@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+build/
+target/
+
+# Reference clone — not our code
+world-contracts/
