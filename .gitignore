@@ -5,3 +5,6 @@ target/
 
 # Reference clone — not our code
 world-contracts/
+
+# Static game data (large binary/embedded repos)
+static-data/

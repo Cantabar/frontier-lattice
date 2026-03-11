@@ -1,0 +1,8 @@
+[package]
+name = "forge_planner"
+edition = "2024.beta"
+
+[dependencies]
+world = { local = "../../../world-contracts/contracts/world" }
+tribe = { local = "../tribe" }
+contract_board = { local = "../contract_board" }

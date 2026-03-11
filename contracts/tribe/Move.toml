@@ -1,0 +1,6 @@
+[package]
+name = "tribe"
+edition = "2024.beta"
+
+[dependencies]
+world = { local = "../../../world-contracts/contracts/world" }
