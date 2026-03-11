@@ -1,0 +1,497 @@
+[
+  {
+    "typeId": 72960,
+    "name": "Hull Repairer",
+    "icon": "icons/type-72960.png"
+  },
+  {
+    "typeId": 77484,
+    "name": "Crude Extractor",
+    "icon": "icons/type-77484.png"
+  },
+  {
+    "typeId": 77728,
+    "name": "Sophrogon",
+    "icon": "icons/type-77728.png"
+  },
+  {
+    "typeId": 77753,
+    "name": "Embark",
+    "icon": "icons/type-77753.png"
+  },
+  {
+    "typeId": 77800,
+    "name": "Feldspar Crystals",
+    "icon": "icons/type-77800.png"
+  },
+  {
+    "typeId": 77801,
+    "name": "Nickel-Iron Veins",
+    "icon": "icons/type-77801.png"
+  },
+  {
+    "typeId": 77803,
+    "name": "Silicon Dust",
+    "icon": "icons/type-77803.png"
+  },
+  {
+    "typeId": 77804,
+    "name": "Tholin Aggregates",
+    "icon": "icons/type-77804.png"
+  },
+  {
+    "typeId": 77805,
+    "name": "Platinum-Group Veins ",
+    "icon": "icons/type-77805.png"
+  },
+  {
+    "typeId": 77810,
+    "name": "Platinum-Palladium Matrix",
+    "icon": "icons/type-77810.png"
+  },
+  {
+    "typeId": 77811,
+    "name": "Hydrated Sulfide Matrix",
+    "icon": "icons/type-77811.png"
+  },
+  {
+    "typeId": 77852,
+    "name": "Small Cutting Laser",
+    "icon": "icons/type-77852.png"
+  },
+  {
+    "typeId": 78416,
+    "name": "Apocalypse Protocol Frame",
+    "icon": "icons/type-78416.png"
+  },
+  {
+    "typeId": 78417,
+    "name": "Bastion Program Frame",
+    "icon": "icons/type-78417.png"
+  },
+  {
+    "typeId": 78418,
+    "name": "Nomad Program Frame",
+    "icon": "icons/type-78418.png"
+  },
+  {
+    "typeId": 78420,
+    "name": "Archangel Protocol Frame",
+    "icon": "icons/type-78420.png"
+  },
+  {
+    "typeId": 78421,
+    "name": "Exterminata Protocol Frame",
+    "icon": "icons/type-78421.png"
+  },
+  {
+    "typeId": 78422,
+    "name": "Equilibrium Program Frame",
+    "icon": "icons/type-78422.png"
+  },
+  {
+    "typeId": 78423,
+    "name": "Water Ice",
+    "icon": "icons/type-78423.png"
+  },
+  {
+    "typeId": 78426,
+    "name": "Iridosmine Nodules",
+    "icon": "icons/type-78426.png"
+  },
+  {
+    "typeId": 78435,
+    "name": "Eupraxite",
+    "icon": "icons/type-78435.png"
+  },
+  {
+    "typeId": 78437,
+    "name": "EU-90 Fuel",
+    "icon": "icons/type-78437.png"
+  },
+  {
+    "typeId": 78449,
+    "name": "Tholin Nodules",
+    "icon": "icons/type-78449.png"
+  },
+  {
+    "typeId": 78502,
+    "name": "Velocity CD82",
+    "icon": "icons/type-78502.png"
+  },
+  {
+    "typeId": 78507,
+    "name": "Celerity CD02",
+    "icon": "icons/type-78507.png"
+  },
+  {
+    "typeId": 78511,
+    "name": "Tempo CD41",
+    "icon": "icons/type-78511.png"
+  },
+  {
+    "typeId": 78515,
+    "name": "SOF-80 Fuel",
+    "icon": "icons/type-78515.png"
+  },
+  {
+    "typeId": 78516,
+    "name": "EU-40 Fuel",
+    "icon": "icons/type-78516.png"
+  },
+  {
+    "typeId": 81658,
+    "name": "EM Disintegrator Charge (S)",
+    "icon": "icons/type-81658.png"
+  },
+  {
+    "typeId": 82085,
+    "name": "Tier 3 Autocannon (S)",
+    "icon": "icons/type-82085.png"
+  },
+  {
+    "typeId": 82087,
+    "name": "Tier 3 Rapid Plasma (S)",
+    "icon": "icons/type-82087.png"
+  },
+  {
+    "typeId": 82091,
+    "name": "Tuho S",
+    "icon": "icons/type-82091.png"
+  },
+  {
+    "typeId": 82093,
+    "name": "Tier 3 Coilgun (M)",
+    "icon": "icons/type-82093.png"
+  },
+  {
+    "typeId": 82099,
+    "name": "Tier 3 Howitzer (M)",
+    "icon": "icons/type-82099.png"
+  },
+  {
+    "typeId": 82126,
+    "name": "AC Gyrojet Ammo 2 (S)",
+    "icon": "icons/type-82126.png"
+  },
+  {
+    "typeId": 82127,
+    "name": "AC Gyrojet Ammo 3 (S)",
+    "icon": "icons/type-82127.png"
+  },
+  {
+    "typeId": 82128,
+    "name": "AC Gyrojet Ammo 1 (S) ",
+    "icon": "icons/type-82128.png"
+  },
+  {
+    "typeId": 82131,
+    "name": "Rapid Plasma Ammo 2 (S)",
+    "icon": "icons/type-82131.png"
+  },
+  {
+    "typeId": 82132,
+    "name": "Rapid Plasma Ammo 1 (M)",
+    "icon": "icons/type-82132.png"
+  },
+  {
+    "typeId": 82134,
+    "name": "Coilgun Ammo 1 (M)",
+    "icon": "icons/type-82134.png"
+  },
+  {
+    "typeId": 82413,
+    "name": "Kinetic Nanite Sequencer",
+    "icon": "icons/type-82413.png"
+  },
+  {
+    "typeId": 82667,
+    "name": "Shield Restorer II",
+    "icon": "icons/type-82667.png"
+  },
+  {
+    "typeId": 82682,
+    "name": "Warp Entangler II",
+    "icon": "icons/type-82682.png"
+  },
+  {
+    "typeId": 82683,
+    "name": "Stasis Net II",
+    "icon": "icons/type-82683.png"
+  },
+  {
+    "typeId": 82915,
+    "name": "Afterburner IV",
+    "icon": "icons/type-82915.png"
+  },
+  {
+    "typeId": 83430,
+    "name": "Reactive Armor Plates IV",
+    "icon": "icons/type-83430.png"
+  },
+  {
+    "typeId": 83438,
+    "name": "Systematic Armor Restorer IV",
+    "icon": "icons/type-83438.png"
+  },
+  {
+    "typeId": 83442,
+    "name": "Adaptive Nanitic Armor Weave III",
+    "icon": "icons/type-83442.png"
+  },
+  {
+    "typeId": 83451,
+    "name": "Attuned Shield Generator IV",
+    "icon": "icons/type-83451.png"
+  },
+  {
+    "typeId": 83463,
+    "name": "Synthetic Mining Lens",
+    "icon": "icons/type-83463.png"
+  },
+  {
+    "typeId": 83501,
+    "name": "Cargo Grid VI",
+    "icon": "icons/type-83501.png"
+  },
+  {
+    "typeId": 83524,
+    "name": "Large Cutting Laser",
+    "icon": "icons/type-83524.png"
+  },
+  {
+    "typeId": 83528,
+    "name": "Medium Cutting Laser",
+    "icon": "icons/type-83528.png"
+  },
+  {
+    "typeId": 83624,
+    "name": "Explo-electro Nanitic Brace III",
+    "icon": "icons/type-83624.png"
+  },
+  {
+    "typeId": 83784,
+    "name": "Kinetic Field Array IV",
+    "icon": "icons/type-83784.png"
+  },
+  {
+    "typeId": 83818,
+    "name": "Fossilized Exotronics",
+    "icon": "icons/type-83818.png"
+  },
+  {
+    "typeId": 83839,
+    "name": "Salt",
+    "icon": "icons/type-83839.png"
+  },
+  {
+    "typeId": 83891,
+    "name": "Gravionite",
+    "icon": "icons/type-83891.png"
+  },
+  {
+    "typeId": 83892,
+    "name": "Luminalis",
+    "icon": "icons/type-83892.png"
+  },
+  {
+    "typeId": 83893,
+    "name": "Eclipsite",
+    "icon": "icons/type-83893.png"
+  },
+  {
+    "typeId": 83894,
+    "name": "Radiantium",
+    "icon": "icons/type-83894.png"
+  },
+  {
+    "typeId": 83898,
+    "name": "Eclipsite Mining Lens",
+    "icon": "icons/type-83898.png"
+  },
+  {
+    "typeId": 83899,
+    "name": "Catalytic Dust",
+    "icon": "icons/type-83899.png"
+  },
+  {
+    "typeId": 84180,
+    "name": "Printed Circuits",
+    "icon": "icons/type-84180.png"
+  },
+  {
+    "typeId": 84182,
+    "name": "Reinforced Alloys",
+    "icon": "icons/type-84182.png"
+  },
+  {
+    "typeId": 84204,
+    "name": "Batched Reinforced Alloys",
+    "icon": "icons/type-84204.png"
+  },
+  {
+    "typeId": 84206,
+    "name": "Packaged Reinforced Alloys",
+    "icon": "icons/type-84206.png"
+  },
+  {
+    "typeId": 84210,
+    "name": "Carbon Weave",
+    "icon": "icons/type-84210.png"
+  },
+  {
+    "typeId": 84868,
+    "name": "SOF-40 Fuel",
+    "icon": "icons/type-84868.png"
+  },
+  {
+    "typeId": 87599,
+    "name": "Cryogenic Ejector S",
+    "icon": "icons/type-87599.png"
+  },
+  {
+    "typeId": 88234,
+    "name": "Troilite Sulfide Grains",
+    "icon": "icons/type-88234.png"
+  },
+  {
+    "typeId": 88235,
+    "name": "Feldspar Crystal Shards",
+    "icon": "icons/type-88235.png"
+  },
+  {
+    "typeId": 88319,
+    "name": "D2 Fuel",
+    "icon": "icons/type-88319.png"
+  },
+  {
+    "typeId": 88335,
+    "name": "D1 Fuel",
+    "icon": "icons/type-88335.png"
+  },
+  {
+    "typeId": 88561,
+    "name": "Thermal Composites",
+    "icon": "icons/type-88561.png"
+  },
+  {
+    "typeId": 88564,
+    "name": "Feral Echo",
+    "icon": "icons/type-88564.png"
+  },
+  {
+    "typeId": 88565,
+    "name": "Still Knot",
+    "icon": "icons/type-88565.png"
+  },
+  {
+    "typeId": 88764,
+    "name": "Salvaged Materials",
+    "icon": "icons/type-88764.png"
+  },
+  {
+    "typeId": 88765,
+    "name": "Mummified Clone",
+    "icon": "icons/type-88765.png"
+  },
+  {
+    "typeId": 88780,
+    "name": "Echo Chamber",
+    "icon": "icons/type-88780.png"
+  },
+  {
+    "typeId": 88781,
+    "name": "Chitinous Organics",
+    "icon": "icons/type-88781.png"
+  },
+  {
+    "typeId": 88782,
+    "name": "Aromatic Carbon Weave",
+    "icon": "icons/type-88782.png"
+  },
+  {
+    "typeId": 88783,
+    "name": "Kerogen Tar",
+    "icon": "icons/type-88783.png"
+  },
+  {
+    "typeId": 88839,
+    "name": "Batched Printed Circuits",
+    "icon": "icons/type-88839.png"
+  },
+  {
+    "typeId": 88840,
+    "name": "Packaged Printed Circuits",
+    "icon": "icons/type-88840.png"
+  },
+  {
+    "typeId": 88841,
+    "name": "Batched Carbon Weave",
+    "icon": "icons/type-88841.png"
+  },
+  {
+    "typeId": 88842,
+    "name": "Packaged Carbon Weave",
+    "icon": "icons/type-88842.png"
+  },
+  {
+    "typeId": 88843,
+    "name": "Batched Thermal Composites",
+    "icon": "icons/type-88843.png"
+  },
+  {
+    "typeId": 88844,
+    "name": "Packaged Thermal Composites",
+    "icon": "icons/type-88844.png"
+  },
+  {
+    "typeId": 88887,
+    "name": "Compressed Coolant ",
+    "icon": "icons/type-88887.png"
+  },
+  {
+    "typeId": 88889,
+    "name": "Heat Exchanger S",
+    "icon": "icons/type-88889.png"
+  },
+  {
+    "typeId": 89089,
+    "name": "Building Foam",
+    "icon": "icons/type-89089.png"
+  },
+  {
+    "typeId": 89258,
+    "name": "Hydrocarbon Residue",
+    "icon": "icons/type-89258.png"
+  },
+  {
+    "typeId": 89260,
+    "name": "Iron-Rich Nodules",
+    "icon": "icons/type-89260.png"
+  },
+  {
+    "typeId": 89989,
+    "name": "Stack Slice 31F",
+    "icon": "icons/type-89989.png"
+  },
+  {
+    "typeId": 91749,
+    "name": "Reaping Shell",
+    "icon": "icons/type-91749.png"
+  },
+  {
+    "typeId": 91967,
+    "name": "Aggressive Shell",
+    "icon": "icons/type-91967.png"
+  },
+  {
+    "typeId": 91968,
+    "name": "Rugged Shell",
+    "icon": "icons/type-91968.png"
+  },
+  {
+    "typeId": 99001,
+    "name": "Palladium",
+    "icon": "icons/type-99001.png"
+  }
+]
