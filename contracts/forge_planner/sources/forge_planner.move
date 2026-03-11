@@ -29,7 +29,7 @@ use sui::{
     table::{Self, Table},
 };
 use world::character::Character;
-use tribe::tribe::{Self, Tribe, TribeCap};
+use tribe::tribe::{Self, Tribe, TribeCap, RepUpdateCap};
 
 // === Errors ===
 const ENotAuthorized: u64 = 0;
@@ -354,6 +354,56 @@ public fun fulfill_order<C>(
     let order_id = object::id(&order);
     let fulfiller_id = fulfiller_character.id();
     let fulfiller_addr = fulfiller_character.character_address();
+
+    let ManufacturingOrder {
+        id,
+        tribe_id,
+        creator_id,
+        output_type_id,
+        output_quantity,
+        bounty,
+        bounty_amount,
+        ..
+    } = order;
+
+    let coin = coin::from_balance(bounty, ctx);
+    transfer::public_transfer(coin, fulfiller_addr);
+
+    event::emit(OrderFulfilledEvent {
+        order_id,
+        tribe_id,
+        creator_id,
+        fulfiller_id,
+        output_type_id,
+        output_quantity,
+        bounty_amount,
+    });
+
+    id.delete();
+}
+
+/// Creator confirms fulfillment AND awards reputation to the fulfiller.
+/// Requires a `RepUpdateCap` for the tribe (issued by tribe leader).
+/// This is the Forge Planner → Tribe Reputation integration: manufacturing
+/// contributions are rewarded with tribe standing.
+public fun fulfill_order_with_rep<C>(
+    order: ManufacturingOrder<C>,
+    tribe: &mut Tribe<C>,
+    rep_cap: &RepUpdateCap,
+    creator_cap: &TribeCap,
+    fulfiller_character: &Character,
+    rep_delta: u64,
+    ctx: &mut TxContext,
+) {
+    assert!(order.status == OrderStatus::Active, EOrderNotActive);
+    assert!(tribe::cap_character_id(creator_cap) == order.creator_id, ENotOrderCreator);
+
+    let order_id = object::id(&order);
+    let fulfiller_id = fulfiller_character.id();
+    let fulfiller_addr = fulfiller_character.character_address();
+
+    // Award reputation to the fulfiller
+    tribe::update_reputation_with_cap(tribe, rep_cap, fulfiller_id, rep_delta, true);
 
     let ManufacturingOrder {
         id,

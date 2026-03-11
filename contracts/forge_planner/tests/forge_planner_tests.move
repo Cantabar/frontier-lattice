@@ -12,7 +12,7 @@ use world::{
     object_registry::ObjectRegistry,
     test_helpers::{Self, admin, tenant, user_a, user_b},
 };
-use tribe::tribe::{Self, Tribe, TribeCap};
+use tribe::tribe::{Self, Tribe, TribeCap, RepUpdateCap};
 use forge_planner::forge_planner::{
     Self,
     RecipeRegistry,
@@ -531,6 +531,93 @@ fun cancel_order_success() {
 
     // Verify bounty returned to creator (user_a)
     ts::next_tx(&mut ts, user_a());
+    {
+        let coin = ts::take_from_sender<coin::Coin<TESTCOIN>>(&ts);
+        assert!(coin.value() == BOUNTY_AMOUNT);
+        ts::return_to_sender(&ts, coin);
+    };
+
+    ts::end(ts);
+}
+
+#[test]
+fun fulfill_order_with_rep_success() {
+    let mut ts = ts::begin(@0x0);
+    let (leader_id, member_id) = setup_world_and_characters(&mut ts);
+    setup_tribe_with_member(&mut ts, leader_id, member_id);
+    setup_registry(&mut ts);
+
+    // Add recipe
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
+        let tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+        let mut registry = ts::take_shared<RecipeRegistry<TESTCOIN>>(&ts);
+        forge_planner::add_recipe(
+            &mut registry, &tribe, &leader_cap,
+            OUTPUT_TYPE_ID, OUTPUT_QUANTITY, test_inputs(), RUN_TIME,
+        );
+        ts::return_to_sender(&ts, leader_cap);
+        ts::return_shared(tribe);
+        ts::return_shared(registry);
+    };
+
+    // Issue RepUpdateCap
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
+        let tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+        let rep_cap = tribe::issue_rep_update_cap(&tribe, &leader_cap, ts::ctx(&mut ts));
+        transfer::public_transfer(rep_cap, user_a());
+        ts::return_to_sender(&ts, leader_cap);
+        ts::return_shared(tribe);
+    };
+
+    // Create order
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
+        let tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+        let registry = ts::take_shared<RecipeRegistry<TESTCOIN>>(&ts);
+        let leader = ts::take_shared_by_id<Character>(&ts, leader_id);
+        let bounty = coin::mint_for_testing<TESTCOIN>(BOUNTY_AMOUNT, ts::ctx(&mut ts));
+
+        forge_planner::create_order(
+            &registry, &tribe, &leader_cap, &leader,
+            utf8(b"Build 1 Tritanium Bar"),
+            OUTPUT_TYPE_ID, 1, bounty, ts::ctx(&mut ts),
+        );
+
+        ts::return_to_sender(&ts, leader_cap);
+        ts::return_shared(tribe);
+        ts::return_shared(registry);
+        ts::return_shared(leader);
+    };
+
+    // Fulfill with reputation award
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
+        let rep_cap = ts::take_from_sender<RepUpdateCap>(&ts);
+        let mut tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+        let order = ts::take_shared<ManufacturingOrder<TESTCOIN>>(&ts);
+        let member = ts::take_shared_by_id<Character>(&ts, member_id);
+
+        forge_planner::fulfill_order_with_rep(
+            order, &mut tribe, &rep_cap, &leader_cap, &member, 75, ts::ctx(&mut ts),
+        );
+
+        // Verify reputation was updated
+        assert!(tribe::reputation_of(&tribe, member_id) == 75);
+
+        ts::return_to_sender(&ts, leader_cap);
+        ts::return_to_sender(&ts, rep_cap);
+        ts::return_shared(tribe);
+        ts::return_shared(member);
+    };
+
+    // Verify bounty transferred to fulfiller (user_b)
+    ts::next_tx(&mut ts, user_b());
     {
         let coin = ts::take_from_sender<coin::Coin<TESTCOIN>>(&ts);
         assert!(coin.value() == BOUNTY_AMOUNT);
