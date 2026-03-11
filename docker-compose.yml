@@ -1,0 +1,68 @@
+# Frontier Lattice — Local Development
+#
+# Usage:  make local        (or: docker compose up -d)
+# Logs:   docker compose logs -f indexer
+# Stop:   docker compose down
+# Reset:  docker compose down -v   (removes volumes / DB data)
+#
+# The indexer currently uses SQLite. A postgres service is included for
+# future migration and for any new services that need a relational DB.
+
+services:
+  # ── Indexer (subscriber + API on port 3100) ──────────────────────
+  indexer:
+    build:
+      context: ./indexer
+      dockerfile: Dockerfile
+    ports:
+      - "3100:3100"
+    env_file: .env
+    environment:
+      - DATABASE_URL=postgresql://lattice:lattice@postgres:5432/frontier_lattice
+      - API_PORT=3100
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ── App API (auth + optimizer + privacy) ─────────────────────────
+  # Uncomment when app/src/server.ts exists:
+  #
+  # app:
+  #   build:
+  #     context: ./app
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "3000:3000"
+  #   env_file: .env
+  #   environment:
+  #     - DATABASE_URL=postgresql://lattice:lattice@postgres:5432/frontier_lattice
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+  # ── Postgres ─────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: frontier_lattice
+      POSTGRES_USER: lattice
+      POSTGRES_PASSWORD: lattice
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lattice -d frontier_lattice"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:

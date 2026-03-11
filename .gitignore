@@ -4,6 +4,12 @@ build/
 target/
 dist/
 
+# Environment (contains secrets)
+.env
+
+# CDK
+infra/cdk.out/
+
 # Indexer runtime data
 indexer/data/
 
