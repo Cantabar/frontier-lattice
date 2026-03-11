@@ -2,6 +2,10 @@
 node_modules/
 build/
 target/
+dist/
+
+# Indexer runtime data
+indexer/data/
 
 # Reference clone — not our code
 world-contracts/

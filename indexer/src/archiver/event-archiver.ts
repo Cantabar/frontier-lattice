@@ -1,0 +1,234 @@
+/**
+ * Event Archiver — receives filtered Sui events from the subscriber,
+ * enriches them with denormalised fields, stores them in SQLite with
+ * checkpoint proof metadata, and updates materialised views.
+ *
+ * The archiver is the write-side of the indexer. It:
+ *   1. Extracts denormalised fields (tribe_id, character_id, primary_id)
+ *      from the event JSON for efficient querying
+ *   2. Inserts the event into the `events` table
+ *   3. Updates `reputation_snapshots` on ReputationUpdatedEvent
+ *
+ * The proof chain stored per event:
+ *   event_data → tx_digest → checkpoint_seq → checkpoint_digest
+ *
+ * Any third party with the validator set for that epoch can verify:
+ *   - The checkpoint digest is signed by ≥2/3 validators
+ *   - The transaction digest is included in the checkpoint
+ *   - The event was emitted by that transaction
+ */
+
+import type Database from "better-sqlite3";
+import type { ArchivedEvent, EventTypeName } from "../types.js";
+import { insertEvent, upsertReputation } from "../db/queries.js";
+
+export interface RawEventInput {
+  eventType: string;
+  eventName: EventTypeName;
+  module: string;
+  eventData: Record<string, unknown>;
+  txDigest: string;
+  eventSeq: number;
+  checkpointSeq: string;
+  checkpointDigest: string;
+  timestampMs: string;
+}
+
+export class EventArchiver {
+  private db: Database.Database;
+  private eventCount = 0;
+
+  constructor(db: Database.Database) {
+    this.db = db;
+  }
+
+  /**
+   * Archive a single event. Extracts denormalised fields, inserts into
+   * the events table, and updates materialised views.
+   */
+  archive(input: RawEventInput): void {
+    const { primaryId, tribeId, characterId } = extractDenormalisedFields(
+      input.eventName,
+      input.eventData,
+    );
+
+    const archived: ArchivedEvent = {
+      event_type: input.eventType,
+      event_name: input.eventName,
+      module: input.module,
+      event_data: JSON.stringify(input.eventData),
+      tx_digest: input.txDigest,
+      event_seq: input.eventSeq,
+      checkpoint_seq: input.checkpointSeq,
+      checkpoint_digest: input.checkpointDigest,
+      timestamp_ms: input.timestampMs,
+      primary_id: primaryId,
+      tribe_id: tribeId,
+      character_id: characterId,
+    };
+
+    const eventId = insertEvent(this.db, archived);
+    this.eventCount++;
+
+    // Update materialised views
+    if (input.eventName === "ReputationUpdatedEvent" && eventId > 0) {
+      const score = Number(input.eventData.new_score ?? 0);
+      upsertReputation(this.db, tribeId, characterId ?? "", score, eventId);
+    }
+
+    if (this.eventCount % 100 === 0) {
+      console.log(`[archiver] Archived ${this.eventCount} events total`);
+    }
+  }
+
+  /** Total number of events archived in this session. */
+  get totalArchived(): number {
+    return this.eventCount;
+  }
+}
+
+// ============================================================
+// Field extraction — map event name → denormalised query fields
+// ============================================================
+
+/**
+ * Extracts the primary_id, tribe_id, and character_id from an event's
+ * JSON data based on the event type. These denormalised fields enable
+ * efficient queries without parsing the JSON blob.
+ */
+function extractDenormalisedFields(
+  eventName: EventTypeName,
+  data: Record<string, unknown>,
+): { primaryId: string; tribeId: string; characterId: string | null } {
+  switch (eventName) {
+    // -- Tribe events --
+    case "TribeCreatedEvent":
+      return {
+        primaryId: str(data.tribe_id),
+        tribeId: str(data.tribe_id),
+        characterId: str(data.leader_character_id),
+      };
+    case "MemberJoinedEvent":
+      return {
+        primaryId: str(data.tribe_id),
+        tribeId: str(data.tribe_id),
+        characterId: str(data.character_id),
+      };
+    case "MemberRemovedEvent":
+      return {
+        primaryId: str(data.tribe_id),
+        tribeId: str(data.tribe_id),
+        characterId: str(data.character_id),
+      };
+    case "ReputationUpdatedEvent":
+      return {
+        primaryId: str(data.tribe_id),
+        tribeId: str(data.tribe_id),
+        characterId: str(data.character_id),
+      };
+    case "TreasuryDepositEvent":
+      return {
+        primaryId: str(data.tribe_id),
+        tribeId: str(data.tribe_id),
+        characterId: null,
+      };
+    case "TreasuryProposalCreatedEvent":
+      return {
+        primaryId: str(data.proposal_id),
+        tribeId: str(data.tribe_id),
+        characterId: null,
+      };
+    case "TreasuryProposalVotedEvent":
+      return {
+        primaryId: str(data.proposal_id),
+        tribeId: str(data.tribe_id),
+        characterId: str(data.character_id),
+      };
+    case "TreasurySpendEvent":
+      return {
+        primaryId: str(data.proposal_id),
+        tribeId: str(data.tribe_id),
+        characterId: null,
+      };
+
+    // -- Contract Board events --
+    case "JobCreatedEvent":
+      return {
+        primaryId: str(data.job_id),
+        tribeId: str(data.poster_tribe_id),
+        characterId: str(data.poster_id),
+      };
+    case "JobAcceptedEvent":
+      return {
+        primaryId: str(data.job_id),
+        tribeId: "",  // Not available in this event; join with JobCreatedEvent
+        characterId: str(data.assignee_id),
+      };
+    case "JobCompletedEvent":
+      return {
+        primaryId: str(data.job_id),
+        tribeId: "",  // Not in this event
+        characterId: str(data.assignee_id),
+      };
+    case "JobExpiredEvent":
+      return {
+        primaryId: str(data.job_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+    case "JobCancelledEvent":
+      return {
+        primaryId: str(data.job_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+
+    // -- Forge Planner events --
+    case "RecipeRegistryCreatedEvent":
+      return {
+        primaryId: str(data.registry_id),
+        tribeId: str(data.tribe_id),
+        characterId: null,
+      };
+    case "RecipeAddedEvent":
+      return {
+        primaryId: str(data.registry_id),
+        tribeId: str(data.tribe_id),
+        characterId: null,
+      };
+    case "RecipeRemovedEvent":
+      return {
+        primaryId: str(data.registry_id),
+        tribeId: str(data.tribe_id),
+        characterId: null,
+      };
+    case "OrderCreatedEvent":
+      return {
+        primaryId: str(data.order_id),
+        tribeId: str(data.tribe_id),
+        characterId: str(data.creator_id),
+      };
+    case "OrderFulfilledEvent":
+      return {
+        primaryId: str(data.order_id),
+        tribeId: str(data.tribe_id),
+        characterId: str(data.fulfiller_id),
+      };
+    case "OrderCancelledEvent":
+      return {
+        primaryId: str(data.order_id),
+        tribeId: str(data.tribe_id),
+        characterId: str(data.creator_id),
+      };
+
+    default:
+      return { primaryId: "", tribeId: "", characterId: null };
+  }
+}
+
+/** Safe string extraction from unknown value. */
+function str(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value == null) return "";
+  return String(value);
+}
