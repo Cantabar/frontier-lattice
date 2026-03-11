@@ -226,6 +226,69 @@ public fun create_job<C>(
     transfer::share_object(job);
 }
 
+/// Creates a job funded from the tribe treasury instead of personal coin.
+/// Requires Leader or Officer TribeCap. Withdraws `escrow_amount` from the
+/// tribe treasury and locks it as the job's escrow.
+///
+/// This is the primary Tribe → Contract Board integration: tribe leadership
+/// can post bounties and delivery contracts funded by collective resources.
+public fun create_job_from_treasury<C>(
+    tribe: &mut Tribe<C>,
+    cap: &TribeCap,
+    poster_character: &Character,
+    description: String,
+    completion_type: CompletionType,
+    escrow_amount: u64,
+    deadline_ms: u64,
+    min_reputation: u64,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    assert!(description.length() > 0, EDescriptionEmpty);
+    assert!(escrow_amount > 0, EInsufficientEscrow);
+    assert!(deadline_ms > clock.timestamp_ms(), EDeadlineInPast);
+
+    let poster_id = tribe::cap_character_id(cap);
+    let tribe_id = tribe::tribe_id(cap);
+    assert!(poster_character.id() == poster_id, ECharacterMismatch);
+    assert!(tribe_id == object::id(tribe), ETribeMismatch);
+    assert!(tribe::is_member(tribe, poster_id), ENotTribeMember);
+
+    // Withdraw from tribe treasury (checks Leader/Officer + sufficient balance)
+    let escrow_coin = tribe::withdraw_from_treasury(tribe, cap, escrow_amount, ctx);
+    let reward_amount = escrow_coin.value();
+    let poster_address = poster_character.character_address();
+
+    let job = JobPosting<C> {
+        id: object::new(ctx),
+        poster_id,
+        poster_address,
+        poster_tribe_id: tribe_id,
+        description,
+        completion_type,
+        reward_amount,
+        escrow: escrow_coin.into_balance(),
+        assignee_id: option::none(),
+        assignee_address: option::none(),
+        deadline_ms,
+        status: JobStatus::Open,
+        min_reputation,
+    };
+
+    let job_id = object::id(&job);
+    event::emit(JobCreatedEvent {
+        job_id,
+        poster_id,
+        poster_tribe_id: tribe_id,
+        completion_type,
+        reward_amount,
+        deadline_ms,
+        min_reputation,
+    });
+
+    transfer::share_object(job);
+}
+
 /// Accept an open job. The assignee must be a member of the poster's tribe
 /// and meet the minimum reputation requirement.
 /// Cannot accept after deadline; cannot self-assign.

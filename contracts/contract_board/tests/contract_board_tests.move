@@ -719,6 +719,65 @@ fun expire_job_success() {
 }
 
 #[test]
+fun create_job_from_treasury_success() {
+    let mut ts = ts::begin(@0x0);
+    let (leader_id, member_id) = setup_world_and_characters(&mut ts);
+    setup_tribe_with_member(&mut ts, leader_id, member_id);
+
+    // Deposit 2000 into tribe treasury
+    ts::next_tx(&mut ts, user_a());
+    {
+        let mut tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+        let test_coin = coin::mint_for_testing<TESTCOIN>(2000, ts::ctx(&mut ts));
+        tribe::deposit_to_treasury(&mut tribe, test_coin);
+        assert!(tribe::treasury_balance(&tribe) == 2000);
+        ts::return_shared(tribe);
+    };
+
+    // Create job from treasury
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
+        let mut tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+        let leader = ts::take_shared_by_id<Character>(&ts, leader_id);
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        contract_board::create_job_from_treasury(
+            &mut tribe,
+            &leader_cap,
+            &leader,
+            utf8(JOB_DESCRIPTION),
+            test_completion_type(),
+            ESCROW_AMOUNT,
+            JOB_DEADLINE_MS,
+            0,
+            &clock,
+            ts::ctx(&mut ts),
+        );
+
+        // Treasury should be reduced by escrow amount
+        assert!(tribe::treasury_balance(&tribe) == 1000); // 2000 - 1000
+
+        clock.destroy_for_testing();
+        ts::return_to_sender(&ts, leader_cap);
+        ts::return_shared(tribe);
+        ts::return_shared(leader);
+    };
+
+    // Verify job was created with correct fields
+    ts::next_tx(&mut ts, user_a());
+    {
+        let job = ts::take_shared<JobPosting<TESTCOIN>>(&ts);
+        assert!(contract_board::job_poster_id(&job) == leader_id);
+        assert!(contract_board::job_reward_amount(&job) == ESCROW_AMOUNT);
+        assert!(contract_board::job_status(&job) == contract_board::status_open());
+        ts::return_shared(job);
+    };
+
+    ts::end(ts);
+}
+
+#[test]
 #[expected_failure(abort_code = 4)] // EJobNotExpired
 fun expire_before_deadline_fails() {
     let mut ts = ts::begin(@0x0);
