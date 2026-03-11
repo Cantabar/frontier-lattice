@@ -162,6 +162,12 @@ public struct TreasurySpendEvent has copy, drop {
     recipient: address,
 }
 
+public struct TreasuryWithdrawEvent has copy, drop {
+    tribe_id: ID,
+    amount: u64,
+    withdrawn_by: ID,
+}
+
 // === Public Functions ===
 
 /// Creates a new tribe. The caller provides their `Character` as proof of identity.
@@ -347,6 +353,33 @@ public fun deposit_to_treasury<C>(tribe: &mut Tribe<C>, coin: Coin<C>) {
     let amount = coin.value();
     tribe.treasury.join(coin.into_balance());
     event::emit(TreasuryDepositEvent { tribe_id: object::id(tribe), amount });
+}
+
+/// Withdraws tokens from the tribe treasury. Requires Leader or Officer TribeCap.
+/// Returns a `Coin<C>` that can be used directly (e.g. to fund a job on the
+/// Contract Board) or transferred. This is the composable primitive for
+/// treasury-funded operations without requiring the proposal/vote flow.
+public fun withdraw_from_treasury<C>(
+    tribe: &mut Tribe<C>,
+    cap: &TribeCap,
+    amount: u64,
+    ctx: &mut TxContext,
+): Coin<C> {
+    verify_tribe_cap(tribe, cap);
+    assert!(is_leader_or_officer(cap), ENotAuthorized);
+    assert!(amount > 0, ETribeNameEmpty); // reuse: zero-amount check
+    assert!(tribe.treasury.value() >= amount, EInsufficientFunds);
+
+    let tribe_id = object::id(tribe);
+    let coin = coin::take(&mut tribe.treasury, amount, ctx);
+
+    event::emit(TreasuryWithdrawEvent {
+        tribe_id,
+        amount,
+        withdrawn_by: cap.character_id,
+    });
+
+    coin
 }
 
 /// Creates a treasury spend proposal. Requires Officer or Leader `TribeCap`.

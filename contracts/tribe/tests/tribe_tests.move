@@ -536,6 +536,87 @@ fun execute_proposal_without_enough_votes_fails() {
 }
 
 #[test]
+fun withdraw_from_treasury_success() {
+    let mut ts = ts::begin(@0x0);
+    let (leader_id, _) = setup_characters(&mut ts);
+
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader = ts::take_shared_by_id<Character>(&ts, leader_id);
+        let cap = tribe::create_tribe<TESTCOIN>(&leader, utf8(TRIBE_NAME), VOTE_THRESHOLD_51, ts::ctx(&mut ts));
+        transfer::public_transfer(cap, user_a());
+        ts::return_shared(leader);
+    };
+
+    // Deposit 1000
+    ts::next_tx(&mut ts, user_a());
+    {
+        let mut tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+        let test_coin = coin::mint_for_testing<TESTCOIN>(1000, ts::ctx(&mut ts));
+        tribe::deposit_to_treasury(&mut tribe, test_coin);
+        assert!(tribe::treasury_balance(&tribe) == 1000);
+        ts::return_shared(tribe);
+    };
+
+    // Withdraw 400
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
+        let mut tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+
+        let withdrawn = tribe::withdraw_from_treasury(&mut tribe, &leader_cap, 400, ts::ctx(&mut ts));
+        assert!(withdrawn.value() == 400);
+        assert!(tribe::treasury_balance(&tribe) == 600);
+
+        // Clean up the withdrawn coin
+        transfer::public_transfer(withdrawn, user_a());
+        ts::return_to_sender(&ts, leader_cap);
+        ts::return_shared(tribe);
+    };
+
+    ts::end(ts);
+}
+
+#[test]
+#[expected_failure(abort_code = 4)] // EInsufficientFunds
+fun withdraw_from_treasury_insufficient_fails() {
+    let mut ts = ts::begin(@0x0);
+    let (leader_id, _) = setup_characters(&mut ts);
+
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader = ts::take_shared_by_id<Character>(&ts, leader_id);
+        let cap = tribe::create_tribe<TESTCOIN>(&leader, utf8(TRIBE_NAME), VOTE_THRESHOLD_51, ts::ctx(&mut ts));
+        transfer::public_transfer(cap, user_a());
+        ts::return_shared(leader);
+    };
+
+    // Deposit 100
+    ts::next_tx(&mut ts, user_a());
+    {
+        let mut tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+        let test_coin = coin::mint_for_testing<TESTCOIN>(100, ts::ctx(&mut ts));
+        tribe::deposit_to_treasury(&mut tribe, test_coin);
+        ts::return_shared(tribe);
+    };
+
+    // Try to withdraw 500 — should fail
+    ts::next_tx(&mut ts, user_a());
+    {
+        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
+        let mut tribe = ts::take_shared<Tribe<TESTCOIN>>(&ts);
+
+        let withdrawn = tribe::withdraw_from_treasury(&mut tribe, &leader_cap, 500, ts::ctx(&mut ts));
+        transfer::public_transfer(withdrawn, user_a());
+
+        ts::return_to_sender(&ts, leader_cap);
+        ts::return_shared(tribe);
+    };
+
+    ts::end(ts);
+}
+
+#[test]
 #[expected_failure(abort_code = 7)]
 fun double_vote_fails() {
     let mut ts = ts::begin(@0x0);
