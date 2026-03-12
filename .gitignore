@@ -18,3 +18,9 @@ world-contracts/
 
 # Static game data (large binary/embedded repos)
 static-data/
+
+# Move ephemeral publication metadata (regenerated on each publish)
+Pub.local.toml
+
+# mprocs runtime log
+mprocs.log
