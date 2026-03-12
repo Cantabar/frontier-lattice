@@ -1,0 +1,73 @@
+# Frontier Lattice — Local Dev (mprocs)
+#
+# Install:  cargo install mprocs   (or: brew install mprocs)
+# Run:      mprocs
+#
+# Keybindings (default):
+#   q        quit all
+#   j/k      switch process
+#   x        stop/restart focused process
+#   Enter    toggle focus on log pane
+
+procs:
+  # ── SUI local network ────────────────────────────────────────────
+  sui-localnet:
+    shell: "sui start --with-faucet --force-regenesis"
+    stop:
+      signal: "SIGTERM"
+
+  # ── Postgres (via docker compose) ────────────────────────────────
+  postgres:
+    shell: "docker compose up postgres"
+    stop:
+      signal: "SIGINT"
+
+  # ── DB migration (one-shot, waits for postgres) ──────────────────
+  db-migrate:
+    shell: |
+      echo "Waiting for postgres..."
+      until pg_isready -h localhost -p 5432 -U lattice -q 2>/dev/null; do
+        sleep 1
+      done
+      echo "Postgres ready — running migration"
+      npm --prefix indexer run migrate
+    autostart: true
+
+  # ── Contract build (one-shot, builds all Move packages) ──────────
+  contracts-build:
+    shell: |
+      echo "Waiting for SUI localnet..."
+      until curl -sf http://127.0.0.1:9000 >/dev/null 2>&1; do
+        sleep 2
+      done
+      echo "SUI ready — building contracts"
+      sui move build --path contracts/tribe && \
+      sui move build --path contracts/contract_board && \
+      sui move build --path contracts/forge_planner && \
+      echo "All contracts built successfully"
+
+  # ── Indexer (event subscriber + API on :3100) ────────────────────
+  indexer:
+    shell: |
+      echo "Waiting for postgres and SUI localnet..."
+      until pg_isready -h localhost -p 5432 -U lattice -q 2>/dev/null; do
+        sleep 1
+      done
+      until curl -sf http://127.0.0.1:9000 >/dev/null 2>&1; do
+        sleep 2
+      done
+      echo "Dependencies ready — starting indexer"
+      npm --prefix indexer run dev
+    env:
+      SUI_RPC_URL: "http://127.0.0.1:9000"
+      DATABASE_URL: "postgresql://lattice:lattice@localhost:5432/frontier_lattice"
+      API_PORT: "3100"
+      POLL_INTERVAL_MS: "2000"
+    stop:
+      signal: "SIGINT"
+
+  # ── Giveitem Helper (Vite dev UI) ───────────────────────────────
+  giveitem-helper:
+    shell: "npm --prefix dev-tools/giveitem-helper run dev"
+    stop:
+      signal: "SIGINT"
