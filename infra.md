@@ -56,10 +56,12 @@ First-time setup: `./scripts/bootstrap.sh` then `make infra-init`
 
 ### Frontend: S3 + CloudFront (not ECS, not Amplify)
 
-- The React UI is a static build — no server-side rendering needed.
+- The React UI (`web/`) is a Vite + React 18 + TypeScript SPA using styled-components and `@mysten/dapp-kit` for Sui wallet integration.
 - S3 + CloudFront is the cheapest and fastest option for static hosting.
 - CloudFront provides HTTPS with an ACM certificate and global edge caching.
 - The SPA fallback (404 → `/index.html`) is configured in the CloudFront error responses.
+- A multi-stage `web/Dockerfile` is also provided for containerized deployment (nginx + SPA fallback). Build-time `VITE_*` ARGs inject package IDs and network config.
+- The UI connects to the indexer at `/api/v1` (proxied by Vite dev server in local dev, by CloudFront/ALB in production).
 
 ### Encrypted Storage: S3 (not DynamoDB, not a custom service)
 
@@ -140,6 +142,20 @@ infra/
 app/
 └── Dockerfile                      # API service container
 
+web/
+├── Dockerfile                      # Web UI container (nginx + SPA)
+├── package.json                    # Vite, React 18, styled-components, dApp Kit
+├── vite.config.ts                  # Dev server, /api proxy to indexer
+└── src/
+    ├── config.ts                   # VITE_* env var → package ID mapping
+    ├── styles/                     # Theme (EVE Frontier palette), global styles
+    ├── lib/                        # PTB builders, indexer client, types, format
+    ├── hooks/                      # useIdentity, useTribe, useJobs, useOrders,
+    │                               #   useReputation, useOptimizer
+    ├── components/                 # tribe/, jobs/, forge/, events/, shared/
+    └── pages/                      # Dashboard, TribePage, ContractBoard,
+                                    #   ForgePlanner, EventExplorer
+
 indexer/
 └── Dockerfile                      # Indexer container
 
@@ -159,8 +175,25 @@ scripts/
 - **indexer** — builds from `indexer/Dockerfile`, exposes port 3100, uses SQLite with a Docker volume
 - **postgres** — PostgreSQL 16 on port 5432, credentials `lattice/lattice`, for future services
 - **app** — commented out, uncomment when `app/src/server.ts` exists
+- **web** — run separately via `cd web && npm run dev` (Vite dev server on port 5173). Proxies `/api` requests to `localhost:3001` (indexer).
 
 All services read from `.env` (copy from `.env.example`). The local Sui network runs separately via `sui start`.
+
+### Web UI Environment Variables
+
+The web UI reads Sui package IDs and network config from `VITE_*` env vars at build time:
+
+```
+VITE_SUI_NETWORK=localnet
+VITE_TRIBE_PACKAGE_ID=0x...
+VITE_CONTRACT_BOARD_PACKAGE_ID=0x...
+VITE_FORGE_PLANNER_PACKAGE_ID=0x...
+VITE_WORLD_PACKAGE_ID=0x...
+VITE_COIN_TYPE=0x2::sui::SUI
+VITE_INDEXER_URL=/api/v1
+```
+
+For local dev, defaults are used (all `0x0`). Update after `sui client publish`.
 
 ---
 
