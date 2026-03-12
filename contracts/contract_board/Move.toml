@@ -6,5 +6,5 @@ edition = "2024.beta"
 localnet = "ca6ba8e0"
 
 [dependencies]
-world = { local = "../../world-contracts/contracts/world" }
+world = { local = "../../../world-contracts/contracts/world" }
 tribe = { local = "../tribe" }

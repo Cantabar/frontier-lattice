@@ -5,49 +5,73 @@
 version = 4
 
 [pinned.localnet.MoveStdlib]
-source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "b38bca86f0323b3fe8b6b7f4ca0cd7ae7faebe4b" }
-use_environment = "localnet"
-manifest_digest = "C4FE4C91DE74CBF223B2E380AE40F592177D21870DC2D7EB6227D2D694E05363"
-deps = {}
-
-[pinned.localnet.MoveStdlib_1]
-source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "a9a6825eaf6273cc819ee3bcf65fd4909f7624a9" }
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "868c226359ef914f1f3b080518f27eb13d8967f5" }
 use_environment = "localnet"
 manifest_digest = "C4FE4C91DE74CBF223B2E380AE40F592177D21870DC2D7EB6227D2D694E05363"
 deps = {}
 
 [pinned.localnet.Sui]
-source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "b38bca86f0323b3fe8b6b7f4ca0cd7ae7faebe4b" }
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "868c226359ef914f1f3b080518f27eb13d8967f5" }
 use_environment = "localnet"
 manifest_digest = "CC15CB146CA1113370B03476BFF694B88F43F77D8DEE7C23CC0C78AB0634420D"
 deps = { MoveStdlib = "MoveStdlib" }
 
-[pinned.localnet.Sui_1]
-source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "a9a6825eaf6273cc819ee3bcf65fd4909f7624a9" }
-use_environment = "localnet"
-manifest_digest = "CC15CB146CA1113370B03476BFF694B88F43F77D8DEE7C23CC0C78AB0634420D"
-deps = { MoveStdlib = "MoveStdlib_1" }
-
-[pinned.localnet.World]
-source = { local = "../../world-contracts/contracts/world" }
-use_environment = "localnet"
-manifest_digest = "F8D772EDBB9358971958F9C67DF89A6EBE5B5F89AC6A1B5C9A209A15EFFB3691"
-deps = { Sui = "Sui_1" }
-
 [pinned.localnet.contract_board]
 source = { local = "../contract_board" }
 use_environment = "localnet"
-manifest_digest = "4811E72BE52F4D350CBFA2E32C54092844E7748941D3317F76EE238E5BF250F1"
-deps = { std = "MoveStdlib", sui = "Sui", tribe = "tribe", world = "World" }
+manifest_digest = "43D8B12E7F5CEB2F92EC84B7D366D697116F82EF85F5B8162E4ABD3002B23DAB"
+deps = { std = "MoveStdlib", sui = "Sui", tribe = "tribe", world = "world" }
 
 [pinned.localnet.forge_planner]
 source = { root = true }
 use_environment = "localnet"
-manifest_digest = "B1F1130C6646C469A601FB3F596809465F551805AED20DDF3B481C21C279697F"
-deps = { contract_board = "contract_board", std = "MoveStdlib", sui = "Sui", tribe = "tribe", world = "World" }
+manifest_digest = "56B7C4CD70189353F735EB99C0798AC9820000C233A9C35065CD8CE1991F5CEC"
+deps = { contract_board = "contract_board", std = "MoveStdlib", sui = "Sui", tribe = "tribe", world = "world" }
 
 [pinned.localnet.tribe]
 source = { local = "../tribe" }
 use_environment = "localnet"
-manifest_digest = "4E5BDE97336FD5F805ABB534AC3C87EC9E26827514F3ED377E328AA3048AABEF"
-deps = { std = "MoveStdlib", sui = "Sui", world = "World" }
+manifest_digest = "67C3D4EFFF744664641B85E46ACFC5E0F9FB532FDAFCD56ABE95953906C7CE94"
+deps = { std = "MoveStdlib", sui = "Sui", world = "world" }
+
+[pinned.localnet.world]
+source = { local = "../../../world-contracts/contracts/world" }
+use_environment = "localnet"
+manifest_digest = "EAE83E4C2C7D5B4EF605145EE3703A5AF265593E686986BA5E58EE3F5D5E884F"
+deps = { std = "MoveStdlib", sui = "Sui" }
+
+[pinned.testnet.MoveStdlib]
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "868c226359ef914f1f3b080518f27eb13d8967f5" }
+use_environment = "testnet"
+manifest_digest = "C4FE4C91DE74CBF223B2E380AE40F592177D21870DC2D7EB6227D2D694E05363"
+deps = {}
+
+[pinned.testnet.Sui]
+source = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "868c226359ef914f1f3b080518f27eb13d8967f5" }
+use_environment = "testnet"
+manifest_digest = "7AFB66695545775FBFBB2D3078ADFD084244D5002392E837FDE21D9EA1C6D01C"
+deps = { MoveStdlib = "MoveStdlib" }
+
+[pinned.testnet.contract_board]
+source = { local = "../contract_board" }
+use_environment = "testnet"
+manifest_digest = "D8F7C8BB9D03D51D7DE4E5C208600BD68FD575CB65DB27CBD5154713E7E417DF"
+deps = { std = "MoveStdlib", sui = "Sui", tribe = "tribe", world = "world" }
+
+[pinned.testnet.forge_planner]
+source = { root = true }
+use_environment = "testnet"
+manifest_digest = "93E71BB88C7E8948D2D5452D953C89CE3ABD1AD16553925B9973484933DB2897"
+deps = { contract_board = "contract_board", std = "MoveStdlib", sui = "Sui", tribe = "tribe", world = "world" }
+
+[pinned.testnet.tribe]
+source = { local = "../tribe" }
+use_environment = "testnet"
+manifest_digest = "A690391E34E31EF9DF31FAECBAD641ECA7E4802A7102A067E66A93DBC046236B"
+deps = { std = "MoveStdlib", sui = "Sui", world = "world" }
+
+[pinned.testnet.world]
+source = { local = "../../../world-contracts/contracts/world" }
+use_environment = "testnet"
+manifest_digest = "5745706258F61D6CE210904B3E6AE87A73CE9D31A6F93BE4718C442529332A87"
+deps = { std = "MoveStdlib", sui = "Sui" }
