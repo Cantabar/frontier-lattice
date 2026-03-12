@@ -12,21 +12,19 @@
 procs:
   # ── SUI local network ────────────────────────────────────────────
   sui-localnet:
-    shell: "sui start --with-faucet --force-regenesis"
-    stop:
-      signal: "SIGTERM"
+    shell: "RUST_LOG=\"off,sui_node=info\" sui start --with-faucet --force-regenesis"
+    stop: "SIGTERM"
 
   # ── Postgres (via docker compose) ────────────────────────────────
   postgres:
     shell: "docker compose up postgres"
-    stop:
-      signal: "SIGINT"
+    stop: "SIGINT"
 
   # ── DB migration (one-shot, waits for postgres) ──────────────────
   db-migrate:
     shell: |
       echo "Waiting for postgres..."
-      until pg_isready -h localhost -p 5432 -U lattice -q 2>/dev/null; do
+      until docker exec hackathon-postgres-1 pg_isready -U lattice -d frontier_lattice -q 2>/dev/null; do
         sleep 1
       done
       echo "Postgres ready — running migration"
@@ -37,7 +35,7 @@ procs:
   contracts-build:
     shell: |
       echo "Waiting for SUI localnet..."
-      until curl -sf http://127.0.0.1:9000 >/dev/null 2>&1; do
+      until curl -so /dev/null -w '%{http_code}' http://127.0.0.1:9000 >/dev/null 2>&1; do
         sleep 2
       done
       echo "SUI ready — building contracts"
@@ -50,10 +48,10 @@ procs:
   indexer:
     shell: |
       echo "Waiting for postgres and SUI localnet..."
-      until pg_isready -h localhost -p 5432 -U lattice -q 2>/dev/null; do
+      until docker exec hackathon-postgres-1 pg_isready -U lattice -d frontier_lattice -q 2>/dev/null; do
         sleep 1
       done
-      until curl -sf http://127.0.0.1:9000 >/dev/null 2>&1; do
+      until curl -so /dev/null -w '%{http_code}' http://127.0.0.1:9000 >/dev/null 2>&1; do
         sleep 2
       done
       echo "Dependencies ready — starting indexer"
@@ -63,11 +61,9 @@ procs:
       DATABASE_URL: "postgresql://lattice:lattice@localhost:5432/frontier_lattice"
       API_PORT: "3100"
       POLL_INTERVAL_MS: "2000"
-    stop:
-      signal: "SIGINT"
+    stop: "SIGINT"
 
   # ── Giveitem Helper (Vite dev UI) ───────────────────────────────
   giveitem-helper:
     shell: "npm --prefix dev-tools/giveitem-helper run dev"
-    stop:
-      signal: "SIGINT"
+    stop: "SIGINT"
