@@ -16,7 +16,7 @@ ENV_VARS=("PACKAGE_TRIBE" "PACKAGE_CONTRACT_BOARD" "PACKAGE_FORGE_PLANNER")
 write_env_var() {
   local var="$1" val="$2" file="$3"
   if grep -q "^${var}=" "$file" 2>/dev/null; then
-    sed -i "s|^${var}=.*|${var}=${val}|" "$file"
+    sed -i '' "s|^${var}=.*|${var}=${val}|" "$file"
   else
     echo "${var}=${val}" >> "$file"
   fi

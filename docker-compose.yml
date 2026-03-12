@@ -11,6 +11,7 @@
 services:
   # ── Indexer (subscriber + API on port 3100) ──────────────────────
   indexer:
+    container_name: frontier-lattice-indexer
     build:
       context: ./indexer
       dockerfile: Dockerfile
@@ -49,6 +50,7 @@ services:
 
   # ── Postgres ─────────────────────────────────────────────────────
   postgres:
+    container_name: frontier-lattice-db
     image: postgres:16-alpine
     ports:
       - "5432:5432"

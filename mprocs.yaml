@@ -26,7 +26,7 @@ procs:
   db-migrate:
     shell: |
       echo "Waiting for postgres..."
-      until docker exec frontier-lattice-postgres-1 pg_isready -U lattice -d frontier_lattice -q 2>/dev/null; do
+      until docker exec frontier-lattice-db pg_isready -U lattice -d frontier_lattice -q 2>/dev/null; do
         sleep 1
       done
       echo "Postgres ready — running migration"
@@ -41,14 +41,14 @@ procs:
   indexer:
     shell: |
       echo "Waiting for postgres and SUI localnet..."
-      until docker exec frontier-lattice-postgres-1 pg_isready -U lattice -d frontier_lattice -q 2>/dev/null; do
+      until docker exec frontier-lattice-db pg_isready -U lattice -d frontier_lattice -q 2>/dev/null; do
         sleep 1
       done
       until curl -so /dev/null -w '%{http_code}' http://127.0.0.1:9000 >/dev/null 2>&1; do
         sleep 2
       done
       echo "Waiting for contracts to be published..."
-      until grep -q '^PACKAGE_TRIBE=0x' .env 2>/dev/null; do
+      until grep -q '^PACKAGE_FORGE_PLANNER=0x' .env 2>/dev/null; do
         sleep 2
       done
       echo "Loading package IDs from .env"
