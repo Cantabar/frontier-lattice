@@ -16,8 +16,17 @@ indexer/data/
 # Reference clone — not our code
 world-contracts/
 
-# Static game data (large binary/embedded repos)
-static-data/
+# Static game data (large binary/embedded repos) — ignore bulk, allow curated files
+static-data/*
+!static-data/data
+static-data/data/*
+!static-data/data/icons
+!static-data/data/phobos
+static-data/data/phobos/*
+!static-data/data/phobos/fsd_built
+static-data/data/phobos/fsd_built/*
+!static-data/data/phobos/fsd_built/types.json
+!static-data/data/phobos/fsd_built/industry_blueprints.json
 
 # Move ephemeral publication metadata (regenerated on each publish)
 Pub.local.toml
