@@ -11,6 +11,7 @@ import {
   buildFillItemForCoin,
   buildDeliverTransport,
 } from "../../lib/sui";
+import { SsuPickerField } from "../shared/SsuPickerField";
 
 const Label = styled.label`
   display: block;
@@ -182,13 +183,8 @@ export function FillContractModal({ contract, onClose }: Props) {
 
       {isItemFill && (
         <>
-          <Label>Destination SSU ID</Label>
-          <Input
-            placeholder="0x..."
-            value={ssuId}
-            onChange={(e) => setSsuId(e.target.value)}
-            autoFocus
-          />
+          <Label>Destination SSU</Label>
+          <SsuPickerField value={ssuId} onChange={setSsuId} />
           <Label>Item Object ID</Label>
           <Input placeholder="0x..." value={itemId} onChange={(e) => setItemId(e.target.value)} />
         </>

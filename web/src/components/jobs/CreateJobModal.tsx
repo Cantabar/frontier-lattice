@@ -8,6 +8,7 @@ import { useNotifications } from "../../hooks/useNotifications";
 import { config } from "../../config";
 import type { TribeCapData } from "../../lib/types";
 import { ItemPickerField } from "../shared/ItemPickerField";
+import { SsuPickerField } from "../shared/SsuPickerField";
 
 const Label = styled.label`
   display: block;
@@ -205,7 +206,8 @@ export function CreateJobModal({ tribeId, cap, onClose }: Props) {
 
       {variant === "Delivery" && (
         <>
-          <Input placeholder="Storage Unit ID" value={storageUnitId} onChange={(e) => setStorageUnitId(e.target.value)} />
+          <Label>Storage Unit (SSU)</Label>
+          <SsuPickerField value={storageUnitId} onChange={setStorageUnitId} />
           <Row>
             <div>
               <Label>Type ID</Label>
