@@ -36,6 +36,8 @@ export interface TribeData {
   treasuryBalance: string; // u64 as string
   voteThreshold: number;
   members: TribeMember[];
+  /** Full coin type string extracted from the Tribe<C> object type */
+  coinType: string;
 }
 
 export interface TribeCapData {
@@ -51,6 +53,8 @@ export interface TribeListItem {
   name: string;
   inGameTribeId: number;
   leaderCharacterId: string;
+  /** Full coin type string. Optional — may not be available from event-sourced lists. */
+  coinType?: string;
 }
 
 /** Tribe metadata from the Stillness World API (/v2/tribes). */

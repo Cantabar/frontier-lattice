@@ -9,6 +9,8 @@ import { useSuiClientQuery } from "@mysten/dapp-kit";
 import { useQuery } from "@tanstack/react-query";
 import { useSuiClient } from "@mysten/dapp-kit";
 import type { TribeData, TribeMember, Role } from "../lib/types";
+import { extractCoinTypeFromObjectType } from "../lib/coinUtils";
+import { config } from "../config";
 
 function parseRole(raw: unknown): Role {
   if (typeof raw === "object" && raw !== null) {
@@ -29,6 +31,9 @@ export function useTribe(tribeId: string | undefined) {
     },
     { enabled: !!tribeId },
   );
+
+  const objectType = (data?.data?.content as { type?: string })?.type ?? "";
+  const parsedCoinType = extractCoinTypeFromObjectType(objectType) ?? config.coinType;
 
   const fields = (data?.data?.content as { fields?: Record<string, unknown> })?.fields;
   const membersTableId = (fields?.members as { fields?: { id?: { id: string } } })?.fields?.id?.id;
@@ -86,6 +91,7 @@ export function useTribe(tribeId: string | undefined) {
       ),
       voteThreshold: Number(fields.vote_threshold),
       members: members ?? [],
+      coinType: parsedCoinType,
     };
   })();
 

@@ -2,15 +2,22 @@
  * Programmable Transaction Block (PTB) builders for Frontier Corm contracts.
  *
  * Each function returns a Transaction object ready for useSignAndExecuteTransaction.
- * Type argument C (coin type) is taken from config.coinType.
+ * Type argument C (coin type) defaults to config.coinType but can be overridden
+ * per-call to support tribes with custom coin types.
  */
 
 import { Transaction } from "@mysten/sui/transactions";
 import { config } from "../config";
+import { isNativeSui } from "./coinUtils";
 import type { Role } from "./types";
 
-const { packages, coinType } = config;
+const { packages, coinType: defaultCoinType } = config;
 const SUI_CLOCK = "0x6";
+
+/** Resolve coin type: use explicit override or fall back to config default. */
+function ct(override?: string): string {
+  return override ?? defaultCoinType;
+}
 
 // ============================================================
 // Tribe (Phase 1)
@@ -22,11 +29,12 @@ export function buildCreateTribe(params: {
   name: string;
   voteThreshold: number;
   sender: string;
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   const [leaderCap] = tx.moveCall({
     target: `${packages.tribe}::tribe::create_tribe`,
-    typeArguments: [coinType],
+    typeArguments: [ct(params.coinType)],
     arguments: [
       tx.object(params.registryId),
       tx.object(params.characterId),
@@ -44,13 +52,14 @@ export function buildAddMember(params: {
   newMemberCharacterId: string;
   role: Role;
   newMemberAddress: string;
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   const roleTarget = `${packages.tribe}::tribe::role_${params.role.toLowerCase()}`;
   const [role] = tx.moveCall({ target: roleTarget });
   const [memberCap] = tx.moveCall({
     target: `${packages.tribe}::tribe::add_member`,
-    typeArguments: [coinType],
+    typeArguments: [ct(params.coinType)],
     arguments: [
       tx.object(params.tribeId),
       tx.object(params.capId),
@@ -66,11 +75,12 @@ export function buildRemoveMember(params: {
   tribeId: string;
   capId: string;
   characterId: string;
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.tribe}::tribe::remove_member`,
-    typeArguments: [coinType],
+    typeArguments: [ct(params.coinType)],
     arguments: [
       tx.object(params.tribeId),
       tx.object(params.capId),
@@ -86,11 +96,12 @@ export function buildUpdateReputation(params: {
   characterId: string;
   delta: number;
   increase: boolean;
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.tribe}::tribe::update_reputation`,
-    typeArguments: [coinType],
+    typeArguments: [ct(params.coinType)],
     arguments: [
       tx.object(params.tribeId),
       tx.object(params.capId),
@@ -102,15 +113,39 @@ export function buildUpdateReputation(params: {
   return tx;
 }
 
+/**
+ * Deposit coins into a tribe treasury.
+ *
+ * For native SUI, splits from gas. For custom coins, the caller must provide
+ * `coinObjectIds` — the owned Coin<C> objects to merge and split from.
+ */
 export function buildDepositToTreasury(params: {
   tribeId: string;
   amount: number;
+  coinType?: string;
+  /** Required when coinType is not native SUI. Owned Coin<C> object IDs. */
+  coinObjectIds?: string[];
 }): Transaction {
   const tx = new Transaction();
-  const [coin] = tx.splitCoins(tx.gas, [params.amount]);
+  const resolvedType = ct(params.coinType);
+
+  let coin;
+  if (isNativeSui(resolvedType)) {
+    [coin] = tx.splitCoins(tx.gas, [params.amount]);
+  } else {
+    // Merge all provided coin objects, then split the deposit amount
+    const ids = params.coinObjectIds ?? [];
+    if (ids.length === 0) throw new Error("coinObjectIds required for non-SUI deposits");
+    const primary = tx.object(ids[0]);
+    if (ids.length > 1) {
+      tx.mergeCoins(primary, ids.slice(1).map((id) => tx.object(id)));
+    }
+    [coin] = tx.splitCoins(primary, [params.amount]);
+  }
+
   tx.moveCall({
     target: `${packages.tribe}::tribe::deposit_to_treasury`,
-    typeArguments: [coinType],
+    typeArguments: [resolvedType],
     arguments: [tx.object(params.tribeId), coin],
   });
   return tx;
@@ -121,11 +156,12 @@ export function buildWithdrawFromTreasury(params: {
   capId: string;
   amount: number;
   recipient: string;
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   const [coin] = tx.moveCall({
     target: `${packages.tribe}::tribe::withdraw_from_treasury`,
-    typeArguments: [coinType],
+    typeArguments: [ct(params.coinType)],
     arguments: [
       tx.object(params.tribeId),
       tx.object(params.capId),
@@ -162,11 +198,12 @@ export function buildProposeTreasurySpend(params: {
   amount: number;
   recipient: string;
   deadlineMs: number;
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.tribe}::tribe::propose_treasury_spend`,
-    typeArguments: [coinType],
+    typeArguments: [ct(params.coinType)],
     arguments: [
       tx.object(params.tribeId),
       tx.object(params.capId),
@@ -183,11 +220,12 @@ export function buildVoteOnProposal(params: {
   tribeId: string;
   proposalId: string;
   capId: string;
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.tribe}::tribe::vote_on_proposal`,
-    typeArguments: [coinType],
+    typeArguments: [ct(params.coinType)],
     arguments: [
       tx.object(params.tribeId),
       tx.object(params.proposalId),
@@ -201,11 +239,12 @@ export function buildVoteOnProposal(params: {
 export function buildExecuteProposal(params: {
   tribeId: string;
   proposalId: string;
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.tribe}::tribe::execute_proposal`,
-    typeArguments: [coinType],
+    typeArguments: [ct(params.coinType)],
     arguments: [
       tx.object(params.tribeId),
       tx.object(params.proposalId),
@@ -237,7 +276,7 @@ export function buildCreateJob(params: {
   const [escrowCoin] = tx.splitCoins(tx.gas, [params.escrowAmount]);
   tx.moveCall({
     target: `${packages.contractBoard}::contract_board::create_job`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [
       tx.object(params.tribeId),
       tx.object(params.capId),
@@ -262,7 +301,7 @@ export function buildAcceptJob(params: {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.contractBoard}::contract_board::accept_job`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [
       tx.object(params.jobId),
       tx.object(params.tribeId),
@@ -281,7 +320,7 @@ export function buildConfirmCompletion(params: {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.contractBoard}::contract_board::confirm_completion`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [tx.object(params.jobId), tx.object(params.capId)],
   });
   return tx;
@@ -294,7 +333,7 @@ export function buildCancelJob(params: {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.contractBoard}::contract_board::cancel_job`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [tx.object(params.jobId), tx.object(params.capId)],
   });
   return tx;
@@ -304,7 +343,7 @@ export function buildExpireJob(params: { jobId: string }): Transaction {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.contractBoard}::contract_board::expire_job`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [tx.object(params.jobId), tx.object(SUI_CLOCK)],
   });
   return tx;
@@ -321,7 +360,7 @@ export function buildCreateRegistry(params: {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.forgePlanner}::forge_planner::create_registry`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [tx.object(params.tribeId), tx.object(params.capId)],
   });
   return tx;
@@ -341,7 +380,7 @@ export function buildAddRecipe(params: {
   const inputQuantities = params.inputs.map((i) => i.quantity);
   tx.moveCall({
     target: `${packages.forgePlanner}::forge_planner::add_recipe`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [
       tx.object(params.registryId),
       tx.object(params.tribeId),
@@ -370,7 +409,7 @@ export function buildCreateOrder(params: {
   const [bountyCoin] = tx.splitCoins(tx.gas, [params.bountyAmount]);
   tx.moveCall({
     target: `${packages.forgePlanner}::forge_planner::create_order`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [
       tx.object(params.registryId),
       tx.object(params.tribeId),
@@ -393,7 +432,7 @@ export function buildFulfillOrder(params: {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.forgePlanner}::forge_planner::fulfill_order`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [
       tx.object(params.orderId),
       tx.object(params.capId),
@@ -410,7 +449,7 @@ export function buildCancelOrder(params: {
   const tx = new Transaction();
   tx.moveCall({
     target: `${packages.forgePlanner}::forge_planner::cancel_order`,
-    typeArguments: [coinType],
+    typeArguments: [defaultCoinType],
     arguments: [tx.object(params.orderId), tx.object(params.capId)],
   });
   return tx;
@@ -423,7 +462,7 @@ export function buildCancelOrder(params: {
 const { fillCoinType } = config;
 const tcPkg = () => packages.trustlessContracts;
 const tcTarget = (fn: string) => `${tcPkg()}::trustless_contracts::${fn}`;
-const tcTypes = () => [coinType, fillCoinType];
+const tcTypes = () => [defaultCoinType, fillCoinType];
 
 // --- Creation ---
 
