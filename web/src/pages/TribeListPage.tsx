@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useSuiClient } from "@mysten/dapp-kit";
@@ -11,6 +11,7 @@ import { EmptyState } from "../components/shared/EmptyState";
 import { truncateAddress } from "../lib/format";
 import { buildLookupTribeByGameId } from "../lib/sui";
 import { config } from "../config";
+import type { TribeListItem } from "../lib/types";
 
 const Page = styled.div`
   max-width: 960px;
@@ -158,12 +159,50 @@ const TribeLink = styled(Link)`
   }
 `;
 
+/** How long (ms) to poll the indexer after creating a tribe. */
+const POLL_DURATION_MS = 15_000;
+const POLL_INTERVAL_MS = 3_000;
+
 export function TribeListPage() {
   const navigate = useNavigate();
   const client = useSuiClient();
   const { tribeCaps, inGameTribeId } = useIdentity();
-  const { tribes, isLoading } = useTribes();
+
+  // Optimistic tribe entry + polling
+  const [optimistic, setOptimistic] = useState<TribeListItem | null>(null);
+  const [refetchInterval, setRefetchInterval] = useState<number | false>(false);
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const { tribes, isLoading } = useTribes({ refetchInterval });
   const [showCreate, setShowCreate] = useState(false);
+
+  // Clear optimistic entry once the indexer returns the real tribe
+  useEffect(() => {
+    if (optimistic && tribes.some((t) => t.id === optimistic.id || t.name === optimistic.name)) {
+      setOptimistic(null);
+      setRefetchInterval(false);
+      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
+    }
+  }, [tribes, optimistic]);
+
+  // Stop polling after the duration elapses
+  useEffect(() => {
+    return () => { if (pollTimerRef.current) clearTimeout(pollTimerRef.current); };
+  }, []);
+
+  const handleTribeCreated = useCallback((tribe: TribeListItem) => {
+    setOptimistic(tribe);
+    setRefetchInterval(POLL_INTERVAL_MS);
+    // Auto-stop polling after the duration
+    pollTimerRef.current = setTimeout(() => {
+      setRefetchInterval(false);
+    }, POLL_DURATION_MS);
+  }, []);
+
+  // Merge optimistic entry into the displayed list
+  const displayedTribes = optimistic && !tribes.some((t) => t.id === optimistic.id)
+    ? [optimistic, ...tribes]
+    : tribes;
 
   // Lookup state
   const [lookupId, setLookupId] = useState("");
@@ -268,7 +307,7 @@ export function TribeListPage() {
       <SectionLabel>All Tribes</SectionLabel>
       {isLoading ? (
         <LoadingSpinner />
-      ) : tribes.length === 0 ? (
+      ) : displayedTribes.length === 0 ? (
         <EmptyState title="No tribes found" description="Create the first tribe to get started." />
       ) : (
         <Table>
@@ -281,7 +320,7 @@ export function TribeListPage() {
             </tr>
           </thead>
           <tbody>
-            {tribes.map((t) => (
+            {displayedTribes.map((t) => (
               <tr key={t.id}>
                 <Td>
                   <TribeLink to={`/tribe/${t.id}`}>{t.name}</TribeLink>
@@ -299,7 +338,12 @@ export function TribeListPage() {
         </Table>
       )}
 
-      {showCreate && <CreateTribeModal onClose={() => setShowCreate(false)} />}
+      {showCreate && (
+        <CreateTribeModal
+          onClose={() => setShowCreate(false)}
+          onCreated={handleTribeCreated}
+        />
+      )}
     </Page>
   );
 }

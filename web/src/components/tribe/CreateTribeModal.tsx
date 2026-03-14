@@ -1,11 +1,14 @@
 import { useState } from "react";
-import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import styled, { keyframes } from "styled-components";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import { useQueryClient } from "@tanstack/react-query";
 import { Modal } from "../shared/Modal";
 import { buildCreateTribe } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
 import { useNotifications } from "../../hooks/useNotifications";
 import { config } from "../../config";
+import type { TribeListItem } from "../../lib/types";
 
 const Label = styled.label`
   display: block;
@@ -92,19 +95,72 @@ const Button = styled.button`
   }
 `;
 
+const SecondaryButton = styled(Button)`
+  background: ${({ theme }) => theme.colors.surface.bg};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  margin-top: ${({ theme }) => theme.spacing.sm};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.surface.raised};
+  }
+`;
+
+const fadeIn = keyframes`
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+`;
+
+const SuccessWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.lg} 0;
+  animation: ${fadeIn} 0.3s ease;
+`;
+
+const SuccessIcon = styled.div`
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: ${({ theme }) => theme.colors.success}20;
+  border: 2px solid ${({ theme }) => theme.colors.success};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: ${({ theme }) => theme.colors.success};
+`;
+
+const SuccessTitle = styled.div`
+  font-size: 16px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+const SuccessDetail = styled.div`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-align: center;
+`;
+
 interface Props {
   onClose: () => void;
+  onCreated?: (tribe: TribeListItem) => void;
 }
 
-export function CreateTribeModal({ onClose }: Props) {
+export function CreateTribeModal({ onClose, onCreated }: Props) {
+  const navigate = useNavigate();
   const { characterId, inGameTribeId, address } = useIdentity();
   const { push } = useNotifications();
+  const queryClient = useQueryClient();
   const hasTribe = inGameTribeId != null && inGameTribeId > 0;
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
   const [name, setName] = useState("");
   const [threshold, setThreshold] = useState("50");
   const [error, setError] = useState<string | null>(null);
+  const [createdTribeId, setCreatedTribeId] = useState<string | null>(null);
 
   const misconfigured =
     config.tribeRegistryId === "0x0" || config.packages.tribe === "0x0";
@@ -128,8 +184,45 @@ export function CreateTribeModal({ onClose }: Props) {
     });
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- duplicate @mysten/sui in dep tree
-      await signAndExecute({ transaction: tx as any });
-      onClose();
+      const result = await signAndExecute(
+        { transaction: tx as any },
+        { onSuccess: () => {} },
+      );
+
+      // Parse the created Tribe object ID from the transaction response
+      let tribeObjectId: string | null = null;
+      const changes = (result as { objectChanges?: { type: string; objectType?: string; objectId?: string }[] }).objectChanges;
+      if (changes) {
+        const tribeObj = changes.find(
+          (c) => c.type === "created" && c.objectType?.includes("::tribe::Tribe<"),
+        );
+        if (tribeObj?.objectId) tribeObjectId = tribeObj.objectId;
+      }
+
+      setCreatedTribeId(tribeObjectId);
+
+      // Notify parent for optimistic list update
+      if (onCreated) {
+        onCreated({
+          id: tribeObjectId ?? "pending",
+          name,
+          inGameTribeId: inGameTribeId ?? 0,
+          leaderCharacterId: characterId,
+        });
+      }
+
+      // Invalidate caches so tribe list and identity refresh
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["tribes"] }),
+        queryClient.invalidateQueries({ queryKey: ["sui.getOwnedObjects"] }),
+      ]);
+
+      push({
+        level: "info",
+        title: "Tribe Created",
+        message: `${name} has been created on-chain.`,
+        source: "CreateTribeModal",
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Transaction failed";
       setError(msg);
@@ -142,6 +235,34 @@ export function CreateTribeModal({ onClose }: Props) {
     }
   }
 
+  // -- Success view --
+  if (createdTribeId !== null) {
+    return (
+      <Modal title="Tribe Created" onClose={onClose}>
+        <SuccessWrapper>
+          <SuccessIcon>&#10003;</SuccessIcon>
+          <SuccessTitle>{name}</SuccessTitle>
+          <SuccessDetail>
+            Your tribe has been created on-chain.
+            {createdTribeId !== "pending" && " You can now view and manage it."}
+          </SuccessDetail>
+          {createdTribeId !== "pending" && (
+            <Button
+              onClick={() => {
+                onClose();
+                navigate(`/tribe/${createdTribeId}`);
+              }}
+            >
+              View Tribe
+            </Button>
+          )}
+          <SecondaryButton onClick={onClose}>Close</SecondaryButton>
+        </SuccessWrapper>
+      </Modal>
+    );
+  }
+
+  // -- Form view --
   return (
     <Modal title="Create Tribe" onClose={onClose}>
       {hasTribe ? (

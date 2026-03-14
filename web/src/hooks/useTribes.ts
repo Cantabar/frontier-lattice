@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getEvents } from "../lib/indexer";
 import type { TribeListItem } from "../lib/types";
 
-export function useTribes() {
+export function useTribes(options?: { refetchInterval?: number | false }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["tribes"],
     queryFn: async (): Promise<TribeListItem[]> => {
@@ -21,6 +21,7 @@ export function useTribes() {
         leaderCharacterId: ev.event_data.leader_character_id as string,
       }));
     },
+    refetchInterval: options?.refetchInterval,
   });
 
   return { tribes: data ?? [], isLoading, error };
