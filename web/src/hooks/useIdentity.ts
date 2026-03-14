@@ -187,7 +187,21 @@ export function useIdentityResolver(): Identity {
 }
 
 function parseRole(raw: unknown): Role {
+  // Plain string (e.g. "Leader")
+  if (typeof raw === "string") {
+    if (raw === "Leader") return "Leader";
+    if (raw === "Officer") return "Officer";
+    return "Member";
+  }
   if (typeof raw === "object" && raw !== null) {
+    // Move 2024 enum format: { variant: "Leader" } or { variant: "Leader", fields: {} }
+    if ("variant" in raw) {
+      const v = (raw as { variant: string }).variant;
+      if (v === "Leader") return "Leader";
+      if (v === "Officer") return "Officer";
+      return "Member";
+    }
+    // Legacy format: { Leader: {} }
     if ("Leader" in raw) return "Leader";
     if ("Officer" in raw) return "Officer";
   }
