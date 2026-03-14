@@ -11,6 +11,11 @@ export interface BlueprintInput {
   quantity: number;
 }
 
+export interface BlueprintFacility {
+  facilityTypeId: number;
+  facilityName: string;
+}
+
 export interface BlueprintEntry {
   blueprintId: number;
   primaryTypeId: number;
@@ -22,6 +27,7 @@ export interface BlueprintEntry {
   runTime: number;
   outputs: BlueprintOutput[];
   inputs: BlueprintInput[];
+  facilities: BlueprintFacility[];
 }
 
 let cache: BlueprintEntry[] | null = null;

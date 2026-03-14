@@ -23,6 +23,12 @@
         "typeId": 77800,
         "quantity": 20
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
+      }
     ]
   },
   {
@@ -48,6 +54,12 @@
       {
         "typeId": 77800,
         "quantity": 40
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
       }
     ]
   },
@@ -75,6 +87,12 @@
         "typeId": 77800,
         "quantity": 120
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -100,6 +118,12 @@
       {
         "typeId": 77811,
         "quantity": 20
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
       }
     ]
   },
@@ -127,6 +151,12 @@
         "typeId": 77811,
         "quantity": 40
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      }
     ]
   },
   {
@@ -152,6 +182,12 @@
       {
         "typeId": 77811,
         "quantity": 120
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -183,6 +219,16 @@
         "typeId": 78446,
         "quantity": 100
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -208,6 +254,16 @@
       {
         "typeId": 78447,
         "quantity": 100
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -239,6 +295,16 @@
         "typeId": 78448,
         "quantity": 100
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -261,6 +327,12 @@
         "typeId": 78426,
         "quantity": 40
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      }
     ]
   },
   {
@@ -282,6 +354,12 @@
       {
         "typeId": 78426,
         "quantity": 120
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -309,6 +387,16 @@
         "typeId": 77729,
         "quantity": 30
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -334,6 +422,16 @@
       {
         "typeId": 78434,
         "quantity": 30
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -365,6 +463,12 @@
         "typeId": 77810,
         "quantity": 20
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
+      }
     ]
   },
   {
@@ -394,6 +498,12 @@
       {
         "typeId": 77810,
         "quantity": 40
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
       }
     ]
   },
@@ -425,6 +535,12 @@
         "typeId": 77810,
         "quantity": 120
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -450,6 +566,16 @@
       {
         "typeId": 78449,
         "quantity": 100
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -477,6 +603,12 @@
         "typeId": 83893,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -502,6 +634,12 @@
       {
         "typeId": 83891,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
       }
     ]
   },
@@ -529,6 +667,12 @@
         "typeId": 83892,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      }
     ]
   },
   {
@@ -555,6 +699,12 @@
         "typeId": 83894,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      }
     ]
   },
   {
@@ -576,6 +726,16 @@
       {
         "typeId": 89259,
         "quantity": 3
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      },
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
       }
     ]
   },
@@ -599,6 +759,12 @@
         "typeId": 84182,
         "quantity": 7
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
+      }
     ]
   },
   {
@@ -620,6 +786,12 @@
       {
         "typeId": 77801,
         "quantity": 230
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
       }
     ]
   },
@@ -647,6 +819,12 @@
         "typeId": 77805,
         "quantity": 60
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -672,6 +850,12 @@
       {
         "typeId": 77805,
         "quantity": 20
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
       }
     ]
   },
@@ -699,6 +883,12 @@
         "typeId": 77805,
         "quantity": 10
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -720,6 +910,16 @@
       {
         "typeId": 89260,
         "quantity": 24
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      },
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
       }
     ]
   },
@@ -743,6 +943,12 @@
         "typeId": 77801,
         "quantity": 230
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -764,6 +970,12 @@
       {
         "typeId": 77801,
         "quantity": 230
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
       }
     ]
   },
@@ -791,6 +1003,16 @@
         "typeId": 89260,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      },
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      }
     ]
   },
   {
@@ -816,6 +1038,12 @@
       {
         "typeId": 84210,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
       }
     ]
   },
@@ -843,6 +1071,12 @@
         "typeId": 88561,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -869,6 +1103,12 @@
         "typeId": 88561,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -894,6 +1134,12 @@
       {
         "typeId": 88561,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
       }
     ]
   },
@@ -937,6 +1183,12 @@
         "typeId": 77811,
         "quantity": 100
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
+      }
     ]
   },
   {
@@ -962,6 +1214,12 @@
       {
         "typeId": 88234,
         "quantity": 400
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
       }
     ]
   },
@@ -989,6 +1247,12 @@
         "typeId": 88234,
         "quantity": 400
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1014,6 +1278,12 @@
       {
         "typeId": 88234,
         "quantity": 400
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
       }
     ]
   },
@@ -1041,6 +1311,12 @@
         "typeId": 83899,
         "quantity": 60
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
+      }
     ]
   },
   {
@@ -1066,6 +1342,12 @@
       {
         "typeId": 84868,
         "quantity": 600
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
       }
     ]
   },
@@ -1097,6 +1379,12 @@
         "typeId": 88783,
         "quantity": 128
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1126,6 +1414,12 @@
       {
         "typeId": 88783,
         "quantity": 38
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
       }
     ]
   },
@@ -1157,6 +1451,12 @@
         "typeId": 88783,
         "quantity": 38
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1186,6 +1486,12 @@
       {
         "typeId": 88782,
         "quantity": 1347
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
       }
     ]
   },
@@ -1217,6 +1523,12 @@
         "typeId": 88783,
         "quantity": 38
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1238,6 +1550,16 @@
       {
         "typeId": 83818,
         "quantity": 5
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      },
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
       }
     ]
   },
@@ -1265,6 +1587,12 @@
         "typeId": 88335,
         "quantity": 200
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      }
     ]
   },
   {
@@ -1286,6 +1614,20 @@
       {
         "typeId": 88319,
         "quantity": 200
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
+      },
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -1329,6 +1671,12 @@
         "typeId": 89989,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      }
     ]
   },
   {
@@ -1363,6 +1711,12 @@
         "typeId": 89986,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      }
     ]
   },
   {
@@ -1384,6 +1738,12 @@
       {
         "typeId": 88765,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
       }
     ]
   },
@@ -1415,6 +1775,16 @@
         "typeId": 88765,
         "quantity": 5
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -1436,6 +1806,12 @@
       {
         "typeId": 88764,
         "quantity": 3
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
       }
     ]
   },
@@ -1467,6 +1843,16 @@
         "typeId": 88764,
         "quantity": 10
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -1488,6 +1874,12 @@
       {
         "typeId": 84210,
         "quantity": 10
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
       }
     ]
   },
@@ -1511,6 +1903,12 @@
         "typeId": 84180,
         "quantity": 10
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1533,6 +1931,12 @@
         "typeId": 84182,
         "quantity": 10
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1554,6 +1958,12 @@
       {
         "typeId": 88561,
         "quantity": 10
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
       }
     ]
   },
@@ -1585,6 +1995,12 @@
         "typeId": 88561,
         "quantity": 65
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      }
     ]
   },
   {
@@ -1607,6 +2023,12 @@
         "typeId": 89258,
         "quantity": 350
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      }
     ]
   },
   {
@@ -1628,6 +2050,12 @@
       {
         "typeId": 77804,
         "quantity": 3150
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
       }
     ]
   },
@@ -1659,6 +2087,16 @@
         "typeId": 88235,
         "quantity": 105
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      },
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1680,6 +2118,12 @@
       {
         "typeId": 88841,
         "quantity": 10
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
       }
     ]
   },
@@ -1703,6 +2147,12 @@
         "typeId": 88839,
         "quantity": 10
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
+      }
     ]
   },
   {
@@ -1725,6 +2175,12 @@
         "typeId": 84204,
         "quantity": 10
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
+      }
     ]
   },
   {
@@ -1746,6 +2202,12 @@
       {
         "typeId": 88843,
         "quantity": 10
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87120,
+        "facilityName": "Heavy Printer"
       }
     ]
   },
@@ -1773,6 +2235,12 @@
         "typeId": 89259,
         "quantity": 5
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      }
     ]
   },
   {
@@ -1798,6 +2266,12 @@
       {
         "typeId": 77804,
         "quantity": 22
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
       }
     ]
   },
@@ -1829,6 +2303,12 @@
         "typeId": 99001,
         "quantity": 70
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      }
     ]
   },
   {
@@ -1854,6 +2334,12 @@
       {
         "typeId": 88235,
         "quantity": 1050
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
       }
     ]
   },
@@ -1881,6 +2367,16 @@
         "typeId": 78449,
         "quantity": 5
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      },
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1907,6 +2403,16 @@
         "typeId": 88564,
         "quantity": 5
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      },
+      {
+        "facilityTypeId": 88067,
+        "facilityName": "Printer"
+      }
     ]
   },
   {
@@ -1932,6 +2438,12 @@
       {
         "typeId": 89259,
         "quantity": 90
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
       }
     ]
   },
@@ -1963,6 +2475,12 @@
         "typeId": 88235,
         "quantity": 210
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87119,
+        "facilityName": "Mini Printer"
+      }
     ]
   },
   {
@@ -1984,6 +2502,16 @@
       {
         "typeId": 78435,
         "quantity": 10
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -2011,6 +2539,20 @@
         "typeId": 92394,
         "quantity": 30
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
+      },
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -2036,6 +2578,12 @@
       {
         "typeId": 89258,
         "quantity": 20
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
       }
     ]
   },
@@ -2063,6 +2611,12 @@
         "typeId": 89258,
         "quantity": 60
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -2088,6 +2642,12 @@
       {
         "typeId": 89260,
         "quantity": 10
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
       }
     ]
   },
@@ -2115,6 +2675,12 @@
         "typeId": 89260,
         "quantity": 60
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -2140,6 +2706,12 @@
       {
         "typeId": 89259,
         "quantity": 20
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
       }
     ]
   },
@@ -2167,6 +2739,12 @@
         "typeId": 89259,
         "quantity": 60
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -2188,6 +2766,16 @@
       {
         "typeId": 77728,
         "quantity": 10
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -2215,6 +2803,20 @@
         "typeId": 92414,
         "quantity": 30
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
+      },
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
+      }
     ]
   },
   {
@@ -2236,6 +2838,20 @@
       {
         "typeId": 78423,
         "quantity": 275
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87161,
+        "facilityName": "Field Refinery"
+      },
+      {
+        "facilityTypeId": 88063,
+        "facilityName": "Refinery"
+      },
+      {
+        "facilityTypeId": 88064,
+        "facilityName": "Heavy Refinery"
       }
     ]
   },
@@ -2262,6 +2878,12 @@
       {
         "typeId": 84182,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2293,6 +2915,12 @@
         "typeId": 92483,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2323,6 +2951,12 @@
         "typeId": 92483,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2348,6 +2982,12 @@
       {
         "typeId": 84210,
         "quantity": 15
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2375,6 +3015,12 @@
         "typeId": 84210,
         "quantity": 10
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2400,6 +3046,16 @@
       {
         "typeId": 84210,
         "quantity": 3
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      },
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2430,6 +3086,12 @@
       {
         "typeId": 88561,
         "quantity": 8
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2465,6 +3127,12 @@
         "typeId": 92483,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2499,6 +3167,12 @@
         "typeId": 92483,
         "quantity": 2
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2528,6 +3202,12 @@
       {
         "typeId": 88561,
         "quantity": 8
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2563,6 +3243,12 @@
         "typeId": 92483,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2592,6 +3278,12 @@
       {
         "typeId": 88561,
         "quantity": 8
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2627,6 +3319,12 @@
         "typeId": 92483,
         "quantity": 2
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2652,6 +3350,12 @@
       {
         "typeId": 84210,
         "quantity": 5
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2679,6 +3383,12 @@
         "typeId": 84210,
         "quantity": 8
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2704,6 +3414,12 @@
       {
         "typeId": 84210,
         "quantity": 24
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2731,6 +3447,12 @@
         "typeId": 84210,
         "quantity": 62
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2752,6 +3474,16 @@
       {
         "typeId": 84182,
         "quantity": 4
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      },
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2775,6 +3507,12 @@
         "typeId": 84182,
         "quantity": 7
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2796,6 +3534,12 @@
       {
         "typeId": 84182,
         "quantity": 24
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2827,6 +3571,16 @@
         "typeId": 99001,
         "quantity": 150
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      },
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2856,6 +3610,12 @@
       {
         "typeId": 99001,
         "quantity": 450
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2887,6 +3647,12 @@
         "typeId": 99001,
         "quantity": 600
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2908,6 +3674,12 @@
       {
         "typeId": 84210,
         "quantity": 4
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2931,6 +3703,12 @@
         "typeId": 84210,
         "quantity": 7
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -2952,6 +3730,12 @@
       {
         "typeId": 84210,
         "quantity": 16
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -2979,6 +3763,12 @@
         "typeId": 84210,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3004,6 +3794,12 @@
       {
         "typeId": 84210,
         "quantity": 2
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3031,6 +3827,12 @@
         "typeId": 84210,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3056,6 +3858,12 @@
       {
         "typeId": 88561,
         "quantity": 3
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3083,6 +3891,12 @@
         "typeId": 88561,
         "quantity": 6
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3108,6 +3922,12 @@
       {
         "typeId": 88561,
         "quantity": 11
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3135,6 +3955,12 @@
         "typeId": 84210,
         "quantity": 8
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3160,6 +3986,12 @@
       {
         "typeId": 84210,
         "quantity": 24
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3187,6 +4019,12 @@
         "typeId": 84210,
         "quantity": 62
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3212,6 +4050,12 @@
       {
         "typeId": 84182,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3239,6 +4083,12 @@
         "typeId": 84182,
         "quantity": 2
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3264,6 +4114,12 @@
       {
         "typeId": 84182,
         "quantity": 2
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3291,6 +4147,12 @@
         "typeId": 84182,
         "quantity": 2
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3316,6 +4178,12 @@
       {
         "typeId": 84182,
         "quantity": 4
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3343,6 +4211,12 @@
         "typeId": 84182,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3368,6 +4242,12 @@
       {
         "typeId": 84210,
         "quantity": 7
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3395,6 +4275,12 @@
         "typeId": 84210,
         "quantity": 13
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3420,6 +4306,12 @@
       {
         "typeId": 84210,
         "quantity": 26
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3447,6 +4339,12 @@
         "typeId": 84210,
         "quantity": 52
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3473,6 +4371,12 @@
         "typeId": 84210,
         "quantity": 104
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3494,6 +4398,12 @@
       {
         "typeId": 88561,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3521,6 +4431,12 @@
         "typeId": 92483,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3546,6 +4462,12 @@
       {
         "typeId": 92483,
         "quantity": 6
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3581,6 +4503,12 @@
         "typeId": 99001,
         "quantity": 35
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3615,6 +4543,12 @@
         "typeId": 99001,
         "quantity": 35
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3645,6 +4579,16 @@
         "typeId": 99001,
         "quantity": 2
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      },
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3670,6 +4614,12 @@
       {
         "typeId": 84210,
         "quantity": 2
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3701,6 +4651,12 @@
         "typeId": 88561,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3726,6 +4682,16 @@
       {
         "typeId": 89258,
         "quantity": 10
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      },
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3761,6 +4727,12 @@
         "typeId": 99001,
         "quantity": 120
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3794,6 +4766,12 @@
       {
         "typeId": 99001,
         "quantity": 60
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3829,6 +4807,12 @@
         "typeId": 99001,
         "quantity": 70
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3859,6 +4843,12 @@
         "typeId": 84182,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3888,6 +4878,12 @@
       {
         "typeId": 84182,
         "quantity": 2
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3923,6 +4919,12 @@
         "typeId": 99001,
         "quantity": 110
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -3952,6 +4954,12 @@
       {
         "typeId": 88561,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -3983,6 +4991,12 @@
         "typeId": 88561,
         "quantity": 3
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4012,6 +5026,12 @@
       {
         "typeId": 88561,
         "quantity": 8
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4043,6 +5063,12 @@
         "typeId": 88561,
         "quantity": 1
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4072,6 +5098,12 @@
       {
         "typeId": 88561,
         "quantity": 4
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4103,6 +5135,12 @@
         "typeId": 88561,
         "quantity": 11
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4132,6 +5170,12 @@
       {
         "typeId": 88561,
         "quantity": 4
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4163,6 +5207,12 @@
         "typeId": 88561,
         "quantity": 9
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4192,6 +5242,12 @@
       {
         "typeId": 88561,
         "quantity": 20
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4223,6 +5279,12 @@
         "typeId": 88561,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4249,6 +5311,12 @@
         "typeId": 88561,
         "quantity": 12
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4274,6 +5342,12 @@
       {
         "typeId": 88561,
         "quantity": 24
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4305,6 +5379,12 @@
         "typeId": 88234,
         "quantity": 90
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4334,6 +5414,12 @@
       {
         "typeId": 88234,
         "quantity": 180
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4365,6 +5451,12 @@
         "typeId": 88234,
         "quantity": 300
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4394,6 +5486,12 @@
       {
         "typeId": 88234,
         "quantity": 150
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4425,6 +5523,12 @@
         "typeId": 88234,
         "quantity": 420
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4455,6 +5559,12 @@
         "typeId": 88234,
         "quantity": 210
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4480,6 +5590,16 @@
       {
         "typeId": 89259,
         "quantity": 30
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      },
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4511,6 +5631,12 @@
         "typeId": 88235,
         "quantity": 150
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4540,6 +5666,12 @@
       {
         "typeId": 88235,
         "quantity": 125
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4571,6 +5703,12 @@
         "typeId": 88235,
         "quantity": 250
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4600,6 +5738,12 @@
       {
         "typeId": 88235,
         "quantity": 170
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4631,6 +5775,12 @@
         "typeId": 88235,
         "quantity": 340
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4652,6 +5802,12 @@
       {
         "typeId": 88561,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4678,6 +5834,12 @@
       {
         "typeId": 92483,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4713,6 +5875,12 @@
         "typeId": 92483,
         "quantity": 3
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4734,6 +5902,12 @@
       {
         "typeId": 84210,
         "quantity": 12
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4757,6 +5931,12 @@
         "typeId": 84210,
         "quantity": 16
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4778,6 +5958,12 @@
       {
         "typeId": 84210,
         "quantity": 19
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4805,6 +5991,12 @@
         "typeId": 88561,
         "quantity": 6
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4830,6 +6022,12 @@
       {
         "typeId": 88561,
         "quantity": 7
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4857,6 +6055,12 @@
         "typeId": 88561,
         "quantity": 8
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4878,6 +6082,12 @@
       {
         "typeId": 84182,
         "quantity": 8
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4901,6 +6111,12 @@
         "typeId": 84182,
         "quantity": 10
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4922,6 +6138,12 @@
       {
         "typeId": 84182,
         "quantity": 12
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4945,6 +6167,12 @@
         "typeId": 88561,
         "quantity": 12
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -4966,6 +6194,12 @@
       {
         "typeId": 88561,
         "quantity": 16
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -4989,6 +6223,12 @@
         "typeId": 88561,
         "quantity": 19
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5010,6 +6250,12 @@
       {
         "typeId": 88561,
         "quantity": 22
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -5041,6 +6287,12 @@
         "typeId": 84210,
         "quantity": 17
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5070,6 +6322,12 @@
       {
         "typeId": 84210,
         "quantity": 19
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -5105,6 +6363,12 @@
         "typeId": 92483,
         "quantity": 3
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5134,6 +6398,12 @@
       {
         "typeId": 88561,
         "quantity": 4
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -5165,6 +6435,12 @@
         "typeId": 88561,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5194,6 +6470,12 @@
       {
         "typeId": 88561,
         "quantity": 5
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -5225,6 +6507,12 @@
         "typeId": 88561,
         "quantity": 5
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5255,6 +6543,12 @@
         "typeId": 88561,
         "quantity": 6
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5280,6 +6574,16 @@
       {
         "typeId": 84180,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      },
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -5311,6 +6615,12 @@
         "typeId": 84182,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5341,6 +6651,12 @@
         "typeId": 84182,
         "quantity": 16
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5362,6 +6678,12 @@
       {
         "typeId": 88561,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
       }
     ]
   },
@@ -5393,6 +6715,12 @@
         "typeId": 84210,
         "quantity": 3
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5422,6 +6750,12 @@
       {
         "typeId": 84210,
         "quantity": 3
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -5453,6 +6787,12 @@
         "typeId": 84210,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5482,6 +6822,12 @@
       {
         "typeId": 84210,
         "quantity": 4
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
       }
     ]
   },
@@ -5513,6 +6859,12 @@
         "typeId": 84210,
         "quantity": 5
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88068,
+        "facilityName": "Assembler"
+      }
     ]
   },
   {
@@ -5542,6 +6894,12 @@
       {
         "typeId": 92483,
         "quantity": 1
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 91978,
+        "facilityName": "Nursery"
       }
     ]
   },
@@ -5576,6 +6934,12 @@
       {
         "typeId": 78423,
         "quantity": 8
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 91978,
+        "facilityName": "Nursery"
       }
     ]
   },
@@ -5619,6 +6983,12 @@
         "typeId": 78423,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 91978,
+        "facilityName": "Nursery"
+      }
     ]
   },
   {
@@ -5652,6 +7022,12 @@
       {
         "typeId": 84206,
         "quantity": 256
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88071,
+        "facilityName": "Heavy Berth"
       }
     ]
   },
@@ -5691,6 +7067,12 @@
         "typeId": 84182,
         "quantity": 88
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88069,
+        "facilityName": "Mini Berth"
+      }
     ]
   },
   {
@@ -5729,6 +7111,12 @@
         "typeId": 92483,
         "quantity": 2
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88069,
+        "facilityName": "Mini Berth"
+      }
     ]
   },
   {
@@ -5758,6 +7146,16 @@
       {
         "typeId": 89258,
         "quantity": 40
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 87162,
+        "facilityName": "Field Printer"
+      },
+      {
+        "facilityTypeId": 88069,
+        "facilityName": "Mini Berth"
       }
     ]
   },
@@ -5792,6 +7190,12 @@
       {
         "typeId": 84182,
         "quantity": 78
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88069,
+        "facilityName": "Mini Berth"
       }
     ]
   },
@@ -5830,6 +7234,12 @@
       {
         "typeId": 84182,
         "quantity": 96
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88069,
+        "facilityName": "Mini Berth"
       }
     ]
   },
@@ -5873,6 +7283,12 @@
         "typeId": 88565,
         "quantity": 2
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88071,
+        "facilityName": "Heavy Berth"
+      }
     ]
   },
   {
@@ -5911,6 +7327,12 @@
         "typeId": 92483,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88070,
+        "facilityName": "Berth"
+      }
     ]
   },
   {
@@ -5944,6 +7366,12 @@
       {
         "typeId": 88843,
         "quantity": 74
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88070,
+        "facilityName": "Berth"
       }
     ]
   },
@@ -5983,6 +7411,12 @@
         "typeId": 92483,
         "quantity": 4
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88070,
+        "facilityName": "Berth"
+      }
     ]
   },
   {
@@ -6016,6 +7450,12 @@
       {
         "typeId": 88843,
         "quantity": 29
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88070,
+        "facilityName": "Berth"
       }
     ]
   },
@@ -6055,6 +7495,12 @@
         "typeId": 92483,
         "quantity": 3
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88070,
+        "facilityName": "Berth"
+      }
     ]
   },
   {
@@ -6089,6 +7535,12 @@
         "typeId": 88843,
         "quantity": 28
       }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88070,
+        "facilityName": "Berth"
+      }
     ]
   },
   {
@@ -6122,6 +7574,12 @@
       {
         "typeId": 88561,
         "quantity": 17
+      }
+    ],
+    "facilities": [
+      {
+        "facilityTypeId": 88069,
+        "facilityName": "Mini Berth"
       }
     ]
   }
