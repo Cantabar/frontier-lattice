@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Frontier Dev Wallet",
+  "description": "Local dev wallet for Frontier Lattice — injects seeded ed25519 keys as a Sui wallet",
+  "version": "0.1.0",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Frontier Dev Wallet"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "run_at": "document_start",
+      "js": ["dist/content.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["dist/injected.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "background": {
+    "service_worker": "dist/background.js"
+  }
+}

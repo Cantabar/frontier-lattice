@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Frontier Dev Wallet</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      width: 360px; padding: 16px; background: #1a1a2e; color: #e0e0e0;
+    }
+    h2 { font-size: 14px; color: #00bf63; margin-bottom: 12px; }
+    h3 { font-size: 12px; color: #888; margin: 12px 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    label { display: block; font-size: 11px; color: #aaa; margin-bottom: 3px; }
+    input, textarea {
+      width: 100%; padding: 6px 8px; border: 1px solid #333; border-radius: 4px;
+      background: #16213e; color: #e0e0e0; font-size: 12px; font-family: monospace;
+    }
+    textarea { resize: vertical; min-height: 48px; }
+    button {
+      padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer;
+      font-size: 12px; margin-top: 8px;
+    }
+    .btn-primary { background: #00bf63; color: #fff; }
+    .btn-danger  { background: #d32f2f; color: #fff; font-size: 11px; padding: 3px 8px; }
+    .btn-secondary { background: #333; color: #ccc; }
+    .account {
+      background: #16213e; border: 1px solid #333; border-radius: 4px;
+      padding: 8px; margin-bottom: 6px; font-size: 11px;
+    }
+    .account .addr { font-family: monospace; color: #00bf63; word-break: break-all; }
+    .account .label-text { color: #aaa; }
+    .row { display: flex; gap: 6px; align-items: flex-end; }
+    .row > * { flex: 1; }
+    .status { font-size: 11px; margin-top: 6px; }
+    .status.ok { color: #00bf63; }
+    .status.err { color: #d32f2f; }
+    hr { border: none; border-top: 1px solid #333; margin: 12px 0; }
+    #accounts:empty::after {
+      content: "No keys imported yet";
+      color: #666; font-size: 11px; font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h2>⛏ Frontier Dev Wallet</h2>
+
+  <h3>Accounts</h3>
+  <div id="accounts"></div>
+
+  <hr>
+
+  <h3>Import Key</h3>
+  <div class="row">
+    <div>
+      <label for="keyLabel">Label</label>
+      <input id="keyLabel" placeholder="e.g. Player A" />
+    </div>
+  </div>
+  <div style="margin-top:6px">
+    <label for="keyInput">Private Key (suiprivkey1… or base64)</label>
+    <textarea id="keyInput" rows="2" placeholder="suiprivkey1…"></textarea>
+  </div>
+  <button class="btn-primary" id="importBtn">Import</button>
+  <div id="importStatus" class="status"></div>
+
+  <hr>
+
+  <h3>RPC URL</h3>
+  <input id="rpcUrl" placeholder="http://127.0.0.1:9000" />
+  <button class="btn-secondary" id="saveRpc" style="margin-top:4px">Save</button>
+  <div id="rpcStatus" class="status"></div>
+
+  <script src="dist/popup.js"></script>
+</body>
+</html>
