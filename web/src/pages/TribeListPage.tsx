@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useSuiClient } from "@mysten/dapp-kit";
 import { useIdentity } from "../hooks/useIdentity";
-import { useTribes } from "../hooks/useTribes";
+import { useAllTribes } from "../hooks/useAllTribes";
 import { useTribe } from "../hooks/useTribe";
 import { CreateTribeModal } from "../components/tribe/CreateTribeModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
@@ -157,6 +157,48 @@ const TribeLink = styled(Link)`
   }
 `;
 
+const MutedRow = styled.tr`
+  opacity: 0.6;
+`;
+
+const Ticker = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.text.muted};
+  margin-left: ${({ theme }) => theme.spacing.xs};
+`;
+
+const StatusDot = styled.span<{ $active: boolean }>`
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.primary.main : theme.colors.text.muted};
+`;
+
+const StatusLabel = styled.span<{ $active: boolean }>`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.primary.main : theme.colors.text.muted};
+`;
+
+const SmallButton = styled.button`
+  background: ${({ theme }) => theme.colors.surface.overlay};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.surface.borderHover};
+  }
+`;
+
 /** How long (ms) to poll the indexer after creating a tribe. */
 const POLL_DURATION_MS = 15_000;
 const POLL_INTERVAL_MS = 3_000;
@@ -171,17 +213,22 @@ export function TribeListPage() {
   const [refetchInterval, setRefetchInterval] = useState<number | false>(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const { tribes, isLoading } = useTribes({ refetchInterval });
+  const { allTribes, isLoading } = useAllTribes({ refetchInterval });
   const [showCreate, setShowCreate] = useState(false);
 
-  // Clear optimistic entry once the indexer returns the real tribe
+  // Clear optimistic entry once the merged list contains the real tribe
   useEffect(() => {
-    if (optimistic && tribes.some((t) => t.id === optimistic.id || t.name === optimistic.name)) {
+    if (
+      optimistic &&
+      allTribes.some(
+        (t) => t.onChainTribe?.id === optimistic.id || t.onChainTribe?.name === optimistic.name,
+      )
+    ) {
       setOptimistic(null);
       setRefetchInterval(false);
       if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
     }
-  }, [tribes, optimistic]);
+  }, [allTribes, optimistic]);
 
   // Stop polling after the duration elapses
   useEffect(() => {
@@ -196,11 +243,6 @@ export function TribeListPage() {
       setRefetchInterval(false);
     }, POLL_DURATION_MS);
   }, []);
-
-  // Merge optimistic entry into the displayed list
-  const displayedTribes = optimistic && !tribes.some((t) => t.id === optimistic.id)
-    ? [optimistic, ...tribes]
-    : tribes;
 
   // Lookup state
   const [lookupId, setLookupId] = useState("");
@@ -305,33 +347,84 @@ export function TribeListPage() {
       <SectionLabel>All Tribes</SectionLabel>
       {isLoading ? (
         <LoadingSpinner />
-      ) : displayedTribes.length === 0 ? (
+      ) : allTribes.length === 0 && !optimistic ? (
         <EmptyState title="No tribes found" description="Create the first tribe to get started." />
       ) : (
         <Table>
           <thead>
             <tr>
-              <Th>Name</Th>
-              <Th>Game ID</Th>
+              <Th>Tribe</Th>
+              <Th>Status</Th>
+              <Th>Members</Th>
               <Th>Leader</Th>
               <Th>Object ID</Th>
             </tr>
           </thead>
           <tbody>
-            {displayedTribes.map((t) => (
-              <tr key={t.id}>
+            {/* Optimistic entry (if not yet merged) */}
+            {optimistic && !allTribes.some((t) => t.onChainTribe?.id === optimistic.id) && (
+              <tr key={optimistic.id}>
                 <Td>
-                  <TribeLink to={`/tribe/${t.id}`}>{t.name}</TribeLink>
-                </Td>
-                <Td>#{t.inGameTribeId}</Td>
-                <Td>
-                  <code>{t.leaderCharacterId ? truncateAddress(t.leaderCharacterId) : "—"}</code>
+                  <TribeLink to={`/tribe/${optimistic.id}`}>{optimistic.name}</TribeLink>
+                  <Ticker>#{optimistic.inGameTribeId}</Ticker>
                 </Td>
                 <Td>
-                  <code>{truncateAddress(t.id)}</code>
+                  <StatusDot $active />
+                  <StatusLabel $active>On-Chain</StatusLabel>
+                </Td>
+                <Td>—</Td>
+                <Td>
+                  <code>{optimistic.leaderCharacterId ? truncateAddress(optimistic.leaderCharacterId) : "—"}</code>
+                </Td>
+                <Td>
+                  <code>{truncateAddress(optimistic.id)}</code>
                 </Td>
               </tr>
-            ))}
+            )}
+            {allTribes.map((t) => {
+              const oc = t.onChainTribe;
+              const name = oc?.name ?? t.worldInfo?.name ?? `Tribe #${t.inGameTribeId}`;
+              const ticker = t.worldInfo?.nameShort ?? null;
+              const Row = oc ? "tr" : MutedRow;
+              const key = oc?.id ?? `game-${t.inGameTribeId}`;
+
+              return (
+                <Row key={key}>
+                  <Td>
+                    {oc ? (
+                      <TribeLink to={`/tribe/${oc.id}`}>{name}</TribeLink>
+                    ) : (
+                      <span>{name}</span>
+                    )}
+                    {ticker && <Ticker>[{ticker}]</Ticker>}
+                    {t.inGameTribeId > 0 && <Ticker>#{t.inGameTribeId}</Ticker>}
+                  </Td>
+                  <Td>
+                    <StatusDot $active={oc !== null} />
+                    <StatusLabel $active={oc !== null}>
+                      {oc ? "On-Chain" : "Unclaimed"}
+                    </StatusLabel>
+                  </Td>
+                  <Td>{t.characterCount > 0 ? t.characterCount : "—"}</Td>
+                  <Td>
+                    {oc?.leaderCharacterId ? (
+                      <code>{truncateAddress(oc.leaderCharacterId)}</code>
+                    ) : (
+                      "—"
+                    )}
+                  </Td>
+                  <Td>
+                    {oc ? (
+                      <code>{truncateAddress(oc.id)}</code>
+                    ) : inGameTribeId === t.inGameTribeId ? (
+                      <SmallButton onClick={() => setShowCreate(true)}>Create Tribe</SmallButton>
+                    ) : (
+                      "—"
+                    )}
+                  </Td>
+                </Row>
+              );
+            })}
           </tbody>
         </Table>
       )}

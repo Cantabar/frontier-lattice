@@ -29,4 +29,7 @@ export const config = {
 
   /** Event indexer base URL */
   indexerUrl: import.meta.env.VITE_INDEXER_URL ?? "/api/v1",
+
+  /** Stillness World API base URL (for tribe name backfill) */
+  worldApiUrl: import.meta.env.VITE_WORLD_API_URL ?? "https://world-api-stillness.live.tech.evefrontier.com",
 } as const;

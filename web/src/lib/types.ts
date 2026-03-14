@@ -53,6 +53,24 @@ export interface TribeListItem {
   leaderCharacterId: string;
 }
 
+/** Tribe metadata from the Stillness World API (/v2/tribes). */
+export interface WorldTribeInfo {
+  id: number;
+  name: string;
+  nameShort: string; // ticker, e.g. "PGCL"
+  description: string;
+  taxRate: number;
+  tribeUrl: string;
+}
+
+/** Merged tribe entry for the All Tribes display. */
+export interface InGameTribe {
+  inGameTribeId: number;
+  characterCount: number;
+  onChainTribe: TribeListItem | null;
+  worldInfo: WorldTribeInfo | null;
+}
+
 export interface TreasuryProposalData {
   id: string;
   tribeId: string;
