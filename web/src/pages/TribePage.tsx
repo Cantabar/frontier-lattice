@@ -10,8 +10,11 @@ import { TreasuryPanel } from "../components/tribe/TreasuryPanel";
 import { CreateTribeModal } from "../components/tribe/CreateTribeModal";
 import { AddMemberModal } from "../components/tribe/AddMemberModal";
 import { UpdateReputationModal } from "../components/tribe/UpdateReputationModal";
+import { ChangeRoleModal } from "../components/tribe/ChangeRoleModal";
+import { IssueRepCapModal } from "../components/tribe/IssueRepCapModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
+import type { Role } from "../lib/types";
 
 const Page = styled.div``;
 
@@ -102,9 +105,12 @@ export function TribePage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
   const [repTarget, setRepTarget] = useState<{ characterId: string; reputation: number } | null>(null);
+  const [roleTarget, setRoleTarget] = useState<{ characterId: string; currentRole: Role } | null>(null);
+  const [showIssueRepCap, setShowIssueRepCap] = useState(false);
 
   // Find TribeCap for this tribe (enables write actions)
   const cap = tribeCaps.find((c) => c.tribeId === tribeId) ?? null;
+  const isLeader = cap?.role === "Leader";
   const isLeaderOrOfficer = cap && (cap.role === "Leader" || cap.role === "Officer");
 
   if (!tribeId) {
@@ -177,6 +183,9 @@ export function TribePage() {
             onUpdateReputation={(characterId, reputation) =>
               setRepTarget({ characterId, reputation })
             }
+            onChangeRole={(characterId, currentRole) =>
+              setRoleTarget({ characterId, currentRole })
+            }
           />
 
           <SectionLabel>Reputation</SectionLabel>
@@ -187,6 +196,18 @@ export function TribePage() {
           <TreasuryPanel tribe={tribe} cap={cap} proposals={[]} />
         </div>
       </Grid>
+
+      {/* Tribe Admin (Leader only) */}
+      {isLeader && cap && (
+        <>
+          <SectionLabel>Tribe Admin</SectionLabel>
+          <ActionRow>
+            <SecondaryButton onClick={() => setShowIssueRepCap(true)}>
+              Issue RepUpdateCap
+            </SecondaryButton>
+          </ActionRow>
+        </>
+      )}
 
       {showCreate && <CreateTribeModal onClose={() => setShowCreate(false)} />}
       {showAddMember && cap && (
@@ -199,6 +220,22 @@ export function TribePage() {
           characterId={repTarget.characterId}
           currentReputation={repTarget.reputation}
           onClose={() => setRepTarget(null)}
+        />
+      )}
+      {roleTarget && cap && (
+        <ChangeRoleModal
+          tribeId={tribe.id}
+          capId={cap.id}
+          characterId={roleTarget.characterId}
+          currentRole={roleTarget.currentRole}
+          onClose={() => setRoleTarget(null)}
+        />
+      )}
+      {showIssueRepCap && cap && (
+        <IssueRepCapModal
+          tribeId={tribe.id}
+          capId={cap.id}
+          onClose={() => setShowIssueRepCap(false)}
         />
       )}
     </Page>

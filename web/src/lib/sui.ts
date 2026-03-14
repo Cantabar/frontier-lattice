@@ -133,6 +133,75 @@ export function buildUpdateReputation(params: {
 }
 
 /**
+ * Atomically change a member's role by composing remove_member + add_member
+ * in a single PTB. Leader-only (remove_member requires Leader cap).
+ * The new TribeCap is transferred to the member's wallet.
+ */
+export function buildChangeRole(params: {
+  tribeId: string;
+  capId: string;
+  characterId: string;
+  newRole: Role;
+  memberWalletAddress: string;
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  const typeArgs = [ct(params.coinType)];
+
+  // Step 1: Remove the member (invalidates their old TribeCap)
+  tx.moveCall({
+    target: `${packages.tribe}::tribe::remove_member`,
+    typeArguments: typeArgs,
+    arguments: [
+      tx.object(params.tribeId),
+      tx.object(params.capId),
+      tx.pure.id(params.characterId),
+    ],
+  });
+
+  // Step 2: Re-add with the new role (Character is a shared object)
+  const roleTarget = `${packages.tribe}::tribe::role_${params.newRole.toLowerCase()}`;
+  const [role] = tx.moveCall({ target: roleTarget });
+  const [newCap] = tx.moveCall({
+    target: `${packages.tribe}::tribe::add_member`,
+    typeArguments: typeArgs,
+    arguments: [
+      tx.object(params.tribeId),
+      tx.object(params.capId),
+      tx.object(params.characterId),
+      role,
+    ],
+  });
+
+  // Step 3: Transfer the new TribeCap to the member's wallet
+  tx.transferObjects([newCap], tx.pure.address(params.memberWalletAddress));
+  return tx;
+}
+
+/**
+ * Issue a RepUpdateCap for a tribe. Leader-only.
+ * Transfers the cap to the specified recipient (hot wallet or contract address).
+ */
+export function buildIssueRepUpdateCap(params: {
+  tribeId: string;
+  capId: string;
+  recipientAddress: string;
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  const [repCap] = tx.moveCall({
+    target: `${packages.tribe}::tribe::issue_rep_update_cap`,
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.object(params.tribeId),
+      tx.object(params.capId),
+    ],
+  });
+  tx.transferObjects([repCap], tx.pure.address(params.recipientAddress));
+  return tx;
+}
+
+/**
  * Deposit coins into a tribe treasury.
  *
  * For native SUI, splits from gas. For custom coins, the caller must provide

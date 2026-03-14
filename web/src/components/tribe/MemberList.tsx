@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import type { TribeMember, TribeCapData } from "../../lib/types";
+import type { TribeMember, TribeCapData, Role } from "../../lib/types";
 import { RemoveMemberButton } from "./RemoveMemberButton";
 import { useCharacterProfiles } from "../../hooks/useCharacterProfile";
 import { ResolvedCharacterDisplay } from "../shared/CharacterDisplay";
@@ -76,9 +76,10 @@ interface Props {
   leaderCharacterId: string;
   cap: TribeCapData | null;
   onUpdateReputation?: (characterId: string, currentReputation: number) => void;
+  onChangeRole?: (characterId: string, currentRole: Role) => void;
 }
 
-export function MemberList({ members, tribeId, leaderCharacterId, cap, onUpdateReputation }: Props) {
+export function MemberList({ members, tribeId, leaderCharacterId, cap, onUpdateReputation, onChangeRole }: Props) {
   const isLeader = cap?.role === "Leader";
   const isLeaderOrOfficer = cap && (cap.role === "Leader" || cap.role === "Officer");
   const { profiles } = useCharacterProfiles(members.map((m) => m.characterId));
@@ -109,6 +110,11 @@ export function MemberList({ members, tribeId, leaderCharacterId, cap, onUpdateR
             {(isLeader || isLeaderOrOfficer) && (
               <Td>
                 <ActionCell>
+                  {isLeader && m.characterId !== leaderCharacterId && onChangeRole && (
+                    <RepButton onClick={() => onChangeRole(m.characterId, m.role)}>
+                      Role
+                    </RepButton>
+                  )}
                   {isLeaderOrOfficer && onUpdateReputation && (
                     <RepButton onClick={() => onUpdateReputation(m.characterId, m.reputation)}>
                       Rep
