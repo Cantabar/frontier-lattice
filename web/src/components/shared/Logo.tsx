@@ -3,23 +3,14 @@ import type { CSSProperties } from "react";
 /**
  * Corm growth mark.
  *
- * Six lines converge from a center point to hexagon vertices,
- * with small circles at each vertex and the center.
+ * A rounded bulb with concentric tunic arcs and a small upward sprout,
+ * evoking underground growth potential.
  *
  * Designed at a 32×32 viewBox so it works as a favicon-sized mark
  * and scales cleanly to header size.
  */
 
 const CYAN = "#00E5FF";
-
-/** Hexagon vertices (pointy-top orientation, radius 12, center 16,16) */
-const R = 12;
-const CX = 16;
-const CY = 16;
-const vertices = Array.from({ length: 6 }, (_, i) => {
-  const angle = (Math.PI / 3) * i - Math.PI / 2;
-  return { x: CX + R * Math.cos(angle), y: CY + R * Math.sin(angle) };
-});
 
 interface LogoMarkProps {
   size?: number;
@@ -45,33 +36,33 @@ export function LogoMark({
       style={style}
       className={className}
     >
-      {/* Lines from center to each vertex */}
-      {vertices.map((v, i) => (
-        <line
-          key={`spoke-${i}`}
-          x1={CX}
-          y1={CY}
-          x2={v.x}
-          y2={v.y}
-          stroke={color}
-          strokeWidth={1.2}
-          strokeLinecap="round"
-        />
-      ))}
-      {/* Hexagon perimeter */}
-      <polygon
-        points={vertices.map((v) => `${v.x},${v.y}`).join(" ")}
+      {/* Bulb body — rounded bottom */}
+      <ellipse cx={16} cy={19} rx={10} ry={9} stroke={color} strokeWidth={1.4} fill="none" />
+      {/* Inner tunic arcs — concentric growth rings */}
+      <ellipse cx={16} cy={19} rx={6.5} ry={5.8} stroke={color} strokeWidth={1.0} fill="none" opacity={0.7} />
+      <ellipse cx={16} cy={19} rx={3.2} ry={2.8} stroke={color} strokeWidth={0.8} fill="none" opacity={0.5} />
+      {/* Sprout — upward shoot from the top */}
+      <path
+        d="M16 10 Q16 5 13 3"
         stroke={color}
-        strokeWidth={1.2}
-        strokeLinejoin="round"
+        strokeWidth={1.4}
+        strokeLinecap="round"
         fill="none"
       />
-      {/* Vertex dots */}
-      {vertices.map((v, i) => (
-        <circle key={`dot-${i}`} cx={v.x} cy={v.y} r={2} fill={color} />
-      ))}
-      {/* Center dot */}
-      <circle cx={CX} cy={CY} r={2.4} fill={color} />
+      <path
+        d="M16 10 Q16 6 19 4.5"
+        stroke={color}
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        fill="none"
+      />
+      {/* Growth node at sprout base */}
+      <circle cx={16} cy={11} r={1.8} fill={color} />
+      {/* Root node at base */}
+      <circle cx={16} cy={28} r={1.2} fill={color} opacity={0.6} />
+      {/* Small root tendrils */}
+      <line x1={16} y1={28} x2={13} y2={30.5} stroke={color} strokeWidth={0.8} strokeLinecap="round" opacity={0.5} />
+      <line x1={16} y1={28} x2={19} y2={30.5} stroke={color} strokeWidth={0.8} strokeLinecap="round" opacity={0.5} />
     </svg>
   );
 }
@@ -84,7 +75,7 @@ interface LogoProps {
   className?: string;
 }
 
-/** Full horizontal lockup: mark + "FRONTIER LATTICE" wordmark */
+/** Full horizontal lockup: mark + "FRONTIER CORM" wordmark */
 export function Logo({
   height = 28,
   color = "#F0F4F8",
@@ -92,7 +83,6 @@ export function Logo({
   style,
   className,
 }: LogoProps) {
-  // Scale factor from the 32-unit mark height
   const scale = height / 32;
   const markWidth = 32 * scale;
   const gap = 8 * scale;
@@ -109,35 +99,15 @@ export function Logo({
     >
       {/* Mark */}
       <g transform={`scale(${scale})`}>
-        {vertices.map((v, i) => (
-          <line
-            key={`spoke-${i}`}
-            x1={CX}
-            y1={CY}
-            x2={v.x}
-            y2={v.y}
-            stroke={accentColor}
-            strokeWidth={1.2}
-            strokeLinecap="round"
-          />
-        ))}
-        <polygon
-          points={vertices.map((v) => `${v.x},${v.y}`).join(" ")}
-          stroke={accentColor}
-          strokeWidth={1.2}
-          strokeLinejoin="round"
-          fill="none"
-        />
-        {vertices.map((v, i) => (
-          <circle
-            key={`dot-${i}`}
-            cx={v.x}
-            cy={v.y}
-            r={2}
-            fill={accentColor}
-          />
-        ))}
-        <circle cx={CX} cy={CY} r={2.4} fill={accentColor} />
+        <ellipse cx={16} cy={19} rx={10} ry={9} stroke={accentColor} strokeWidth={1.4} fill="none" />
+        <ellipse cx={16} cy={19} rx={6.5} ry={5.8} stroke={accentColor} strokeWidth={1.0} fill="none" opacity={0.7} />
+        <ellipse cx={16} cy={19} rx={3.2} ry={2.8} stroke={accentColor} strokeWidth={0.8} fill="none" opacity={0.5} />
+        <path d="M16 10 Q16 5 13 3" stroke={accentColor} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+        <path d="M16 10 Q16 6 19 4.5" stroke={accentColor} strokeWidth={1.4} strokeLinecap="round" fill="none" />
+        <circle cx={16} cy={11} r={1.8} fill={accentColor} />
+        <circle cx={16} cy={28} r={1.2} fill={accentColor} opacity={0.6} />
+        <line x1={16} y1={28} x2={13} y2={30.5} stroke={accentColor} strokeWidth={0.8} strokeLinecap="round" opacity={0.5} />
+        <line x1={16} y1={28} x2={19} y2={30.5} stroke={accentColor} strokeWidth={0.8} strokeLinecap="round" opacity={0.5} />
       </g>
       {/* Wordmark */}
       <text
@@ -151,7 +121,7 @@ export function Logo({
           FRONTIER{" "}
         </tspan>
         <tspan fill={accentColor} fontWeight={700}>
-          LATTICE
+          CORM
         </tspan>
       </text>
     </svg>
