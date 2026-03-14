@@ -3357,5 +3357,29 @@
       "Ships",
       "Shuttle"
     ]
+  },
+  {
+    "typeId": 89087,
+    "name": "Synod Technocore",
+    "icon": "icons/type-89087.png",
+    "categoryId": 4,
+    "categoryName": "Material",
+    "groupId": 4780,
+    "groupName": "Manufacturing Component",
+    "metaGroupId": null,
+    "metaGroupName": null,
+    "tags": []
+  },
+  {
+    "typeId": 89088,
+    "name": "Exclave Technocore",
+    "icon": "icons/type-89088.png",
+    "categoryId": 4,
+    "categoryName": "Material",
+    "groupId": 4780,
+    "groupName": "Manufacturing Component",
+    "metaGroupId": null,
+    "metaGroupName": null,
+    "tags": []
   }
 ]
