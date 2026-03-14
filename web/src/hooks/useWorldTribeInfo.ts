@@ -46,8 +46,8 @@ export function useWorldTribeInfo() {
   const { data, isLoading } = useQuery({
     queryKey: ["worldTribeInfo"],
     queryFn: fetchAllTribes,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000,   // 30 minutes
+    staleTime: Infinity, // tribe names never change after creation
+    gcTime: Infinity,
     retry: 1,
     // Silently return empty map on failure — this is a best-effort backfill
     placeholderData: () => new Map<number, WorldTribeInfo>(),
