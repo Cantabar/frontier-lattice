@@ -39,6 +39,37 @@ const HelpText = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
+const InfoRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  background: ${({ theme }) => theme.colors.surface.bg};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+`;
+
+const InfoLabel = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+`;
+
+const Warning = styled.div`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.text.muted};
+  background: ${({ theme }) => theme.colors.surface.bg};
+  border: 1px dashed ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+`;
+
 const Button = styled.button`
   width: 100%;
   background: ${({ theme }) => theme.colors.primary.main};
@@ -65,7 +96,8 @@ interface Props {
 }
 
 export function CreateTribeModal({ onClose }: Props) {
-  const { characterId } = useIdentity();
+  const { characterId, inGameTribeId } = useIdentity();
+  const hasTribe = inGameTribeId != null && inGameTribeId > 0;
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
   const [name, setName] = useState("");
@@ -86,14 +118,26 @@ export function CreateTribeModal({ onClose }: Props) {
 
   return (
     <Modal title="Create Tribe" onClose={onClose}>
+      {hasTribe ? (
+        <InfoRow>
+          <InfoLabel>In-Game Tribe ID</InfoLabel>
+          #{inGameTribeId}
+        </InfoRow>
+      ) : (
+        <Warning>
+          Your Character has no in-game tribe assignment. You must belong to a tribe in-game before
+          creating one on-chain.
+        </Warning>
+      )}
+
       <Label>Tribe Name</Label>
       <Input
         placeholder="e.g. Frontier Syndicate"
         value={name}
         onChange={(e) => setName(e.target.value)}
         autoFocus
+        disabled={!hasTribe}
       />
-      <HelpText>Your in-game tribe ID is read from your Character automatically.</HelpText>
 
       <Label>Vote Threshold (%)</Label>
       <Input
@@ -105,7 +149,7 @@ export function CreateTribeModal({ onClose }: Props) {
       />
       <HelpText>Percentage of members needed to pass a treasury proposal</HelpText>
 
-      <Button onClick={handleCreate} disabled={!name || !characterId || isPending}>
+      <Button onClick={handleCreate} disabled={!name || !characterId || !hasTribe || isPending}>
         {isPending ? "Creating…" : "Create Tribe"}
       </Button>
     </Modal>
