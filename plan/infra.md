@@ -173,7 +173,7 @@ scripts/
 `docker-compose.yml` mirrors the production topology:
 
 - **indexer** — builds from `indexer/Dockerfile`, exposes port 3100, uses SQLite with a Docker volume
-- **postgres** — PostgreSQL 16 on port 5432, credentials `lattice/lattice`, for future services
+- **postgres** — PostgreSQL 16 on port 5432, credentials `corm/corm`, for future services
 - **app** — commented out, uncomment when `app/src/server.ts` exists
 - **web** — run separately via `cd web && npm run dev` (Vite dev server on port 5173). Proxies `/api` requests to `localhost:3001` (indexer).
 

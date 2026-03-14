@@ -80,7 +80,7 @@ export class FrontierCormStack extends cdk.Stack {
     const dbCredentials = new secretsmanager.Secret(this, "DbCredentials", {
       secretName: `${prefix}/db-credentials`,
       generateSecretString: {
-        secretStringTemplate: JSON.stringify({ username: "lattice" }),
+        secretStringTemplate: JSON.stringify({ username: "corm" }),
         generateStringKey: "password",
         excludePunctuation: true,
         passwordLength: 32,
