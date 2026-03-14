@@ -232,6 +232,19 @@ export function BlueprintDetailModal({ blueprint, onClose, onResolve }: Props) {
         );
       })}
 
+      {/* Built At — facilities */}
+      {blueprint.facilities.length > 0 && (
+        <>
+          <Divider />
+          <SectionLabel>Built At</SectionLabel>
+          {blueprint.facilities.map((f) => (
+            <ItemRow key={f.facilityTypeId}>
+              <ItemName>{f.facilityName}</ItemName>
+            </ItemRow>
+          ))}
+        </>
+      )}
+
       {/* Resolve button */}
       {onResolve && (
         <ActionButton

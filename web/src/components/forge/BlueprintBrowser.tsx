@@ -17,15 +17,63 @@ const TIER_COLOR: Record<string, string> = {
 
 // ── Styled components ──────────────────────────────────────────
 
+type GroupBy = "category" | "facility";
+
 const Section = styled.section`
   margin-bottom: ${({ theme }) => theme.spacing.lg};
+`;
+
+const SectionHeader = styled.button`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 ${({ theme }) => theme.spacing.md};
+  cursor: pointer;
+  user-select: none;
 `;
 
 const SectionTitle = styled.h2`
   font-size: 16px;
   font-weight: 600;
   color: ${({ theme }) => theme.colors.text.primary};
-  margin: 0 0 ${({ theme }) => theme.spacing.md};
+  margin: 0;
+`;
+
+const Chevron = styled.span<{ $open: boolean }>`
+  display: inline-block;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.text.muted};
+  transition: transform 0.15s;
+  transform: rotate(${({ $open }) => ($open ? "90deg" : "0deg")});
+`;
+
+const GroupByRow = styled.div`
+  display: flex;
+  gap: 2px;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
+const GroupByOption = styled.button<{ $active: boolean }>`
+  padding: 3px 8px;
+  border: 1px solid
+    ${({ $active, theme }) =>
+      $active ? theme.colors.text.muted : theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.surface.overlay : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.text.primary : theme.colors.text.muted};
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.text.muted};
+  }
 `;
 
 const TabBar = styled.div`
@@ -153,6 +201,17 @@ const CardGroup = styled.div`
   margin-top: 1px;
 `;
 
+const FacilityBadge = styled.span`
+  font-size: 9px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.muted};
+  background: ${({ theme }) => theme.colors.surface.bg};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: 3px;
+  padding: 0 3px;
+  white-space: nowrap;
+`;
+
 const InputsRow = styled.div`
   display: flex;
   align-items: center;
@@ -219,9 +278,12 @@ interface Props {
 export function BlueprintBrowser({ blueprints, onResolve }: Props) {
   const { getItem } = useItems();
 
+  const [collapsed, setCollapsed] = useState(false);
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [groupBy, setGroupBy] = useState<GroupBy>("category");
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [activeFacility, setActiveFacility] = useState<string | null>(null);
   const [selectedBp, setSelectedBp] = useState<BlueprintEntry | null>(null);
 
   // Unique categories from blueprints
@@ -235,30 +297,69 @@ export function BlueprintBrowser({ blueprints, onResolve }: Props) {
     [blueprints],
   );
 
-  // Groups within active category
+  // Unique facility names across all blueprints
+  const facilityNames = useMemo(
+    () =>
+      [
+        ...new Set(
+          blueprints.flatMap((b) => b.facilities.map((f) => f.facilityName)),
+        ),
+      ].sort(),
+    [blueprints],
+  );
+
+  // Tab labels depend on groupBy mode
+  const tabs = groupBy === "category" ? categories : facilityNames;
+
+  // Groups within the active tab (sub-filter dropdown)
   const groups = useMemo(() => {
-    if (!activeCategory) return [];
-    return [
-      ...new Set(
-        blueprints
-          .filter((b) => b.primaryCategoryName === activeCategory)
-          .map((b) => b.primaryGroupName)
-          .filter(Boolean),
-      ),
-    ] as string[];
-  }, [blueprints, activeCategory]);
+    if (!activeTab) return [];
+    let subset = blueprints;
+    if (groupBy === "category") {
+      subset = subset.filter((b) => b.primaryCategoryName === activeTab);
+      return [
+        ...new Set(subset.map((b) => b.primaryGroupName).filter(Boolean)),
+      ] as string[];
+    } else {
+      // Facility mode — show output categories within the selected facility
+      subset = subset.filter((b) =>
+        b.facilities.some((f) => f.facilityName === activeTab),
+      );
+      return [
+        ...new Set(subset.map((b) => b.primaryCategoryName).filter(Boolean)),
+      ] as string[];
+    }
+  }, [blueprints, activeTab, groupBy]);
 
   // Filtered list
   const filtered = useMemo(() => {
     let list = blueprints;
 
-    if (activeCategory) {
-      list = list.filter((b) => b.primaryCategoryName === activeCategory);
-      if (activeGroup) {
-        list = list.filter((b) => b.primaryGroupName === activeGroup);
+    // Tab filter
+    if (activeTab) {
+      if (groupBy === "category") {
+        list = list.filter((b) => b.primaryCategoryName === activeTab);
+        if (activeGroup) {
+          list = list.filter((b) => b.primaryGroupName === activeGroup);
+        }
+      } else {
+        list = list.filter((b) =>
+          b.facilities.some((f) => f.facilityName === activeTab),
+        );
+        if (activeGroup) {
+          list = list.filter((b) => b.primaryCategoryName === activeGroup);
+        }
       }
     }
 
+    // Facility dropdown filter (independent, available in category mode)
+    if (activeFacility) {
+      list = list.filter((b) =>
+        b.facilities.some((f) => f.facilityName === activeFacility),
+      );
+    }
+
+    // Text search
     const q = query.toLowerCase().trim();
     if (q) {
       list = list.filter(
@@ -269,113 +370,180 @@ export function BlueprintBrowser({ blueprints, onResolve }: Props) {
     }
 
     return list;
-  }, [blueprints, activeCategory, activeGroup, query]);
+  }, [blueprints, activeTab, activeGroup, activeFacility, groupBy, query]);
 
   function itemIconPath(typeId: number): string {
     return getItem(typeId)?.icon ?? "";
   }
 
+  function handleGroupByChange(mode: GroupBy) {
+    setGroupBy(mode);
+    setActiveTab(null);
+    setActiveGroup(null);
+    if (mode === "facility") setActiveFacility(null);
+  }
+
   return (
     <Section>
-      <SectionTitle>Blueprints</SectionTitle>
-
-      {/* Category tabs */}
-      <TabBar>
-        <Tab
-          $active={activeCategory === null}
-          onClick={() => {
-            setActiveCategory(null);
-            setActiveGroup(null);
-          }}
-        >
-          All
-        </Tab>
-        {categories.sort().map((cat) => (
-          <Tab
-            key={cat}
-            $active={activeCategory === cat}
-            onClick={() => {
-              setActiveCategory(cat);
-              setActiveGroup(null);
-            }}
-          >
-            {cat}
-          </Tab>
-        ))}
-      </TabBar>
-
-      {/* Filters */}
-      <FiltersRow>
-        {activeCategory && groups.length > 1 && (
-          <GroupSelect
-            value={activeGroup ?? ""}
-            onChange={(e) => setActiveGroup(e.target.value || null)}
-          >
-            <option value="">All {activeCategory}</option>
-            {groups.sort().map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </GroupSelect>
-        )}
-        <Search
-          placeholder="Search blueprints…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+      <SectionHeader onClick={() => setCollapsed((c) => !c)}>
+        <Chevron $open={!collapsed}>▸</Chevron>
+        <SectionTitle>Blueprints</SectionTitle>
         <CountBadge>{filtered.length} blueprints</CountBadge>
-      </FiltersRow>
+      </SectionHeader>
 
-      {/* Grid */}
-      <Grid>
-        {filtered.length === 0 && <Empty>No blueprints found</Empty>}
-        {filtered.map((bp) => {
-          const tierColor = bp.primaryMetaGroupName
-            ? TIER_COLOR[bp.primaryMetaGroupName]
-            : undefined;
-
-          return (
-            <Card
-              key={bp.blueprintId}
-              $tierColor={tierColor}
-              onClick={() => setSelectedBp(bp)}
+      {!collapsed && (
+        <>
+          {/* Group-by toggle */}
+          <GroupByRow>
+            <GroupByOption
+              $active={groupBy === "category"}
+              onClick={() => handleGroupByChange("category")}
             >
-              {bp.primaryIcon && (
-                <CardIcon src={`/${bp.primaryIcon}`} alt={bp.primaryName} loading="lazy" />
-              )}
-              <CardBody>
-                <CardName>{bp.primaryName}</CardName>
-                {bp.primaryGroupName && (
-                  <CardGroup>{bp.primaryGroupName}</CardGroup>
-                )}
-                <InputsRow>
-                  {bp.inputs.slice(0, 4).map((inp) => {
-                    const icon = itemIconPath(inp.typeId);
-                    return (
-                      <InputChip key={inp.typeId}>
-                        {icon && <InputIcon src={`/${icon}`} alt="" loading="lazy" />}
-                        ×{inp.quantity}
-                      </InputChip>
-                    );
-                  })}
-                  {bp.inputs.length > 4 && (
-                    <InputChip>+{bp.inputs.length - 4}</InputChip>
+              By Category
+            </GroupByOption>
+            <GroupByOption
+              $active={groupBy === "facility"}
+              onClick={() => handleGroupByChange("facility")}
+            >
+              By Facility
+            </GroupByOption>
+          </GroupByRow>
+
+          {/* Tabs (categories or facilities) */}
+          <TabBar>
+            <Tab
+              $active={activeTab === null}
+              onClick={() => {
+                setActiveTab(null);
+                setActiveGroup(null);
+              }}
+            >
+              All
+            </Tab>
+            {tabs.sort().map((t) => (
+              <Tab
+                key={t}
+                $active={activeTab === t}
+                onClick={() => {
+                  setActiveTab(t);
+                  setActiveGroup(null);
+                }}
+              >
+                {t}
+              </Tab>
+            ))}
+          </TabBar>
+
+          {/* Filters */}
+          <FiltersRow>
+            {/* Facility dropdown — only shown in category mode */}
+            {groupBy === "category" && facilityNames.length > 1 && (
+              <GroupSelect
+                value={activeFacility ?? ""}
+                onChange={(e) => setActiveFacility(e.target.value || null)}
+              >
+                <option value="">All Facilities</option>
+                {facilityNames.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </GroupSelect>
+            )}
+            {/* Sub-group dropdown */}
+            {activeTab && groups.length > 1 && (
+              <GroupSelect
+                value={activeGroup ?? ""}
+                onChange={(e) => setActiveGroup(e.target.value || null)}
+              >
+                <option value="">
+                  All{" "}
+                  {groupBy === "category" ? activeTab : "Categories"}
+                </option>
+                {groups.sort().map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </GroupSelect>
+            )}
+            <Search
+              placeholder="Search blueprints…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </FiltersRow>
+
+          {/* Grid */}
+          <Grid>
+            {filtered.length === 0 && <Empty>No blueprints found</Empty>}
+            {filtered.map((bp) => {
+              const tierColor = bp.primaryMetaGroupName
+                ? TIER_COLOR[bp.primaryMetaGroupName]
+                : undefined;
+
+              return (
+                <Card
+                  key={bp.blueprintId}
+                  $tierColor={tierColor}
+                  onClick={() => setSelectedBp(bp)}
+                >
+                  {bp.primaryIcon && (
+                    <CardIcon
+                      src={`/${bp.primaryIcon}`}
+                      alt={bp.primaryName}
+                      loading="lazy"
+                    />
                   )}
-                </InputsRow>
-                <BadgeRow>
-                  <TimeBadge>{bp.runTime}s</TimeBadge>
-                  {bp.outputs.length > 1 && (
-                    <MultiOutputBadge>
-                      {bp.outputs.length} outputs
-                    </MultiOutputBadge>
-                  )}
-                </BadgeRow>
-              </CardBody>
-            </Card>
-          );
-        })}
-      </Grid>
+                  <CardBody>
+                    <CardName>{bp.primaryName}</CardName>
+                    {bp.primaryGroupName && (
+                      <CardGroup>{bp.primaryGroupName}</CardGroup>
+                    )}
+                    {bp.facilities.length > 0 && (
+                      <InputsRow>
+                        {bp.facilities.map((f) => (
+                          <FacilityBadge key={f.facilityTypeId}>
+                            {f.facilityName}
+                          </FacilityBadge>
+                        ))}
+                      </InputsRow>
+                    )}
+                    <InputsRow>
+                      {bp.inputs.slice(0, 4).map((inp) => {
+                        const icon = itemIconPath(inp.typeId);
+                        return (
+                          <InputChip key={inp.typeId}>
+                            {icon && (
+                              <InputIcon
+                                src={`/${icon}`}
+                                alt=""
+                                loading="lazy"
+                              />
+                            )}
+                            ×{inp.quantity}
+                          </InputChip>
+                        );
+                      })}
+                      {bp.inputs.length > 4 && (
+                        <InputChip>+{bp.inputs.length - 4}</InputChip>
+                      )}
+                    </InputsRow>
+                    <BadgeRow>
+                      <TimeBadge>{bp.runTime}s</TimeBadge>
+                      {bp.outputs.length > 1 && (
+                        <MultiOutputBadge>
+                          {bp.outputs.length} outputs
+                        </MultiOutputBadge>
+                      )}
+                    </BadgeRow>
+                  </CardBody>
+                </Card>
+              );
+            })}
+          </Grid>
+        </>
+      )}
 
       {/* Detail modal */}
       {selectedBp && (
