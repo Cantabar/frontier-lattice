@@ -8,6 +8,7 @@ import {
   buildCreateCoinForCoin,
   buildCreateCoinForItem,
   buildCreateItemForCoin,
+  buildCreateItemForItem,
   buildCreateTransport,
 } from "../../lib/sui";
 
@@ -102,6 +103,23 @@ const Button = styled.button`
   }
 `;
 
+const ErrorBanner = styled.div`
+  background: ${({ theme }) => theme.colors.danger}22;
+  border: 1px solid ${({ theme }) => theme.colors.danger};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  color: ${({ theme }) => theme.colors.danger};
+  font-size: 13px;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+`;
+
+const FieldError = styled.div`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.danger};
+  margin-top: -${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
 // ---------------------------------------------------------------------------
 
 const VARIANT_DESCRIPTIONS: Record<TrustlessContractVariant, string> = {
@@ -114,9 +132,10 @@ const VARIANT_DESCRIPTIONS: Record<TrustlessContractVariant, string> = {
 
 interface Props {
   onClose: () => void;
+  onCreated?: () => void;
 }
 
-export function CreateContractModal({ onClose }: Props) {
+export function CreateContractModal({ onClose, onCreated }: Props) {
   const { characterId } = useIdentity();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
@@ -142,11 +161,20 @@ export function CreateContractModal({ onClose }: Props) {
   const [transportItemQuantity, setTransportItemQuantity] = useState("");
   const [requiredStake, setRequiredStake] = useState("");
 
+  // ItemForItem extra fields
+  const [i4iWantedTypeId, setI4iWantedTypeId] = useState("");
+  const [i4iWantedQuantity, setI4iWantedQuantity] = useState("");
+  const [i4iDestinationSsuId, setI4iDestinationSsuId] = useState("");
+
   // Common fields
   const [allowPartial, setAllowPartial] = useState(true);
   const [deadlineHours, setDeadlineHours] = useState("48");
   const [allowedCharacters, setAllowedCharacters] = useState("");
   const [allowedTribes, setAllowedTribes] = useState("");
+
+  // UI state
+  const [error, setError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
   function parseIdList(s: string): string[] {
     return s.split(",").map((x) => x.trim()).filter(Boolean);
@@ -157,7 +185,9 @@ export function CreateContractModal({ onClose }: Props) {
   }
 
   async function handleCreate() {
-    if (!characterId) return;
+    setSubmitted(true);
+    if (!characterId || !isValid) return;
+    setError(null);
 
     const deadlineMs = Date.now() + Number(deadlineHours) * 3600 * 1000;
     const chars = parseIdList(allowedCharacters);
@@ -201,6 +231,20 @@ export function CreateContractModal({ onClose }: Props) {
           allowedTribes: tribes,
         });
         break;
+      case "ItemForItem":
+        tx = buildCreateItemForItem({
+          characterId,
+          sourceSsuId,
+          itemId,
+          wantedTypeId: Number(i4iWantedTypeId),
+          wantedQuantity: Number(i4iWantedQuantity),
+          destinationSsuId: i4iDestinationSsuId,
+          allowPartial,
+          deadlineMs,
+          allowedCharacters: chars,
+          allowedTribes: tribes,
+        });
+        break;
       case "Transport":
         tx = buildCreateTransport({
           characterId,
@@ -214,26 +258,17 @@ export function CreateContractModal({ onClose }: Props) {
           allowedTribes: tribes,
         });
         break;
-      case "ItemForItem":
-        // ItemForItem requires two sets of SSU/item params — simplified to show
-        // the same form as ItemForCoin + destination. Full implementation would
-        // add a second set of fields. For now, fallback to ItemForCoin.
-        tx = buildCreateItemForCoin({
-          characterId,
-          sourceSsuId,
-          itemId,
-          wantedAmount: Math.round(Number(itemWantedAmount) * 1e9),
-          allowPartial,
-          deadlineMs,
-          allowedCharacters: chars,
-          allowedTribes: tribes,
-        });
-        break;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await signAndExecute({ transaction: tx as any });
-    onClose();
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await signAndExecute({ transaction: tx as any });
+      onCreated?.();
+      onClose();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Transaction failed";
+      setError(msg);
+    }
   }
 
   const isValid = (() => {
@@ -246,7 +281,7 @@ export function CreateContractModal({ onClose }: Props) {
       case "ItemForCoin":
         return !!sourceSsuId && !!itemId && Number(itemWantedAmount) > 0;
       case "ItemForItem":
-        return !!sourceSsuId && !!itemId && Number(itemWantedAmount) > 0;
+        return !!sourceSsuId && !!itemId && Number(i4iWantedQuantity) > 0 && !!i4iDestinationSsuId;
       case "Transport":
         return Number(escrow) > 0 && Number(transportItemQuantity) > 0 && !!destinationSsuId && Number(requiredStake) > 0;
     }
@@ -296,14 +331,44 @@ export function CreateContractModal({ onClose }: Props) {
         </>
       )}
 
-      {(variant === "ItemForCoin" || variant === "ItemForItem") && (
+      {variant === "ItemForCoin" && (
         <>
           <Label>Source SSU ID</Label>
           <Input placeholder="0x..." value={sourceSsuId} onChange={(e) => setSourceSsuId(e.target.value)} />
+          {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
           <Label>Item Object ID</Label>
           <Input placeholder="0x..." value={itemId} onChange={(e) => setItemId(e.target.value)} />
+          {submitted && !itemId && <FieldError>Required</FieldError>}
           <Label>Wanted Amount (SUI)</Label>
           <Input type="number" placeholder="0.0" value={itemWantedAmount} onChange={(e) => setItemWantedAmount(e.target.value)} />
+          {submitted && !(Number(itemWantedAmount) > 0) && <FieldError>Must be greater than 0</FieldError>}
+        </>
+      )}
+
+      {variant === "ItemForItem" && (
+        <>
+          <Label>Source SSU ID</Label>
+          <Input placeholder="0x..." value={sourceSsuId} onChange={(e) => setSourceSsuId(e.target.value)} />
+          {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
+          <Label>Offered Item Object ID</Label>
+          <Input placeholder="0x..." value={itemId} onChange={(e) => setItemId(e.target.value)} />
+          {submitted && !itemId && <FieldError>Required</FieldError>}
+          <Separator />
+          <Hint>What you want in return:</Hint>
+          <Row>
+            <div>
+              <Label>Wanted Type ID</Label>
+              <Input type="number" value={i4iWantedTypeId} onChange={(e) => setI4iWantedTypeId(e.target.value)} />
+            </div>
+            <div>
+              <Label>Wanted Quantity</Label>
+              <Input type="number" value={i4iWantedQuantity} onChange={(e) => setI4iWantedQuantity(e.target.value)} />
+              {submitted && !(Number(i4iWantedQuantity) > 0) && <FieldError>Must be greater than 0</FieldError>}
+            </div>
+          </Row>
+          <Label>Destination SSU ID</Label>
+          <Input placeholder="0x..." value={i4iDestinationSsuId} onChange={(e) => setI4iDestinationSsuId(e.target.value)} />
+          {submitted && !i4iDestinationSsuId && <FieldError>Required</FieldError>}
         </>
       )}
 
@@ -346,7 +411,9 @@ export function CreateContractModal({ onClose }: Props) {
       <Label>Allowed Tribes (comma-separated IDs, optional)</Label>
       <Input placeholder="1, 2, 3" value={allowedTribes} onChange={(e) => setAllowedTribes(e.target.value)} />
 
-      <Button onClick={handleCreate} disabled={!isValid || isPending}>
+      {error && <ErrorBanner>{error}</ErrorBanner>}
+
+      <Button onClick={handleCreate} disabled={isPending}>
         {isPending ? "Creating…" : "Create Contract"}
       </Button>
     </Modal>

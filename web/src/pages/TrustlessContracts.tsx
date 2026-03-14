@@ -114,7 +114,7 @@ type StatusTab = "all" | "Open" | "InProgress";
 
 export function TrustlessContracts() {
   const { characterId } = useIdentity();
-  const { contracts, isLoading } = useActiveContracts();
+  const { contracts, isLoading, refetch } = useActiveContracts();
 
   const [statusTab, setStatusTab] = useState<StatusTab>("all");
   const [typeFilter, setTypeFilter] = useState<TrustlessContractVariant | "all">("all");
@@ -180,7 +180,12 @@ export function TrustlessContracts() {
       <SectionLabel>Contract History</SectionLabel>
       <ContractHistory />
 
-      {showCreate && <CreateContractModal onClose={() => setShowCreate(false)} />}
+      {showCreate && (
+        <CreateContractModal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => refetch()}
+        />
+      )}
     </Page>
   );
 }

@@ -138,7 +138,7 @@ function objectToContract(fields: Record<string, unknown>): TrustlessContractDat
 
 /** Fetch active contracts from on-chain ContractCreatedEvent emissions. */
 export function useActiveContracts() {
-  const { data, isLoading, error } = useSuiClientQuery(
+  const { data, isLoading, error, refetch } = useSuiClientQuery(
     "queryEvents",
     {
       query: {
@@ -152,7 +152,7 @@ export function useActiveContracts() {
 
   const contracts: TrustlessContractData[] = (data?.data ?? []).map(eventToContract);
 
-  return { contracts, isLoading, error };
+  return { contracts, isLoading, error, refetch };
 }
 
 /** Fetch a single contract shared object for live state (balances, filled qty). */
