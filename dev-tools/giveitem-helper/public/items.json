@@ -15,6 +15,11 @@
     "icon": "icons/type-77728.png"
   },
   {
+    "typeId": 77729,
+    "name": "Rough Old Crude Matter",
+    "icon": "icons/type-77729.png"
+  },
+  {
     "typeId": 77753,
     "name": "Embark",
     "icon": "icons/type-77753.png"
@@ -100,6 +105,11 @@
     "icon": "icons/type-78426.png"
   },
   {
+    "typeId": 78434,
+    "name": "Rough Young Crude Matter",
+    "icon": "icons/type-78434.png"
+  },
+  {
     "typeId": 78435,
     "name": "Eupraxite",
     "icon": "icons/type-78435.png"
@@ -110,9 +120,29 @@
     "icon": "icons/type-78437.png"
   },
   {
+    "typeId": 78446,
+    "name": "Methane Ice Shards",
+    "icon": "icons/type-78446.png"
+  },
+  {
+    "typeId": 78447,
+    "name": "Primitive Kerogen Matrix",
+    "icon": "icons/type-78447.png"
+  },
+  {
+    "typeId": 78448,
+    "name": "Aromatic Carbon Veins",
+    "icon": "icons/type-78448.png"
+  },
+  {
     "typeId": 78449,
     "name": "Tholin Nodules",
     "icon": "icons/type-78449.png"
+  },
+  {
+    "typeId": 78490,
+    "name": "Velocity CD81",
+    "icon": "icons/type-78490.png"
   },
   {
     "typeId": 78502,
@@ -120,9 +150,24 @@
     "icon": "icons/type-78502.png"
   },
   {
+    "typeId": 78506,
+    "name": "Celerity CD01",
+    "icon": "icons/type-78506.png"
+  },
+  {
     "typeId": 78507,
     "name": "Celerity CD02",
     "icon": "icons/type-78507.png"
+  },
+  {
+    "typeId": 78508,
+    "name": "Celerity CD03",
+    "icon": "icons/type-78508.png"
+  },
+  {
+    "typeId": 78510,
+    "name": "Tempo CD42",
+    "icon": "icons/type-78510.png"
   },
   {
     "typeId": 78511,
@@ -150,6 +195,16 @@
     "icon": "icons/type-81611.png"
   },
   {
+    "typeId": 81656,
+    "name": "Tuho 7",
+    "icon": "icons/type-81656.png"
+  },
+  {
+    "typeId": 81657,
+    "name": "Xoru 7",
+    "icon": "icons/type-81657.png"
+  },
+  {
     "typeId": 81658,
     "name": "EM Disintegrator Charge (S)",
     "icon": "icons/type-81658.png"
@@ -160,9 +215,49 @@
     "icon": "icons/type-81808.png"
   },
   {
+    "typeId": 81846,
+    "name": "Sojourn",
+    "icon": "icons/type-81846.png"
+  },
+  {
     "typeId": 81904,
     "name": "MCF",
     "icon": "icons/type-81904.png"
+  },
+  {
+    "typeId": 81972,
+    "name": "Base Coilgun (S)",
+    "icon": "icons/type-81972.png"
+  },
+  {
+    "typeId": 81974,
+    "name": "Base Autocannon (S)",
+    "icon": "icons/type-81974.png"
+  },
+  {
+    "typeId": 82028,
+    "name": "Base Coilgun (M)",
+    "icon": "icons/type-82028.png"
+  },
+  {
+    "typeId": 82030,
+    "name": "Base Howitzer (M)",
+    "icon": "icons/type-82030.png"
+  },
+  {
+    "typeId": 82032,
+    "name": "Base Rapid Plasma (S)",
+    "icon": "icons/type-82032.png"
+  },
+  {
+    "typeId": 82033,
+    "name": "Rapid Plasma (M)",
+    "icon": "icons/type-82033.png"
+  },
+  {
+    "typeId": 82084,
+    "name": "Tier 2 Autocannon (S)",
+    "icon": "icons/type-82084.png"
   },
   {
     "typeId": 82085,
@@ -170,9 +265,29 @@
     "icon": "icons/type-82085.png"
   },
   {
+    "typeId": 82086,
+    "name": "Tier 2 Rapid Plasma (S)",
+    "icon": "icons/type-82086.png"
+  },
+  {
     "typeId": 82087,
     "name": "Tier 3 Rapid Plasma (S)",
     "icon": "icons/type-82087.png"
+  },
+  {
+    "typeId": 82088,
+    "name": "Tier 2 Coilgun (S)",
+    "icon": "icons/type-82088.png"
+  },
+  {
+    "typeId": 82089,
+    "name": "Tier 3 Coilgun (S)",
+    "icon": "icons/type-82089.png"
+  },
+  {
+    "typeId": 82090,
+    "name": "Tuho 9",
+    "icon": "icons/type-82090.png"
   },
   {
     "typeId": 82091,
@@ -180,9 +295,39 @@
     "icon": "icons/type-82091.png"
   },
   {
+    "typeId": 82092,
+    "name": "Tier 2 Coilgun (M)",
+    "icon": "icons/type-82092.png"
+  },
+  {
     "typeId": 82093,
     "name": "Tier 3 Coilgun (M)",
     "icon": "icons/type-82093.png"
+  },
+  {
+    "typeId": 82094,
+    "name": "Xoru 9",
+    "icon": "icons/type-82094.png"
+  },
+  {
+    "typeId": 82095,
+    "name": "Xoru S",
+    "icon": "icons/type-82095.png"
+  },
+  {
+    "typeId": 82096,
+    "name": "Tier 2 Rapid Plasma (M)",
+    "icon": "icons/type-82096.png"
+  },
+  {
+    "typeId": 82097,
+    "name": "Tier 3 Rapid Plasma (M)",
+    "icon": "icons/type-82097.png"
+  },
+  {
+    "typeId": 82098,
+    "name": "Tier 2 Howitzer (M)",
+    "icon": "icons/type-82098.png"
   },
   {
     "typeId": 82099,
@@ -205,6 +350,11 @@
     "icon": "icons/type-82128.png"
   },
   {
+    "typeId": 82130,
+    "name": "Rapid Plasma Ammo 1 (S)",
+    "icon": "icons/type-82130.png"
+  },
+  {
     "typeId": 82131,
     "name": "Rapid Plasma Ammo 2 (S)",
     "icon": "icons/type-82131.png"
@@ -215,9 +365,39 @@
     "icon": "icons/type-82132.png"
   },
   {
+    "typeId": 82133,
+    "name": "Coilgun Ammo 1 (S)",
+    "icon": "icons/type-82133.png"
+  },
+  {
     "typeId": 82134,
     "name": "Coilgun Ammo 1 (M)",
     "icon": "icons/type-82134.png"
+  },
+  {
+    "typeId": 82137,
+    "name": "EM Disintegrator Charge (M)",
+    "icon": "icons/type-82137.png"
+  },
+  {
+    "typeId": 82140,
+    "name": "Howitzer Ammo 1 (M)",
+    "icon": "icons/type-82140.png"
+  },
+  {
+    "typeId": 82410,
+    "name": "Explosive Nanite Sequencer",
+    "icon": "icons/type-82410.png"
+  },
+  {
+    "typeId": 82411,
+    "name": "EM Nanite Sequencer",
+    "icon": "icons/type-82411.png"
+  },
+  {
+    "typeId": 82412,
+    "name": "Thermal Nanite Sequencer",
+    "icon": "icons/type-82412.png"
   },
   {
     "typeId": 82413,
@@ -245,9 +425,54 @@
     "icon": "icons/type-82430.png"
   },
   {
+    "typeId": 82647,
+    "name": "Bulky Armor Plates II",
+    "icon": "icons/type-82647.png"
+  },
+  {
+    "typeId": 82648,
+    "name": "Coated Armor Plates II",
+    "icon": "icons/type-82648.png"
+  },
+  {
+    "typeId": 82649,
+    "name": "Reactive Armor Plates II",
+    "icon": "icons/type-82649.png"
+  },
+  {
+    "typeId": 82650,
+    "name": "Nimble Armor Plates II",
+    "icon": "icons/type-82650.png"
+  },
+  {
+    "typeId": 82651,
+    "name": "Systematic Armor Restorer II",
+    "icon": "icons/type-82651.png"
+  },
+  {
+    "typeId": 82652,
+    "name": "Bulwark Shield Generator II",
+    "icon": "icons/type-82652.png"
+  },
+  {
+    "typeId": 82653,
+    "name": "Attuned Shield Generator II",
+    "icon": "icons/type-82653.png"
+  },
+  {
+    "typeId": 82654,
+    "name": "Reinforced Shield Generator II",
+    "icon": "icons/type-82654.png"
+  },
+  {
     "typeId": 82667,
     "name": "Shield Restorer II",
     "icon": "icons/type-82667.png"
+  },
+  {
+    "typeId": 82681,
+    "name": "Afterburner II",
+    "icon": "icons/type-82681.png"
   },
   {
     "typeId": 82682,
@@ -265,9 +490,49 @@
     "icon": "icons/type-82915.png"
   },
   {
+    "typeId": 83421,
+    "name": "Bulky Armor Plates III",
+    "icon": "icons/type-83421.png"
+  },
+  {
+    "typeId": 83423,
+    "name": "Bulky Armor Plates V",
+    "icon": "icons/type-83423.png"
+  },
+  {
+    "typeId": 83425,
+    "name": "Coated Armor Plates III",
+    "icon": "icons/type-83425.png"
+  },
+  {
+    "typeId": 83426,
+    "name": "Coated Armor Plates IV",
+    "icon": "icons/type-83426.png"
+  },
+  {
+    "typeId": 83429,
+    "name": "Reactive Armor Plates III",
+    "icon": "icons/type-83429.png"
+  },
+  {
     "typeId": 83430,
     "name": "Reactive Armor Plates IV",
     "icon": "icons/type-83430.png"
+  },
+  {
+    "typeId": 83433,
+    "name": "Nimble Armor Plates III",
+    "icon": "icons/type-83433.png"
+  },
+  {
+    "typeId": 83434,
+    "name": "Nimble Armor Plates IV",
+    "icon": "icons/type-83434.png"
+  },
+  {
+    "typeId": 83437,
+    "name": "Systematic Armor Restorer III",
+    "icon": "icons/type-83437.png"
   },
   {
     "typeId": 83438,
@@ -275,9 +540,34 @@
     "icon": "icons/type-83438.png"
   },
   {
+    "typeId": 83441,
+    "name": "Adaptive Nanitic Armor Weave II",
+    "icon": "icons/type-83441.png"
+  },
+  {
     "typeId": 83442,
     "name": "Adaptive Nanitic Armor Weave III",
     "icon": "icons/type-83442.png"
+  },
+  {
+    "typeId": 83443,
+    "name": "Adaptive Nanitic Armor Weave IV",
+    "icon": "icons/type-83443.png"
+  },
+  {
+    "typeId": 83448,
+    "name": "Bulwark Shield Generator III",
+    "icon": "icons/type-83448.png"
+  },
+  {
+    "typeId": 83449,
+    "name": "Bulwark Shield Generator IV",
+    "icon": "icons/type-83449.png"
+  },
+  {
+    "typeId": 83450,
+    "name": "Attuned Shield Generator III",
+    "icon": "icons/type-83450.png"
   },
   {
     "typeId": 83451,
@@ -285,14 +575,94 @@
     "icon": "icons/type-83451.png"
   },
   {
+    "typeId": 83456,
+    "name": "Reinforced Shield Generator III",
+    "icon": "icons/type-83456.png"
+  },
+  {
+    "typeId": 83457,
+    "name": "Reinforced Shield Generator IV",
+    "icon": "icons/type-83457.png"
+  },
+  {
+    "typeId": 83458,
+    "name": "Shield Restorer III",
+    "icon": "icons/type-83458.png"
+  },
+  {
+    "typeId": 83459,
+    "name": "Shield Restorer IV",
+    "icon": "icons/type-83459.png"
+  },
+  {
     "typeId": 83463,
     "name": "Synthetic Mining Lens",
     "icon": "icons/type-83463.png"
   },
   {
+    "typeId": 83497,
+    "name": "Cargo Grid II",
+    "icon": "icons/type-83497.png"
+  },
+  {
+    "typeId": 83498,
+    "name": "Cargo Grid III",
+    "icon": "icons/type-83498.png"
+  },
+  {
+    "typeId": 83499,
+    "name": "Cargo Grid IV",
+    "icon": "icons/type-83499.png"
+  },
+  {
+    "typeId": 83500,
+    "name": "Cargo Grid V",
+    "icon": "icons/type-83500.png"
+  },
+  {
     "typeId": 83501,
     "name": "Cargo Grid VI",
     "icon": "icons/type-83501.png"
+  },
+  {
+    "typeId": 83516,
+    "name": "Warp Entangler III",
+    "icon": "icons/type-83516.png"
+  },
+  {
+    "typeId": 83517,
+    "name": "Warp Entangler IV",
+    "icon": "icons/type-83517.png"
+  },
+  {
+    "typeId": 83518,
+    "name": "Warp Entangler V",
+    "icon": "icons/type-83518.png"
+  },
+  {
+    "typeId": 83519,
+    "name": "Warp Entangler VI",
+    "icon": "icons/type-83519.png"
+  },
+  {
+    "typeId": 83520,
+    "name": "Stasis Net III",
+    "icon": "icons/type-83520.png"
+  },
+  {
+    "typeId": 83521,
+    "name": "Stasis Net IV",
+    "icon": "icons/type-83521.png"
+  },
+  {
+    "typeId": 83522,
+    "name": "Stasis Net V",
+    "icon": "icons/type-83522.png"
+  },
+  {
+    "typeId": 83523,
+    "name": "Stasis Net VI",
+    "icon": "icons/type-83523.png"
   },
   {
     "typeId": 83524,
@@ -305,9 +675,129 @@
     "icon": "icons/type-83528.png"
   },
   {
+    "typeId": 83536,
+    "name": "Afterburner III",
+    "icon": "icons/type-83536.png"
+  },
+  {
+    "typeId": 83613,
+    "name": "Thermal-electro Nanitic Brace II",
+    "icon": "icons/type-83613.png"
+  },
+  {
+    "typeId": 83614,
+    "name": "Thermal-electro Nanitic Brace III",
+    "icon": "icons/type-83614.png"
+  },
+  {
+    "typeId": 83615,
+    "name": "Thermal-electro Nanitic Brace IV ",
+    "icon": "icons/type-83615.png"
+  },
+  {
+    "typeId": 83618,
+    "name": "Explonetic-electro Nanitic Brace II ",
+    "icon": "icons/type-83618.png"
+  },
+  {
+    "typeId": 83619,
+    "name": "Explonetic-electro Nanitic Brace III",
+    "icon": "icons/type-83619.png"
+  },
+  {
+    "typeId": 83620,
+    "name": "Explonetic-electro Nanitic Brace IV",
+    "icon": "icons/type-83620.png"
+  },
+  {
+    "typeId": 83623,
+    "name": "Explo-electro Nanitic Brace II",
+    "icon": "icons/type-83623.png"
+  },
+  {
     "typeId": 83624,
     "name": "Explo-electro Nanitic Brace III",
     "icon": "icons/type-83624.png"
+  },
+  {
+    "typeId": 83625,
+    "name": "Explo-electro Nanitic Brace IV",
+    "icon": "icons/type-83625.png"
+  },
+  {
+    "typeId": 83628,
+    "name": "Thermalnetic Nanitic Brace II",
+    "icon": "icons/type-83628.png"
+  },
+  {
+    "typeId": 83629,
+    "name": "Thermalnetic Nanitic Brace III",
+    "icon": "icons/type-83629.png"
+  },
+  {
+    "typeId": 83630,
+    "name": "Thermalnetic Nanitic Brace IV",
+    "icon": "icons/type-83630.png"
+  },
+  {
+    "typeId": 83768,
+    "name": "EM Field Array II",
+    "icon": "icons/type-83768.png"
+  },
+  {
+    "typeId": 83769,
+    "name": "EM Field Array III",
+    "icon": "icons/type-83769.png"
+  },
+  {
+    "typeId": 83770,
+    "name": "EM Field Array IV",
+    "icon": "icons/type-83770.png"
+  },
+  {
+    "typeId": 83772,
+    "name": "Thermal Field Array II",
+    "icon": "icons/type-83772.png"
+  },
+  {
+    "typeId": 83773,
+    "name": "Thermal Field Array III",
+    "icon": "icons/type-83773.png"
+  },
+  {
+    "typeId": 83774,
+    "name": "Thermal Field Array IV",
+    "icon": "icons/type-83774.png"
+  },
+  {
+    "typeId": 83775,
+    "name": "Thermal Field Array V",
+    "icon": "icons/type-83775.png"
+  },
+  {
+    "typeId": 83777,
+    "name": "Explosive Field Array II",
+    "icon": "icons/type-83777.png"
+  },
+  {
+    "typeId": 83778,
+    "name": "Explosive Field Array III",
+    "icon": "icons/type-83778.png"
+  },
+  {
+    "typeId": 83779,
+    "name": "Explosive Field Array IV",
+    "icon": "icons/type-83779.png"
+  },
+  {
+    "typeId": 83782,
+    "name": "Kinetic Field Array II",
+    "icon": "icons/type-83782.png"
+  },
+  {
+    "typeId": 83783,
+    "name": "Kinetic Field Array III",
+    "icon": "icons/type-83783.png"
   },
   {
     "typeId": 83784,
@@ -343,6 +833,21 @@
     "typeId": 83894,
     "name": "Radiantium",
     "icon": "icons/type-83894.png"
+  },
+  {
+    "typeId": 83895,
+    "name": "Radiantium Mining Lens",
+    "icon": "icons/type-83895.png"
+  },
+  {
+    "typeId": 83896,
+    "name": "Gravionite Mining Lens",
+    "icon": "icons/type-83896.png"
+  },
+  {
+    "typeId": 83897,
+    "name": "Luminalis Mining Lens",
+    "icon": "icons/type-83897.png"
   },
   {
     "typeId": 83898,
@@ -510,6 +1015,11 @@
     "icon": "icons/type-88844.png"
   },
   {
+    "typeId": 88886,
+    "name": "Heat Exchanger XS",
+    "icon": "icons/type-88886.png"
+  },
+  {
     "typeId": 88887,
     "name": "Compressed Coolant ",
     "icon": "icons/type-88887.png"
@@ -530,14 +1040,79 @@
     "icon": "icons/type-89258.png"
   },
   {
+    "typeId": 89259,
+    "name": "Silica Grains",
+    "icon": "icons/type-89259.png"
+  },
+  {
     "typeId": 89260,
     "name": "Iron-Rich Nodules",
     "icon": "icons/type-89260.png"
   },
   {
+    "typeId": 89978,
+    "name": "Stride Stack",
+    "icon": "icons/type-89978.png"
+  },
+  {
+    "typeId": 89979,
+    "name": "Carom Stack",
+    "icon": "icons/type-89979.png"
+  },
+  {
+    "typeId": 89980,
+    "name": "Stack Slice 5DZ",
+    "icon": "icons/type-89980.png"
+  },
+  {
+    "typeId": 89981,
+    "name": "Stack Slice 5DW",
+    "icon": "icons/type-89981.png"
+  },
+  {
+    "typeId": 89982,
+    "name": "Stack Slice 5DK",
+    "icon": "icons/type-89982.png"
+  },
+  {
+    "typeId": 89983,
+    "name": "Stack Slice 5DE",
+    "icon": "icons/type-89983.png"
+  },
+  {
+    "typeId": 89984,
+    "name": "Stack Slice 5C0",
+    "icon": "icons/type-89984.png"
+  },
+  {
+    "typeId": 89985,
+    "name": "Stack Slice 5C1",
+    "icon": "icons/type-89985.png"
+  },
+  {
+    "typeId": 89986,
+    "name": "Stack Slice 31P",
+    "icon": "icons/type-89986.png"
+  },
+  {
+    "typeId": 89987,
+    "name": "Stack Slice 31V",
+    "icon": "icons/type-89987.png"
+  },
+  {
+    "typeId": 89988,
+    "name": "Stack Slice 31Q",
+    "icon": "icons/type-89988.png"
+  },
+  {
     "typeId": 89989,
     "name": "Stack Slice 31F",
     "icon": "icons/type-89989.png"
+  },
+  {
+    "typeId": 90887,
+    "name": "Hop",
+    "icon": "icons/type-90887.png"
   },
   {
     "typeId": 91106,
@@ -563,6 +1138,41 @@
     "typeId": 91968,
     "name": "Rugged Shell",
     "icon": "icons/type-91968.png"
+  },
+  {
+    "typeId": 92389,
+    "name": "Skip",
+    "icon": "icons/type-92389.png"
+  },
+  {
+    "typeId": 92390,
+    "name": "Lunge",
+    "icon": "icons/type-92390.png"
+  },
+  {
+    "typeId": 92394,
+    "name": "Fine Young Crude Matter",
+    "icon": "icons/type-92394.png"
+  },
+  {
+    "typeId": 92414,
+    "name": "Fine Old Crude Matter",
+    "icon": "icons/type-92414.png"
+  },
+  {
+    "typeId": 92421,
+    "name": "Leap",
+    "icon": "icons/type-92421.png"
+  },
+  {
+    "typeId": 92422,
+    "name": "Brine",
+    "icon": "icons/type-92422.png"
+  },
+  {
+    "typeId": 92483,
+    "name": "Still Kernel",
+    "icon": "icons/type-92483.png"
   },
   {
     "typeId": 99001,

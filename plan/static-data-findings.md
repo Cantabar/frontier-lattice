@@ -92,6 +92,39 @@ Physical file = `ResFiles/<physical_subpath>`
 | 91968  | Rugged Shell     | Apocalypse Protocol Frame   |
 
 ## Giveitem Helper Coverage
-After this update, `dev-tools/giveitem-helper/public/items.json` contains 114 items
-covering all blueprint inputs/outputs plus ships. Icons are stored in
-`dev-tools/giveitem-helper/public/icons/` and sourced from `static-data/data/icons/`.
+
+### Current state
+`dev-tools/giveitem-helper/public/items.json` now contains **236 items** — full coverage
+of every type ID referenced by the 221 blueprints, plus starter ships and the Forager.
+
+Icons are stored in `dev-tools/giveitem-helper/public/icons/` and the canonical copies
+live in `static-data/data/icons/`.
+
+### Icon extraction results
+- **118 items** extracted via standard `iconID` pipeline (modules, ammo, materials, etc.)
+- **15 items** extracted via SOF `graphicID` pipeline (ships/vehicles)
+- **4 items** have transparent placeholder icons (no icon data in game client):
+  - 77729 — Rough Old Crude Matter (no iconID, no graphicID)
+  - 78434 — Rough Young Crude Matter (no iconID, no graphicID)
+  - 92394 — Fine Young Crude Matter (graphicID exists but no SOF icon render)
+  - 92414 — Fine Old Crude Matter (graphicID exists but no SOF icon render)
+
+### Blueprint-referenced item categories
+- Raw materials & ores (Feldspar, Nickel-Iron, Silicon Dust, Tholin, Crude Matter variants, etc.)
+- Refined materials (Printed Circuits, Reinforced Alloys, Carbon Weave, Thermal Composites, batched/packaged)
+- Fuels (D1, D2, EU-40, EU-90, SOF-40, SOF-80)
+- Ship frames (6 types: Apocalypse, Bastion, Nomad, Archangel, Exterminata, Equilibrium)
+- Ships & vehicles (15 craftable + 2 starters + Forager)
+- Shells (Aggressive, Reaping, Rugged)
+- Ship stacks & stack slices (Stride Stack, Carom Stack, 10 slice variants)
+- Weapons — small & medium (Autocannons, Coilguns, Howitzers, Rapid Plasma, Cutting Lasers, Cryogenic Ejector)
+- Ammo (AC Gyrojet, Rapid Plasma, Coilgun, Howitzer, EM Disintegrator — S and M sizes)
+- Armor modules (Bulky/Coated/Reactive/Nimble Armor Plates, Armor Restorers, Nanitic Armor Weaves)
+- Shield modules (Bulwark/Attuned/Reinforced Shield Generators, Shield Restorers, Field Arrays)
+- Nanite braces (Thermal-electro, Explonetic-electro, Explo-electro, Thermalnetic — tiers II-IV)
+- Navigation (Afterburners II-IV, Warp Entanglers II-VI, Stasis Nets II-VI)
+- Propulsion (Hop, Skip, Lunge, Drive components — Velocity/Celerity/Tempo)
+- Cargo (Cargo Grid II-VI)
+- Mining lenses (Synthetic, Eclipsite, Radiantium, Gravionite, Luminalis)
+- Nanite sequencers (Kinetic, Explosive, EM, Thermal)
+- Utility (Hull Repairer, Heat Exchangers, Building Foam, Sojourn, Compressed Coolant)
