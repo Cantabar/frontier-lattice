@@ -3,14 +3,14 @@ import styled from "styled-components";
 type BadgeVariant = "open" | "assigned" | "disputed" | "active" | "in-progress" | "completed" | "cancelled" | "expired";
 
 const variantColors: Record<BadgeVariant, { bg: string; text: string }> = {
-  open: { bg: "#1a3a2a", text: "#81C784" },
-  assigned: { bg: "#1a2a3a", text: "#4FC3F7" },
-  disputed: { bg: "#3a1a1a", text: "#FB2C36" },
-  active: { bg: "#1a2a3a", text: "#4FC3F7" },
-  "in-progress": { bg: "#2a2a1a", text: "#FFB651" },
-  completed: { bg: "#2a2a1a", text: "#FAFAE5" },
-  cancelled: { bg: "#2a2020", text: "#9E7B72" },
-  expired: { bg: "#2a2020", text: "#9E7B72" },
+  open: { bg: "#0D3B4A", text: "#69F0AE" },
+  assigned: { bg: "#1C2330", text: "#00E5FF" },
+  disputed: { bg: "#3A1520", text: "#FF5252" },
+  active: { bg: "#1C2330", text: "#00E5FF" },
+  "in-progress": { bg: "#2A2510", text: "#FFD740" },
+  completed: { bg: "#0F2A1C", text: "#69F0AE" },
+  cancelled: { bg: "#1C2330", text: "#546E7A" },
+  expired: { bg: "#1C2330", text: "#546E7A" },
 };
 
 const Badge = styled.span<{ $variant: BadgeVariant }>`

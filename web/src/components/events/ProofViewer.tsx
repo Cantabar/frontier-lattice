@@ -77,7 +77,7 @@ export function ProofViewer({ eventId, onClose }: Props) {
         <Title>On-Chain Proof</Title>
         <button
           onClick={onClose}
-          style={{ background: "none", border: "none", color: "#9E8C87", cursor: "pointer", fontSize: 18 }}
+style={{ background: "none", border: "none", color: "#78909C", cursor: "pointer", fontSize: 18 }}
         >
           &times;
         </button>

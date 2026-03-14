@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useIdentity } from "../../hooks/useIdentity";
 import { useNotifications } from "../../hooks/useNotifications";
 import { truncateAddress, generateAvatarColor } from "../../lib/format";
+import { Logo as LogoSvg } from "../shared/Logo";
 
 const HeaderBar = styled.header`
   display: flex;
@@ -20,17 +21,7 @@ const Brand = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
-`;
-
-const Logo = styled.span`
-  font-size: 18px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text.primary};
-  letter-spacing: -0.02em;
-`;
-
-const Accent = styled.span`
-  color: ${({ theme }) => theme.colors.primary.main};
+  cursor: pointer;
 `;
 
 const Controls = styled.div`
@@ -114,10 +105,8 @@ export function Header() {
 
   return (
     <HeaderBar>
-      <Brand>
-        <Logo>
-          Frontier <Accent>Lattice</Accent>
-        </Logo>
+      <Brand onClick={() => navigate("/")}>
+        <LogoSvg height={28} />
       </Brand>
       <Controls>
         {showCharacter && (

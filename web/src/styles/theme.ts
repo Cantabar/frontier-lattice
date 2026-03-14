@@ -1,45 +1,49 @@
 /**
- * EVE Frontier design tokens.
+ * Frontier Lattice design tokens.
  *
- * Colors extracted from docs.evefrontier.com CSS custom properties.
- * Dark-mode-first, warm-gray industrial palette with burnt orange accents.
+ * "Cold Trust" palette — cyan primary, violet accents, cold-gray surfaces.
+ * Designed to stand apart from the default warm-orange Frontier theme.
  */
 
 export const theme = {
   colors: {
     primary: {
-      main: "#FF4700", // rgb(255, 71, 0)  — buttons, active states
-      hover: "#FC4400", // rgb(252, 68, 0)  — hover
-      muted: "#F5AB98", // rgb(245, 171, 152) — secondary text
-      subtle: "#633529", // rgb(99, 53, 41)  — subtle borders / card accents
+      main: "#00E5FF", // electric cyan — buttons, active states
+      hover: "#00B8D4", // deeper cyan — hover
+      muted: "#80F0FF", // soft cyan — secondary text, tags
+      subtle: "#0D3B4A", // dark teal — borders, card accents, selection
+    },
+    secondary: {
+      accent: "#7C4DFF", // electric violet — special badges, zkProof indicators
+      accentMuted: "#4A2D99", // subdued violet — section highlights
     },
     surface: {
-      bg: "#1D1D1D", // rgb(29, 29, 29)  — page background
-      raised: "#232222", // rgb(35, 34, 34)  — cards, panels
-      overlay: "#2D2B2B", // rgb(45, 43, 43)  — modals, dropdowns
-      border: "#3C3837", // rgb(60, 56, 55)  — borders
-      borderHover: "#474241", // rgb(71, 66, 65) — border hover
-      muted: "#524C4B", // rgb(82, 76, 75)  — disabled elements
+      bg: "#0F1318", // near-black cold blue — page background
+      raised: "#161B22", // dark slate — cards, panels
+      overlay: "#1C2330", // modal / dropdown background
+      border: "#2A3140", // cool steel — borders
+      borderHover: "#3B4556", // lighter steel — border hover
+      muted: "#4A5568", // disabled elements
     },
     text: {
-      primary: "#FFFFFE", // rgb(255, 255, 254) — headings
-      secondary: "#C6BEBC", // rgb(198, 190, 188) — body text
-      muted: "#9E8C87", // rgb(158, 140, 135) — timestamps
-      disabled: "#9E7B72", // rgb(158, 123, 114) — placeholders
+      primary: "#F0F4F8", // cool white — headings
+      secondary: "#B0BEC5", // blue-gray — body text
+      muted: "#78909C", // subdued blue-gray — timestamps
+      disabled: "#546E7A", // placeholder text
     },
-    danger: "#FB2C36", // rgb(251, 44, 54)
-    warning: "#FFB651", // rgb(255, 182, 81)
-    success: "#FAFAE5", // rgb(250, 250, 229)
-    /** Module badge colors for event-type coding */
+    danger: "#FF5252",
+    warning: "#FFD740",
+    success: "#69F0AE",
+    /** Module badge colors — cooler palette coding */
     module: {
-      tribe: "#FF4700",
-      contractBoard: "#4FC3F7",
-      forgePlanner: "#81C784",
-      trustlessContracts: "#FFB651",
+      tribe: "#00E5FF",
+      contractBoard: "#7C4DFF",
+      forgePlanner: "#69F0AE",
+      trustlessContracts: "#FFD740",
     },
   },
   fonts: {
-    body: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    body: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     mono: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
   },
   radii: {

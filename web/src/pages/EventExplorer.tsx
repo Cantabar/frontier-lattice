@@ -111,9 +111,9 @@ const NavButton = styled.button`
 type ModuleFilter = "all" | "tribe" | "contractBoard" | "forgePlanner";
 
 const MODULE_COLORS: Record<string, string> = {
-  tribe: "#FF4700",
-  contractBoard: "#4FC3F7",
-  forgePlanner: "#81C784",
+  tribe: "#00E5FF",
+  contractBoard: "#7C4DFF",
+  forgePlanner: "#69F0AE",
 };
 
 function moduleOf(eventName: string): string {
@@ -152,7 +152,7 @@ export function EventExplorer() {
           <FilterChip
             key={m}
             $active={moduleFilter === m}
-            $color={m === "all" ? "#FFFFFE" : MODULE_COLORS[m]}
+$color={m === "all" ? "#F0F4F8" : MODULE_COLORS[m]}
             onClick={() => setModuleFilter(m)}
           >
             {m === "all" ? "All" : m === "contractBoard" ? "Contracts" : m === "forgePlanner" ? "Forge" : "Tribe"}
@@ -173,7 +173,7 @@ export function EventExplorer() {
             const mod = moduleOf(ev.event_name);
             return (
               <EventRow key={ev.id} onClick={() => setProofEventId(ev.id)}>
-                <ModuleBadge $color={MODULE_COLORS[mod] ?? "#9E8C87"}>
+<ModuleBadge $color={MODULE_COLORS[mod] ?? "#78909C"}>
                   {mod === "contractBoard" ? "BOARD" : mod === "forgePlanner" ? "FORGE" : "TRIBE"}
                 </ModuleBadge>
                 <EventName>{ev.event_name.replace("Event", "")}</EventName>

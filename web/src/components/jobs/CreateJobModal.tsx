@@ -243,11 +243,11 @@ export function CreateJobModal({ tribeId, cap, onClose }: Props) {
 
       {error && (
         <div style={{
-          background: "rgba(251,44,54,0.13)",
-          border: "1px solid #FB2C36",
+          background: "rgba(255,82,82,0.13)",
+          border: "1px solid #FF5252",
           borderRadius: 4,
           padding: "8px 16px",
-          color: "#FB2C36",
+          color: "#FF5252",
           fontSize: 13,
           marginBottom: 16,
         }}>
