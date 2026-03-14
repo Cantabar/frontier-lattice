@@ -68,8 +68,15 @@ const StatusDot = styled.span<{ $status: AssemblyStatus }>`
   }};
 `;
 
-const FuelBarOuter = styled.div`
-  width: 48px;
+const BarGroup = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+`;
+
+const BarOuter = styled.div<{ $width?: number }>`
+  width: ${({ $width }) => $width ?? 48}px;
   height: 4px;
   border-radius: 2px;
   background: ${({ theme }) => theme.colors.surface.bg};
@@ -77,17 +84,25 @@ const FuelBarOuter = styled.div`
   flex-shrink: 0;
 `;
 
-const FuelBarInner = styled.div<{ $pct: number }>`
+const BarInner = styled.div<{ $pct: number; $invert?: boolean }>`
   height: 100%;
   width: ${({ $pct }) => Math.min($pct, 100)}%;
   border-radius: 2px;
-  background: ${({ $pct, theme }) =>
-    $pct > 60
-      ? theme.colors.success
-      : $pct > 25
-        ? theme.colors.warning
-        : theme.colors.danger};
+  background: ${({ $pct, $invert, theme }) => {
+    // When $invert is true, higher % = worse (energy load)
+    const effective = $invert ? $pct : 100 - $pct;
+    if (effective > 85) return theme.colors.danger;
+    if (effective > 60) return theme.colors.warning;
+    return theme.colors.success;
+  }};
   transition: width 0.3s ease;
+`;
+
+const BarLabel = styled.span`
+  font-size: 10px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.muted};
+  white-space: nowrap;
 `;
 
 const Spacer = styled.span`
@@ -164,10 +179,16 @@ export function NetworkNodeGroup({
 
   const displayName = node.name || truncateAddress(node.id, 10, 6);
   const accent = accentColorForStatus(node.status);
-  // Fuel percentage — max capacity is unknown at the UI level, so we just
-  // show a binary indicator: > 0 = has fuel. If we later fetch max_capacity
-  // we can compute a real percentage.
-  const fuelPct = node.fuelQuantity > 0 ? 100 : 0;
+  const fuelPct =
+    node.fuelMaxCapacity > 0
+      ? (node.fuelQuantity / node.fuelMaxCapacity) * 100
+      : node.fuelQuantity > 0
+        ? 100
+        : 0;
+  const energyPct =
+    node.maxEnergyProduction > 0
+      ? (node.totalReservedEnergy / node.maxEnergyProduction) * 100
+      : 0;
 
   return (
     <GroupContainer $accentColor={accent}>
@@ -176,9 +197,21 @@ export function NetworkNodeGroup({
         <NodeName>{displayName}</NodeName>
         <NodeMeta>{node.status}</NodeMeta>
         <NodeMeta>·</NodeMeta>
-        <FuelBarOuter>
-          <FuelBarInner $pct={fuelPct} />
-        </FuelBarOuter>
+        <BarGroup>
+          <BarLabel>⛽</BarLabel>
+          <BarOuter>
+            <BarInner $pct={fuelPct} />
+          </BarOuter>
+        </BarGroup>
+        <BarGroup>
+          <BarLabel>⚡</BarLabel>
+          <BarOuter $width={56}>
+            <BarInner $pct={energyPct} $invert />
+          </BarOuter>
+          <BarLabel>
+            {node.totalReservedEnergy} / {node.maxEnergyProduction} GJ
+          </BarLabel>
+        </BarGroup>
         <NodeMeta>
           {node.connectedAssemblyCount} connected · {structureCount} shown
         </NodeMeta>

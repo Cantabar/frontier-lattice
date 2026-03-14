@@ -316,6 +316,17 @@ export function MyStructuresPage() {
   const onlineCount = structures.filter((s) => s.status === "Online").length;
   const offlineCount = structures.filter((s) => s.status !== "Online").length;
 
+  // Aggregate energy across all network nodes
+  const energyTotals = useMemo(() => {
+    let reserved = 0;
+    let max = 0;
+    for (const node of networkNodes.values()) {
+      reserved += node.totalReservedEnergy;
+      max += node.maxEnergyProduction;
+    }
+    return { reserved, max };
+  }, [networkNodes]);
+
   if (!account) {
     return (
       <Page>
@@ -348,6 +359,12 @@ export function MyStructuresPage() {
         <SummaryCard>
           <CardLabel>Nodes</CardLabel>
           <CardValue>{nodeIds.length}</CardValue>
+        </SummaryCard>
+        <SummaryCard>
+          <CardLabel>Energy</CardLabel>
+          <CardValue>
+            {energyTotals.reserved} / {energyTotals.max} GJ
+          </CardValue>
         </SummaryCard>
       </SummaryGrid>
 
