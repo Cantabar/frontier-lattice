@@ -33,7 +33,12 @@ procs:
       npm --prefix indexer run migrate
     autostart: true
 
-  # ── Contract publish (one-shot, publishes all Move packages to localnet) ──
+  # ── World contracts (deploy + configure + seed — one-shot) ─────────
+  world-contracts:
+    shell: "bash scripts/deploy-world-contracts.sh"
+    autostart: true
+
+  # ── Contract publish (one-shot, waits for world, then publishes frontier-lattice) ──
   contracts-publish:
     shell: "bash scripts/publish-contracts.sh"
 
@@ -68,7 +73,7 @@ procs:
   # ── Web UI (Vite dev on :5173, proxies /api → indexer) ─────────────
   web:
     shell: "npm --prefix web run dev"
-    stop: "SIGINT"
+    stop: "SIGTERM"
 
   # ── Giveitem Helper (Vite dev UI) ───────────────────────────────────────
   giveitem-helper:

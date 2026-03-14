@@ -3,6 +3,7 @@ node_modules/
 build/
 target/
 dist/
+*.key
 
 # Environment (contains secrets)
 .env
@@ -30,6 +31,10 @@ static-data/data/phobos/fsd_built/*
 
 # Move ephemeral publication metadata (regenerated on each publish)
 Pub.local.toml
+Pub.localnet.toml
 
 # mprocs runtime log
 mprocs.log
+
+# mprocs coordination markers
+.world-ready
