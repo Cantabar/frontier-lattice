@@ -80,6 +80,23 @@ for i in "${!PACKAGES[@]}"; do
   echo "  $var=$PACKAGE_ID"
   write_env_var "$var" "$PACKAGE_ID" "$ENV_FILE"
   write_env_var "$vite_var" "$PACKAGE_ID" "$ENV_FILE"
+
+  # ── Extract shared object IDs created during init ────────────────
+  if [ "$pkg" = "tribe" ]; then
+    echo "  Querying TribeRegistry shared object ID..."
+    TRIBE_REGISTRY_ID=$(
+      curl -s http://127.0.0.1:9000 -X POST \
+        -H 'Content-Type: application/json' \
+        -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"suix_queryEvents\",\"params\":[{\"MoveEventType\":\"${PACKAGE_ID}::tribe::TribeRegistryCreatedEvent\"},null,1,false]}" \
+      | jq -r '.result.data[0].parsedJson.registry_id'
+    )
+    if [ -n "$TRIBE_REGISTRY_ID" ] && [ "$TRIBE_REGISTRY_ID" != "null" ]; then
+      echo "  VITE_TRIBE_REGISTRY_ID=$TRIBE_REGISTRY_ID"
+      write_env_var "VITE_TRIBE_REGISTRY_ID" "$TRIBE_REGISTRY_ID" "$ENV_FILE"
+    else
+      echo "  WARNING: Could not extract TribeRegistry ID from publish events" >&2
+    fi
+  fi
 done
 
 echo ""
