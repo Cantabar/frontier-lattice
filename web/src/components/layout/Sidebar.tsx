@@ -63,6 +63,10 @@ const NotifBadge = styled.span`
   margin-left: auto;
 `;
 
+const Spacer = styled.div`
+  margin-top: auto;
+`;
+
 const DisabledNavItem = styled.span`
   display: flex;
   align-items: center;
@@ -115,8 +119,9 @@ export function Sidebar() {
       <StyledLink to="/jobs">Contract Board</StyledLink>
       <StyledLink to="/contracts">Trustless Contracts</StyledLink>
       <StyledLink to="/forge">Forge Planner</StyledLink>
-      <StyledLink to="/events">Event Explorer</StyledLink>
+      <Spacer />
       <SectionLabel>System</SectionLabel>
+      <StyledLink to="/events">Event Explorer</StyledLink>
       <StyledLink to="/notifications">
         Notifications{unreadCount > 0 && <NotifBadge>{unreadCount}</NotifBadge>}
       </StyledLink>
