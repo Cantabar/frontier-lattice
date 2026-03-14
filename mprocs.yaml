@@ -81,6 +81,6 @@ procs:
   giveitem-helper:
     shell: |
       trap 'kill 0' EXIT
-      npm --prefix dev-tools/giveitem-helper run dev &
+      npm --prefix dev-tools/giveitem-helper run dev -- --port 5175 &
       wait
     stop: "SIGINT"
