@@ -15,14 +15,27 @@ import type { AssemblyStatus, NetworkNodeData } from "../lib/types";
 // ---------------------------------------------------------------------------
 
 function parseStatus(raw: unknown): AssemblyStatus {
-  if (typeof raw === "object" && raw !== null) {
-    if ("Online" in raw) return "Online";
-    if ("Offline" in raw) return "Offline";
-    if ("Unanchoring" in raw) return "Unanchoring";
+  // On-chain: AssemblyStatus { status: Status } where Status is an enum
+  // with uppercase variants (ONLINE, OFFLINE).  Unwrap the outer struct.
+  let target = raw;
+  if (typeof target === "object" && target !== null) {
+    const outer = target as Record<string, unknown>;
+    if (outer.fields && typeof outer.fields === "object") {
+      const inner = (outer.fields as Record<string, unknown>).status;
+      if (inner !== undefined) target = inner;
+    }
   }
-  if (raw === "Online") return "Online";
-  if (raw === "Offline") return "Offline";
-  if (raw === "Unanchoring") return "Unanchoring";
+
+  let v = "";
+  if (typeof target === "string") {
+    v = target;
+  } else if (typeof target === "object" && target !== null) {
+    v = String((target as Record<string, unknown>).variant ?? "");
+  }
+  const upper = v.toUpperCase();
+  if (upper === "ONLINE")  return "Online";
+  if (upper === "OFFLINE") return "Offline";
+  if (upper === "UNANCHORING") return "Unanchoring";
   return "Anchored";
 }
 
