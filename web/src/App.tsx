@@ -16,6 +16,7 @@ import { TrustlessContracts } from "./pages/TrustlessContracts";
 import { TribeListPage } from "./pages/TribeListPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { MyStructuresPage } from "./pages/MyStructuresPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { ToastContainer } from "./components/shared/Toast";
 
 const Shell = styled.div`
@@ -69,6 +70,7 @@ export default function App() {
               <Route path="/events" element={<EventExplorer />} />
               <Route path="/structures" element={<MyStructuresPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Routes>
           </Content>
         </Main>

@@ -120,6 +120,7 @@ export function Sidebar() {
       <StyledLink to="/notifications">
         Notifications{unreadCount > 0 && <NotifBadge>{unreadCount}</NotifBadge>}
       </StyledLink>
+      <StyledLink to="/settings">Settings</StyledLink>
     </Nav>
   );
 }

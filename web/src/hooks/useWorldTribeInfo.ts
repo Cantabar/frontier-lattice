@@ -46,6 +46,16 @@ function saveToStorage(map: Map<number, WorldTribeInfo>): void {
   }
 }
 
+/**
+ * Remove the persisted tribe-info cache from localStorage.
+ * Call `queryClient.invalidateQueries({ queryKey: ["worldTribeInfo"] })` after
+ * this to trigger a fresh network fetch.
+ */
+export function clearWorldTribeInfoCache(): string {
+  localStorage.removeItem(STORAGE_KEY);
+  return STORAGE_KEY;
+}
+
 // ---------------------------------------------------------------------------
 // Fetch with localStorage merge
 // ---------------------------------------------------------------------------
