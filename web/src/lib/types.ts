@@ -5,6 +5,17 @@
  */
 
 // ============================================================
+// Character Profile (resolved from on-chain Character objects)
+// ============================================================
+
+export interface CharacterProfile {
+  characterId: string;
+  name: string;
+  portraitUrl: string;
+  tribeId: number;
+}
+
+// ============================================================
 // Tribe (Phase 1)
 // ============================================================
 

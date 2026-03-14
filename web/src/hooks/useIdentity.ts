@@ -15,6 +15,10 @@ export interface Identity {
   address: string;
   /** Character Sui object ID (from world contracts) */
   characterId: string | null;
+  /** Character display name from on-chain metadata */
+  characterName: string | null;
+  /** Character portrait URL from on-chain metadata */
+  characterPortraitUrl: string | null;
   /** In-game tribe ID read from the Character object (0 = unassigned) */
   inGameTribeId: number | null;
   /** All TribeCaps owned by this wallet */
@@ -26,6 +30,8 @@ export interface Identity {
 export const IdentityContext = createContext<Identity>({
   address: "",
   characterId: null,
+  characterName: null,
+  characterPortraitUrl: null,
   inGameTribeId: null,
   tribeCaps: [],
   isLoading: true,
@@ -74,6 +80,11 @@ export function useIdentityResolver(): Identity {
   const charFields = (charObj?.content as { fields?: Record<string, unknown> })?.fields;
   const inGameTribeId = charFields ? Number(charFields.tribe_id ?? 0) : null;
 
+  // Extract character name & portrait from metadata (already fetched)
+  const metadata = (charFields?.metadata as { fields?: { name?: string; url?: string } })?.fields;
+  const characterName = metadata?.name || null;
+  const characterPortraitUrl = metadata?.url || null;
+
   const tribeCaps: TribeCapData[] = (capData?.data ?? [])
     .map((obj) => {
       const fields = (obj.data?.content as { fields?: Record<string, unknown> })?.fields;
@@ -90,6 +101,8 @@ export function useIdentityResolver(): Identity {
   return {
     address,
     characterId,
+    characterName,
+    characterPortraitUrl,
     inGameTribeId,
     tribeCaps,
     isLoading: charLoading || capLoading,

@@ -45,6 +45,16 @@ export function timeAgo(timestampMs: string | number): string {
   return `${months}mo ago`;
 }
 
+/** Deterministic hex colour derived from a Sui object ID, for avatar placeholders. */
+export function generateAvatarColor(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = ((hash % 360) + 360) % 360;
+  return `hsl(${h}, 55%, 45%)`;
+}
+
 /** Format a deadline timestamp as a countdown string or "Expired". */
 export function formatDeadline(deadlineMs: string): string {
   const deadline = Number(deadlineMs);
