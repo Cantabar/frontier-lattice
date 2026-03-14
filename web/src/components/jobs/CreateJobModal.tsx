@@ -7,6 +7,7 @@ import { useIdentity } from "../../hooks/useIdentity";
 import { useNotifications } from "../../hooks/useNotifications";
 import { config } from "../../config";
 import type { TribeCapData } from "../../lib/types";
+import { ItemPickerField } from "../shared/ItemPickerField";
 
 const Label = styled.label`
   display: block;
@@ -208,7 +209,7 @@ export function CreateJobModal({ tribeId, cap, onClose }: Props) {
           <Row>
             <div>
               <Label>Type ID</Label>
-              <Input type="number" value={typeId} onChange={(e) => setTypeId(e.target.value)} />
+              <ItemPickerField value={typeId} onChange={setTypeId} />
             </div>
             <div>
               <Label>Quantity</Label>

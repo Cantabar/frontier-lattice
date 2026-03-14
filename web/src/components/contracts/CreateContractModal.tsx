@@ -11,6 +11,7 @@ import {
   buildCreateItemForItem,
   buildCreateTransport,
 } from "../../lib/sui";
+import { ItemPickerField } from "../shared/ItemPickerField";
 
 const Label = styled.label`
   display: block;
@@ -319,7 +320,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
           <Row>
             <div>
               <Label>Wanted Type ID</Label>
-              <Input type="number" value={wantedTypeId} onChange={(e) => setWantedTypeId(e.target.value)} />
+              <ItemPickerField value={wantedTypeId} onChange={setWantedTypeId} />
             </div>
             <div>
               <Label>Wanted Quantity</Label>
@@ -358,7 +359,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
           <Row>
             <div>
               <Label>Wanted Type ID</Label>
-              <Input type="number" value={i4iWantedTypeId} onChange={(e) => setI4iWantedTypeId(e.target.value)} />
+              <ItemPickerField value={i4iWantedTypeId} onChange={setI4iWantedTypeId} />
             </div>
             <div>
               <Label>Wanted Quantity</Label>
@@ -377,7 +378,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
           <Row>
             <div>
               <Label>Item Type ID</Label>
-              <Input type="number" value={transportItemTypeId} onChange={(e) => setTransportItemTypeId(e.target.value)} />
+              <ItemPickerField value={transportItemTypeId} onChange={setTransportItemTypeId} />
             </div>
             <div>
               <Label>Item Quantity</Label>

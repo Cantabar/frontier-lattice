@@ -2,6 +2,8 @@ import { useState } from "react";
 import styled from "styled-components";
 import { useOptimizer, type ResolvedNode, type GapAnalysis } from "../../hooks/useOptimizer";
 import type { RecipeData } from "../../lib/types";
+import { ItemPickerField } from "../shared/ItemPickerField";
+import { useItems } from "../../hooks/useItems";
 
 const Panel = styled.section`
   background: ${({ theme }) => theme.colors.surface.raised};
@@ -106,7 +108,7 @@ const Summary = styled.div`
   margin-top: ${({ theme }) => theme.spacing.sm};
 `;
 
-function renderTree(node: ResolvedNode, depth = 0): JSX.Element[] {
+function renderTree(node: ResolvedNode, getItemName: (id: number) => string, depth = 0): JSX.Element[] {
   const badge = node.isCraftable ? (
     <CraftBadge> ({node.runs}× {node.quantityPerRun}/run)</CraftBadge>
   ) : (
@@ -115,23 +117,23 @@ function renderTree(node: ResolvedNode, depth = 0): JSX.Element[] {
 
   const elements = [
     <TreeNode key={`${node.typeId}-${depth}`} $depth={depth}>
-      Type {node.typeId} ×{node.quantityNeeded}{badge}
+      {getItemName(node.typeId)} ×{node.quantityNeeded}{badge}
     </TreeNode>,
   ];
 
   for (const child of node.children) {
-    elements.push(...renderTree(child, depth + 1));
+    elements.push(...renderTree(child, getItemName, depth + 1));
   }
 
   return elements;
 }
 
-function renderGaps(gaps: GapAnalysis) {
+function renderGaps(gaps: GapAnalysis, getItemName: (id: number) => string) {
   return (
     <>
       {gaps.shoppingList.map((item) => (
         <GapRow key={item.typeId}>
-          <span>Type {item.typeId}</span>
+          <span>{getItemName(item.typeId)}</span>
           <span>
             {item.onHand}/{item.required} — <Missing>{item.missing} missing</Missing>
           </span>
@@ -146,8 +148,13 @@ function renderGaps(gaps: GapAnalysis) {
 
 export function OptimizerPanel({ recipes }: { recipes: RecipeData[] }) {
   const { result, optimize, clear } = useOptimizer(recipes);
+  const { getItem } = useItems();
   const [targetType, setTargetType] = useState("");
   const [quantity, setQuantity] = useState("1");
+
+  function getItemName(typeId: number): string {
+    return getItem(typeId)?.name ?? `Type ${typeId}`;
+  }
 
   function handleOptimize() {
     const typeId = Number(targetType);
@@ -160,12 +167,7 @@ export function OptimizerPanel({ recipes }: { recipes: RecipeData[] }) {
       <SectionTitle>Optimizer</SectionTitle>
 
       <Row>
-        <Input
-          type="number"
-          placeholder="Target Type ID"
-          value={targetType}
-          onChange={(e) => setTargetType(e.target.value)}
-        />
+        <ItemPickerField value={targetType} onChange={setTargetType} />
         <Input
           type="number"
           placeholder="Qty"
@@ -187,14 +189,14 @@ export function OptimizerPanel({ recipes }: { recipes: RecipeData[] }) {
         <>
           <Divider />
           <SectionTitle>Dependency Tree</SectionTitle>
-          {renderTree(result.tree)}
+          {renderTree(result.tree, getItemName)}
 
           <Divider />
           <SectionTitle>Gap Analysis</SectionTitle>
           {result.gaps.shoppingList.length === 0 ? (
             <Summary>All materials satisfied!</Summary>
           ) : (
-            renderGaps(result.gaps)
+            renderGaps(result.gaps, getItemName)
           )}
         </>
       )}

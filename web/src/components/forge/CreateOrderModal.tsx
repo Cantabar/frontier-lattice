@@ -5,6 +5,7 @@ import { Modal } from "../shared/Modal";
 import { buildCreateOrder } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
 import type { TribeCapData } from "../../lib/types";
+import { ItemPickerField } from "../shared/ItemPickerField";
 
 const Label = styled.label`
   display: block;
@@ -105,11 +106,7 @@ export function CreateOrderModal({ tribeId, registryId, cap, onClose }: Props) {
       <Row>
         <div>
           <Label>Output Type ID</Label>
-          <Input
-            type="number"
-            value={outputTypeId}
-            onChange={(e) => setOutputTypeId(e.target.value)}
-          />
+          <ItemPickerField value={outputTypeId} onChange={setOutputTypeId} />
         </div>
         <div>
           <Label>Run Count</Label>
