@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ENV_FILE="$PROJECT_ROOT/.env"
-PUB_FILE="$PROJECT_ROOT/Pub.local.toml"
+PUB_FILE="$PROJECT_ROOT/Pub.localnet.toml"
 GAS_BUDGET=2000000000  # 2 SUI — publishing with deps needs more than 0.5
 
 PACKAGES=("tribe" "contract_board" "forge_planner" "trustless_contracts")
