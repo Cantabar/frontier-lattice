@@ -272,3 +272,63 @@ live in `static-data/data/icons/`.
 - Mining lenses (Synthetic, Eclipsite, Radiantium, Gravionite, Luminalis)
 - Nanite sequencers (Kinetic, Explosive, EM, Thermal)
 - Utility (Hull Repairer, Heat Exchangers, Building Foam, Sojourn, Compressed Coolant)
+
+---
+
+## Item Grouping & Classification
+
+The static data provides four grouping systems that can be used to organize items in
+UI contexts. The fields live on each type record in `types.json`.
+
+### 1. Category → Group hierarchy (primary structure)
+Resolution: `types.json` → `groupID` → `groups.json` → `categoryID` → `categories.json`
+
+100% coverage across all 236 items. Clean 2-level tree.
+
+**7 categories, ~40 groups across our items:**
+
+- **Ship** (15 items): Corvette (5), Frigate (5), Shuttle (2), Destroyer (1), Cruiser (1), Combat Battlecruiser (1)
+- **Module** (118 items): Defensive System (21), Shield Hardener (13), Nanitic Brace (12),
+  Crude Engines (7), Energy Lance (6), Mass Driver Weapon (6), Plasma Weapon (6),
+  Projectile Weapon (6), Expanded Cargohold (5), Stasis Web (5), Warp Scrambler (5),
+  Warp Accelerator (4), Propulsion Module (3), Armor Repair Unit (3), Asteroid Mining Laser (3),
+  Flex Armor Hardener (3), Heat Ejector (3), Shield Recharger (3), Hydrogen Engines (2),
+  Crude Extractor (1), Hull Repair Unit (1)
+- **Charge** (21 items): Asteroid Mining Crystal (5), Nanitic Armor Weave Sequencer (4),
+  Gyrojet Ammunition (3), Plasma Charge (3), Coilgun Charge (2),
+  EM Disintegrator Charge (2), Projectile Ammo (1), Heat Sink Charge (1)
+- **Material** (40 items): Manufacturing Component (21), Mineral (14), Rogue Drone Components (5)
+- **Commodity** (27 items): Miscellaneous (12), Exotronic Frames (7), Crude Fuel (4),
+  Hydrogen Fuel (2), Salvage (2)
+- **Asteroid** (12 items): Rift (4), plus Char/Comet/Dewdrop/Ember/Glint/Ingot/Slag/Soot Ores (1 each)
+- **Shell** (3 items): Synthetic (3)
+
+### 2. Tags (cross-cutting filters)
+Resolution: `types.json` → `tags[]` → `tags.json` → `internalName`
+
+98 of 236 items have tags (mostly modules, ships, charges). Tags are multi-valued.
+Useful tag families:
+
+- **Slot type**: `high_slot` (14), `mid_slot` (19), `low_slot` (13), `engine_slot` (9)
+- **Size**: `small_size` (27), `medium_size` (24), `large_size` (4)
+- **Role**: `defense` (23), `mining` (9), plus specialized module-family tags
+- **Origin/faction**: `Synod` (16), `Exclave` (24)
+- **Industry grade**: `industry_grade_0` through `industry_grade_6`
+
+### 3. Meta Group (quality/rarity tier)
+Resolution: `types.json` → `metaGroupID` → `metagroups.json` → `name`
+
+135 of 236 items have a `metaGroupID`. Tier progression:
+
+Basic (9) → Standard (42) → Enhanced (40) → Prototype (30) → Experimental (10) → Exotic (4)
+
+### 4. Market Group (alternative hierarchy)
+Resolution: `types.json` → `marketGroupID` → `marketgroups.json` → `parentGroupID` (tree)
+
+224 of 236 items have a `marketGroupID`. Provides a deeper market-oriented tree with
+`parentGroupID` for nesting. Overlaps heavily with Category→Group but has more levels.
+
+### Recommended UI approach
+- **Primary navigation**: Category → Group (2-level tree, 100% coverage)
+- **Filters/facets**: Tags for slot type, size, and role
+- **Tier badge/indicator**: `metaGroupID` for rarity/quality coloring
