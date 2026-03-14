@@ -80,6 +80,14 @@ function parseAssemblyFields(
   const metaOuter = fields.metadata as { fields?: MetadataFields } | null;
   const meta = metaOuter?.fields;
 
+  // Parse extension: Option<TypeName> → string | null
+  // SUI RPC serialises as null or { fields: { name: "..." } }
+  let extension: string | null = null;
+  if (fields.extension != null) {
+    const ext = fields.extension as { fields?: { name?: string } };
+    extension = ext.fields?.name ?? null;
+  }
+
   return {
     id: objectId,
     ownerCapId,
@@ -94,6 +102,7 @@ function parseAssemblyFields(
     energySourceId: fields.energy_source_id
       ? String(fields.energy_source_id)
       : null,
+    extension,
   };
 }
 

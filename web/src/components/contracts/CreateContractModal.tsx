@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import styled from "styled-components";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
@@ -11,6 +11,7 @@ import {
   buildCreateItemForCoin,
   buildCreateItemForItem,
   buildCreateTransport,
+  buildAuthorizeExtension,
 } from "../../lib/sui";
 import { ItemPickerField } from "../shared/ItemPickerField";
 import { SsuPickerField } from "../shared/SsuPickerField";
@@ -117,6 +118,38 @@ const ErrorBanner = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
+const WarningBanner = styled.div`
+  background: ${({ theme }) => theme.colors.warning}22;
+  border: 1px solid ${({ theme }) => theme.colors.warning};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  color: ${({ theme }) => theme.colors.warning};
+  font-size: 13px;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+`;
+
+const EnableButton = styled.button`
+  width: 100%;
+  background: transparent;
+  color: ${({ theme }) => theme.colors.warning};
+  border: 1px solid ${({ theme }) => theme.colors.warning};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.warning}22;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 const FieldError = styled.div`
   font-size: 11px;
   color: ${({ theme }) => theme.colors.danger};
@@ -142,7 +175,7 @@ interface Props {
 export function CreateContractModal({ onClose, onCreated }: Props) {
   const { characterId } = useIdentity();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
-  const { structures } = useMyStructures();
+  const { structures, refetch: refetchStructures } = useMyStructures();
 
   const getOwnerCapId = useCallback(
     (ssuId: string) => structures.find((s) => s.id === ssuId)?.ownerCapId ?? "",
@@ -199,6 +232,69 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
   // UI state
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [isEnabling, setIsEnabling] = useState(false);
+
+  // --- Extension check: SSUs that need TrustlessAuth ---
+  const TRUSTLESS_EXT = "trustless_contracts::TrustlessAuth";
+
+  /** SSU IDs selected by the current variant that lack the TrustlessAuth extension. */
+  const ssusNeedingExtension = useMemo(() => {
+    const ids: string[] = [];
+    switch (variant) {
+      case "ItemForCoin":
+        if (sourceSsuId) ids.push(sourceSsuId);
+        break;
+      case "ItemForItem":
+        if (sourceSsuId) ids.push(sourceSsuId);
+        if (i4iDestinationSsuId) ids.push(i4iDestinationSsuId);
+        break;
+      case "CoinForItem":
+        if (destinationSsuId) ids.push(destinationSsuId);
+        break;
+      case "Transport":
+        if (destinationSsuId) ids.push(destinationSsuId);
+        break;
+    }
+    // Deduplicate then filter to SSUs missing the correct extension
+    return [...new Set(ids)].filter((id) => {
+      const ssu = structures.find((s) => s.id === id);
+      return ssu && !(ssu.extension?.includes(TRUSTLESS_EXT) ?? false);
+    });
+  }, [variant, sourceSsuId, destinationSsuId, i4iDestinationSsuId, structures]);
+
+  /** True when at least one SSU has a *different* extension that will be replaced. */
+  const willReplaceExtension = useMemo(
+    () =>
+      ssusNeedingExtension.some((id) => {
+        const ssu = structures.find((s) => s.id === id);
+        return ssu?.extension != null && !ssu.extension.includes(TRUSTLESS_EXT);
+      }),
+    [ssusNeedingExtension, structures],
+  );
+
+  async function handleEnableExtension(ssuId: string) {
+    if (!characterId) return;
+    setIsEnabling(true);
+    setError(null);
+    const cap = getOwnerCapDetails(ssuId);
+    const tx = buildAuthorizeExtension({
+      characterId,
+      structureId: ssuId,
+      ownerCapId: cap.ownerCapId,
+      ownerCapVersion: cap.ownerCapVersion,
+      ownerCapDigest: cap.ownerCapDigest,
+    });
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await signAndExecute({ transaction: tx as any });
+      refetchStructures();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to enable contracts extension";
+      setError(msg);
+    } finally {
+      setIsEnabling(false);
+    }
+  }
 
   // Reset item selections when the associated SSU changes
   useEffect(() => { setItemId(""); setOfferedQuantity(""); setAvailableQuantity(0); }, [sourceSsuId]);
@@ -515,7 +611,32 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
 
       {error && <ErrorBanner>{error}</ErrorBanner>}
 
-      <Button onClick={handleCreate} disabled={isPending}>
+      {ssusNeedingExtension.length > 0 && (
+        <>
+          <WarningBanner>
+            {ssusNeedingExtension.length === 1
+              ? "The selected SSU needs the Contracts extension enabled before creating this contract."
+              : "Some selected SSUs need the Contracts extension enabled before creating this contract."}
+            {willReplaceExtension &&
+              " Warning: this will replace the existing extension on the SSU."}
+          </WarningBanner>
+          {ssusNeedingExtension.map((id) => {
+            const ssu = structures.find((s) => s.id === id);
+            const label = ssu?.name || `${id.slice(0, 10)}…`;
+            return (
+              <EnableButton
+                key={id}
+                onClick={() => handleEnableExtension(id)}
+                disabled={isEnabling || isPending}
+              >
+                {isEnabling ? "Enabling…" : `Enable Contracts on ${label}`}
+              </EnableButton>
+            );
+          })}
+        </>
+      )}
+
+      <Button onClick={handleCreate} disabled={isPending || isEnabling || ssusNeedingExtension.length > 0}>
         {isPending ? "Creating…" : "Create Contract"}
       </Button>
     </Modal>

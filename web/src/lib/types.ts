@@ -226,6 +226,8 @@ export interface AssemblyData {
   description: string;
   imageUrl: string;
   energySourceId: string | null;
+  /** Authorized extension TypeName (e.g. "…::trustless_contracts::TrustlessAuth"), or null if none. */
+  extension: string | null;
 }
 
 /**

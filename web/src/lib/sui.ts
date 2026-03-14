@@ -881,6 +881,68 @@ export function buildExpireTrustlessContract(params: {
 }
 
 // ============================================================
+// SSU Extension Authorization
+// ============================================================
+
+/**
+ * Authorize the TrustlessAuth extension on a StorageUnit so the
+ * trustless-contracts package can deposit/withdraw items.
+ *
+ * Follows the same borrow/return OwnerCap pattern as online/offline.
+ */
+export function buildAuthorizeExtension(params: {
+  characterId: string;
+  structureId: string;
+  ownerCapId: string;
+  ownerCapVersion: string;
+  ownerCapDigest: string;
+}): Transaction {
+  const tx = new Transaction();
+  const pkg = worldPkg();
+  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
+  const authTypeArg = `${tcPkg()}::trustless_contracts::TrustlessAuth`;
+
+  // 1. Borrow OwnerCap<StorageUnit> from Character
+  const [ownerCap, receipt] = tx.moveCall({
+    target: `${pkg}::character::borrow_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.characterId),
+      tx.object(
+        Inputs.ReceivingRef({
+          objectId: params.ownerCapId,
+          version: params.ownerCapVersion,
+          digest: params.ownerCapDigest,
+        }),
+      ),
+    ],
+  });
+
+  // 2. Authorize extension
+  tx.moveCall({
+    target: `${pkg}::storage_unit::authorize_extension`,
+    typeArguments: [authTypeArg],
+    arguments: [
+      tx.object(params.structureId),
+      ownerCap,
+    ],
+  });
+
+  // 3. Return OwnerCap to Character
+  tx.moveCall({
+    target: `${pkg}::character::return_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.characterId),
+      ownerCap,
+      receipt,
+    ],
+  });
+
+  return tx;
+}
+
+// ============================================================
 // Smart Assembly Actions (Online / Offline)
 // ============================================================
 
