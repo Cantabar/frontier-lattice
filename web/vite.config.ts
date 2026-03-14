@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:3001",
+        target: process.env.INDEXER_API_URL ?? "http://localhost:3100",
         changeOrigin: true,
       },
     },

@@ -49,7 +49,7 @@ procs:
         sleep 2
       done
       echo "Loading package IDs from .env"
-      set -a && source .env && set +a
+      set -a && . ./.env && set +a
       echo "Dependencies ready — starting indexer"
       npm --prefix indexer run dev
     env:
