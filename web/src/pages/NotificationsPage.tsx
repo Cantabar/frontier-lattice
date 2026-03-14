@@ -14,9 +14,7 @@ import { timeAgo } from "../lib/format";
 // Styled components
 // ---------------------------------------------------------------------------
 
-const Page = styled.div`
-  max-width: 720px;
-`;
+const Page = styled.div``;
 
 const Header = styled.div`
   display: flex;

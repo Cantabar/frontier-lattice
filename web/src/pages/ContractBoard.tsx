@@ -10,9 +10,7 @@ import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
 import type { JobPostingData } from "../lib/types";
 
-const Page = styled.div`
-  max-width: 960px;
-`;
+const Page = styled.div``;
 
 const Header = styled.div`
   display: flex;

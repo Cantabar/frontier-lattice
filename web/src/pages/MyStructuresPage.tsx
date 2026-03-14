@@ -12,9 +12,7 @@ import type { AssemblyData, AssemblyTypeFilter, AssemblyStatus } from "../lib/ty
 // Styled components
 // ---------------------------------------------------------------------------
 
-const Page = styled.div`
-  max-width: 960px;
-`;
+const Page = styled.div``;
 
 const Header = styled.div`
   display: flex;

@@ -9,9 +9,7 @@ import { EmptyState } from "../components/shared/EmptyState";
 import { timeAgo, truncateAddress } from "../lib/format";
 import type { RecipeData } from "../lib/types";
 
-const Page = styled.div`
-  max-width: 960px;
-`;
+const Page = styled.div``;
 
 const Header = styled.div`
   display: flex;

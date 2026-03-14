@@ -10,9 +10,7 @@ import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { useNotifications } from "../hooks/useNotifications";
 import type { ArchivedEvent } from "../lib/types";
 
-const Page = styled.div`
-  max-width: 960px;
-`;
+const Page = styled.div``;
 
 const Title = styled.h1`
   font-size: 24px;

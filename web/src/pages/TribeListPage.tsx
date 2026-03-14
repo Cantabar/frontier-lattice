@@ -13,9 +13,7 @@ import { buildLookupTribeByGameId } from "../lib/sui";
 import { config } from "../config";
 import type { TribeListItem } from "../lib/types";
 
-const Page = styled.div`
-  max-width: 960px;
-`;
+const Page = styled.div``;
 
 const Header = styled.div`
   display: flex;
