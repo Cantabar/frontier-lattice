@@ -108,6 +108,45 @@ export interface ManufacturingOrderData {
 }
 
 // ============================================================
+// Trustless Contracts
+// ============================================================
+
+export type TrustlessContractVariant =
+  | "CoinForCoin"
+  | "CoinForItem"
+  | "ItemForCoin"
+  | "ItemForItem"
+  | "Transport";
+
+export type TrustlessContractType =
+  | { variant: "CoinForCoin"; offeredAmount: string; wantedAmount: string }
+  | { variant: "CoinForItem"; offeredAmount: string; wantedTypeId: number; wantedQuantity: number; destinationSsuId: string }
+  | { variant: "ItemForCoin"; offeredTypeId: number; offeredQuantity: number; sourceSsuId: string; wantedAmount: string }
+  | { variant: "ItemForItem"; offeredTypeId: number; offeredQuantity: number; sourceSsuId: string; wantedTypeId: number; wantedQuantity: number; destinationSsuId: string }
+  | { variant: "Transport"; itemTypeId: number; itemQuantity: number; destinationSsuId: string; paymentAmount: string; requiredStake: string };
+
+export type TrustlessContractStatus = "Open" | "InProgress";
+
+export interface TrustlessContractData {
+  id: string;
+  posterId: string;
+  posterAddress: string;
+  contractType: TrustlessContractType;
+  escrowAmount: string;
+  targetQuantity: string;
+  filledQuantity: string;
+  allowPartial: boolean;
+  requireStake: boolean;
+  stakeAmount: string;
+  deadlineMs: string;
+  status: TrustlessContractStatus;
+  courierId?: string;
+  courierAddress?: string;
+  allowedCharacters: string[];
+  allowedTribes: number[];
+}
+
+// ============================================================
 // Indexer event types (Phase 4)
 // ============================================================
 
@@ -134,7 +173,15 @@ export type EventTypeName =
   | "RecipeRemovedEvent"
   | "OrderCreatedEvent"
   | "OrderFulfilledEvent"
-  | "OrderCancelledEvent";
+  | "OrderCancelledEvent"
+  // Trustless Contracts
+  | "ContractCreatedEvent"
+  | "ContractFilledEvent"
+  | "ContractCompletedEvent"
+  | "ContractCancelledEvent"
+  | "ContractExpiredEvent"
+  | "TransportAcceptedEvent"
+  | "TransportDeliveredEvent";
 
 export interface ArchivedEvent {
   id: number;

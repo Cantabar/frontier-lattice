@@ -35,6 +35,7 @@ export const theme = {
       tribe: "#FF4700",
       contractBoard: "#4FC3F7",
       forgePlanner: "#81C784",
+      trustlessContracts: "#FFB651",
     },
   },
   fonts: {
