@@ -110,6 +110,7 @@ export function Sidebar() {
       ) : (
         <DisabledNavItem>My Tribe</DisabledNavItem>
       )}
+      <StyledLink to="/structures">My Structures</StyledLink>
       <SectionLabel>Modules</SectionLabel>
       <StyledLink to="/jobs">Contract Board</StyledLink>
       <StyledLink to="/contracts">Trustless Contracts</StyledLink>

@@ -167,6 +167,49 @@ export interface TrustlessContractData {
 }
 
 // ============================================================
+// Smart Assemblies (Structures)
+// ============================================================
+
+export type AssemblyStatus = "Anchored" | "Online" | "Offline" | "Unanchoring";
+
+export interface AssemblyData {
+  id: string;
+  ownerCapId: string;
+  typeId: number;
+  status: AssemblyStatus;
+  name: string;
+  description: string;
+  imageUrl: string;
+  energySourceId: string | null;
+}
+
+/**
+ * Well-known assembly type IDs from the world contracts.
+ * These map `type_id` values to human-readable labels.
+ */
+export const ASSEMBLY_TYPES: Record<number, { label: string; short: string }> = {
+  // From static-data/data/phobos/fsd_built/types.json — extend as new types are added.
+  88082: { label: "Mini Storage", short: "SSU" },
+  88083: { label: "Storage", short: "SSU" },
+  88084: { label: "Large Storage Unit", short: "SSU" },
+  87566: { label: "Field Storage", short: "SSU" },
+  91713: { label: "Mini Storage", short: "SSU" },
+  91714: { label: "Storage", short: "SSU" },
+  91715: { label: "Heavy Storage", short: "SSU" },
+  84955: { label: "Heavy Gate", short: "Gate" },
+  88086: { label: "Mini Gate", short: "Gate" },
+  87495: { label: "Deployable Stargate Small", short: "Gate" },
+  91711: { label: "Mini Gate", short: "Gate" },
+  91712: { label: "Heavy Gate", short: "Gate" },
+  92279: { label: "Mini Turret", short: "Turret" },
+  92280: { label: "Mini Turret", short: "Turret" },
+  92401: { label: "Turret", short: "Turret" },
+};
+
+/** All known assembly type categories for filtering. */
+export type AssemblyTypeFilter = "all" | "SSU" | "Gate" | "Turret";
+
+// ============================================================
 // Indexer event types (Phase 4)
 // ============================================================
 

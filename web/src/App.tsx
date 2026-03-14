@@ -15,6 +15,7 @@ import { EventExplorer } from "./pages/EventExplorer";
 import { TrustlessContracts } from "./pages/TrustlessContracts";
 import { TribeListPage } from "./pages/TribeListPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { MyStructuresPage } from "./pages/MyStructuresPage";
 import { ToastContainer } from "./components/shared/Toast";
 
 const Shell = styled.div`
@@ -66,6 +67,7 @@ export default function App() {
               <Route path="/contracts" element={<TrustlessContracts />} />
               <Route path="/forge" element={<ForgePlanner />} />
               <Route path="/events" element={<EventExplorer />} />
+              <Route path="/structures" element={<MyStructuresPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
             </Routes>
           </Content>
