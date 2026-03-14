@@ -103,6 +103,7 @@ export function useNetworkNodes(nodeIds: string[]) {
       data: res.map((r) => r.data),
       isLoading: res.some((r) => r.isLoading),
       error: res.find((r) => r.error)?.error ?? null,
+      refetch: () => res.forEach((r) => r.refetch()),
     }),
   });
 
@@ -118,5 +119,5 @@ export function useNetworkNodes(nodeIds: string[]) {
     return map;
   }, [results.data, nodeIds]);
 
-  return { nodes, isLoading: results.isLoading, error: results.error };
+  return { nodes, isLoading: results.isLoading, error: results.error, refetch: results.refetch };
 }

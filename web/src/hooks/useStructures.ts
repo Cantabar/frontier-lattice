@@ -168,6 +168,7 @@ export function useMyStructures() {
       data: results.map((r) => r.data),
       isLoading: results.some((r) => r.isLoading),
       error: results.find((r) => r.error)?.error ?? null,
+      refetch: () => results.forEach((r) => r.refetch()),
     }),
   });
 
@@ -196,6 +197,9 @@ export function useMyStructures() {
     structures,
     isLoading: capResults.isLoading || assemblyResults.isLoading,
     error: capResults.error ?? assemblyResults.error,
-    refetch: capResults.refetch,
+    refetch: () => {
+      capResults.refetch();
+      assemblyResults.refetch();
+    },
   };
 }

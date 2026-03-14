@@ -287,7 +287,7 @@ export function MyStructuresPage() {
     return Array.from(ids);
   }, [structures]);
 
-  const { nodes: networkNodes } = useNetworkNodes(nodeIds);
+  const { nodes: networkNodes, refetch: refetchNodes } = useNetworkNodes(nodeIds);
 
   // Group filtered structures by energySourceId
   const groupedEntries = useMemo(() => {
@@ -419,6 +419,7 @@ export function MyStructuresPage() {
                     structure={s}
                     characterId={characterId}
                     onRefresh={refetch}
+                    onRefreshNodes={refetchNodes}
                     onSelect={setSelectedSsu}
                   />
                 ))}
@@ -434,6 +435,7 @@ export function MyStructuresPage() {
               structure={s}
               characterId={characterId}
               onRefresh={refetch}
+              onRefreshNodes={refetchNodes}
               onSelect={setSelectedSsu}
             />
           ))}
@@ -455,11 +457,13 @@ function StructureRow({
   structure,
   characterId,
   onRefresh,
+  onRefreshNodes,
   onSelect,
 }: {
   structure: AssemblyData;
   characterId: string | null;
   onRefresh: () => void;
+  onRefreshNodes: () => void;
   onSelect: (ssu: AssemblyData) => void;
 }) {
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
@@ -489,7 +493,10 @@ function StructureRow({
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- duplicate @mysten/sui in dep tree
       await signAndExecute({ transaction: tx as any });
+      // Allow RPC to reflect the new on-chain state before refetching
+      await new Promise((r) => setTimeout(r, 1500));
       onRefresh();
+      onRefreshNodes();
     } catch (err) {
       console.error(`Failed to ${action} structure:`, err);
     } finally {
