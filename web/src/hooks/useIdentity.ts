@@ -45,22 +45,41 @@ export function useIdentity() {
 /**
  * Hook that resolves the current wallet's Character and TribeCap objects.
  * Used by the IdentityProvider in main.tsx.
+ *
+ * Character objects are shared (not wallet-owned). The world contract creates a
+ * wallet-owned PlayerProfile that holds a `character_id` pointer. We query for
+ * PlayerProfile first, then fetch the shared Character by ID.
  */
 export function useIdentityResolver(): Identity {
   const account = useCurrentAccount();
   const address = account?.address ?? "";
 
-  // Query owned Character objects
-  const { data: characterData, isLoading: charLoading } = useSuiClientQuery(
+  // Step 1: Query owned PlayerProfile objects (wallet-owned pointers to shared Characters)
+  const { data: profileData, isLoading: profileLoading } = useSuiClientQuery(
     "getOwnedObjects",
     {
       owner: address,
       filter: {
-        StructType: `${config.packages.world}::character::Character`,
+        StructType: `${config.packages.world}::character::PlayerProfile`,
       },
       options: { showContent: true },
     },
     { enabled: !!address && config.packages.world !== "0x0" },
+  );
+
+  // Extract character_id from the first PlayerProfile
+  const profileObj = profileData?.data?.[0]?.data;
+  const profileFields = (profileObj?.content as { fields?: Record<string, unknown> })?.fields;
+  const characterIdFromProfile = profileFields?.character_id as string | undefined ?? null;
+
+  // Step 2: Fetch the shared Character object by ID to get metadata & tribe_id
+  const { data: characterObj, isLoading: charLoading } = useSuiClientQuery(
+    "getObject",
+    {
+      id: characterIdFromProfile!,
+      options: { showContent: true },
+    },
+    { enabled: !!characterIdFromProfile },
   );
 
   // Query owned TribeCap objects
@@ -76,12 +95,12 @@ export function useIdentityResolver(): Identity {
     { enabled: !!address && config.packages.tribe !== "0x0" },
   );
 
-  const charObj = characterData?.data?.[0]?.data;
-  const characterId = charObj?.objectId ?? null;
-  const charFields = (charObj?.content as { fields?: Record<string, unknown> })?.fields;
+  const charData = characterObj?.data;
+  const characterId = charData?.objectId ?? null;
+  const charFields = (charData?.content as { fields?: Record<string, unknown> })?.fields;
   const inGameTribeId = charFields ? Number(charFields.tribe_id ?? 0) : null;
 
-  // Extract character name & portrait from metadata (already fetched)
+  // Extract character name & portrait from metadata
   const metadata = (charFields?.metadata as { fields?: { name?: string; url?: string } })?.fields;
   const characterName = metadata?.name || null;
   const characterPortraitUrl = metadata?.url || null;
@@ -103,7 +122,7 @@ export function useIdentityResolver(): Identity {
   // Diagnostic notifications
   // ---------------------------------------------------------------------------
   const { push, clearBySource } = useNotifications();
-  const isLoading = charLoading || capLoading;
+  const isLoading = profileLoading || charLoading || capLoading;
   const prevAddressRef = useRef<string>("");
   const pushedRef = useRef<Set<string>>(new Set());
 
