@@ -1,6 +1,8 @@
 import styled from "styled-components";
 import { ConnectButton } from "@mysten/dapp-kit";
+import { useNavigate } from "react-router-dom";
 import { useIdentity } from "../../hooks/useIdentity";
+import { useNotifications } from "../../hooks/useNotifications";
 import { truncateAddress, generateAvatarColor } from "../../lib/format";
 
 const HeaderBar = styled.header`
@@ -65,8 +67,46 @@ const CharacterName = styled.span`
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 
+const BellButton = styled.button<{ $hasUnread: boolean }>`
+  position: relative;
+  background: none;
+  border: 1px solid ${({ theme, $hasUnread }) =>
+    $hasUnread ? theme.colors.warning : theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  color: ${({ theme, $hasUnread }) =>
+    $hasUnread ? theme.colors.warning : theme.colors.text.muted};
+  padding: 4px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary.main};
+    color: ${({ theme }) => theme.colors.text.primary};
+  }
+`;
+
+const UnreadBadge = styled.span`
+  background: ${({ theme }) => theme.colors.danger};
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+`;
+
 export function Header() {
   const { address, characterId, characterName, characterPortraitUrl } = useIdentity();
+  const { unreadCount } = useNotifications();
+  const navigate = useNavigate();
 
   const showCharacter = !!address && !!characterId;
   const displayName = characterName || (characterId ? truncateAddress(characterId) : null);
@@ -90,6 +130,14 @@ export function Header() {
             <CharacterName>{displayName}</CharacterName>
           </CharacterBadge>
         )}
+        <BellButton
+          $hasUnread={unreadCount > 0}
+          onClick={() => navigate("/notifications")}
+          title="Session notifications"
+        >
+          &#x1F514;
+          {unreadCount > 0 && <UnreadBadge>{unreadCount}</UnreadBadge>}
+        </BellButton>
         <ConnectButton />
       </Controls>
     </HeaderBar>

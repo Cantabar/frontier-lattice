@@ -5,9 +5,10 @@
  * the identity context to determine which actions are available.
  */
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useRef } from "react";
 import { useCurrentAccount, useSuiClientQuery } from "@mysten/dapp-kit";
 import { config } from "../config";
+import { useNotifications } from "./useNotifications";
 import type { TribeCapData, Role } from "../lib/types";
 
 export interface Identity {
@@ -98,6 +99,63 @@ export function useIdentityResolver(): Identity {
     })
     .filter((c): c is TribeCapData => c !== null);
 
+  // ---------------------------------------------------------------------------
+  // Diagnostic notifications
+  // ---------------------------------------------------------------------------
+  const { push, clearBySource } = useNotifications();
+  const isLoading = charLoading || capLoading;
+  const prevAddressRef = useRef<string>("");
+  const pushedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Reset when wallet changes
+    if (prevAddressRef.current !== address) {
+      clearBySource("identity");
+      pushedRef.current.clear();
+      prevAddressRef.current = address;
+    }
+
+    if (isLoading || !address) return;
+
+    // No Character object found
+    if (!characterId && !pushedRef.current.has("no-character")) {
+      pushedRef.current.add("no-character");
+      push({
+        level: "warning",
+        title: "No Character Found",
+        message:
+          "No Character object found for this wallet. Most actions require an on-chain Character.",
+        source: "identity",
+      });
+    }
+
+    // Character exists but no tribe caps
+    if (characterId && tribeCaps.length === 0 && !pushedRef.current.has("no-tribe")) {
+      pushedRef.current.add("no-tribe");
+      push({
+        level: "info",
+        title: "No Tribe Membership",
+        message:
+          "You are not a member of any Tribe. Join or create one to unlock tribe features.",
+        source: "identity",
+      });
+    }
+
+    // Unconfigured packages
+    const unconfigured = Object.entries(config.packages)
+      .filter(([, v]) => v === "0x0")
+      .map(([k]) => k);
+    if (unconfigured.length > 0 && !pushedRef.current.has("packages")) {
+      pushedRef.current.add("packages");
+      push({
+        level: "warning",
+        title: "Unconfigured Packages",
+        message: `The following packages are not deployed: ${unconfigured.join(", ")}. Some features will be unavailable.`,
+        source: "identity",
+      });
+    }
+  }, [address, characterId, tribeCaps.length, isLoading, push, clearBySource]);
+
   return {
     address,
     characterId,
@@ -105,7 +163,7 @@ export function useIdentityResolver(): Identity {
     characterPortraitUrl,
     inGameTribeId,
     tribeCaps,
-    isLoading: charLoading || capLoading,
+    isLoading,
   };
 }
 

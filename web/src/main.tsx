@@ -13,6 +13,7 @@ import { getFullnodeUrl } from "@mysten/sui/client";
 import { theme } from "./styles/theme";
 import { GlobalStyles } from "./styles/globalStyles";
 import { config } from "./config";
+import { NotificationProvider } from "./hooks/useNotifications";
 import App from "./App";
 
 import "@mysten/dapp-kit/dist/index.css";
@@ -37,7 +38,9 @@ createRoot(document.getElementById("root")!).render(
           <ThemeProvider theme={theme}>
             <GlobalStyles />
             <BrowserRouter>
-              <App />
+              <NotificationProvider>
+                <App />
+              </NotificationProvider>
             </BrowserRouter>
           </ThemeProvider>
         </WalletProvider>

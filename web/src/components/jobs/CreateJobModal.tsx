@@ -4,6 +4,7 @@ import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { buildCreateJob } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
+import { useNotifications } from "../../hooks/useNotifications";
 import { config } from "../../config";
 import type { TribeCapData } from "../../lib/types";
 
@@ -105,6 +106,7 @@ interface Props {
 
 export function CreateJobModal({ tribeId, cap, onClose }: Props) {
   const { characterId } = useIdentity();
+  const { push } = useNotifications();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
   const [description, setDescription] = useState("");
@@ -151,8 +153,11 @@ export function CreateJobModal({ tribeId, cap, onClose }: Props) {
     }
   }
 
+  const [error, setError] = useState<string | null>(null);
+
   async function handleCreate() {
     if (!characterId || !description || !escrow) return;
+    setError(null);
     const tx = buildCreateJob({
       tribeId,
       capId: cap.id,
@@ -163,9 +168,20 @@ export function CreateJobModal({ tribeId, cap, onClose }: Props) {
       deadlineMs: Date.now() + Number(deadlineHours) * 3600 * 1000,
       minReputation: Number(minRep),
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await signAndExecute({ transaction: tx as any });
-    onClose();
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await signAndExecute({ transaction: tx as any });
+      onClose();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Transaction failed";
+      setError(msg);
+      push({
+        level: "error",
+        title: "Post Job Failed",
+        message: msg,
+        source: "CreateJobModal",
+      });
+    }
   }
 
   return (
@@ -224,6 +240,20 @@ export function CreateJobModal({ tribeId, cap, onClose }: Props) {
 
       <Label>Min Reputation</Label>
       <Input type="number" value={minRep} onChange={(e) => setMinRep(e.target.value)} />
+
+      {error && (
+        <div style={{
+          background: "rgba(251,44,54,0.13)",
+          border: "1px solid #FB2C36",
+          borderRadius: 4,
+          padding: "8px 16px",
+          color: "#FB2C36",
+          fontSize: 13,
+          marginBottom: 16,
+        }}>
+          {error}
+        </div>
+      )}
 
       <Button onClick={handleCreate} disabled={!description || !escrow || !characterId || isPending}>
         {isPending ? "Posting…" : "Post Job"}

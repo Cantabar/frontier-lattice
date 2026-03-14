@@ -7,6 +7,7 @@ import { useTribe } from "../hooks/useTribe";
 import { getStats, getEvents } from "../lib/indexer";
 import { truncateAddress, timeAgo, formatAmount } from "../lib/format";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
+import { useNotifications } from "../hooks/useNotifications";
 import type { ArchivedEvent } from "../lib/types";
 
 const Page = styled.div`
@@ -114,9 +115,29 @@ const Meta = styled.span`
   font-size: 12px;
 `;
 
+const WarningBanner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.warning}11;
+  border: 1px solid ${({ theme }) => theme.colors.warning};
+  border-left: 4px solid ${({ theme }) => theme.colors.warning};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+const WarningTitle = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.warning};
+`;
+
 export function Dashboard() {
   const account = useCurrentAccount();
-  const { tribeCaps, characterId } = useIdentity();
+  const { tribeCaps, characterId, isLoading: identityLoading } = useIdentity();
+  const { unreadCount } = useNotifications();
   const tribeId = tribeCaps[0]?.tribeId;
   const { tribe } = useTribe(tribeId);
 
@@ -144,6 +165,23 @@ export function Dashboard() {
   return (
     <Page>
       <Title>Dashboard</Title>
+
+      {!identityLoading && !characterId && (
+        <WarningBanner>
+          <div>
+            <WarningTitle>No Character Found</WarningTitle>
+            <div style={{ marginTop: 4 }}>
+              No on-chain Character object was found for this wallet. Most actions (creating tribes,
+              posting jobs, creating contracts) require a Character.{" "}
+              {unreadCount > 0 && (
+                <a href="/notifications" style={{ color: "inherit", textDecoration: "underline" }}>
+                  View {unreadCount} notification{unreadCount !== 1 ? "s" : ""}
+                </a>
+              )}
+            </div>
+          </div>
+        </WarningBanner>
+      )}
 
       <OverviewGrid>
         <OverviewCard>

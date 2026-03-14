@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import styled from "styled-components";
 import { useIdentity } from "../../hooks/useIdentity";
+import { useNotifications } from "../../hooks/useNotifications";
 
 const Nav = styled.nav`
   width: 200px;
@@ -47,8 +48,24 @@ const SectionLabel = styled.div`
     ${({ theme }) => theme.spacing.xs};
 `;
 
+const NotifBadge = styled.span`
+  background: ${({ theme }) => theme.colors.danger};
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  margin-left: auto;
+`;
+
 export function Sidebar() {
   const { tribeCaps } = useIdentity();
+  const { unreadCount } = useNotifications();
   const userTribeId = tribeCaps[0]?.tribeId;
 
   return (
@@ -66,6 +83,10 @@ export function Sidebar() {
       <StyledLink to="/contracts">Trustless Contracts</StyledLink>
       <StyledLink to="/forge">Forge Planner</StyledLink>
       <StyledLink to="/events">Event Explorer</StyledLink>
+      <SectionLabel>System</SectionLabel>
+      <StyledLink to="/notifications">
+        Notifications{unreadCount > 0 && <NotifBadge>{unreadCount}</NotifBadge>}
+      </StyledLink>
     </Nav>
   );
 }

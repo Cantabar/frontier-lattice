@@ -4,6 +4,7 @@ import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { buildCreateTribe } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
+import { useNotifications } from "../../hooks/useNotifications";
 import { config } from "../../config";
 
 const Label = styled.label`
@@ -97,23 +98,37 @@ interface Props {
 
 export function CreateTribeModal({ onClose }: Props) {
   const { characterId, inGameTribeId } = useIdentity();
+  const { push } = useNotifications();
   const hasTribe = inGameTribeId != null && inGameTribeId > 0;
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
   const [name, setName] = useState("");
   const [threshold, setThreshold] = useState("50");
+  const [error, setError] = useState<string | null>(null);
 
   async function handleCreate() {
     if (!characterId || !name) return;
+    setError(null);
     const tx = buildCreateTribe({
       registryId: config.tribeRegistryId,
       characterId,
       name,
       voteThreshold: Number(threshold),
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- duplicate @mysten/sui in dep tree
-    await signAndExecute({ transaction: tx as any });
-    onClose();
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- duplicate @mysten/sui in dep tree
+      await signAndExecute({ transaction: tx as any });
+      onClose();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Transaction failed";
+      setError(msg);
+      push({
+        level: "error",
+        title: "Create Tribe Failed",
+        message: msg,
+        source: "CreateTribeModal",
+      });
+    }
   }
 
   return (
@@ -148,6 +163,20 @@ export function CreateTribeModal({ onClose }: Props) {
         onChange={(e) => setThreshold(e.target.value)}
       />
       <HelpText>Percentage of members needed to pass a treasury proposal</HelpText>
+
+      {error && (
+        <div style={{
+          background: "rgba(251,44,54,0.13)",
+          border: "1px solid #FB2C36",
+          borderRadius: 4,
+          padding: "8px 16px",
+          color: "#FB2C36",
+          fontSize: 13,
+          marginBottom: 16,
+        }}>
+          {error}
+        </div>
+      )}
 
       <Button onClick={handleCreate} disabled={!name || !characterId || !hasTribe || isPending}>
         {isPending ? "Creating…" : "Create Tribe"}

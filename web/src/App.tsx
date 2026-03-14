@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import styled from "styled-components";
 
 import { IdentityContext, useIdentityResolver } from "./hooks/useIdentity";
+import { useNotifications } from "./hooks/useNotifications";
+import { onIndexerError } from "./lib/indexer";
 import { Header } from "./components/layout/Header";
 import { Sidebar } from "./components/layout/Sidebar";
 import { Dashboard } from "./pages/Dashboard";
@@ -11,6 +14,8 @@ import { ForgePlanner } from "./pages/ForgePlanner";
 import { EventExplorer } from "./pages/EventExplorer";
 import { TrustlessContracts } from "./pages/TrustlessContracts";
 import { TribeListPage } from "./pages/TribeListPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
+import { ToastContainer } from "./components/shared/Toast";
 
 const Shell = styled.div`
   display: flex;
@@ -32,6 +37,19 @@ const Content = styled.main`
 
 export default function App() {
   const identity = useIdentityResolver();
+  const { push } = useNotifications();
+
+  // Subscribe to indexer fetch errors and surface them as notifications
+  useEffect(() => {
+    return onIndexerError((error, path) => {
+      push({
+        level: "error",
+        title: "Indexer Error",
+        message: `${error.message} (${path})`,
+        source: "indexer",
+      });
+    });
+  }, [push]);
 
   return (
     <IdentityContext.Provider value={identity}>
@@ -48,9 +66,11 @@ export default function App() {
               <Route path="/contracts" element={<TrustlessContracts />} />
               <Route path="/forge" element={<ForgePlanner />} />
               <Route path="/events" element={<EventExplorer />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
             </Routes>
           </Content>
         </Main>
+        <ToastContainer />
       </Shell>
     </IdentityContext.Provider>
   );

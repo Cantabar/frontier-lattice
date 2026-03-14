@@ -9,6 +9,28 @@ import type { ArchivedEvent, EventTypeName, PaginationParams, ReputationSnapshot
 
 const base = config.indexerUrl;
 
+// ---------------------------------------------------------------------------
+// Global error listener — components can subscribe to indexer failures
+// without coupling indexer.ts to React.
+// ---------------------------------------------------------------------------
+
+type IndexerErrorListener = (error: Error, path: string) => void;
+const errorListeners = new Set<IndexerErrorListener>();
+
+/** Register a callback that fires whenever an indexer request fails. */
+export function onIndexerError(listener: IndexerErrorListener): () => void {
+  errorListeners.add(listener);
+  return () => { errorListeners.delete(listener); };
+}
+
+function notifyError(error: Error, path: string) {
+  for (const listener of errorListeners) {
+    try { listener(error, path); } catch { /* swallow listener errors */ }
+  }
+}
+
+// ---------------------------------------------------------------------------
+
 function qs(params: Record<string, string | number | undefined>): string {
   const entries = Object.entries(params).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return "";
@@ -17,7 +39,11 @@ function qs(params: Record<string, string | number | undefined>): string {
 
 async function get<T>(path: string): Promise<T> {
   const res = await fetch(`${base}${path}`);
-  if (!res.ok) throw new Error(`Indexer ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    const error = new Error(`Indexer ${res.status}: ${await res.text()}`);
+    notifyError(error, path);
+    throw error;
+  }
   return res.json();
 }
 
