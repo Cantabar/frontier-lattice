@@ -79,6 +79,44 @@ Example — Skip module dogmaEffects:
 ### `industry_blueprints.json`
 221 blueprints mapping inputs → outputs with `runTime`.
 
+Fields per blueprint entry:
+- `inputs` — array of `{ typeID, quantity }` input materials
+- `outputs` — array of `{ typeID, quantity }` output items
+- `primaryTypeID` — the main output type (used for display/lookup)
+- `runTime` — base production time in seconds
+
+**Note:** No assembly type information is stored here. Use `industry_facilities.json` to determine where a blueprint can be run.
+
+---
+
+### `industry_facilities.json`
+Maps `facilityTypeID (string)` → facility record listing which blueprints can run there.
+
+Fields per facility entry:
+- `blueprints` — array of `{ blueprintID, maxInputRuns, maxOutputRuns }` entries
+- `inputCapacity` — max total input volume the facility can accept
+- `outputCapacity` — max total output volume the facility can produce
+
+12 facilities are present, corresponding to the Industry-group smart assemblies:
+
+| typeID | Name           |
+|--------|----------------|
+| 87119  | Mini Printer   |
+| 87120  | Heavy Printer  |
+| 87161  | Field Refinery |
+| 87162  | Field Printer  |
+| 88063  | Refinery       |
+| 88064  | Heavy Refinery |
+| 88067  | Printer        |
+| 88068  | Assembler      |
+| 88069  | Mini Berth     |
+| 88070  | Berth          |
+| 88071  | Heavy Berth    |
+| 91978  | Nursery        |
+
+**Lookup pattern — blueprint → valid facilities:**
+The relationship is stored facility-first. To find which assemblies can run a given blueprint, invert the map at runtime: iterate all facility entries and collect those whose `blueprints[]` array contains the target `blueprintID`.
+
 ---
 
 ### `dogmaattributes.json`
