@@ -14,6 +14,7 @@ export const config = {
     tribe: import.meta.env.VITE_TRIBE_PACKAGE_ID ?? "0x0",
     contractBoard: import.meta.env.VITE_CONTRACT_BOARD_PACKAGE_ID ?? "0x0",
     forgePlanner: import.meta.env.VITE_FORGE_PLANNER_PACKAGE_ID ?? "0x0",
+    trustlessContracts: import.meta.env.VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID ?? "0x0",
     world: import.meta.env.VITE_WORLD_PACKAGE_ID ?? "0x0",
   },
 
