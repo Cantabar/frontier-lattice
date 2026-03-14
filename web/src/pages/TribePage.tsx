@@ -9,6 +9,7 @@ import { ReputationLeaderboard } from "../components/tribe/ReputationLeaderboard
 import { TreasuryPanel } from "../components/tribe/TreasuryPanel";
 import { CreateTribeModal } from "../components/tribe/CreateTribeModal";
 import { AddMemberModal } from "../components/tribe/AddMemberModal";
+import { UpdateReputationModal } from "../components/tribe/UpdateReputationModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
 
@@ -90,6 +91,7 @@ export function TribePage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
+  const [repTarget, setRepTarget] = useState<{ characterId: string; reputation: number } | null>(null);
 
   // Find TribeCap for this tribe (enables write actions)
   const cap = tribeCaps.find((c) => c.tribeId === tribeId) ?? null;
@@ -141,7 +143,15 @@ export function TribePage() {
       <Grid>
         <div>
           <SectionLabel>Members</SectionLabel>
-          <MemberList members={tribe.members} />
+          <MemberList
+            members={tribe.members}
+            tribeId={tribe.id}
+            leaderCharacterId={tribe.leaderCharacterId}
+            cap={cap}
+            onUpdateReputation={(characterId, reputation) =>
+              setRepTarget({ characterId, reputation })
+            }
+          />
 
           <SectionLabel>Reputation</SectionLabel>
           <ReputationLeaderboard tribeId={tribe.id} />
@@ -155,6 +165,15 @@ export function TribePage() {
       {showCreate && <CreateTribeModal onClose={() => setShowCreate(false)} />}
       {showAddMember && cap && (
         <AddMemberModal tribeId={tribe.id} cap={cap} onClose={() => setShowAddMember(false)} />
+      )}
+      {repTarget && cap && (
+        <UpdateReputationModal
+          tribeId={tribe.id}
+          capId={cap.id}
+          characterId={repTarget.characterId}
+          currentReputation={repTarget.reputation}
+          onClose={() => setRepTarget(null)}
+        />
       )}
     </Page>
   );
