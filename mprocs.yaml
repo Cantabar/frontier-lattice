@@ -67,7 +67,8 @@ procs:
         && grep -q '^VITE_CONTRACT_BOARD_PACKAGE_ID=0x' .env 2>/dev/null \
         && grep -q '^VITE_FORGE_PLANNER_PACKAGE_ID=0x' .env 2>/dev/null \
         && grep -q '^VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID=0x' .env 2>/dev/null \
-        && grep -q '^VITE_WORLD_PACKAGE_ID=0x' .env 2>/dev/null; do
+        && grep -q '^VITE_WORLD_PACKAGE_ID=0x' .env 2>/dev/null \
+        && grep -q '^VITE_ENERGY_CONFIG_ID=0x' .env 2>/dev/null; do
         sleep 2
       done
       echo "Loading package IDs from .env"
