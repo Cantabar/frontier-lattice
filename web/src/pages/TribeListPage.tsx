@@ -288,7 +288,7 @@ export function TribeListPage() {
                 </Td>
                 <Td>#{t.inGameTribeId}</Td>
                 <Td>
-                  <code>{truncateAddress(t.leaderCharacterId)}</code>
+                  <code>{t.leaderCharacterId ? truncateAddress(t.leaderCharacterId) : "—"}</code>
                 </Td>
                 <Td>
                   <code>{truncateAddress(t.id)}</code>

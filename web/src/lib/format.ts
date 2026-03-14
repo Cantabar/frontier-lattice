@@ -3,7 +3,8 @@
  */
 
 /** Truncate a Sui address/object ID for display: 0x1234...abcd */
-export function truncateAddress(addr: string, startLen = 6, endLen = 4): string {
+export function truncateAddress(addr: string | undefined | null, startLen = 6, endLen = 4): string {
+  if (!addr) return "—";
   if (addr.length <= startLen + endLen + 3) return addr;
   return `${addr.slice(0, startLen)}...${addr.slice(-endLen)}`;
 }
