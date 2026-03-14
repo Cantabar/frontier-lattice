@@ -18,7 +18,7 @@
 
 .PHONY: local local-down local-reset \
         infra-init deploy deploy-infra deploy-images deploy-frontend teardown \
-        build clean help
+        build clean enrich-items help
 
 SHELL := /bin/bash
 AWS_REGION ?= us-east-1
@@ -108,6 +108,11 @@ teardown: ## Destroy all AWS resources
 	@read -p "Type 'yes' to confirm: " confirm && [ "$$confirm" = "yes" ] || exit 1
 	npx --prefix infra cdk destroy --all --force
 	@echo "All resources destroyed."
+
+# ── Static Data ────────────────────────────────────────────────────
+
+enrich-items: ## Enrich items.json with category/group/tier/tag data
+	node scripts/enrich-items.mjs
 
 # ── Build / Clean ──────────────────────────────────────────────────
 
