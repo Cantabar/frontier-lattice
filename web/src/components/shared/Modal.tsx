@@ -51,18 +51,20 @@ const CloseButton = styled.button`
 export function Modal({
   title,
   onClose,
+  disableClose,
   children,
 }: {
   title: string;
   onClose: () => void;
+  disableClose?: boolean;
   children: ReactNode;
 }) {
   return (
-    <Overlay onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <Overlay onMouseDown={(e) => { if (!disableClose && e.target === e.currentTarget) onClose(); }}>
       <Panel>
         <ModalHeader>
           <ModalTitle>{title}</ModalTitle>
-          <CloseButton onClick={onClose}>&times;</CloseButton>
+          <CloseButton onClick={onClose} disabled={disableClose}>&times;</CloseButton>
         </ModalHeader>
         {children}
       </Panel>
