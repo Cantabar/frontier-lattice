@@ -1,12 +1,13 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import styled from "styled-components";
 import { LoadingSpinner } from "../shared/LoadingSpinner";
 import { EmptyState } from "../shared/EmptyState";
 import { PortalTooltip } from "../shared/PortalTooltip";
+import { ResolvedCharacterDisplay } from "../shared/CharacterDisplay";
 import { useSsuInventory } from "../../hooks/useSsuInventory";
+import { useCharacterProfiles } from "../../hooks/useCharacterProfile";
 import { useItems } from "../../hooks/useItems";
-import { truncateAddress } from "../../lib/format";
-import type { AssemblyData } from "../../lib/types";
+import type { AssemblyData, CharacterProfile } from "../../lib/types";
 import type { InventorySlot, InventoryItemEntry } from "../../hooks/useSsuInventory";
 
 // ---------------------------------------------------------------------------
@@ -171,19 +172,28 @@ function InventoryItemTile({ item }: { item: InventoryItemEntry }) {
   );
 }
 
-function SlotSection({ slot }: { slot: InventorySlot }) {
+function SlotSection({ slot, profile }: { slot: InventorySlot; profile?: CharacterProfile | null }) {
+  const pct = slot.maxCapacity > 0 ? (slot.usedCapacity / slot.maxCapacity) * 100 : 0;
+
   const label =
     slot.kind === "owner"
       ? "Owner"
       : slot.kind === "open"
         ? "Open"
-        : truncateAddress(slot.key);
-  const pct = slot.maxCapacity > 0 ? (slot.usedCapacity / slot.maxCapacity) * 100 : 0;
+        : null;
 
   return (
     <SlotColumn>
       <SlotHeader>
-        <SectionTitle>{label}</SectionTitle>
+        {label ? (
+          <SectionTitle>{label}</SectionTitle>
+        ) : (
+          <ResolvedCharacterDisplay
+            characterId={slot.key}
+            profile={profile ?? null}
+            size="sm"
+          />
+        )}
         <CapacityBadge $pct={pct}>{pct.toFixed(0)}%</CapacityBadge>
       </SlotHeader>
       {slot.items.length === 0 ? (
@@ -210,6 +220,13 @@ interface Props {
 export function SsuInventoryPanel({ ssu }: Props) {
   const { slots, isLoading, error } = useSsuInventory(ssu.id, ssu.ownerCapId);
 
+  // Batch-resolve character profiles for player ("other") inventory slots
+  const otherKeys = useMemo(
+    () => slots.filter((s) => s.kind === "other").map((s) => s.key),
+    [slots],
+  );
+  const { profiles } = useCharacterProfiles(otherKeys);
+
   return (
     <PanelWrapper>
       {isLoading ? (
@@ -224,7 +241,13 @@ export function SsuInventoryPanel({ ssu }: Props) {
       ) : (
         <ScrollArea>
           <SlotsRow>
-            {slots.map((slot) => <SlotSection key={slot.key} slot={slot} />)}
+            {slots.map((slot) => (
+              <SlotSection
+                key={slot.key}
+                slot={slot}
+                profile={slot.kind === "other" ? profiles.get(slot.key) : undefined}
+              />
+            ))}
           </SlotsRow>
         </ScrollArea>
       )}
