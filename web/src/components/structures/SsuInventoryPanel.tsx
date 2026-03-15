@@ -32,6 +32,7 @@ const SlotsRow = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.spacing.md};
   min-width: min-content;
+  align-items: flex-start;
 `;
 
 const SlotColumn = styled.div`
@@ -43,6 +44,8 @@ const SlotHeader = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
   margin-bottom: ${({ theme }) => theme.spacing.xs};
+  height: 22px;
+  line-height: 1;
 `;
 
 const SectionTitle = styled.h3`
