@@ -37,10 +37,26 @@ import { getOwnerCap } from "../../world-contracts/ts-scripts/storage-unit/helpe
 // ---------------------------------------------------------------------------
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ITEMS_PATH = resolve(__dirname, "../web/public/items.json");
+const FSD = resolve(__dirname, "../static-data/data/phobos/fsd_built");
 
 interface ItemEntry {
     typeId: number;
     name: string;
+}
+
+interface TypeEntry {
+    volume?: number;
+}
+
+const typesData: Record<string, TypeEntry> = JSON.parse(
+    readFileSync(resolve(FSD, "types.json"), "utf-8"),
+);
+
+/** Look up real volume for a type from static data. On-chain volume is u64, so
+ *  we round to the nearest integer and clamp to a minimum of 1. */
+function volumeForType(typeId: bigint): bigint {
+    const raw = typesData[String(typeId)]?.volume ?? 1;
+    return BigInt(Math.max(1, Math.round(raw)));
 }
 
 const ALL_ITEMS: { typeId: bigint; name: string }[] = (JSON.parse(
@@ -48,7 +64,6 @@ const ALL_ITEMS: { typeId: bigint; name: string }[] = (JSON.parse(
 ) as ItemEntry[]).map((item) => ({ typeId: BigInt(item.typeId), name: item.name }));
 
 const QUANTITY = 100;
-const VOLUME = 1n;
 const DELAY_MS = parseInt(process.env.SEED_DELAY_MS || "2000", 10);
 
 /** Deterministic itemId per item type — avoids collisions with test-resources IDs. */
@@ -105,10 +120,11 @@ async function main() {
         for (let i = 0; i < ALL_ITEMS.length; i++) {
             const item = ALL_ITEMS[i];
             const itemId = itemIdForType(item.typeId);
+            const volume = volumeForType(item.typeId);
 
             console.log(
                 `[${i + 1}/${ALL_ITEMS.length}] Minting ${QUANTITY}x ${item.name} ` +
-                `(typeId=${item.typeId}, itemId=${itemId})...`,
+                `(typeId=${item.typeId}, itemId=${itemId}, vol=${volume})...`,
             );
 
             const tx = new Transaction();
@@ -133,7 +149,7 @@ async function main() {
                     ownerCap,
                     tx.pure.u64(itemId),
                     tx.pure.u64(item.typeId),
-                    tx.pure.u64(VOLUME),
+                    tx.pure.u64(volume),
                     tx.pure.u32(QUANTITY),
                 ],
             });
