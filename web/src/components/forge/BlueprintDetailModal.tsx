@@ -2,6 +2,7 @@ import styled from "styled-components";
 import { Modal } from "../shared/Modal";
 import { useItems } from "../../hooks/useItems";
 import type { BlueprintEntry } from "../../hooks/useBlueprints";
+import { PrimaryButton } from "../shared/Button";
 
 // ── Tier color map ─────────────────────────────────────────────
 
@@ -130,21 +131,8 @@ const Arrow = styled.div`
   padding: ${({ theme }) => theme.spacing.xs} 0;
 `;
 
-const ActionButton = styled.button`
-  width: 100%;
+const ActionButton = styled(PrimaryButton)`
   margin-top: ${({ theme }) => theme.spacing.md};
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #0f1318;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
 `;
 
 // ── Component ──────────────────────────────────────────────────

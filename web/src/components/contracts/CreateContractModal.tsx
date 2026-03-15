@@ -18,6 +18,7 @@ import { SsuPickerField } from "../shared/SsuPickerField";
 import { SsuItemPickerField } from "../shared/SsuItemPickerField";
 import { CharacterPickerField } from "../shared/CharacterPickerField";
 import { TribePickerField } from "../shared/TribePickerField";
+import { PrimaryButton } from "../shared/Button";
 
 const Label = styled.label`
   display: block;
@@ -89,25 +90,8 @@ const Separator = styled.hr`
   margin: ${({ theme }) => theme.spacing.md} 0;
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 const ErrorBanner = styled.div`
@@ -673,9 +657,9 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
         </>
       )}
 
-      <Button onClick={handleCreate} disabled={isPending || isEnabling || ssusNeedingExtension.length > 0}>
+      <SubmitButton $fullWidth onClick={handleCreate} disabled={isPending || isEnabling || ssusNeedingExtension.length > 0}>
         {isPending ? "Creating…" : "Create Contract"}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

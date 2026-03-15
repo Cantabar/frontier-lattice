@@ -8,6 +8,7 @@ import { CreateContractModal } from "../components/contracts/CreateContractModal
 import { ContractHistory } from "../components/contracts/ContractHistory";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
+import { PrimaryButton, SecondaryButton } from "../components/shared/Button";
 import type { TrustlessContractData, TrustlessContractVariant } from "../lib/types";
 
 const Page = styled.div``;
@@ -62,35 +63,8 @@ const TypeSelect = styled.select`
   }
 `;
 
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-`;
-
-const BackButton = styled.button`
-  background: ${({ theme }) => theme.colors.surface.overlay};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
+const BackButton = styled(SecondaryButton)`
   margin-bottom: ${({ theme }) => theme.spacing.md};
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.surface.borderHover};
-  }
 `;
 
 const Grid = styled.div`
@@ -131,7 +105,7 @@ export function TrustlessContracts() {
     <Page>
       <Header>
         <Title>Trustless Contracts</Title>
-        {characterId && <Button onClick={() => setShowCreate(true)}>+ Create Contract</Button>}
+        {characterId && <PrimaryButton onClick={() => setShowCreate(true)}>+ Create Contract</PrimaryButton>}
       </Header>
 
       {selected ? (

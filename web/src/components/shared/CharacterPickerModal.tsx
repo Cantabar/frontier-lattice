@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import styled from "styled-components";
 import { useCharacters } from "../../hooks/useCharacters";
 import { truncateAddress, generateAvatarColor } from "../../lib/format";
+import { PrimaryButton } from "./Button";
 
 // ── Styled components ──────────────────────────────────────────
 
@@ -147,18 +148,8 @@ const Footer = styled.div`
   gap: ${({ theme }) => theme.spacing.sm};
 `;
 
-const DoneButton = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
+const DoneButton = styled(PrimaryButton)`
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
 `;
 
 const ClearButton = styled.button`

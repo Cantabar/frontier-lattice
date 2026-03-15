@@ -6,6 +6,7 @@ import { CharacterDisplay } from "../shared/CharacterDisplay";
 import { StatusBadge } from "../shared/StatusBadge";
 import { useIdentity } from "../../hooks/useIdentity";
 import { buildAcceptJob, buildConfirmCompletion, buildCancelJob, buildExpireJob } from "../../lib/sui";
+import { PrimaryButton, SecondaryButton as SharedSecondary, DangerButton as SharedDanger } from "../shared/Button";
 
 const Wrapper = styled.div`
   background: ${({ theme }) => theme.colors.surface.raised};
@@ -59,38 +60,6 @@ const ActionRow = styled.div`
   gap: ${({ theme }) => theme.spacing.sm};
   border-top: 1px solid ${({ theme }) => theme.colors.surface.border};
   padding-top: ${({ theme }) => theme.spacing.md};
-`;
-
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: ${({ theme }) => theme.colors.surface.overlay};
-  color: ${({ theme }) => theme.colors.text.secondary};
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.surface.borderHover};
-  }
-`;
-
-const DangerButton = styled(Button)`
-  background: ${({ theme }) => theme.colors.danger};
-
-  &:hover {
-    background: #e0222a;
-  }
 `;
 
 interface Props {
@@ -175,15 +144,15 @@ export function JobDetail({ job, cap }: Props) {
 
       <ActionRow>
         {job.status === "Open" && !isPoster && cap && (
-          <Button onClick={handleAccept}>Accept Job</Button>
+          <PrimaryButton onClick={handleAccept}>Accept Job</PrimaryButton>
         )}
         {job.status === "Assigned" && isPoster && cap && (
-          <Button onClick={handleConfirm}>Confirm Completion</Button>
+          <PrimaryButton onClick={handleConfirm}>Confirm Completion</PrimaryButton>
         )}
         {(isPoster || isAssignee) && cap && job.status !== "Open" && (
-          <DangerButton onClick={handleCancel}>Cancel</DangerButton>
+          <SharedDanger onClick={handleCancel}>Cancel</SharedDanger>
         )}
-        <SecondaryButton onClick={handleExpire}>Expire</SecondaryButton>
+        <SharedSecondary onClick={handleExpire}>Expire</SharedSecondary>
       </ActionRow>
     </Wrapper>
   );

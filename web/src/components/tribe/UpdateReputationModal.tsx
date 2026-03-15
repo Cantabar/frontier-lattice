@@ -4,6 +4,7 @@ import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { buildUpdateReputation } from "../../lib/sui";
 import { truncateAddress } from "../../lib/format";
+import { PrimaryButton } from "../shared/Button";
 
 const Label = styled.label`
   display: block;
@@ -41,7 +42,7 @@ const ToggleButton = styled.button<{ $active: boolean }>`
   flex: 1;
   background: ${({ $active, theme }) =>
     $active ? theme.colors.primary.main : theme.colors.surface.overlay};
-  color: ${({ $active }) => ($active ? "#fff" : "inherit")};
+  color: ${({ $active, theme }) => ($active ? theme.colors.button.primaryText : "inherit")};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.colors.primary.main : theme.colors.surface.border};
   border-radius: ${({ theme }) => theme.radii.sm};
@@ -51,25 +52,8 @@ const ToggleButton = styled.button<{ $active: boolean }>`
   cursor: pointer;
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 const CharacterLabel = styled.div`
@@ -133,9 +117,9 @@ export function UpdateReputationModal({ tribeId, capId, characterId, currentRepu
         autoFocus
       />
 
-      <Button onClick={handleUpdate} disabled={!delta || Number(delta) <= 0 || isPending}>
+      <SubmitButton $fullWidth onClick={handleUpdate} disabled={!delta || Number(delta) <= 0 || isPending}>
         {isPending ? "Updating…" : `${increase ? "Increase" : "Decrease"} Reputation`}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

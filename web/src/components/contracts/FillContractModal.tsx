@@ -12,6 +12,7 @@ import {
   buildDeliverTransport,
 } from "../../lib/sui";
 import { SsuPickerField } from "../shared/SsuPickerField";
+import { PrimaryButton } from "../shared/Button";
 
 const Label = styled.label`
   display: block;
@@ -46,25 +47,8 @@ const Info = styled.div`
   line-height: 1.5;
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 // ---------------------------------------------------------------------------
@@ -205,9 +189,9 @@ export function FillContractModal({ contract, onClose }: Props) {
         </>
       )}
 
-      <Button onClick={handleSubmit} disabled={!isValid || isPending}>
+      <SubmitButton $fullWidth onClick={handleSubmit} disabled={!isValid || isPending}>
         {isPending ? "Submitting…" : "Submit"}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

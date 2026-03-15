@@ -8,6 +8,7 @@ import { CreateJobModal } from "../components/jobs/CreateJobModal";
 import { JobHistory } from "../components/jobs/JobHistory";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
+import { PrimaryButton } from "../components/shared/Button";
 import type { JobPostingData } from "../lib/types";
 
 const Page = styled.div``;
@@ -43,21 +44,6 @@ const Tab = styled.button<{ $active: boolean }>`
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-`;
-
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
 `;
 
 const Grid = styled.div`
@@ -112,7 +98,7 @@ export function ContractBoard() {
     <Page>
       <Header>
         <Title>Contract Board</Title>
-        {cap && <Button onClick={() => setShowCreate(true)}>+ Post Job</Button>}
+        {cap && <PrimaryButton onClick={() => setShowCreate(true)}>+ Post Job</PrimaryButton>}
       </Header>
 
       <TabRow>
@@ -125,9 +111,9 @@ export function ContractBoard() {
 
       {selectedJob ? (
         <>
-          <Button onClick={() => setSelectedJob(null)} style={{ marginBottom: 16, background: "#2D2B2B" }}>
+          <PrimaryButton onClick={() => setSelectedJob(null)} style={{ marginBottom: 16, background: "#2D2B2B" }}>
             ← Back to list
-          </Button>
+          </PrimaryButton>
           <JobDetail job={selectedJob} cap={cap} />
         </>
       ) : (

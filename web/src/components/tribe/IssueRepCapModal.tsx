@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { buildIssueRepUpdateCap } from "../../lib/sui";
+import { PrimaryButton } from "../shared/Button";
 
 const Label = styled.label`
   display: block;
@@ -30,25 +31,8 @@ const Input = styled.input`
   }
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 const InfoText = styled.div`
@@ -101,9 +85,9 @@ export function IssueRepCapModal({ tribeId, capId, onClose }: Props) {
         autoFocus
       />
 
-      <Button onClick={handleIssue} disabled={!recipientAddress || isPending}>
+      <SubmitButton $fullWidth onClick={handleIssue} disabled={!recipientAddress || isPending}>
         {isPending ? "Issuing…" : "Issue RepUpdateCap"}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

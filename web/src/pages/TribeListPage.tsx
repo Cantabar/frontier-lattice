@@ -11,6 +11,7 @@ import { EmptyState } from "../components/shared/EmptyState";
 import { truncateAddress } from "../lib/format";
 import { buildLookupTribeByGameId } from "../lib/sui";
 import { config } from "../config";
+import { PrimaryButton } from "../components/shared/Button";
 import type { TribeListItem } from "../lib/types";
 
 const Page = styled.div``;
@@ -26,26 +27,6 @@ const Title = styled.h1`
   font-size: 24px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
-`;
-
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 const SectionLabel = styled.h2`
@@ -310,12 +291,12 @@ export function TribeListPage() {
       <Header>
         <Title>Tribes</Title>
         <div>
-          <Button
+          <PrimaryButton
             onClick={() => setShowCreate(true)}
             disabled={hasTribeCap || optimistic !== null}
           >
             + Create Tribe
-          </Button>
+          </PrimaryButton>
           {(hasTribeCap || optimistic !== null) && (
             <DisabledHint>A character can only belong to 1 tribe</DisabledHint>
           )}
@@ -359,9 +340,9 @@ export function TribeListPage() {
           onChange={(e) => { setLookupId(e.target.value); setLookupError(""); }}
           onKeyDown={(e) => e.key === "Enter" && handleLookup()}
         />
-        <Button onClick={handleLookup} disabled={lookupPending || !lookupId}>
+        <PrimaryButton onClick={handleLookup} disabled={lookupPending || !lookupId}>
           {lookupPending ? "Looking up…" : "Lookup"}
-        </Button>
+        </PrimaryButton>
         {lookupError && <LookupError>{lookupError}</LookupError>}
       </LookupRow>
 

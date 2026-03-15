@@ -15,6 +15,7 @@ import {
   buildExpireTrustlessContract,
 } from "../../lib/sui";
 import { FillContractModal } from "./FillContractModal";
+import { PrimaryButton, SecondaryButton as SharedSecondary, DangerButton as SharedDanger } from "../shared/Button";
 
 const Wrapper = styled.div`
   background: ${({ theme }) => theme.colors.surface.raised};
@@ -111,42 +112,6 @@ const ActionRow = styled.div`
   padding-top: ${({ theme }) => theme.spacing.md};
 `;
 
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: ${({ theme }) => theme.colors.surface.overlay};
-  color: ${({ theme }) => theme.colors.text.secondary};
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.surface.borderHover};
-  }
-`;
-
-const DangerButton = styled(Button)`
-  background: ${({ theme }) => theme.colors.danger};
-
-  &:hover {
-    background: #e0222a;
-  }
-`;
 
 // ---------------------------------------------------------------------------
 
@@ -327,34 +292,34 @@ export function ContractDetail({ contract: initial }: Props) {
 
         <ActionRow>
           {canFillCoins && (
-            <Button onClick={() => setShowFill(true)} disabled={isPending}>
+            <PrimaryButton onClick={() => setShowFill(true)} disabled={isPending}>
               Fill with Coins
-            </Button>
+            </PrimaryButton>
           )}
           {canFillItems && (
-            <Button onClick={() => setShowFill(true)} disabled={isPending}>
+            <PrimaryButton onClick={() => setShowFill(true)} disabled={isPending}>
               Fill with Items
-            </Button>
+            </PrimaryButton>
           )}
           {canAcceptTransport && (
-            <Button onClick={handleAcceptTransport} disabled={isPending}>
+            <PrimaryButton onClick={handleAcceptTransport} disabled={isPending}>
               {isPending ? "Accepting…" : "Accept Transport"}
-            </Button>
+            </PrimaryButton>
           )}
           {canDeliver && (
-            <Button onClick={() => setShowFill(true)} disabled={isPending}>
+            <PrimaryButton onClick={() => setShowFill(true)} disabled={isPending}>
               Deliver Items
-            </Button>
+            </PrimaryButton>
           )}
           {canCancel && (
-            <DangerButton onClick={handleCancel} disabled={isPending}>
+            <SharedDanger onClick={handleCancel} disabled={isPending}>
               {isPending ? "Cancelling…" : "Cancel"}
-            </DangerButton>
+            </SharedDanger>
           )}
           {canExpire && (
-            <SecondaryButton onClick={handleExpire} disabled={isPending}>
+            <SharedSecondary onClick={handleExpire} disabled={isPending}>
               {isPending ? "Expiring…" : "Expire"}
-            </SecondaryButton>
+            </SharedSecondary>
           )}
         </ActionRow>
       </Wrapper>

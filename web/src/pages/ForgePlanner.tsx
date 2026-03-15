@@ -8,6 +8,7 @@ import { OptimizerPanel } from "../components/forge/OptimizerPanel";
 import { CreateOrderModal } from "../components/forge/CreateOrderModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
+import { PrimaryButton } from "../components/shared/Button";
 import { timeAgo, truncateAddress } from "../lib/format";
 
 const Page = styled.div``;
@@ -23,21 +24,6 @@ const Title = styled.h1`
   font-size: 24px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
-`;
-
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
 `;
 
 const SectionLabel = styled.h2`
@@ -104,7 +90,7 @@ export function ForgePlanner() {
       <Header>
         <Title>Forge Planner</Title>
         {cap && tribeId && (
-          <Button onClick={() => setShowCreateOrder(true)}>+ New Order</Button>
+          <PrimaryButton onClick={() => setShowCreateOrder(true)}>+ New Order</PrimaryButton>
         )}
       </Header>
 

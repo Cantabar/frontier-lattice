@@ -6,6 +6,7 @@ import { formatAmount, truncateAddress, formatDeadline } from "../../lib/format"
 import { parseCoinSymbol, isNativeSui } from "../../lib/coinUtils";
 import { useCoinObjectIds } from "../../hooks/useCoinTypes";
 import { buildDepositToTreasury, buildWithdrawFromTreasury, buildProposeTreasurySpend, buildVoteOnProposal, buildExecuteProposal } from "../../lib/sui";
+import { PrimaryButton, SecondaryButton as SharedSecondary } from "../shared/Button";
 
 /* ------------------------------------------------------------------ */
 /* Styled                                                              */
@@ -53,35 +54,6 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary.main};
-  }
-`;
-
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const SecondaryButton = styled(Button)`
-  background: ${({ theme }) => theme.colors.surface.overlay};
-  color: ${({ theme }) => theme.colors.text.secondary};
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.surface.borderHover};
   }
 `;
 
@@ -208,9 +180,9 @@ export function TreasuryPanel({ tribe, cap, proposals }: Props) {
           value={depositAmount}
           onChange={(e) => setDepositAmount(e.target.value)}
         />
-        <Button onClick={handleDeposit} disabled={!depositAmount}>
+        <PrimaryButton onClick={handleDeposit} disabled={!depositAmount}>
           Deposit
-        </Button>
+        </PrimaryButton>
       </Row>
 
       {/* Withdraw (Leader/Officer only) */}
@@ -222,9 +194,9 @@ export function TreasuryPanel({ tribe, cap, proposals }: Props) {
             value={withdrawAmount}
             onChange={(e) => setWithdrawAmount(e.target.value)}
           />
-          <SecondaryButton onClick={handleWithdraw} disabled={!withdrawAmount}>
+          <SharedSecondary onClick={handleWithdraw} disabled={!withdrawAmount}>
             Withdraw
-          </SecondaryButton>
+          </SharedSecondary>
         </Row>
       )}
 
@@ -253,16 +225,16 @@ export function TreasuryPanel({ tribe, cap, proposals }: Props) {
                   onChange={(e) => setPropDeadlineHours(e.target.value)}
                   style={{ flex: "0 0 120px" }}
                 />
-                <Button onClick={handlePropose} disabled={!propAmount || !propRecipient}>
+                <PrimaryButton onClick={handlePropose} disabled={!propAmount || !propRecipient}>
                   Submit Proposal
-                </Button>
-                <SecondaryButton onClick={() => setProposing(false)}>Cancel</SecondaryButton>
+                </PrimaryButton>
+                <SharedSecondary onClick={() => setProposing(false)}>Cancel</SharedSecondary>
               </Row>
             </>
           ) : (
-            <SecondaryButton onClick={() => setProposing(true)}>
+            <SharedSecondary onClick={() => setProposing(true)}>
               + Propose Spend
-            </SecondaryButton>
+            </SharedSecondary>
           )}
         </>
       )}
@@ -283,8 +255,8 @@ export function TreasuryPanel({ tribe, cap, proposals }: Props) {
                 <ProposalAmount>{formatAmount(p.amount)} {coinSymbol}</ProposalAmount>
                 {cap && (
                   <Row style={{ marginTop: 8, marginBottom: 0 }}>
-                    <SecondaryButton onClick={() => handleVote(p.id)}>Vote</SecondaryButton>
-                    <SecondaryButton onClick={() => handleExecute(p.id)}>Execute</SecondaryButton>
+                    <SharedSecondary onClick={() => handleVote(p.id)}>Vote</SharedSecondary>
+                    <SharedSecondary onClick={() => handleExecute(p.id)}>Execute</SharedSecondary>
                   </Row>
                 )}
               </ProposalCard>

@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { buildAddMember } from "../../lib/sui";
+import { PrimaryButton } from "../shared/Button";
 import type { Role, TribeCapData } from "../../lib/types";
 
 const Label = styled.label`
@@ -47,25 +48,8 @@ const Select = styled.select`
   }
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 interface Props {
@@ -118,9 +102,9 @@ export function AddMemberModal({ tribeId, cap, onClose }: Props) {
         <option value="Officer">Officer</option>
       </Select>
 
-      <Button onClick={handleAdd} disabled={!characterId || !walletAddress || isPending}>
+      <SubmitButton $fullWidth onClick={handleAdd} disabled={!characterId || !walletAddress || isPending}>
         {isPending ? "Adding…" : "Add Member"}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

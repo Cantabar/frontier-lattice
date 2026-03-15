@@ -4,6 +4,7 @@ import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { buildChangeRole } from "../../lib/sui";
 import { truncateAddress } from "../../lib/format";
+import { PrimaryButton } from "../shared/Button";
 import type { Role } from "../../lib/types";
 
 const Label = styled.label`
@@ -48,25 +49,8 @@ const Select = styled.select`
   }
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 const CharacterLabel = styled.div`
@@ -142,9 +126,9 @@ export function ChangeRoleModal({ tribeId, capId, characterId, currentRole, onCl
         autoFocus
       />
 
-      <Button onClick={handleChangeRole} disabled={!walletAddress || isPending}>
+      <SubmitButton $fullWidth onClick={handleChangeRole} disabled={!walletAddress || isPending}>
         {isPending ? "Changing…" : `Change to ${newRole}`}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

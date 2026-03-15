@@ -5,6 +5,7 @@ import { Modal } from "../shared/Modal";
 import { buildTransferLeadership } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
 import { truncateAddress } from "../../lib/format";
+import { DangerButton } from "../shared/Button";
 import type { TribeMember } from "../../lib/types";
 
 const Label = styled.label`
@@ -49,25 +50,8 @@ const Input = styled.input`
   }
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: #e53935;
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(DangerButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: #c62828;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 const Warning = styled.div`
@@ -147,9 +131,9 @@ export function TransferLeadershipModal({
         autoFocus
       />
 
-      <Button onClick={handleTransfer} disabled={!selectedCharId || !walletAddress || isPending}>
+      <SubmitButton $fullWidth onClick={handleTransfer} disabled={!selectedCharId || !walletAddress || isPending}>
         {isPending ? "Transferring…" : "Transfer Leadership"}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

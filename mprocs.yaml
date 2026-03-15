@@ -18,7 +18,7 @@ procs:
   # ── Postgres (via docker compose) ────────────────────────────────
   postgres:
     shell: |
-      trap 'docker compose down postgres' EXIT
+      trap 'docker compose down postgres && docker volume rm frontier-corm_pgdata' EXIT
       docker compose up postgres
     stop: "SIGTERM"
 

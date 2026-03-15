@@ -9,6 +9,7 @@ import { buildCreateTribe } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
 import { useNotifications } from "../../hooks/useNotifications";
 import { config } from "../../config";
+import { PrimaryButton } from "../shared/Button";
 import type { TribeListItem } from "../../lib/types";
 
 const Label = styled.label`
@@ -75,27 +76,9 @@ const Warning = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
-
 
 interface Props {
   onClose: () => void;
@@ -259,9 +242,9 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
         </div>
       )}
 
-      <Button onClick={handleCreate} disabled={!name || !characterId || !hasTribe || isPending || misconfigured || !selectedCoinType}>
+      <SubmitButton $fullWidth onClick={handleCreate} disabled={!name || !characterId || !hasTribe || isPending || misconfigured || !selectedCoinType}>
         {isPending ? "Creating…" : misconfigured ? "Tribe contracts not configured" : "Create Tribe"}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

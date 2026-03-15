@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useOptimizer, type ResolvedNode, type GapAnalysis } from "../../hooks/useOptimizer";
 import type { RecipeData } from "../../lib/types";
 import { ItemPickerField } from "../shared/ItemPickerField";
+import { PrimaryButton, SecondaryButton } from "../shared/Button";
 import { useItems } from "../../hooks/useItems";
 
 const Panel = styled.section`
@@ -40,26 +41,6 @@ const Input = styled.input`
   &:focus {
     outline: none;
     border-color: ${({ theme }) => theme.colors.primary.main};
-  }
-`;
-
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 `;
 
@@ -190,13 +171,13 @@ export function OptimizerPanel({
           onChange={(e) => setQuantity(e.target.value)}
           style={{ flex: "0 0 80px" }}
         />
-        <Button onClick={handleOptimize} disabled={!targetType}>
+        <PrimaryButton onClick={handleOptimize} disabled={!targetType}>
           Resolve
-        </Button>
+        </PrimaryButton>
         {result && (
-          <Button onClick={clear} style={{ background: "#2D2B2B" }}>
+          <SecondaryButton onClick={clear}>
             Clear
-          </Button>
+          </SecondaryButton>
         )}
       </Row>
 

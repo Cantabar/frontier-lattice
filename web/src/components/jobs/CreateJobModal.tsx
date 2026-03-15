@@ -9,6 +9,7 @@ import { config } from "../../config";
 import type { TribeCapData } from "../../lib/types";
 import { ItemPickerField } from "../shared/ItemPickerField";
 import { SsuPickerField } from "../shared/SsuPickerField";
+import { PrimaryButton } from "../shared/Button";
 
 const Label = styled.label`
   display: block;
@@ -77,25 +78,8 @@ const Row = styled.div`
   gap: ${({ theme }) => theme.spacing.md};
 `;
 
-const Button = styled.button`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
+const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 type CompletionVariant = "Delivery" | "Bounty" | "Transport" | "Custom";
@@ -258,9 +242,9 @@ export function CreateJobModal({ tribeId, cap, onClose }: Props) {
         </div>
       )}
 
-      <Button onClick={handleCreate} disabled={!description || !escrow || !characterId || isPending}>
+      <SubmitButton $fullWidth onClick={handleCreate} disabled={!description || !escrow || !characterId || isPending}>
         {isPending ? "Posting…" : "Post Job"}
-      </Button>
+      </SubmitButton>
     </Modal>
   );
 }

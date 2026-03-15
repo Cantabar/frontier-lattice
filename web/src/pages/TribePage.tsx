@@ -15,6 +15,7 @@ import { IssueRepCapModal } from "../components/tribe/IssueRepCapModal";
 import { TransferLeadershipModal } from "../components/tribe/TransferLeadershipModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
+import { PrimaryButton, SecondaryButton as SecondaryBtn } from "../components/shared/Button";
 import type { Role } from "../lib/types";
 
 const Page = styled.div``;
@@ -44,39 +45,10 @@ const ActionRow = styled.div`
   gap: ${({ theme }) => theme.spacing.sm};
 `;
 
-const Button = styled.button`
-  background: ${({ theme }) => theme.colors.primary.main};
-  color: #fff;
-  border: none;
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.hover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
 const DisabledHint = styled.span`
   font-size: 11px;
   color: ${({ theme }) => theme.colors.text.muted};
   margin-left: ${({ theme }) => theme.spacing.sm};
-`;
-
-const SecondaryButton = styled(Button)`
-  background: ${({ theme }) => theme.colors.surface.overlay};
-  color: ${({ theme }) => theme.colors.text.secondary};
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.surface.borderHover};
-  }
 `;
 
 const SectionLabel = styled.h2`
@@ -121,12 +93,12 @@ export function TribePage() {
         <Header>
           <Title>Tribe</Title>
           <div>
-            <Button
+            <PrimaryButton
               onClick={() => setShowCreate(true)}
               disabled={hasTribeCap}
             >
               + Create Tribe
-            </Button>
+            </PrimaryButton>
             {hasTribeCap && (
               <DisabledHint>A character can only belong to 1 tribe</DisabledHint>
             )}
@@ -160,15 +132,15 @@ export function TribePage() {
         </Title>
         <ActionRow>
           {isLeaderOrOfficer && (
-            <Button onClick={() => setShowAddMember(true)}>+ Add Member</Button>
+            <PrimaryButton onClick={() => setShowAddMember(true)}>+ Add Member</PrimaryButton>
           )}
-          <SecondaryButton
+          <SecondaryBtn
             onClick={() => setShowCreate(true)}
             disabled={hasTribeCap}
             title={hasTribeCap ? "A character can only belong to 1 tribe" : undefined}
           >
             + New Tribe
-          </SecondaryButton>
+          </SecondaryBtn>
         </ActionRow>
       </Header>
 
@@ -207,9 +179,9 @@ export function TribePage() {
         <>
           <SectionLabel>Tribe Admin</SectionLabel>
           <ActionRow>
-            <SecondaryButton onClick={() => setShowIssueRepCap(true)}>
+            <SecondaryBtn onClick={() => setShowIssueRepCap(true)}>
               Issue RepUpdateCap
-            </SecondaryButton>
+            </SecondaryBtn>
           </ActionRow>
         </>
       )}
