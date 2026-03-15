@@ -1,0 +1,9 @@
+[package]
+name = "multi_input_contract"
+edition = "2024.beta"
+
+[environments]
+localnet = "ca6ba8e0"
+
+[dependencies]
+world = { local = "../../../world-contracts/contracts/world" }
