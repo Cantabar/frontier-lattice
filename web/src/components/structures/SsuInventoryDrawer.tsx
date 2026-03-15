@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { Modal } from "../shared/Modal";
+import { Drawer } from "../shared/Drawer";
 import { LoadingSpinner } from "../shared/LoadingSpinner";
 import { EmptyState } from "../shared/EmptyState";
 import { useSsuInventory } from "../../hooks/useSsuInventory";
@@ -182,7 +182,7 @@ function SlotSection({ slot }: { slot: InventorySlot }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main modal
+// Main drawer
 // ---------------------------------------------------------------------------
 
 interface Props {
@@ -190,13 +190,13 @@ interface Props {
   onClose: () => void;
 }
 
-export function SsuInventoryModal({ ssu, onClose }: Props) {
+export function SsuInventoryDrawer({ ssu, onClose }: Props) {
   const { slots, isLoading, error } = useSsuInventory(ssu.id, ssu.ownerCapId);
   const typeLabel = ASSEMBLY_TYPES[ssu.typeId]?.label ?? "Storage Unit";
   const displayName = ssu.name || truncateAddress(ssu.id, 10, 6);
 
   return (
-    <Modal title={`${displayName} — ${typeLabel}`} onClose={onClose}>
+    <Drawer title={`${displayName} — ${typeLabel}`} onClose={onClose}>
       {isLoading ? (
         <LoadingSpinner />
       ) : error ? (
@@ -209,6 +209,6 @@ export function SsuInventoryModal({ ssu, onClose }: Props) {
       ) : (
         slots.map((slot) => <SlotSection key={slot.key} slot={slot} />)
       )}
-    </Modal>
+    </Drawer>
   );
 }

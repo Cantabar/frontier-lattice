@@ -6,7 +6,7 @@ import { useNetworkNodes } from "../hooks/useNetworkNodes";
 import { useIdentity } from "../hooks/useIdentity";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
-import { SsuInventoryModal } from "../components/structures/SsuInventoryModal";
+import { SsuInventoryDrawer } from "../components/structures/SsuInventoryDrawer";
 import { NetworkNodeGroup } from "../components/structures/NetworkNodeGroup";
 import { buildOnlineStructure, buildOfflineStructure } from "../lib/sui";
 import { config } from "../config";
@@ -443,7 +443,7 @@ export function MyStructuresPage() {
       )}
 
       {selectedSsu && (
-        <SsuInventoryModal ssu={selectedSsu} onClose={() => setSelectedSsu(null)} />
+        <SsuInventoryDrawer ssu={selectedSsu} onClose={() => setSelectedSsu(null)} />
       )}
     </Page>
   );
