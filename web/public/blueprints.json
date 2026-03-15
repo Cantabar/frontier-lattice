@@ -7,6 +7,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Char Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -40,6 +42,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Char Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -73,6 +77,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Char Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 4,
     "outputs": [
       {
@@ -106,6 +112,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Comet Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -139,6 +147,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Comet Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -172,6 +182,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Comet Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 4,
     "outputs": [
       {
@@ -205,6 +217,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Dewdrop Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 15,
     "outputs": [
       {
@@ -247,6 +261,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Ember Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 15,
     "outputs": [
       {
@@ -285,6 +301,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Glint Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 15,
     "outputs": [
       {
@@ -327,6 +345,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Ingot Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 5,
     "outputs": [
       {
@@ -356,6 +376,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Ingot Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 8,
     "outputs": [
       {
@@ -385,6 +407,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Rift",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 20,
     "outputs": [
       {
@@ -423,6 +447,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Rift",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 20,
     "outputs": [
       {
@@ -461,6 +487,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Slag Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -498,6 +526,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Slag Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -535,6 +565,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Slag Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 4,
     "outputs": [
       {
@@ -572,6 +604,8 @@
     "primaryCategoryName": "Asteroid",
     "primaryGroupName": "Soot Ores",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 15,
     "outputs": [
       {
@@ -610,6 +644,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Asteroid Mining Crystal",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": "large",
     "runTime": 5,
     "outputs": [
       {
@@ -643,6 +679,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Asteroid Mining Crystal",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": "large",
     "runTime": 5,
     "outputs": [
       {
@@ -676,6 +714,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Asteroid Mining Crystal",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": "medium",
     "runTime": 3,
     "outputs": [
       {
@@ -709,6 +749,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Asteroid Mining Crystal",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": "medium",
     "runTime": 3,
     "outputs": [
       {
@@ -742,6 +784,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Asteroid Mining Crystal",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": "small",
     "runTime": 3,
     "outputs": [
       {
@@ -776,6 +820,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Coilgun Charge",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": "medium",
     "runTime": 13,
     "outputs": [
       {
@@ -805,6 +851,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Coilgun Charge",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": "small",
     "runTime": 5,
     "outputs": [
       {
@@ -834,6 +882,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "EM Disintegrator Charge ",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": "medium",
     "runTime": 3,
     "outputs": [
       {
@@ -867,6 +917,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "EM Disintegrator Charge ",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": "medium",
     "runTime": 3,
     "outputs": [
       {
@@ -900,6 +952,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "EM Disintegrator Charge ",
     "primaryMetaGroupName": "Basic",
+    "slotType": null,
+    "sizeClass": "small",
     "runTime": 3,
     "outputs": [
       {
@@ -933,6 +987,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Gyrojet Ammunition",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": "small",
     "runTime": 3,
     "outputs": [
       {
@@ -967,6 +1023,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Gyrojet Ammunition",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": "small",
     "runTime": 5,
     "outputs": [
       {
@@ -996,6 +1054,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Gyrojet Ammunition",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": "small",
     "runTime": 5,
     "outputs": [
       {
@@ -1025,6 +1085,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Heat Sink Charge",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -1063,6 +1125,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Nanitic Armor Weave Sequencer",
     "primaryMetaGroupName": "Basic",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 248,
     "outputs": [
       {
@@ -1096,6 +1160,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Nanitic Armor Weave Sequencer",
     "primaryMetaGroupName": "Basic",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 222,
     "outputs": [
       {
@@ -1129,6 +1195,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Nanitic Armor Weave Sequencer",
     "primaryMetaGroupName": "Basic",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 222,
     "outputs": [
       {
@@ -1162,6 +1230,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Nanitic Armor Weave Sequencer",
     "primaryMetaGroupName": "Basic",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 222,
     "outputs": [
       {
@@ -1195,6 +1265,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Plasma Charge",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": "medium",
     "runTime": 13,
     "outputs": [
       {
@@ -1244,6 +1316,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Plasma Charge",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": "small",
     "runTime": 5,
     "outputs": [
       {
@@ -1277,6 +1351,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Plasma Charge",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": "small",
     "runTime": 5,
     "outputs": [
       {
@@ -1310,6 +1386,8 @@
     "primaryCategoryName": "Charge",
     "primaryGroupName": "Projectile Ammo",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": "medium",
     "runTime": 13,
     "outputs": [
       {
@@ -1343,6 +1421,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Crude Fuel",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 35,
     "outputs": [
       {
@@ -1376,6 +1456,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Crude Fuel",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 35,
     "outputs": [
       {
@@ -1409,6 +1491,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Exotronic Frames",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 46,
     "outputs": [
       {
@@ -1446,6 +1530,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Exotronic Frames",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 31,
     "outputs": [
       {
@@ -1483,6 +1569,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Exotronic Frames",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 31,
     "outputs": [
       {
@@ -1520,6 +1608,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Exotronic Frames",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 126,
     "outputs": [
       {
@@ -1557,6 +1647,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Exotronic Frames",
     "primaryMetaGroupName": "Exotic",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 31,
     "outputs": [
       {
@@ -1594,6 +1686,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Exotronic Frames",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 20,
     "outputs": [
       {
@@ -1628,6 +1722,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Hydrogen Fuel",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 6,
     "outputs": [
       {
@@ -1661,6 +1757,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Hydrogen Fuel",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -1700,6 +1798,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Miscellaneous",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 43200,
     "outputs": [
       {
@@ -1749,6 +1849,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Miscellaneous",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 43200,
     "outputs": [
       {
@@ -1790,6 +1892,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Salvage",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -1819,6 +1923,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Salvage",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -1861,6 +1967,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Salvage",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -1890,6 +1998,8 @@
     "primaryCategoryName": "Commodity",
     "primaryGroupName": "Salvage",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 4,
     "outputs": [
       {
@@ -1932,6 +2042,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 8,
     "outputs": [
       {
@@ -1961,6 +2073,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 5,
     "outputs": [
       {
@@ -1990,6 +2104,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 7,
     "outputs": [
       {
@@ -2019,6 +2135,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 7,
     "outputs": [
       {
@@ -2048,6 +2166,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 25,
     "outputs": [
       {
@@ -2085,6 +2205,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 5,
     "outputs": [
       {
@@ -2114,6 +2236,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 5,
     "outputs": [
       {
@@ -2143,6 +2267,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 17,
     "outputs": [
       {
@@ -2185,6 +2311,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 37,
     "outputs": [
       {
@@ -2214,6 +2342,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 24,
     "outputs": [
       {
@@ -2243,6 +2373,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 32,
     "outputs": [
       {
@@ -2272,6 +2404,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 32,
     "outputs": [
       {
@@ -2301,6 +2435,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -2334,6 +2470,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -2367,6 +2505,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 4,
     "outputs": [
       {
@@ -2404,6 +2544,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 4,
     "outputs": [
       {
@@ -2437,6 +2579,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 11,
     "outputs": [
       {
@@ -2475,6 +2619,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 11,
     "outputs": [
       {
@@ -2513,6 +2659,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 4,
     "outputs": [
       {
@@ -2546,6 +2694,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Manufacturing Component",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 4,
     "outputs": [
       {
@@ -2583,6 +2733,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 18,
     "outputs": [
       {
@@ -2617,6 +2769,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 20,
     "outputs": [
       {
@@ -2660,6 +2814,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 9,
     "outputs": [
       {
@@ -2693,6 +2849,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 25,
     "outputs": [
       {
@@ -2726,6 +2884,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 9,
     "outputs": [
       {
@@ -2759,6 +2919,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 25,
     "outputs": [
       {
@@ -2792,6 +2954,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 9,
     "outputs": [
       {
@@ -2825,6 +2989,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 25,
     "outputs": [
       {
@@ -2858,6 +3024,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 18,
     "outputs": [
       {
@@ -2892,6 +3060,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 20,
     "outputs": [
       {
@@ -2935,6 +3105,8 @@
     "primaryCategoryName": "Material",
     "primaryGroupName": "Mineral",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3,
     "outputs": [
       {
@@ -2974,6 +3146,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Armor Repair Unit",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "small",
     "runTime": 111,
     "outputs": [
       {
@@ -3007,6 +3181,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Armor Repair Unit",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 222,
     "outputs": [
       {
@@ -3044,6 +3220,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Armor Repair Unit",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "mid",
+    "sizeClass": "medium",
     "runTime": 962,
     "outputs": [
       {
@@ -3081,6 +3259,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Asteroid Mining Laser",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": "high",
+    "sizeClass": "large",
     "runTime": 14863,
     "outputs": [
       {
@@ -3114,6 +3294,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Asteroid Mining Laser",
     "primaryMetaGroupName": "Standard",
+    "slotType": "high",
+    "sizeClass": "medium",
     "runTime": 863,
     "outputs": [
       {
@@ -3147,6 +3329,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Asteroid Mining Laser",
     "primaryMetaGroupName": "Basic",
+    "slotType": "high",
+    "sizeClass": "small",
     "runTime": 167,
     "outputs": [
       {
@@ -3185,6 +3369,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Crude Engines",
     "primaryMetaGroupName": "Standard",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 207,
     "outputs": [
       {
@@ -3222,6 +3408,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Crude Engines",
     "primaryMetaGroupName": "Standard",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 471,
     "outputs": [
       {
@@ -3263,6 +3451,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Crude Engines",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 4230,
     "outputs": [
       {
@@ -3304,6 +3494,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Crude Engines",
     "primaryMetaGroupName": "Standard",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 413,
     "outputs": [
       {
@@ -3341,6 +3533,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Crude Engines",
     "primaryMetaGroupName": "Standard",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 942,
     "outputs": [
       {
@@ -3382,6 +3576,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Crude Engines",
     "primaryMetaGroupName": "Standard",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 825,
     "outputs": [
       {
@@ -3419,6 +3615,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Crude Engines",
     "primaryMetaGroupName": "Standard",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 1883,
     "outputs": [
       {
@@ -3460,6 +3658,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Crude Extractor",
     "primaryMetaGroupName": "Basic",
+    "slotType": "high",
+    "sizeClass": "small",
     "runTime": 750,
     "outputs": [
       {
@@ -3493,6 +3693,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Standard",
+    "slotType": "low",
+    "sizeClass": "small",
     "runTime": 207,
     "outputs": [
       {
@@ -3526,6 +3728,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 505,
     "outputs": [
       {
@@ -3559,6 +3763,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "low",
+    "sizeClass": "medium",
     "runTime": 1169,
     "outputs": [
       {
@@ -3592,6 +3798,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Standard",
+    "slotType": "low",
+    "sizeClass": "small",
     "runTime": 155,
     "outputs": [
       {
@@ -3626,6 +3834,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 357,
     "outputs": [
       {
@@ -3655,6 +3865,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 921,
     "outputs": [
       {
@@ -3684,6 +3896,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Standard",
+    "slotType": "low",
+    "sizeClass": "small",
     "runTime": 207,
     "outputs": [
       {
@@ -3726,6 +3940,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 505,
     "outputs": [
       {
@@ -3763,6 +3979,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "low",
+    "sizeClass": "medium",
     "runTime": 1169,
     "outputs": [
       {
@@ -3800,6 +4018,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Standard",
+    "slotType": "low",
+    "sizeClass": "small",
     "runTime": 172,
     "outputs": [
       {
@@ -3829,6 +4049,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 391,
     "outputs": [
       {
@@ -3858,6 +4080,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "low",
+    "sizeClass": "medium",
     "runTime": 921,
     "outputs": [
       {
@@ -3887,6 +4111,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Standard",
+    "slotType": "low",
+    "sizeClass": "small",
     "runTime": 150,
     "outputs": [
       {
@@ -3920,6 +4146,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 357,
     "outputs": [
       {
@@ -3953,6 +4181,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "low",
+    "sizeClass": "medium",
     "runTime": 830,
     "outputs": [
       {
@@ -3986,6 +4216,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Standard",
+    "slotType": "low",
+    "sizeClass": "small",
     "runTime": 182,
     "outputs": [
       {
@@ -4019,6 +4251,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 421,
     "outputs": [
       {
@@ -4052,6 +4286,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "low",
+    "sizeClass": "medium",
     "runTime": 943,
     "outputs": [
       {
@@ -4085,6 +4321,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Standard",
+    "slotType": "low",
+    "sizeClass": "small",
     "runTime": 207,
     "outputs": [
       {
@@ -4118,6 +4356,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 505,
     "outputs": [
       {
@@ -4151,6 +4391,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Defensive System",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "low",
+    "sizeClass": "medium",
     "runTime": 1169,
     "outputs": [
       {
@@ -4184,6 +4426,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Energy Lance",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 137,
     "outputs": [
       {
@@ -4217,6 +4461,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Energy Lance",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 301,
     "outputs": [
       {
@@ -4250,6 +4496,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Energy Lance",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 620,
     "outputs": [
       {
@@ -4283,6 +4531,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Energy Lance",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 664,
     "outputs": [
       {
@@ -4316,6 +4566,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Energy Lance",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 2872,
     "outputs": [
       {
@@ -4349,6 +4601,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Energy Lance",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 11770,
     "outputs": [
       {
@@ -4382,6 +4636,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Expanded Cargohold",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 209,
     "outputs": [
       {
@@ -4415,6 +4671,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Expanded Cargohold",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 469,
     "outputs": [
       {
@@ -4448,6 +4706,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Expanded Cargohold",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 1054,
     "outputs": [
       {
@@ -4481,6 +4741,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Expanded Cargohold",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 2339,
     "outputs": [
       {
@@ -4514,6 +4776,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Expanded Cargohold",
     "primaryMetaGroupName": "Exotic",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 5144,
     "outputs": [
       {
@@ -4547,6 +4811,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Flex Armor Hardener",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 97,
     "outputs": [
       {
@@ -4576,6 +4842,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Flex Armor Hardener",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 194,
     "outputs": [
       {
@@ -4609,6 +4877,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Flex Armor Hardener",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 804,
     "outputs": [
       {
@@ -4642,6 +4912,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Heat Ejector",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 904,
     "outputs": [
       {
@@ -4683,6 +4955,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Heat Ejector",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 452,
     "outputs": [
       {
@@ -4724,6 +4998,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Heat Ejector",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 197,
     "outputs": [
       {
@@ -4766,6 +5042,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Hull Repair Unit",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 148,
     "outputs": [
       {
@@ -4799,6 +5077,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Hydrogen Engines",
     "primaryMetaGroupName": "Basic",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 89,
     "outputs": [
       {
@@ -4836,6 +5116,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Hydrogen Engines",
     "primaryMetaGroupName": "Basic",
+    "slotType": "engine",
+    "sizeClass": null,
     "runTime": 39,
     "outputs": [
       {
@@ -4874,6 +5156,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Mass Driver Weapon",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": "high",
+    "sizeClass": "medium",
     "runTime": 574,
     "outputs": [
       {
@@ -4915,6 +5199,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Mass Driver Weapon",
     "primaryMetaGroupName": "Standard",
+    "slotType": "high",
+    "sizeClass": "small",
     "runTime": 115,
     "outputs": [
       {
@@ -4956,6 +5242,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Mass Driver Weapon",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 2457,
     "outputs": [
       {
@@ -4997,6 +5285,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Mass Driver Weapon",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 249,
     "outputs": [
       {
@@ -5034,6 +5324,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Mass Driver Weapon",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 9935,
     "outputs": [
       {
@@ -5071,6 +5363,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Mass Driver Weapon",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 505,
     "outputs": [
       {
@@ -5112,6 +5406,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 159,
     "outputs": [
       {
@@ -5149,6 +5445,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 350,
     "outputs": [
       {
@@ -5186,6 +5484,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 796,
     "outputs": [
       {
@@ -5223,6 +5523,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 159,
     "outputs": [
       {
@@ -5260,6 +5562,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 362,
     "outputs": [
       {
@@ -5297,6 +5601,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 835,
     "outputs": [
       {
@@ -5334,6 +5640,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Standard",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 181,
     "outputs": [
       {
@@ -5371,6 +5679,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 405,
     "outputs": [
       {
@@ -5408,6 +5718,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 916,
     "outputs": [
       {
@@ -5445,6 +5757,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "small",
     "runTime": 181,
     "outputs": [
       {
@@ -5482,6 +5796,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 405,
     "outputs": [
       {
@@ -5515,6 +5831,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Nanitic Brace",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "mid",
+    "sizeClass": "medium",
     "runTime": 923,
     "outputs": [
       {
@@ -5548,6 +5866,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Plasma Weapon",
     "primaryMetaGroupName": "Standard",
+    "slotType": "high",
+    "sizeClass": "small",
     "runTime": 132,
     "outputs": [
       {
@@ -5585,6 +5905,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Plasma Weapon",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": "high",
+    "sizeClass": "medium",
     "runTime": 643,
     "outputs": [
       {
@@ -5622,6 +5944,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Plasma Weapon",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 2727,
     "outputs": [
       {
@@ -5659,6 +5983,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Plasma Weapon",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 283,
     "outputs": [
       {
@@ -5696,6 +6022,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Plasma Weapon",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 11412,
     "outputs": [
       {
@@ -5733,6 +6061,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Plasma Weapon",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 597,
     "outputs": [
       {
@@ -5770,6 +6100,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Projectile Weapon",
     "primaryMetaGroupName": "Standard",
+    "slotType": "high",
+    "sizeClass": "small",
     "runTime": 156,
     "outputs": [
       {
@@ -5808,6 +6140,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Projectile Weapon",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": "high",
+    "sizeClass": "medium",
     "runTime": 632,
     "outputs": [
       {
@@ -5845,6 +6179,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Projectile Weapon",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 276,
     "outputs": [
       {
@@ -5882,6 +6218,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Projectile Weapon",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 2667,
     "outputs": [
       {
@@ -5919,6 +6257,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Projectile Weapon",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 577,
     "outputs": [
       {
@@ -5956,6 +6296,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Projectile Weapon",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 11086,
     "outputs": [
       {
@@ -5993,6 +6335,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Propulsion Module",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": null,
     "runTime": 97,
     "outputs": [
       {
@@ -6022,6 +6366,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Propulsion Module",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": "mid",
+    "sizeClass": null,
     "runTime": 194,
     "outputs": [
       {
@@ -6055,6 +6401,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Propulsion Module",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "mid",
+    "sizeClass": null,
     "runTime": 798,
     "outputs": [
       {
@@ -6096,6 +6444,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "small",
     "runTime": 218,
     "outputs": [
       {
@@ -6125,6 +6475,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 461,
     "outputs": [
       {
@@ -6154,6 +6506,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "mid",
+    "sizeClass": "medium",
     "runTime": 949,
     "outputs": [
       {
@@ -6183,6 +6537,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "small",
     "runTime": 201,
     "outputs": [
       {
@@ -6216,6 +6572,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 415,
     "outputs": [
       {
@@ -6249,6 +6607,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "mid",
+    "sizeClass": "medium",
     "runTime": 863,
     "outputs": [
       {
@@ -6282,6 +6642,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "small",
     "runTime": 184,
     "outputs": [
       {
@@ -6311,6 +6673,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 387,
     "outputs": [
       {
@@ -6340,6 +6704,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "mid",
+    "sizeClass": "medium",
     "runTime": 804,
     "outputs": [
       {
@@ -6369,6 +6735,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "small",
     "runTime": 201,
     "outputs": [
       {
@@ -6398,6 +6766,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 426,
     "outputs": [
       {
@@ -6427,6 +6797,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "mid",
+    "sizeClass": "medium",
     "runTime": 881,
     "outputs": [
       {
@@ -6456,6 +6828,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Hardener",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 1811,
     "outputs": [
       {
@@ -6485,6 +6859,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Recharger",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "small",
     "runTime": 243,
     "outputs": [
       {
@@ -6522,6 +6898,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Recharger",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 496,
     "outputs": [
       {
@@ -6559,6 +6937,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Shield Recharger",
     "primaryMetaGroupName": "Prototype",
+    "slotType": "mid",
+    "sizeClass": "medium",
     "runTime": 970,
     "outputs": [
       {
@@ -6600,6 +6980,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Stasis Web",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "medium",
     "runTime": 178,
     "outputs": [
       {
@@ -6637,6 +7019,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Stasis Web",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 366,
     "outputs": [
       {
@@ -6674,6 +7058,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Stasis Web",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 760,
     "outputs": [
       {
@@ -6711,6 +7097,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Stasis Web",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 1553,
     "outputs": [
       {
@@ -6748,6 +7136,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Stasis Web",
     "primaryMetaGroupName": "Exotic",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3192,
     "outputs": [
       {
@@ -6785,6 +7175,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Accelerator",
     "primaryMetaGroupName": "Standard",
+    "slotType": "high",
+    "sizeClass": null,
     "runTime": 120,
     "outputs": [
       {
@@ -6823,6 +7215,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Accelerator",
     "primaryMetaGroupName": "Standard",
+    "slotType": "high",
+    "sizeClass": null,
     "runTime": 320,
     "outputs": [
       {
@@ -6860,6 +7254,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Accelerator",
     "primaryMetaGroupName": "Standard",
+    "slotType": "high",
+    "sizeClass": null,
     "runTime": 800,
     "outputs": [
       {
@@ -6897,6 +7293,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Accelerator",
     "primaryMetaGroupName": "Standard",
+    "slotType": "high",
+    "sizeClass": null,
     "runTime": 97,
     "outputs": [
       {
@@ -6926,6 +7324,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Scrambler",
     "primaryMetaGroupName": "Standard",
+    "slotType": "mid",
+    "sizeClass": "large",
     "runTime": 181,
     "outputs": [
       {
@@ -6963,6 +7363,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Scrambler",
     "primaryMetaGroupName": "Enhanced",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 371,
     "outputs": [
       {
@@ -7000,6 +7402,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Scrambler",
     "primaryMetaGroupName": "Prototype",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 777,
     "outputs": [
       {
@@ -7037,6 +7441,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Scrambler",
     "primaryMetaGroupName": "Experimental",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 1585,
     "outputs": [
       {
@@ -7074,6 +7480,8 @@
     "primaryCategoryName": "Module",
     "primaryGroupName": "Warp Scrambler",
     "primaryMetaGroupName": "Exotic",
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 3274,
     "outputs": [
       {
@@ -7111,6 +7519,8 @@
     "primaryCategoryName": "Shell",
     "primaryGroupName": "Synthetic",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 46400,
     "outputs": [
       {
@@ -7148,6 +7558,8 @@
     "primaryCategoryName": "Shell",
     "primaryGroupName": "Synthetic",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 50800,
     "outputs": [
       {
@@ -7189,6 +7601,8 @@
     "primaryCategoryName": "Shell",
     "primaryGroupName": "Synthetic",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 37100,
     "outputs": [
       {
@@ -7238,6 +7652,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Combat Battlecruiser",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 324000,
     "outputs": [
       {
@@ -7279,6 +7695,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Corvette",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 10260,
     "outputs": [
       {
@@ -7324,6 +7742,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Corvette",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 130,
     "outputs": [
       {
@@ -7369,6 +7789,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Corvette",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 50,
     "outputs": [
       {
@@ -7411,6 +7833,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Corvette",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 150,
     "outputs": [
       {
@@ -7452,6 +7876,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Corvette",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 10630,
     "outputs": [
       {
@@ -7497,6 +7923,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Cruiser",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 244800,
     "outputs": [
       {
@@ -7546,6 +7974,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Destroyer",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 151200,
     "outputs": [
       {
@@ -7591,6 +8021,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Frigate",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 82800,
     "outputs": [
       {
@@ -7632,6 +8064,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Frigate",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 78000,
     "outputs": [
       {
@@ -7677,6 +8111,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Frigate",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 8320,
     "outputs": [
       {
@@ -7718,6 +8154,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Frigate",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 79200,
     "outputs": [
       {
@@ -7763,6 +8201,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Frigate",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 8200,
     "outputs": [
       {
@@ -7804,6 +8244,8 @@
     "primaryCategoryName": "Ship",
     "primaryGroupName": "Shuttle",
     "primaryMetaGroupName": null,
+    "slotType": null,
+    "sizeClass": null,
     "runTime": 60,
     "outputs": [
       {

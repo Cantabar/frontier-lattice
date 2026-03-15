@@ -65,6 +65,27 @@ for (const [facilityTypeId, facility] of Object.entries(facilitiesRaw)) {
   }
 }
 
+// ── Helpers: derive slot type & size class from item tags ─────────
+
+const SLOT_TAGS = { high_slot: "high", mid_slot: "mid", low_slot: "low", engine_slot: "engine" };
+const SIZE_TAGS = { small_size: "small", medium_size: "medium", large_size: "large" };
+
+function deriveSlotType(tags) {
+  if (!tags) return null;
+  for (const [tag, slot] of Object.entries(SLOT_TAGS)) {
+    if (tags.includes(tag)) return slot;
+  }
+  return null;
+}
+
+function deriveSizeClass(tags) {
+  if (!tags) return null;
+  for (const [tag, size] of Object.entries(SIZE_TAGS)) {
+    if (tags.includes(tag)) return size;
+  }
+  return null;
+}
+
 // ── Transform each blueprint ──────────────────────────────────────
 
 const blueprints = [];
@@ -84,6 +105,8 @@ for (const [bpId, bp] of Object.entries(blueprintsRaw)) {
     primaryCategoryName: item?.categoryName ?? null,
     primaryGroupName: item?.groupName ?? null,
     primaryMetaGroupName: item?.metaGroupName ?? null,
+    slotType: deriveSlotType(item?.tags),
+    sizeClass: deriveSizeClass(item?.tags),
     runTime: bp.runTime,
     outputs: bp.outputs.map((o) => ({ typeId: o.typeID, quantity: o.quantity })),
     inputs: bp.inputs.map((i) => ({ typeId: i.typeID, quantity: i.quantity })),

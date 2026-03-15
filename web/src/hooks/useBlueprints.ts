@@ -25,6 +25,8 @@ export interface BlueprintEntry {
   primaryCategoryName: string | null;
   primaryGroupName: string | null;
   primaryMetaGroupName: string | null;
+  slotType: "high" | "mid" | "low" | "engine" | null;
+  sizeClass: "small" | "medium" | "large" | null;
   runTime: number;
   outputs: BlueprintOutput[];
   inputs: BlueprintInput[];
