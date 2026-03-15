@@ -35,6 +35,8 @@ const Main = styled.div`
 `;
 
 const Content = styled.main`
+  display: flex;
+  flex-direction: column;
   flex: 1;
   overflow-y: auto;
   padding: ${({ theme }) => theme.spacing.lg};

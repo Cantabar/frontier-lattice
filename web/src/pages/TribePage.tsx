@@ -18,7 +18,12 @@ import { EmptyState } from "../components/shared/EmptyState";
 import { PrimaryButton, SecondaryButton as SecondaryBtn } from "../components/shared/Button";
 import type { Role } from "../lib/types";
 
-const Page = styled.div``;
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 100%;
+`;
 
 const Header = styled.div`
   display: flex;
