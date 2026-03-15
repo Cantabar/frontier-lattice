@@ -3,6 +3,7 @@ import styled from "styled-components";
 import type { AssemblyData } from "../../lib/types";
 import { ASSEMBLY_TYPES } from "../../lib/types";
 import { truncateAddress } from "../../lib/format";
+import { SsuPickerField } from "./SsuPickerField";
 
 // ---------------------------------------------------------------------------
 // Styled components
@@ -81,6 +82,23 @@ const Hint = styled.div`
   color: ${({ theme }) => theme.colors.text.muted};
 `;
 
+const QuickPickRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  padding-left: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
+const QuickPickLabel = styled.span`
+  font-size: 11px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+`;
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -129,6 +147,16 @@ export function SsuInventoryToggle({
       }),
     [ssus],
   );
+
+  // Derive which single SSU is selected when only one is picked
+  const quickPickValue = useMemo(() => {
+    if (selectedIds.size === 1) return [...selectedIds][0];
+    return null;
+  }, [selectedIds]);
+
+  function handleQuickPick(ssuId: string) {
+    onSelectionChange(new Set([ssuId]));
+  }
 
   function toggleSsu(id: string) {
     const next = new Set(selectedIds);
@@ -183,6 +211,15 @@ export function SsuInventoryToggle({
 
       {enabled && (
         <>
+          <QuickPickRow>
+            <QuickPickLabel>Quick pick</QuickPickLabel>
+            <SsuPickerField
+              ssus={sortedSsus}
+              value={quickPickValue}
+              onSelect={handleQuickPick}
+            />
+          </QuickPickRow>
+
           <SelectActions>
             <ActionLink onClick={selectAll}>Select all</ActionLink>
             <ActionLink onClick={selectNone}>Select none</ActionLink>
