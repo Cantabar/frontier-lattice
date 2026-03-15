@@ -1,7 +1,7 @@
 /**
  * seed-ores.ts
  *
- * Seeds 100 of each Frontier ore type into the SSU for Player A.
+ * Seeds 100 of every Frontier item type into the SSU for Player A.
  * Run after world-contracts seed-world.sh has completed.
  *
  * Designed to run from the world-contracts directory so that dotenv/config
@@ -11,6 +11,9 @@
  *   cd ../world-contracts && NODE_PATH=$PWD/node_modules npx tsx ../frontier-corm/scripts/seed-ores.ts
  */
 import "dotenv/config";
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Transaction } from "@mysten/sui/transactions";
 import { getConfig, MODULES } from "../../world-contracts/ts-scripts/utils/config";
 import { deriveObjectId } from "../../world-contracts/ts-scripts/utils/derive-object-id";
@@ -30,25 +33,25 @@ import {
 import { getOwnerCap } from "../../world-contracts/ts-scripts/storage-unit/helper";
 
 // ---------------------------------------------------------------------------
-// Frontier ore types (from static-data/data/phobos/fsd_built/types.json)
-// All ores have volume = 1.
+// Load every item type from the curated items.json catalogue
 // ---------------------------------------------------------------------------
-const ORE_TYPES: { typeId: bigint; name: string }[] = [
-    { typeId: 77800n, name: "Feldspar Crystals" },
-    { typeId: 77810n, name: "Platinum-Palladium Matrix" },
-    { typeId: 77811n, name: "Hydrated Sulfide Matrix" },
-    { typeId: 78426n, name: "Iridosmine Nodules" },
-    { typeId: 78446n, name: "Methane Ice Shards" },
-    { typeId: 78447n, name: "Primitive Kerogen Matrix" },
-    { typeId: 78448n, name: "Aromatic Carbon Veins" },
-    { typeId: 78449n, name: "Tholin Nodules" },
-];
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ITEMS_PATH = resolve(__dirname, "../web/public/items.json");
+
+interface ItemEntry {
+    typeId: number;
+    name: string;
+}
+
+const ALL_ITEMS: { typeId: bigint; name: string }[] = (JSON.parse(
+    readFileSync(ITEMS_PATH, "utf-8"),
+) as ItemEntry[]).map((item) => ({ typeId: BigInt(item.typeId), name: item.name }));
 
 const QUANTITY = 100;
 const VOLUME = 1n;
-const DELAY_MS = parseInt(process.env.SEED_ORE_DELAY_MS || "2000", 10);
+const DELAY_MS = parseInt(process.env.SEED_DELAY_MS || "2000", 10);
 
-/** Deterministic itemId per ore type — avoids collisions with test-resources IDs. */
+/** Deterministic itemId per item type — avoids collisions with test-resources IDs. */
 function itemIdForType(typeId: bigint): bigint {
     return typeId * 10000n + 1n;
 }
@@ -90,22 +93,22 @@ async function main() {
             throw new Error(`OwnerCap not found for SSU ${storageUnit}`);
         }
 
-        // ── Seed each ore type ─────────────────────────────────────
-        console.log("\n==== Seeding Ore Items into SSU ====");
+        // ── Seed each item type ─────────────────────────────────────
+        console.log("\n==== Seeding All Items into SSU ====");
         console.log(`SSU:       ${storageUnit}`);
         console.log(`Character: ${characterObject}`);
         console.log(`OwnerCap:  ${ownerCapId}`);
         console.log(`Player:    ${playerAddress}`);
         console.log(`Admin:     ${adminAddress}`);
-        console.log(`Ores:      ${ORE_TYPES.length} types x ${QUANTITY} each\n`);
+        console.log(`Items:     ${ALL_ITEMS.length} types x ${QUANTITY} each\n`);
 
-        for (let i = 0; i < ORE_TYPES.length; i++) {
-            const ore = ORE_TYPES[i];
-            const itemId = itemIdForType(ore.typeId);
+        for (let i = 0; i < ALL_ITEMS.length; i++) {
+            const item = ALL_ITEMS[i];
+            const itemId = itemIdForType(item.typeId);
 
             console.log(
-                `[${i + 1}/${ORE_TYPES.length}] Minting ${QUANTITY}x ${ore.name} ` +
-                `(typeId=${ore.typeId}, itemId=${itemId})...`,
+                `[${i + 1}/${ALL_ITEMS.length}] Minting ${QUANTITY}x ${item.name} ` +
+                `(typeId=${item.typeId}, itemId=${itemId})...`,
             );
 
             const tx = new Transaction();
@@ -119,7 +122,7 @@ async function main() {
                 arguments: [tx.object(characterObject), tx.object(ownerCapId)],
             });
 
-            // Mint ore items into SSU inventory
+            // Mint items into SSU inventory
             tx.moveCall({
                 target: `${config.packageId}::${MODULES.STORAGE_UNIT}::game_item_to_chain_inventory`,
                 typeArguments: [`${config.packageId}::${MODULES.STORAGE_UNIT}::StorageUnit`],
@@ -129,7 +132,7 @@ async function main() {
                     tx.object(characterObject),
                     ownerCap,
                     tx.pure.u64(itemId),
-                    tx.pure.u64(ore.typeId),
+                    tx.pure.u64(item.typeId),
                     tx.pure.u64(VOLUME),
                     tx.pure.u32(QUANTITY),
                 ],
@@ -154,14 +157,14 @@ async function main() {
 
             console.log(`  done — digest: ${result.digest}`);
 
-            if (i < ORE_TYPES.length - 1) {
+            if (i < ALL_ITEMS.length - 1) {
                 await sleep(DELAY_MS);
             }
         }
 
         console.log(
-            `\n==== Seeded ${ORE_TYPES.length * QUANTITY} ore items ` +
-            `(${ORE_TYPES.length} types x ${QUANTITY}) ====\n`,
+            `\n==== Seeded ${ALL_ITEMS.length * QUANTITY} items ` +
+            `(${ALL_ITEMS.length} types x ${QUANTITY}) ====\n`,
         );
     } catch (error) {
         handleError(error);

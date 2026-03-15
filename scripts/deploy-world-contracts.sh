@@ -128,11 +128,11 @@ request_gas 5
 echo "=== Seeding world ==="
 bash "$WORLD_DIR/scripts/seed-world.sh" localnet
 
-# ── Seed ore items into SSU (frontier-corm specific) ────────────────
-echo "Requesting additional gas for ore seeding..."
-request_gas 2
+# ── Seed all items into SSU (frontier-corm specific) ────────────────
+echo "Requesting additional gas for item seeding..."
+request_gas 5
 
-echo "=== Seeding ore items into SSU ==="
+echo "=== Seeding all items into SSU ==="
 (cd "$WORLD_DIR" && NODE_PATH="$WORLD_DIR/node_modules" npx tsx "$PROJECT_ROOT/scripts/seed-ores.ts")
 
 # ── Write world package ID to frontier-corm .env for the web UI ────
