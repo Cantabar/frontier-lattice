@@ -61,24 +61,41 @@ const SectionTitle = styled.h3`
   white-space: nowrap;
 `;
 
-const CapacityBadge = styled.span<{ $pct: number }>`
-  font-size: 10px;
+/** Return a theme-aware color for a capacity percentage. */
+function capacityColor(pct: number, theme: { colors: { danger: string; warning: string; primary: { main: string } } }) {
+  if (pct > 90) return theme.colors.danger;
+  if (pct > 70) return theme.colors.warning;
+  return theme.colors.primary.main;
+}
+
+const OverallCapacityRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
+const CapacityBarOuter = styled.div<{ $height?: number }>`
+  flex: 1;
+  height: ${({ $height }) => $height ?? 8}px;
+  background: ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  overflow: hidden;
+`;
+
+const CapacityBarFill = styled.div<{ $pct: number }>`
+  height: 100%;
+  width: ${({ $pct }) => Math.min($pct, 100)}%;
+  background: ${({ $pct, theme }) => capacityColor($pct, theme)};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  transition: width 0.3s ease;
+`;
+
+const CapacityLabel = styled.span`
+  font-size: 11px;
   font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 3px;
+  color: ${({ theme }) => theme.colors.text.secondary};
   white-space: nowrap;
-  background: ${({ $pct, theme }) =>
-    $pct > 90
-      ? theme.colors.danger
-      : $pct > 70
-        ? theme.colors.warning
-        : theme.colors.primary.subtle};
-  color: ${({ $pct, theme }) =>
-    $pct > 90
-      ? theme.colors.text.primary
-      : $pct > 70
-        ? theme.colors.surface.bg
-        : theme.colors.primary.muted};
 `;
 
 /** Wrapping grid of item tiles */
@@ -204,7 +221,12 @@ function SlotSection({ slot, profile }: { slot: InventorySlot; profile?: Charact
             size="sm"
           />
         )}
-        <CapacityBadge $pct={pct}>{pct.toFixed(0)}%</CapacityBadge>
+        <CapacityBarOuter $height={5}>
+          <CapacityBarFill $pct={pct} />
+        </CapacityBarOuter>
+        <CapacityLabel>
+          {slot.usedCapacity.toLocaleString()} / {slot.maxCapacity.toLocaleString()} m³
+        </CapacityLabel>
       </SlotHeader>
       {open && (
         slot.items.length === 0 ? (
@@ -239,6 +261,11 @@ export function SsuInventoryPanel({ ssu }: Props) {
   );
   const { profiles } = useCharacterProfiles(otherKeys);
 
+  // Overall SSU capacity totals
+  const totalUsed = useMemo(() => slots.reduce((sum, s) => sum + s.usedCapacity, 0), [slots]);
+  const totalMax = useMemo(() => slots.reduce((sum, s) => sum + s.maxCapacity, 0), [slots]);
+  const totalPct = totalMax > 0 ? (totalUsed / totalMax) * 100 : 0;
+
   return (
     <PanelWrapper>
       {isLoading ? (
@@ -251,6 +278,15 @@ export function SsuInventoryPanel({ ssu }: Props) {
           description="This SSU has no readable inventory slots."
         />
       ) : (
+        <>
+        <OverallCapacityRow>
+          <CapacityBarOuter $height={8}>
+            <CapacityBarFill $pct={totalPct} />
+          </CapacityBarOuter>
+          <CapacityLabel>
+            {totalUsed.toLocaleString()} / {totalMax.toLocaleString()} m³ ({totalPct.toFixed(0)}%)
+          </CapacityLabel>
+        </OverallCapacityRow>
         <SlotsStack>
           {slots.map((slot) => (
             <SlotSection
@@ -260,6 +296,7 @@ export function SsuInventoryPanel({ ssu }: Props) {
             />
           ))}
         </SlotsStack>
+        </>
       )}
     </PanelWrapper>
   );
