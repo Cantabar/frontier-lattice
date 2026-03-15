@@ -22,6 +22,7 @@ const PanelWrapper = styled.div`
 
 const ScrollArea = styled.div`
   overflow-x: auto;
+  overflow-y: clip;
 `;
 
 /** Horizontal strip of inventory slots */
