@@ -173,7 +173,7 @@ function InventoryItemTile({ item }: { item: InventoryItemEntry }) {
       <PortalTooltip targetRef={tileRef} visible={hovered}>
         <TooltipName>{name}</TooltipName>
         <TooltipMeta>
-          ID {item.typeId} · {item.volume} m³ · ×{item.quantity.toLocaleString()}
+          ID {item.typeId} · {info?.volume ?? item.volume} m³ · ×{item.quantity.toLocaleString()}
         </TooltipMeta>
       </PortalTooltip>
     </ItemTile>
