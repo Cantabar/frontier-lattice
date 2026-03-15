@@ -4,7 +4,7 @@
  * yet joined. Exposes a one-click `join()` action that calls `self_join`.
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { useIdentity } from "./useIdentity";
 import { useTribes } from "./useTribes";
@@ -38,6 +38,7 @@ export function useAutoJoinTribe(): AutoJoinState {
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const queryClient = useQueryClient();
   const [isJoining, setIsJoining] = useState(false);
+  const justJoinedRef = useRef(false);
 
   // Basic eligibility: has character, has an in-game tribe, no existing TribeCap
   const isCandidate = !!characterId && !!address && (inGameTribeId ?? 0) > 0 && tribeCaps.length === 0;
@@ -82,7 +83,7 @@ export function useAutoJoinTribe(): AutoJoinState {
 
   const tribeObjectId = eventTribe?.id ?? registryTribeId ?? null;
   const tribeName = eventTribe?.name ?? (inGameTribeId ? tribeInfo.get(inGameTribeId)?.name ?? null : null);
-  const eligible = isCandidate && !!tribeObjectId;
+  const eligible = isCandidate && !!tribeObjectId && !justJoinedRef.current;
   const isLoading = identityLoading || (isCandidate && !eventTribe && registryLoading);
 
   const join = useCallback(async () => {
@@ -95,7 +96,11 @@ export function useAutoJoinTribe(): AutoJoinState {
         sender: address,
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await signAndExecute({ transaction: tx as any });
+      const result = await signAndExecute({ transaction: tx as any });
+      // Hide the banner optimistically before waiting for the chain to index
+      justJoinedRef.current = true;
+      // Wait for the transaction to be indexed so refetches return the new TribeCap
+      await client.waitForTransaction({ digest: result.digest });
       // Invalidate caches so identity (TribeCap) and tribe list refresh
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["tribes"] }),
