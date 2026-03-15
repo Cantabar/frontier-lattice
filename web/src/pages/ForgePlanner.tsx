@@ -6,6 +6,7 @@ import { useBlueprints } from "../hooks/useBlueprints";
 import { useActiveMultiInputContracts, useMultiInputContractObject } from "../hooks/useMultiInputContracts";
 import { BlueprintBrowser } from "../components/forge/BlueprintBrowser";
 import { OptimizerPanel } from "../components/forge/OptimizerPanel";
+import { BuildQueuePanel } from "../components/forge/BuildQueuePanel";
 import { CreateMultiInputContractModal } from "../components/forge/CreateMultiInputContractModal";
 import { MultiInputContractCard } from "../components/forge/MultiInputContractCard";
 import { MultiInputContractDetail } from "../components/forge/MultiInputContractDetail";
@@ -15,19 +16,52 @@ import { PrimaryButton } from "../components/shared/Button";
 import { timeAgo, truncateAddress } from "../lib/format";
 import type { MultiInputContractData } from "../lib/types";
 
+// ── Page-level tab type ────────────────────────────────────────
+
+type PageTab = "blueprints" | "planner" | "orders";
+
+// ── Styled components ──────────────────────────────────────────
+
 const Page = styled.div``;
 
 const Header = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
 const Title = styled.h1`
   font-size: 24px;
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text.primary};
+`;
+
+const PageTabBar = styled.div`
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.surface.border};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+`;
+
+const PageTabButton = styled.button<{ $active: boolean }>`
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.primary.main : theme.colors.text.muted};
+  background: none;
+  border: none;
+  border-bottom: 2px solid
+    ${({ $active, theme }) =>
+      $active ? theme.colors.primary.main : "transparent"};
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.text.primary};
+  }
 `;
 
 const SectionLabel = styled.h2`
@@ -37,7 +71,7 @@ const SectionLabel = styled.h2`
   margin: ${({ theme }) => theme.spacing.lg} 0 ${({ theme }) => theme.spacing.md};
 `;
 
-const Grid = styled.div`
+const PlannerGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: ${({ theme }) => theme.spacing.lg};
@@ -46,6 +80,13 @@ const Grid = styled.div`
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
+`;
+
+const OrdersHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
 const EventRow = styled.div`
@@ -70,6 +111,8 @@ const Meta = styled.span`
   font-size: 12px;
 `;
 
+// ── Helpers ────────────────────────────────────────────────────
+
 /** Thin wrapper so each card can independently fetch live fill totals. */
 function ContractCardWithLiveState({
   contract,
@@ -88,6 +131,8 @@ function ContractCardWithLiveState({
   );
 }
 
+// ── Page component ─────────────────────────────────────────────
+
 export function ForgePlanner() {
   const { characterId, tribeCaps } = useIdentity();
   const tribeId = tribeCaps[0]?.tribeId;
@@ -96,36 +141,78 @@ export function ForgePlanner() {
   const { data: historyData, isLoading: historyLoading } = useManufacturingHistory(tribeId);
   const { contracts, isLoading: contractsLoading } = useActiveMultiInputContracts();
 
+  const [activeTab, setActiveTab] = useState<PageTab>("blueprints");
   const [showCreateOrder, setShowCreateOrder] = useState(false);
   const [selectedContract, setSelectedContract] = useState<MultiInputContractData | null>(null);
 
-  // Optimizer auto-fill: set from BlueprintDetailModal's "Resolve in Optimizer"
+  // Optimizer auto-fill: set from build queue or blueprint detail
   const [optimizerTarget, setOptimizerTarget] = useState<number | null>(null);
 
-  const handleResolve = useCallback((outputTypeId: number) => {
-    setOptimizerTarget(outputTypeId);
+  const handleResolveFromQueue = useCallback((typeId: number, _quantity: number) => {
+    setOptimizerTarget(typeId);
   }, []);
 
   return (
     <Page>
       <Header>
         <Title>Forge Planner</Title>
-        {characterId && (
-          <PrimaryButton onClick={() => setShowCreateOrder(true)}>+ New Order</PrimaryButton>
-        )}
       </Header>
 
-      {/* Blueprint browser — always visible (static data, no wallet needed) */}
-      <BlueprintBrowser blueprints={blueprints} onResolve={handleResolve} />
+      {/* ── Tab bar ── */}
+      <PageTabBar>
+        <PageTabButton $active={activeTab === "blueprints"} onClick={() => setActiveTab("blueprints")}>
+          Blueprints
+        </PageTabButton>
+        <PageTabButton $active={activeTab === "planner"} onClick={() => setActiveTab("planner")}>
+          Planner
+        </PageTabButton>
+        <PageTabButton $active={activeTab === "orders"} onClick={() => setActiveTab("orders")}>
+          Orders
+        </PageTabButton>
+      </PageTabBar>
 
-      <Grid>
-        <div>
+      {/* ── Tab: Blueprints ── */}
+      {activeTab === "blueprints" && (
+        <BlueprintBrowser blueprints={blueprints} />
+      )}
+
+      {/* ── Tab: Planner ── */}
+      {activeTab === "planner" && (
+        <PlannerGrid>
           <OptimizerPanel
             recipes={recipesForOptimizer}
             initialTarget={optimizerTarget}
           />
-        </div>
-        <div>
+          <BuildQueuePanel onResolveItem={handleResolveFromQueue} />
+        </PlannerGrid>
+      )}
+
+      {/* ── Tab: Orders ── */}
+      {activeTab === "orders" && (
+        <>
+          <OrdersHeader>
+            <SectionLabel style={{ margin: 0 }}>Active Orders</SectionLabel>
+            {characterId && (
+              <PrimaryButton onClick={() => setShowCreateOrder(true)}>+ New Order</PrimaryButton>
+            )}
+          </OrdersHeader>
+          {contractsLoading ? (
+            <LoadingSpinner />
+          ) : contracts.length === 0 ? (
+            <EmptyState
+              title="No active orders"
+              description={characterId ? "Create a new order to get started." : "Connect your wallet to post orders."}
+            />
+          ) : (
+            contracts.map((c) => (
+              <ContractCardWithLiveState
+                key={c.id}
+                contract={c}
+                onClick={() => setSelectedContract(c)}
+              />
+            ))
+          )}
+
           <SectionLabel>Manufacturing History</SectionLabel>
           {!tribeId ? (
             <EmptyState
@@ -149,27 +236,10 @@ export function ForgePlanner() {
               </EventRow>
             ))
           )}
-        </div>
-      </Grid>
-
-      <SectionLabel>Active Orders</SectionLabel>
-      {contractsLoading ? (
-        <LoadingSpinner />
-      ) : contracts.length === 0 ? (
-        <EmptyState
-          title="No active orders"
-          description={characterId ? "Create a new order to get started." : "Connect your wallet to post orders."}
-        />
-      ) : (
-        contracts.map((c) => (
-          <ContractCardWithLiveState
-            key={c.id}
-            contract={c}
-            onClick={() => setSelectedContract(c)}
-          />
-        ))
+        </>
       )}
 
+      {/* ── Modals (available from Orders tab) ── */}
       {showCreateOrder && (
         <CreateMultiInputContractModal onClose={() => setShowCreateOrder(false)} />
       )}
