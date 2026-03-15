@@ -1051,10 +1051,15 @@ export function buildExpireTrustlessContract(params: {
 // ============================================================
 // SSU Extension Authorization
 // ============================================================
+/** Construct the dApp delivery URL for a specific SSU. */
+function getDappUrl(ssuId: string): string {
+  return `${config.webUiHost}/dapp/deliver/${ssuId}`;
+}
 
 /**
  * Authorize the TrustlessAuth extension on a StorageUnit so the
- * trustless-contracts package can deposit/withdraw items.
+ * trustless-contracts package can deposit/withdraw items, then
+ * set the SSU metadata URL to the dApp delivery route.
  *
  * Follows the same borrow/return OwnerCap pattern as online/offline.
  */
@@ -1095,8 +1100,17 @@ export function buildAuthorizeExtension(params: {
       ownerCap,
     ],
   });
+  // 3. Update SSU metadata URL to the web dApp route
+  tx.moveCall({
+    target: `${pkg}::storage_unit::update_metadata_url`,
+    arguments: [
+      tx.object(params.structureId),
+      ownerCap,
+      tx.pure.string(getDappUrl(params.structureId)),
+    ],
+  });
 
-  // 3. Return OwnerCap to Character
+  // 4. Return OwnerCap to Character
   tx.moveCall({
     target: `${pkg}::character::return_owner_cap`,
     typeArguments: [suTypeArg],

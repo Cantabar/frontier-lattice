@@ -30,6 +30,8 @@ export const config = {
 
   /** Event indexer base URL */
   indexerUrl: import.meta.env.VITE_INDEXER_URL ?? "/api/v1",
+  /** Web UI host used to compose in-game dApp URLs for SSUs */
+  webUiHost: import.meta.env.VITE_WEB_UI_HOST ?? "http://localhost:5173",
 
   /** Stillness World API base URL (for tribe name backfill) */
   worldApiUrl: import.meta.env.VITE_WORLD_API_URL ?? "https://world-api-stillness.live.tech.evefrontier.com",
