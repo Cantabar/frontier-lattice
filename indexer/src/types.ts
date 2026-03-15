@@ -18,6 +18,7 @@ export const MODULES = {
   tribe: "tribe::tribe",
   forgePlanner: "forge_planner::forge_planner",
   trustlessContracts: "trustless_contracts::trustless_contracts",
+  multiInputContract: "multi_input_contract::multi_input_contract",
 } as const;
 
 // ============================================================
@@ -189,6 +190,53 @@ export interface TransportDeliveredEvent {
 }
 
 // ============================================================
+// Multi-Input Contract Events
+// ============================================================
+
+export interface MultiInputContractCreatedEvent {
+  contract_id: string;
+  poster_id: string;
+  description: string;
+  destination_ssu_id: string;
+  slot_type_ids: string[]; // u64 as string
+  slot_required_quantities: string[]; // u64 as string
+  total_required: string;
+  bounty_amount: string;
+  deadline_ms: string;
+  allowed_characters: string[];
+  allowed_tribes: number[];
+}
+
+export interface SlotFilledEvent {
+  contract_id: string;
+  filler_id: string;
+  type_id: string;
+  fill_quantity: string;
+  payout_amount: string;
+  slot_remaining: string;
+  total_remaining: string;
+}
+
+export interface MultiInputContractCompletedEvent {
+  contract_id: string;
+  poster_id: string;
+  total_filled: string;
+  total_bounty_paid: string;
+}
+
+export interface MultiInputContractCancelledEvent {
+  contract_id: string;
+  poster_id: string;
+  bounty_returned: string;
+}
+
+export interface MultiInputContractExpiredEvent {
+  contract_id: string;
+  poster_id: string;
+  bounty_returned: string;
+}
+
+// ============================================================
 // All known event type names (short names matching Move structs)
 // ============================================================
 
@@ -217,6 +265,12 @@ export const EVENT_TYPES = [
   "ContractExpiredEvent",
   "TransportAcceptedEvent",
   "TransportDeliveredEvent",
+  // Multi-Input Contract
+  "MultiInputContractCreatedEvent",
+  "SlotFilledEvent",
+  "MultiInputContractCompletedEvent",
+  "MultiInputContractCancelledEvent",
+  "MultiInputContractExpiredEvent",
 ] as const;
 
 export type EventTypeName = (typeof EVENT_TYPES)[number];
@@ -284,6 +338,7 @@ export interface IndexerConfig {
     tribe: string;
     forgePlanner: string;
     trustlessContracts: string;
+    multiInputContract: string;
   };
   /** Postgres connection string */
   databaseUrl: string;
@@ -299,6 +354,7 @@ export const DEFAULT_CONFIG: IndexerConfig = {
     tribe: process.env.PACKAGE_TRIBE ?? "",
     forgePlanner: process.env.PACKAGE_FORGE_PLANNER ?? "",
     trustlessContracts: process.env.PACKAGE_TRUSTLESS_CONTRACTS ?? "",
+    multiInputContract: process.env.PACKAGE_MULTI_INPUT_CONTRACT ?? "",
   },
   databaseUrl: process.env.DATABASE_URL ?? "postgresql://corm:corm@localhost:5432/frontier_corm",
   apiPort: Number(process.env.API_PORT) || 3100,

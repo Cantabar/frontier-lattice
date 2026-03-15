@@ -198,6 +198,27 @@ export function createRouter(pool: pg.Pool): Router {
     });
   });
 
+  // ---- Multi-Input Orders ----
+
+  /**
+   * GET /multi-input-orders
+   * List MultiInputContractCreatedEvents (all or filtered by contract_id).
+   * Optional query param: contractId — returns all events for a specific contract.
+   */
+  router.get("/multi-input-orders", async (req: Request, res: Response) => {
+    const contractId = req.query.contractId as string | undefined;
+    const params = parsePagination(req);
+
+    if (contractId) {
+      const events = await getEventsByPrimaryId(pool, contractId, params);
+      res.json({ events: hydrateEvents(events), contract_id: contractId, ...params });
+      return;
+    }
+
+    const events = await getEventsByType(pool, "MultiInputContractCreatedEvent", params);
+    res.json({ events: hydrateEvents(events), ...params });
+  });
+
   // ---- Event Type Metadata ----
 
   /**

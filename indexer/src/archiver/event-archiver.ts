@@ -233,6 +233,38 @@ function extractDenormalisedFields(
         characterId: str(data.courier_id),
       };
 
+    // -- Multi-Input Contract events --
+    case "MultiInputContractCreatedEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+    case "SlotFilledEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: str(data.filler_id),
+      };
+    case "MultiInputContractCompletedEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+    case "MultiInputContractCancelledEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+    case "MultiInputContractExpiredEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+
     default:
       return { primaryId: "", tribeId: "", characterId: null };
   }
