@@ -7,6 +7,7 @@
 
 import { useMemo, useState, useCallback } from "react";
 import type { RecipeData, InputRequirement } from "../lib/types";
+import { buildRecipeMap } from "../lib/bom";
 
 /* ------------------------------------------------------------------ */
 /* Types (mirrored from CLI optimizer)                                 */
@@ -46,14 +47,6 @@ export type Inventory = Map<number, number>;
 /* ------------------------------------------------------------------ */
 /* Resolver (ported from recipe-resolver.ts)                           */
 /* ------------------------------------------------------------------ */
-
-function buildRecipeMap(recipes: RecipeData[]) {
-  const map = new Map<number, RecipeData>();
-  for (const r of recipes) {
-    map.set(r.outputTypeId, r);
-  }
-  return map;
-}
 
 function resolveNode(
   recipeMap: Map<number, RecipeData>,

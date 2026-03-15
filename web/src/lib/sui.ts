@@ -478,6 +478,169 @@ export function buildCancelOrder(params: {
 }
 
 // ============================================================
+// Multi-Input Contract
+// ============================================================
+
+const micPkg = () => packages.multiInputContract;
+const micTarget = (fn: string) => `${micPkg()}::multi_input_contract::${fn}`;
+
+/**
+ * Create a multi-input manufacturing order. Poster escrows a bounty split from
+ * gas and specifies material slots computed by the off-chain BOM optimizer.
+ */
+export function buildCreateMultiInputContract(params: {
+  characterId: string;
+  bountyAmount: number;
+  description: string;
+  destinationSsuId: string;
+  typeIds: number[];
+  quantities: number[];
+  deadlineMs: number;
+  allowedCharacters: string[];
+  allowedTribes: number[];
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  const [bounty] = tx.splitCoins(tx.gas, [params.bountyAmount]);
+  tx.moveCall({
+    target: micTarget("create"),
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.object(params.characterId),
+      bounty,
+      tx.pure.string(params.description),
+      tx.pure.id(params.destinationSsuId),
+      tx.pure("vector<u64>", params.typeIds),
+      tx.pure("vector<u64>", params.quantities),
+      tx.pure.u64(params.deadlineMs),
+      tx.pure("vector<address>", params.allowedCharacters),
+      tx.pure("vector<u32>", params.allowedTribes),
+      tx.object(SUI_CLOCK),
+    ],
+  });
+  return tx;
+}
+
+/**
+ * Fill a slot by withdrawing an item from the filler's SSU and delivering it
+ * to the poster's destination SSU via the MultiInputAuth extension.
+ *
+ * Steps:
+ * 1. Borrow OwnerCap<StorageUnit> from filler's Character
+ * 2. Withdraw item from filler's SSU
+ * 3. Return OwnerCap to filler's Character
+ * 4. Call fill_slot (deposits item to poster's SSU, pays bounty proportionally)
+ */
+export function buildFillMultiInputSlot(params: {
+  contractId: string;
+  destinationSsuId: string;
+  posterCharId: string;
+  fillerCharId: string;
+  fillerSsuId: string;
+  fillerOwnerCapId: string;
+  fillerOwnerCapVersion: string;
+  fillerOwnerCapDigest: string;
+  typeId: number;
+  quantity: number;
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  const pkg = worldPkg();
+  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
+
+  // 1. Borrow OwnerCap<StorageUnit> from filler's Character
+  const [ownerCap, receipt] = tx.moveCall({
+    target: `${pkg}::character::borrow_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerCharId),
+      tx.object(
+        Inputs.ReceivingRef({
+          objectId: params.fillerOwnerCapId,
+          version: params.fillerOwnerCapVersion,
+          digest: params.fillerOwnerCapDigest,
+        }),
+      ),
+    ],
+  });
+
+  // 2. Withdraw item from filler's SSU (returns transit Item)
+  const [item] = tx.moveCall({
+    target: `${pkg}::storage_unit::withdraw_by_owner`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerSsuId),
+      tx.object(params.fillerCharId),
+      ownerCap,
+      tx.pure.u64(params.typeId),
+      tx.pure.u32(params.quantity),
+    ],
+  });
+
+  // 3. Return OwnerCap to filler's Character
+  tx.moveCall({
+    target: `${pkg}::character::return_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerCharId),
+      ownerCap,
+      receipt,
+    ],
+  });
+
+  // 4. Fill the slot (deposits item to poster's destination SSU, pays bounty)
+  tx.moveCall({
+    target: micTarget("fill_slot"),
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(params.destinationSsuId),
+      tx.object(params.posterCharId),
+      tx.object(params.fillerCharId),
+      item,
+      tx.object(SUI_CLOCK),
+    ],
+  });
+
+  return tx;
+}
+
+/** Cancel an active (incomplete) multi-input contract. Poster only. */
+export function buildCancelMultiInputContract(params: {
+  contractId: string;
+  characterId: string;
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: micTarget("cancel"),
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(params.characterId),
+    ],
+  });
+  return tx;
+}
+
+/** Expire a multi-input contract after its deadline. Anyone can call. */
+export function buildExpireMultiInputContract(params: {
+  contractId: string;
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: micTarget("expire"),
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(SUI_CLOCK),
+    ],
+  });
+  return tx;
+}
+
+// ============================================================
 // Trustless Contracts
 // ============================================================
 

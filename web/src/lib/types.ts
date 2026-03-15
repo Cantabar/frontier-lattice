@@ -107,6 +107,33 @@ export interface RecipeRegistryData {
   recipeCount: number;
 }
 
+// ============================================================
+// Multi-Input Contract
+// ============================================================
+
+export interface MultiInputSlot {
+  typeId: number;
+  required: number;
+  filled: number;
+}
+
+export interface MultiInputContractData {
+  id: string;
+  posterId: string;
+  posterAddress: string;
+  description: string;
+  destinationSsuId: string;
+  slots: MultiInputSlot[];
+  totalRequired: number;
+  totalFilled: number;
+  bountyAmount: string;
+  /** Live remaining bounty balance (from getObject, absent when sourced from event). */
+  bountyBalance?: string;
+  deadlineMs: string;
+  allowedCharacters: string[];
+  allowedTribes: number[];
+}
+
 export interface ManufacturingOrderData {
   id: string;
   tribeId: string;
@@ -360,7 +387,13 @@ export type EventTypeName =
   | "ContractCancelledEvent"
   | "ContractExpiredEvent"
   | "TransportAcceptedEvent"
-  | "TransportDeliveredEvent";
+  | "TransportDeliveredEvent"
+  // Multi-Input Contract
+  | "MultiInputContractCreatedEvent"
+  | "SlotFilledEvent"
+  | "MultiInputContractCompletedEvent"
+  | "MultiInputContractCancelledEvent"
+  | "MultiInputContractExpiredEvent";
 
 export interface ArchivedEvent {
   id: number;
