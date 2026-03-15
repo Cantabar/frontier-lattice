@@ -5,12 +5,17 @@
  * We resolve them with getDynamicFields + getDynamicFieldObject queries.
  */
 
+import { useState, useEffect, useRef } from "react";
 import { useSuiClientQuery } from "@mysten/dapp-kit";
 import { useQuery } from "@tanstack/react-query";
 import { useSuiClient } from "@mysten/dapp-kit";
 import type { TribeData, TribeMember, Role } from "../lib/types";
 import { extractCoinTypeFromObjectType } from "../lib/coinUtils";
 import { config } from "../config";
+
+/** How long (ms) to keep polling for a missing-but-expected object. */
+const POLL_TIMEOUT_MS = 15_000;
+const POLL_INTERVAL_MS = 2_000;
 
 function parseRole(raw: unknown): Role {
   // Plain string (e.g. "Leader")
@@ -37,14 +42,50 @@ function parseRole(raw: unknown): Role {
 export function useTribe(tribeId: string | undefined) {
   const client = useSuiClient();
 
+  // Track whether we should be polling for a missing object
+  const [polling, setPolling] = useState(false);
+  const pollStartRef = useRef<number>(0);
+
   const { data, isLoading, error } = useSuiClientQuery(
     "getObject",
     {
       id: tribeId!,
       options: { showContent: true },
     },
-    { enabled: !!tribeId },
+    {
+      enabled: !!tribeId,
+      refetchInterval: polling ? POLL_INTERVAL_MS : false,
+    },
   );
+
+  // Start polling when we have a tribeId but the object isn't found yet
+  const objectMissing = !!tribeId && !isLoading && !!data && !data.data;
+
+  useEffect(() => {
+    if (objectMissing && !polling) {
+      setPolling(true);
+      pollStartRef.current = Date.now();
+    }
+    // Object appeared — stop polling
+    if (data?.data && polling) {
+      setPolling(false);
+    }
+  }, [objectMissing, data, polling]);
+
+  // Auto-stop polling after timeout
+  useEffect(() => {
+    if (!polling) return;
+    const remaining = POLL_TIMEOUT_MS - (Date.now() - pollStartRef.current);
+    if (remaining <= 0) {
+      setPolling(false);
+      return;
+    }
+    const timer = setTimeout(() => setPolling(false), remaining);
+    return () => clearTimeout(timer);
+  }, [polling]);
+
+  /** True while we are still polling for a missing-but-expected object. */
+  const isPending = polling && objectMissing;
 
   const objectType = (data?.data?.content as { type?: string })?.type ?? "";
   const parsedCoinType = extractCoinTypeFromObjectType(objectType) ?? config.coinType;
@@ -109,5 +150,5 @@ export function useTribe(tribeId: string | undefined) {
     };
   })();
 
-  return { tribe, isLoading, error };
+  return { tribe, isLoading, isPending, error };
 }

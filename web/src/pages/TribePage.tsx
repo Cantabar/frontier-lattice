@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useIdentity } from "../hooks/useIdentity";
 import { useTribe } from "../hooks/useTribe";
@@ -71,9 +71,21 @@ const Grid = styled.div`
 
 export function TribePage() {
   const { tribeId } = useParams<{ tribeId: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { tribeCaps } = useIdentity();
-  const { tribe, isLoading } = useTribe(tribeId);
+  const { tribe, isLoading, isPending } = useTribe(tribeId);
   const hasTribeCap = tribeCaps.length > 0;
+
+  const justCreated = (location.state as { justCreated?: boolean })?.justCreated ?? false;
+  const createdName = (location.state as { tribeName?: string })?.tribeName;
+
+  // Clear navigation state once the tribe has loaded to avoid stale state on back-nav
+  useEffect(() => {
+    if (justCreated && tribe) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [justCreated, tribe, navigate, location.pathname]);
 
   const [showCreate, setShowCreate] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
@@ -111,6 +123,19 @@ export function TribePage() {
   }
 
   if (isLoading) return <LoadingSpinner />;
+
+  if (!tribe && (justCreated || isPending)) {
+    return (
+      <Page>
+        <Title>{createdName ?? "Tribe"}</Title>
+        <LoadingSpinner />
+        <EmptyState
+          title="Confirming tribe on chain…"
+          description="Waiting for the network to index your new tribe. This usually takes a few seconds."
+        />
+      </Page>
+    );
+  }
 
   if (!tribe) {
     return (

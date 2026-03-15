@@ -178,7 +178,9 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
       // Dismiss modal and navigate to the new tribe page
       onClose();
       if (tribeObjectId && tribeObjectId !== "pending") {
-        navigate(`/tribe/${tribeObjectId}`);
+        navigate(`/tribe/${tribeObjectId}`, {
+          state: { justCreated: true, tribeName: name },
+        });
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Transaction failed";
