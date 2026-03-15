@@ -12,6 +12,7 @@ import {
   buildDeliverTransport,
 } from "../../lib/sui";
 import { SsuPickerField } from "../shared/SsuPickerField";
+import { ItemBadge } from "../shared/ItemBadge";
 import { PrimaryButton } from "../shared/Button";
 
 const Label = styled.label`
@@ -149,6 +150,18 @@ export function FillContractModal({ contract, onClose }: Props) {
         Remaining: {remaining.toLocaleString()} / {Number(contract.targetQuantity).toLocaleString()}
         {contract.escrowAmount !== "0" && (
           <> — Escrow: {formatAmount(contract.escrowAmount)} SUI</>
+        )}
+        {variant === "CoinForItem" && contract.contractType.variant === "CoinForItem" && (
+          <div>Wanted: <ItemBadge typeId={contract.contractType.wantedTypeId} /></div>
+        )}
+        {variant === "ItemForCoin" && contract.contractType.variant === "ItemForCoin" && (
+          <div>Item: <ItemBadge typeId={contract.contractType.offeredTypeId} /></div>
+        )}
+        {variant === "ItemForItem" && contract.contractType.variant === "ItemForItem" && (
+          <div>Wanted: <ItemBadge typeId={contract.contractType.wantedTypeId} /></div>
+        )}
+        {variant === "Transport" && contract.contractType.variant === "Transport" && (
+          <div>Item: <ItemBadge typeId={contract.contractType.itemTypeId} /></div>
         )}
       </Info>
 
