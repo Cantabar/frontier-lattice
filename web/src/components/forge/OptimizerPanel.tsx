@@ -1,10 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import styled from "styled-components";
 import { useOptimizer, type ResolvedNode, type GapAnalysis } from "../../hooks/useOptimizer";
 import type { RecipeData } from "../../lib/types";
 import { ItemPickerField } from "../shared/ItemPickerField";
 import { PrimaryButton, SecondaryButton } from "../shared/Button";
 import { useItems } from "../../hooks/useItems";
+import { useIdentity } from "../../hooks/useIdentity";
+import { useMyStructures } from "../../hooks/useStructures";
+import { useAggregatedSsuInventory } from "../../hooks/useAggregatedSsuInventory";
+import { SsuInventoryToggle } from "./SsuInventoryToggle";
 
 const Panel = styled.section`
   background: ${({ theme }) => theme.colors.surface.raised};
@@ -83,10 +87,36 @@ const Missing = styled.span`
   color: ${({ theme }) => theme.colors.danger};
 `;
 
+const Satisfied = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.success};
+`;
+
 const Summary = styled.div`
   font-size: 13px;
   color: ${({ theme }) => theme.colors.text.muted};
   margin-top: ${({ theme }) => theme.spacing.sm};
+`;
+
+const ProgressBarOuter = styled.div`
+  height: 4px;
+  border-radius: 2px;
+  background: ${({ theme }) => theme.colors.surface.bg};
+  overflow: hidden;
+  margin-top: ${({ theme }) => theme.spacing.xs};
+`;
+
+const ProgressBarInner = styled.div<{ $pct: number }>`
+  height: 100%;
+  width: ${({ $pct }) => Math.min($pct, 100)}%;
+  border-radius: 2px;
+  background: ${({ $pct, theme }) =>
+    $pct >= 100
+      ? theme.colors.success
+      : $pct > 50
+        ? theme.colors.warning
+        : theme.colors.danger};
+  transition: width 0.3s ease;
 `;
 
 function renderTree(node: ResolvedNode, getItemName: (id: number) => string, depth = 0): JSX.Element[] {
@@ -109,19 +139,44 @@ function renderTree(node: ResolvedNode, getItemName: (id: number) => string, dep
   return elements;
 }
 
-function renderGaps(gaps: GapAnalysis, getItemName: (id: number) => string) {
+function renderGaps(
+  gaps: GapAnalysis,
+  getItemName: (id: number) => string,
+  inventoryActive: boolean,
+) {
   return (
     <>
-      {gaps.shoppingList.map((item) => (
-        <GapRow key={item.typeId}>
-          <span>{getItemName(item.typeId)}</span>
-          <span>
-            {item.onHand}/{item.required} — <Missing>{item.missing} missing</Missing>
-          </span>
-        </GapRow>
-      ))}
+      {gaps.shoppingList.map((item) => {
+        const pct = item.required > 0 ? (item.onHand / item.required) * 100 : 0;
+        return (
+          <GapRow key={item.typeId}>
+            <div>
+              <span>{getItemName(item.typeId)}</span>
+              {inventoryActive && (
+                <ProgressBarOuter>
+                  <ProgressBarInner $pct={pct} />
+                </ProgressBarOuter>
+              )}
+            </div>
+            <span>
+              {item.onHand}/{item.required} — <Missing>{item.missing} missing</Missing>
+            </span>
+          </GapRow>
+        );
+      })}
+      {inventoryActive && gaps.satisfied.length > 0 && (
+        gaps.satisfied.map((item) => (
+          <GapRow key={item.typeId}>
+            <span>{getItemName(item.typeId)}</span>
+            <Satisfied>✓ {item.required} in SSUs</Satisfied>
+          </GapRow>
+        ))
+      )}
       <Summary>
         {gaps.totalOnHand}/{gaps.totalRequired} on hand · {gaps.totalMissing} missing
+        {inventoryActive && gaps.satisfied.length > 0 && (
+          <> · <Satisfied>{gaps.satisfied.length} fully covered</Satisfied></>
+        )}
       </Summary>
     </>
   );
@@ -136,17 +191,63 @@ export function OptimizerPanel({
 }) {
   const { result, optimize, clear } = useOptimizer(recipes);
   const { getItem } = useItems();
+  const { address } = useIdentity();
   const [targetType, setTargetType] = useState("");
   const [quantity, setQuantity] = useState("1");
+
+  // SSU inventory state
+  const [ssuInventoryEnabled, setSsuInventoryEnabled] = useState(false);
+  const [selectedSsuIds, setSelectedSsuIds] = useState<Set<string>>(new Set());
+
+  const { structures, isLoading: structuresLoading } = useMyStructures();
+  const ssus = useMemo(
+    () => structures.filter((s) => s.moveType === "StorageUnit"),
+    [structures],
+  );
+
+  // Auto-select all SSUs when first enabling the toggle
+  const handleToggle = useCallback(
+    (on: boolean) => {
+      setSsuInventoryEnabled(on);
+      if (on && selectedSsuIds.size === 0 && ssus.length > 0) {
+        setSelectedSsuIds(new Set(ssus.map((s) => s.id)));
+      }
+    },
+    [ssus, selectedSsuIds.size],
+  );
+
+  const selectedSsus = useMemo(
+    () => ssus.filter((s) => selectedSsuIds.has(s.id)),
+    [ssus, selectedSsuIds],
+  );
+
+  const {
+    inventory: aggregatedInventory,
+    isLoading: inventoryLoading,
+    uniqueTypeCount,
+    ssuCount,
+  } = useAggregatedSsuInventory(selectedSsus, ssuInventoryEnabled);
+
+  const emptyInventory = useMemo(() => new Map<number, number>(), []);
+  const effectiveInventory = ssuInventoryEnabled ? aggregatedInventory : emptyInventory;
 
   // Auto-fill and resolve when a blueprint's "Resolve in Optimizer" is clicked
   useEffect(() => {
     if (initialTarget != null && recipes.length > 0) {
       setTargetType(String(initialTarget));
       setQuantity("1");
-      optimize(initialTarget, 1);
+      optimize(initialTarget, 1, effectiveInventory);
     }
-  }, [initialTarget, recipes.length, optimize]);
+  }, [initialTarget, recipes.length, optimize, effectiveInventory]);
+
+  // Re-run optimization when inventory data changes
+  useEffect(() => {
+    if (result && targetType) {
+      optimize(Number(targetType), Number(quantity), effectiveInventory);
+    }
+    // Only re-run when inventory changes, not on every result change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveInventory]);
 
   function getItemName(typeId: number): string {
     return getItem(typeId)?.name ?? `Type ${typeId}`;
@@ -155,7 +256,7 @@ export function OptimizerPanel({
   function handleOptimize() {
     const typeId = Number(targetType);
     if (!typeId) return;
-    optimize(typeId, Number(quantity));
+    optimize(typeId, Number(quantity), effectiveInventory);
   }
 
   return (
@@ -181,6 +282,19 @@ export function OptimizerPanel({
         )}
       </Row>
 
+      <SsuInventoryToggle
+        ssus={ssus}
+        enabled={ssuInventoryEnabled}
+        onToggle={handleToggle}
+        selectedIds={selectedSsuIds}
+        onSelectionChange={setSelectedSsuIds}
+        isLoadingStructures={structuresLoading}
+        isLoadingInventory={inventoryLoading}
+        uniqueTypeCount={uniqueTypeCount}
+        ssuCount={ssuCount}
+        walletConnected={!!address}
+      />
+
       {result && (
         <>
           <Divider />
@@ -190,9 +304,12 @@ export function OptimizerPanel({
           <Divider />
           <SectionTitle>Gap Analysis</SectionTitle>
           {result.gaps.shoppingList.length === 0 ? (
-            <Summary>All materials satisfied!</Summary>
+            <Summary>
+              All materials satisfied!
+              {ssuInventoryEnabled && " (from SSU inventory)"}
+            </Summary>
           ) : (
-            renderGaps(result.gaps, getItemName)
+            renderGaps(result.gaps, getItemName, ssuInventoryEnabled)
           )}
         </>
       )}
