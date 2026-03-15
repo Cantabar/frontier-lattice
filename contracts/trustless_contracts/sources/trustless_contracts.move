@@ -60,6 +60,8 @@ const EItemTypeMismatch: u64 = 14;
 const EZeroQuantity: u64 = 15;
 const EWantedAmountZero: u64 = 16;
 const EContractFull: u64 = 17;
+const ESourceSsuMismatch: u64 = 18;
+const EItemContractRequiresItemCancel: u64 = 19;
 
 // === Auth Witness ===
 
@@ -153,6 +155,8 @@ public struct Contract<phantom CE, phantom CF> has key {
     allowed_characters: vector<ID>,
     /// Access control: in-game tribe IDs permitted to fill (empty = open)
     allowed_tribes: vector<u32>,
+    /// Items withdrawn from open inventory so far (ItemForCoin / ItemForItem only)
+    items_released: u32,
 }
 
 // === Events ===
@@ -190,6 +194,7 @@ public struct ContractCancelledEvent has copy, drop {
     contract_id: ID,
     poster_id: ID,
     escrow_returned: u64,
+    items_returned: u32,
 }
 
 public struct ContractExpiredEvent has copy, drop {
@@ -198,6 +203,7 @@ public struct ContractExpiredEvent has copy, drop {
     escrow_returned: u64,
     stake_forfeited: u64,
     fill_pool_returned: u64,
+    items_returned: u32,
 }
 
 public struct TransportAcceptedEvent has copy, drop {
@@ -315,6 +321,7 @@ public fun create_coin_for_coin<CE, CF>(
         status: ContractStatus::Open,
         allowed_characters,
         allowed_tribes,
+        items_released: 0,
     };
 
     let contract_id = object::id(&contract);
@@ -386,6 +393,7 @@ public fun create_coin_for_item<CE, CF>(
         status: ContractStatus::Open,
         allowed_characters,
         allowed_tribes,
+        items_released: 0,
     };
 
     let contract_id = object::id(&contract);
@@ -406,7 +414,7 @@ public fun create_coin_for_item<CE, CF>(
     transfer::share_object(contract);
 }
 
-/// Create an ItemForCoin contract. Poster locks items at an SSU, wants Coin<CF>.
+/// Create an ItemForCoin
 /// Items are moved to open inventory (contract-controlled) via our extension.
 /// The SSU must have TrustlessAuth registered as its extension.
 ///
@@ -471,6 +479,7 @@ public fun create_item_for_coin<CE, CF>(
         status: ContractStatus::Open,
         allowed_characters,
         allowed_tribes,
+        items_released: 0,
     };
 
     let contract_id = object::id(&contract);
@@ -556,6 +565,7 @@ public fun create_item_for_item<CE, CF>(
         status: ContractStatus::Open,
         allowed_characters,
         allowed_tribes,
+        items_released: 0,
     };
 
     let contract_id = object::id(&contract);
@@ -631,6 +641,7 @@ public fun create_transport<CE, CF>(
         status: ContractStatus::Open,
         allowed_characters,
         allowed_tribes,
+        items_released: 0,
     };
 
     let contract_id = object::id(&contract);
@@ -768,9 +779,9 @@ public fun fill_with_items<CE, CF>(
     assert!(filler_id != contract.poster_id, ESelfFill);
     verify_filler_access(contract, filler_character);
 
-    // Valid for CoinForItem and ItemForItem
+    // Valid for CoinForItem only; ItemForItem uses fill_item_for_item
     assert!(
-        is_coin_for_item(&contract.contract_type) || is_item_for_item(&contract.contract_type),
+        is_coin_for_item(&contract.contract_type),
         EWrongContractType,
     );
 
@@ -850,6 +861,7 @@ public fun fill_with_items<CE, CF>(
 public fun fill_item_for_coin<CE, CF>(
     contract: &mut Contract<CE, CF>,
     source_ssu: &mut StorageUnit,
+    poster_character: &Character,
     filler_character: &Character,
     mut fill_coin: Coin<CF>,
     clock: &Clock,
@@ -920,6 +932,7 @@ public fun fill_item_for_coin<CE, CF>(
             trustless_auth(),
             ctx,
         );
+        contract.items_released = contract.items_released + items_to_release;
     };
 
     // Release fill_pool coins to poster proportionally
@@ -938,11 +951,150 @@ public fun fill_item_for_coin<CE, CF>(
     });
 
     if (contract.filled_quantity == contract.target_quantity) {
+        // Return any rounding dust items to poster
+        let dust_items = offered_quantity - contract.items_released;
+        if (dust_items > 0) {
+            let dust = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+                poster_character,
+                trustless_auth(),
+                offered_type_id,
+                dust_items,
+                ctx,
+            );
+            source_ssu.deposit_to_owned<TrustlessAuth>(
+                poster_character,
+                dust,
+                trustless_auth(),
+                ctx,
+            );
+            contract.items_released = contract.items_released + dust_items;
+        };
+
         event::emit(ContractCompletedEvent {
             contract_id,
             poster_id: contract.poster_id,
             total_filled: contract.filled_quantity,
             total_escrow_paid: contract.target_quantity,
+        });
+    };
+}
+
+/// Fill an ItemForItem contract. Filler deposits wanted items at the destination SSU,
+/// receives proportional offered items from the source SSU open inventory.
+public fun fill_item_for_item<CE, CF>(
+    contract: &mut Contract<CE, CF>,
+    source_ssu: &mut StorageUnit,
+    destination_ssu: &mut StorageUnit,
+    poster_character: &Character,
+    filler_character: &Character,
+    item: inventory::Item,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    assert!(contract.status == ContractStatus::Open, EContractNotOpen);
+    assert!(clock.timestamp_ms() <= contract.deadline_ms, EContractExpired);
+    assert!(is_item_for_item(&contract.contract_type), EWrongContractType);
+
+    let filler_id = filler_character.id();
+    assert!(filler_id != contract.poster_id, ESelfFill);
+    verify_filler_access(contract, filler_character);
+
+    // Verify source SSU matches
+    let source_ssu_id = get_source_ssu_id(&contract.contract_type);
+    assert!(object::id(source_ssu) == source_ssu_id, ESourceSsuMismatch);
+
+    // Verify item matches what the contract wants
+    let wanted_type_id = get_wanted_type_id(&contract.contract_type);
+    assert!(inventory::type_id(&item) == wanted_type_id, EItemTypeMismatch);
+
+    let item_qty = (inventory::quantity(&item) as u64);
+    assert!(item_qty > 0, EZeroQuantity);
+
+    let remaining = contract.target_quantity - contract.filled_quantity;
+    assert!(remaining > 0, EContractFull);
+
+    let fill_amount = if (item_qty > remaining) { remaining } else { item_qty };
+
+    if (!contract.allow_partial) {
+        assert!(fill_amount == remaining, EInsufficientFill);
+    };
+
+    // Deposit filler's items to poster's owned inventory at destination SSU
+    destination_ssu.deposit_to_owned<TrustlessAuth>(
+        poster_character,
+        item,
+        trustless_auth(),
+        ctx,
+    );
+
+    // Track fill
+    if (contract.fills.contains(filler_id)) {
+        let existing = contract.fills.borrow_mut(filler_id);
+        *existing = *existing + fill_amount;
+    } else {
+        contract.fills.add(filler_id, fill_amount);
+    };
+
+    contract.filled_quantity = contract.filled_quantity + fill_amount;
+
+    // Calculate proportional offered items to release to filler
+    let (offered_type_id, offered_quantity) = get_offered_item_info(&contract.contract_type);
+    let items_to_release = ((fill_amount * (offered_quantity as u64)) / contract.target_quantity as u32);
+
+    let contract_id = object::id(contract);
+
+    // Release proportional offered items from source open inventory to filler
+    if (items_to_release > 0) {
+        let released_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+            filler_character,
+            trustless_auth(),
+            offered_type_id,
+            items_to_release,
+            ctx,
+        );
+        source_ssu.deposit_to_owned<TrustlessAuth>(
+            filler_character,
+            released_item,
+            trustless_auth(),
+            ctx,
+        );
+        contract.items_released = contract.items_released + items_to_release;
+    };
+
+    event::emit(ContractFilledEvent {
+        contract_id,
+        filler_id,
+        fill_quantity: fill_amount,
+        payout_amount: (items_to_release as u64),
+        remaining_quantity: contract.target_quantity - contract.filled_quantity,
+    });
+
+    // Auto-complete if fully filled
+    if (contract.filled_quantity == contract.target_quantity) {
+        // Return any rounding dust items to poster
+        let dust_items = offered_quantity - contract.items_released;
+        if (dust_items > 0) {
+            let dust = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+                poster_character,
+                trustless_auth(),
+                offered_type_id,
+                dust_items,
+                ctx,
+            );
+            source_ssu.deposit_to_owned<TrustlessAuth>(
+                poster_character,
+                dust,
+                trustless_auth(),
+                ctx,
+            );
+            contract.items_released = contract.items_released + dust_items;
+        };
+
+        event::emit(ContractCompletedEvent {
+            contract_id,
+            poster_id: contract.poster_id,
+            total_filled: contract.filled_quantity,
+            total_escrow_paid: 0,
         });
     };
 }
@@ -1080,9 +1232,8 @@ public fun deliver_transport<CE, CF>(
 
 // === Lifecycle Functions ===
 
-/// Cancel an open (unfilled or partially filled) contract. Returns escrow to poster.
-/// If partially filled, the fill_pool coins stay with the poster (already released
-/// on each fill for CoinForCoin). For ItemForCoin, returns locked items to poster.
+/// Cancel an open coin-only contract (CoinForCoin, CoinForItem, Transport).
+/// Item-bearing contracts (ItemForCoin, ItemForItem) must use cancel_item_contract.
 /// Only the poster can cancel. Cannot cancel InProgress transport (courier has stake).
 public fun cancel_contract<CE, CF>(
     contract: Contract<CE, CF>,
@@ -1091,6 +1242,11 @@ public fun cancel_contract<CE, CF>(
 ) {
     assert!(contract.status == ContractStatus::Open, EContractNotOpen);
     assert!(poster_character.id() == contract.poster_id, ENotPoster);
+    // Item-bearing contracts must use cancel_item_contract
+    assert!(
+        !is_item_for_coin(&contract.contract_type) && !is_item_for_item(&contract.contract_type),
+        EItemContractRequiresItemCancel,
+    );
 
     let contract_id = object::id(&contract);
     let escrow_returned = contract.escrow.value();
@@ -1114,8 +1270,7 @@ public fun cancel_contract<CE, CF>(
         escrow.destroy_zero();
     };
 
-    // Return any fill_pool to poster (for CoinForCoin, coins already released;
-    // for ItemForCoin, filler payments go to poster)
+    // Return any fill_pool to poster
     if (fill_pool.value() > 0) {
         let coin = coin::from_balance(fill_pool, ctx);
         transfer::public_transfer(coin, poster_address);
@@ -1129,13 +1284,99 @@ public fun cancel_contract<CE, CF>(
         contract_id,
         poster_id,
         escrow_returned,
+        items_returned: 0,
     });
 
     fills.drop();
     id.delete();
 }
 
-/// Expire a contract after its deadline. Anyone can call this.
+/// Cancel an item-bearing contract (ItemForCoin or ItemForItem).
+/// Returns remaining escrowed items from SSU open inventory to poster's owned inventory.
+/// Only the poster can cancel. Contract must be Open.
+public fun cancel_item_contract<CE, CF>(
+    contract: Contract<CE, CF>,
+    poster_character: &Character,
+    source_ssu: &mut StorageUnit,
+    ctx: &mut TxContext,
+) {
+    assert!(contract.status == ContractStatus::Open, EContractNotOpen);
+    assert!(poster_character.id() == contract.poster_id, ENotPoster);
+    assert!(
+        is_item_for_coin(&contract.contract_type) || is_item_for_item(&contract.contract_type),
+        EWrongContractType,
+    );
+
+    // Verify source SSU matches
+    let source_ssu_id = get_source_ssu_id(&contract.contract_type);
+    assert!(object::id(source_ssu) == source_ssu_id, ESourceSsuMismatch);
+
+    let contract_id = object::id(&contract);
+    let escrow_returned = contract.escrow.value();
+
+    // Calculate remaining items in open inventory
+    let (offered_type_id, offered_quantity) = get_offered_item_info(&contract.contract_type);
+    let items_remaining = offered_quantity - contract.items_released;
+
+    let Contract {
+        id,
+        poster_id,
+        poster_address,
+        escrow,
+        fill_pool,
+        courier_stake,
+        fills,
+        ..
+    } = contract;
+
+    // Return remaining items from open inventory to poster
+    if (items_remaining > 0) {
+        let returned_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+            poster_character,
+            trustless_auth(),
+            offered_type_id,
+            items_remaining,
+            ctx,
+        );
+        source_ssu.deposit_to_owned<TrustlessAuth>(
+            poster_character,
+            returned_item,
+            trustless_auth(),
+            ctx,
+        );
+    };
+
+    // Return remaining escrow to poster (zero for item-escrow, but handle generically)
+    if (escrow.value() > 0) {
+        let coin = coin::from_balance(escrow, ctx);
+        transfer::public_transfer(coin, poster_address);
+    } else {
+        escrow.destroy_zero();
+    };
+
+    // Return any fill_pool to poster
+    if (fill_pool.value() > 0) {
+        let coin = coin::from_balance(fill_pool, ctx);
+        transfer::public_transfer(coin, poster_address);
+    } else {
+        fill_pool.destroy_zero();
+    };
+
+    courier_stake.destroy_zero();
+
+    event::emit(ContractCancelledEvent {
+        contract_id,
+        poster_id,
+        escrow_returned,
+        items_returned: items_remaining,
+    });
+
+    fills.drop();
+    id.delete();
+}
+
+/// Expire a coin-only contract after its deadline. Anyone can call this.
+/// Item-bearing contracts must use expire_item_contract.
 /// Escrow → poster. Stake → poster (forfeited). Fill pool → poster.
 public fun expire_contract<CE, CF>(
     contract: Contract<CE, CF>,
@@ -1143,6 +1384,11 @@ public fun expire_contract<CE, CF>(
     ctx: &mut TxContext,
 ) {
     assert!(clock.timestamp_ms() > contract.deadline_ms, EContractNotExpired);
+    // Item-bearing contracts must use expire_item_contract
+    assert!(
+        !is_item_for_coin(&contract.contract_type) && !is_item_for_item(&contract.contract_type),
+        EItemContractRequiresItemCancel,
+    );
 
     let contract_id = object::id(&contract);
     let escrow_returned = contract.escrow.value();
@@ -1190,6 +1436,99 @@ public fun expire_contract<CE, CF>(
         escrow_returned,
         stake_forfeited,
         fill_pool_returned,
+        items_returned: 0,
+    });
+
+    fills.drop();
+    id.delete();
+}
+
+/// Expire an item-bearing contract (ItemForCoin or ItemForItem) after deadline.
+/// Returns remaining escrowed items to poster's owned inventory.
+/// Anyone can call this (poster_character is a shared object needed for deposit).
+public fun expire_item_contract<CE, CF>(
+    contract: Contract<CE, CF>,
+    poster_character: &Character,
+    source_ssu: &mut StorageUnit,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    assert!(clock.timestamp_ms() > contract.deadline_ms, EContractNotExpired);
+    assert!(
+        is_item_for_coin(&contract.contract_type) || is_item_for_item(&contract.contract_type),
+        EWrongContractType,
+    );
+
+    let source_ssu_id = get_source_ssu_id(&contract.contract_type);
+    assert!(object::id(source_ssu) == source_ssu_id, ESourceSsuMismatch);
+
+    let contract_id = object::id(&contract);
+    let escrow_returned = contract.escrow.value();
+    let stake_forfeited = contract.courier_stake.value();
+    let fill_pool_returned = contract.fill_pool.value();
+
+    let (offered_type_id, offered_quantity) = get_offered_item_info(&contract.contract_type);
+    let items_remaining = offered_quantity - contract.items_released;
+
+    let Contract {
+        id,
+        poster_id,
+        poster_address,
+        escrow,
+        fill_pool,
+        courier_stake,
+        fills,
+        ..
+    } = contract;
+
+    // Return remaining items from open inventory to poster
+    if (items_remaining > 0) {
+        let returned_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+            poster_character,
+            trustless_auth(),
+            offered_type_id,
+            items_remaining,
+            ctx,
+        );
+        source_ssu.deposit_to_owned<TrustlessAuth>(
+            poster_character,
+            returned_item,
+            trustless_auth(),
+            ctx,
+        );
+    };
+
+    // Return remaining escrow to poster
+    if (escrow.value() > 0) {
+        let coin = coin::from_balance(escrow, ctx);
+        transfer::public_transfer(coin, poster_address);
+    } else {
+        escrow.destroy_zero();
+    };
+
+    // Forfeit courier stake to poster
+    if (courier_stake.value() > 0) {
+        let coin = coin::from_balance(courier_stake, ctx);
+        transfer::public_transfer(coin, poster_address);
+    } else {
+        courier_stake.destroy_zero();
+    };
+
+    // Return fill pool to poster
+    if (fill_pool.value() > 0) {
+        let coin = coin::from_balance(fill_pool, ctx);
+        transfer::public_transfer(coin, poster_address);
+    } else {
+        fill_pool.destroy_zero();
+    };
+
+    event::emit(ContractExpiredEvent {
+        contract_id,
+        poster_id,
+        escrow_returned,
+        stake_forfeited,
+        fill_pool_returned,
+        items_returned: items_remaining,
     });
 
     fills.drop();
@@ -1215,6 +1554,7 @@ public fun contract_status<CE, CF>(c: &Contract<CE, CF>): ContractStatus { c.sta
 public fun contract_courier_id<CE, CF>(c: &Contract<CE, CF>): Option<ID> { c.courier_id }
 public fun contract_allowed_characters<CE, CF>(c: &Contract<CE, CF>): vector<ID> { c.allowed_characters }
 public fun contract_allowed_tribes<CE, CF>(c: &Contract<CE, CF>): vector<u32> { c.allowed_tribes }
+public fun contract_items_released<CE, CF>(c: &Contract<CE, CF>): u32 { c.items_released }
 
 public fun filler_contribution<CE, CF>(c: &Contract<CE, CF>, filler_id: ID): u64 {
     if (c.fills.contains(filler_id)) {
@@ -1320,6 +1660,18 @@ fun get_transport_item_info(ct: &ContractType): (u64, u32) {
         ContractType::Transport { item_type_id, item_quantity, .. } => (*item_type_id, *item_quantity),
         _ => abort EWrongContractType,
     }
+}
+
+fun get_source_ssu_id(ct: &ContractType): ID {
+    match (ct) {
+        ContractType::ItemForCoin { source_ssu_id, .. } => *source_ssu_id,
+        ContractType::ItemForItem { source_ssu_id, .. } => *source_ssu_id,
+        _ => abort EWrongContractType,
+    }
+}
+
+fun has_item_escrow(ct: &ContractType): bool {
+    is_item_for_coin(ct) || is_item_for_item(ct)
 }
 
 // === Test-only Helpers ===

@@ -514,6 +514,7 @@ fun test_expire_contract() {
 fun test_expire_transport_forfeits_stake() {
     let mut ts = ts::begin(@0x0);
     let (poster_id, filler_id) = setup_characters(&mut ts);
+    let source_ssu_id = object::id_from_address(@0x41);
     let dest_ssu_id = object::id_from_address(@0x42);
     let stake_amount: u64 = 200;
 
@@ -525,7 +526,7 @@ fun test_expire_transport_forfeits_stake() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_transport<ESCROW, FILL>(
-            &poster, escrow, 42, 10, dest_ssu_id, stake_amount, 100,
+            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, stake_amount, 100,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 
@@ -923,6 +924,7 @@ fun test_cancel_not_poster() {
 fun test_transport_create_and_accept() {
     let mut ts = ts::begin(@0x0);
     let (poster_id, filler_id) = setup_characters(&mut ts);
+    let source_ssu_id = object::id_from_address(@0x41);
     let dest_ssu_id = object::id_from_address(@0x42);
     let stake_amount: u64 = 200;
 
@@ -934,7 +936,7 @@ fun test_transport_create_and_accept() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_transport<ESCROW, FILL>(
-            &poster, escrow, 42, 10, dest_ssu_id, stake_amount, FAR_FUTURE_MS,
+            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, stake_amount, FAR_FUTURE_MS,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 
@@ -984,6 +986,7 @@ fun test_transport_create_and_accept() {
 fun test_transport_insufficient_stake() {
     let mut ts = ts::begin(@0x0);
     let (poster_id, filler_id) = setup_characters(&mut ts);
+    let source_ssu_id = object::id_from_address(@0x41);
     let dest_ssu_id = object::id_from_address(@0x42);
 
     ts::next_tx(&mut ts, user_a());
@@ -993,7 +996,7 @@ fun test_transport_insufficient_stake() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_transport<ESCROW, FILL>(
-            &poster, escrow, 42, 10, dest_ssu_id, 200, FAR_FUTURE_MS,
+            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, 200, FAR_FUTURE_MS,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 

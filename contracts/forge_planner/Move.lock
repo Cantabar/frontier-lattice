@@ -19,7 +19,7 @@ deps = { MoveStdlib = "MoveStdlib" }
 [pinned.localnet.forge_planner]
 source = { root = true }
 use_environment = "localnet"
-manifest_digest = "56B7C4CD70189353F735EB99C0798AC9820000C233A9C35065CD8CE1991F5CEC"
+manifest_digest = "43D8B12E7F5CEB2F92EC84B7D366D697116F82EF85F5B8162E4ABD3002B23DAB"
 deps = { std = "MoveStdlib", sui = "Sui", tribe = "tribe", world = "world" }
 
 [pinned.localnet.tribe]
