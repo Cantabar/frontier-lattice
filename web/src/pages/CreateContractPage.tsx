@@ -499,6 +499,104 @@ export function CreateContractPage() {
   const [creationPhase, setCreationPhase] = useState<CreationPhase>(null);
   const isBusy = creationPhase !== null;
 
+  // ---------------------------------------------------------------------------
+  // Divisibility validation — prevents rounding dust on partial fills.
+  // The Move contract enforces these same guards at creation time.
+  // ---------------------------------------------------------------------------
+  const divisibilityError: string | null = useMemo(() => {
+    switch (variant) {
+      case "CoinForCoin": {
+        const e = Math.round(Number(escrow) * 1e9);
+        const w = Math.round(Number(wantedAmount) * 1e9);
+        if (e > 0 && w > 0 && e % w !== 0) {
+          const unitDown = Math.floor(e / w) * w;
+          const unitUp = (Math.floor(e / w) + 1) * w;
+          return `Reward must be evenly divisible by wanted amount. Nearest valid rewards: ${(unitDown / 1e9).toFixed(9).replace(/\.?0+$/, "")} or ${(unitUp / 1e9).toFixed(9).replace(/\.?0+$/, "")} SUI`;
+        }
+        return null;
+      }
+      case "CoinForItem": {
+        const e = Math.round(Number(escrow) * 1e9);
+        const q = Number(wantedQuantity);
+        if (e > 0 && q > 0 && e % q !== 0) {
+          const unitDown = Math.floor(e / q) * q;
+          const unitUp = (Math.floor(e / q) + 1) * q;
+          return `Reward must be evenly divisible by wanted quantity (${q}). Nearest valid rewards: ${(unitDown / 1e9).toFixed(9).replace(/\.?0+$/, "")} or ${(unitUp / 1e9).toFixed(9).replace(/\.?0+$/, "")} SUI`;
+        }
+        return null;
+      }
+      case "ItemForCoin": {
+        const w = Math.round(Number(itemWantedAmount) * 1e9);
+        const q = Number(offeredQuantity);
+        if (w > 0 && q > 0 && w % q !== 0) {
+          const unitDown = Math.floor(w / q) * q;
+          const unitUp = (Math.floor(w / q) + 1) * q;
+          return `Wanted amount must be evenly divisible by offered quantity (${q}). Nearest valid amounts: ${(unitDown / 1e9).toFixed(9).replace(/\.?0+$/, "")} or ${(unitUp / 1e9).toFixed(9).replace(/\.?0+$/, "")} SUI`;
+        }
+        return null;
+      }
+      case "ItemForItem": {
+        const o = Number(offeredQuantity);
+        const w = Number(i4iWantedQuantity);
+        if (o > 0 && w > 0 && o % w !== 0) {
+          const unitDown = Math.floor(o / w) * w;
+          const unitUp = (Math.floor(o / w) + 1) * w;
+          return `Offered quantity must be evenly divisible by wanted quantity (${w}). Nearest valid offered: ${unitDown} or ${unitUp}`;
+        }
+        return null;
+      }
+      case "Transport": {
+        const p = Math.round(Number(escrow) * 1e9);
+        const s = Math.round(Number(requiredStake) * 1e9);
+        const q = Number(transportItemQuantity);
+        if (q > 0) {
+          if (p > 0 && p % q !== 0)
+            return `Reward must be evenly divisible by item quantity (${q})`;
+          if (s > 0 && s % q !== 0)
+            return `Stake must be evenly divisible by item quantity (${q})`;
+        }
+        return null;
+      }
+    }
+  }, [variant, escrow, wantedAmount, wantedQuantity, itemWantedAmount, offeredQuantity, i4iWantedQuantity, transportItemQuantity, requiredStake]);
+
+  /** Unit price hint text shown when amounts are valid and non-zero. */
+  const unitPriceHint: string | null = useMemo(() => {
+    if (divisibilityError) return null;
+    switch (variant) {
+      case "CoinForCoin": {
+        const e = Number(escrow);
+        const w = Number(wantedAmount);
+        if (e > 0 && w > 0) return `Rate: ${(e / w).toFixed(4).replace(/\.?0+$/, "")} SUI reward per 1 SUI filled`;
+        return null;
+      }
+      case "CoinForItem": {
+        const e = Number(escrow);
+        const q = Number(wantedQuantity);
+        if (e > 0 && q > 0) return `Rate: ${(e / q).toFixed(4).replace(/\.?0+$/, "")} SUI per item`;
+        return null;
+      }
+      case "ItemForCoin": {
+        const w = Number(itemWantedAmount);
+        const q = Number(offeredQuantity);
+        if (w > 0 && q > 0) return `Rate: ${(w / q).toFixed(4).replace(/\.?0+$/, "")} SUI per item`;
+        return null;
+      }
+      case "ItemForItem": {
+        const o = Number(offeredQuantity);
+        const w = Number(i4iWantedQuantity);
+        if (o > 0 && w > 0) return `Rate: ${(o / w).toFixed(2).replace(/\.?0+$/, "")} offered per wanted item`;
+        return null;
+      }
+      case "Transport": {
+        const p = Number(escrow);
+        const q = Number(transportItemQuantity);
+        if (p > 0 && q > 0) return `Rate: ${(p / q).toFixed(4).replace(/\.?0+$/, "")} SUI per item delivered`;
+        return null;
+      }
+    }
+  }, [variant, escrow, wantedAmount, wantedQuantity, itemWantedAmount, offeredQuantity, i4iWantedQuantity, transportItemQuantity, divisibilityError]);
+
   // --- Extension check ---
   const CORM_EXT = "corm_auth::CormAuth";
 
@@ -686,7 +784,7 @@ export function CreateContractPage() {
   }
 
   const isValid = (() => {
-    if (!characterId) return false;
+    if (!characterId || divisibilityError) return false;
     switch (variant) {
       case "CoinForCoin":
         return isValidCoinAmount(escrow) && isValidCoinAmount(wantedAmount)
@@ -836,6 +934,9 @@ export function CreateContractPage() {
               {submitted && !isValidCoinAmount(wantedAmount) && <FieldError>Enter a valid amount</FieldError>}
             </div>
           )}
+
+          {unitPriceHint && <Hint>{unitPriceHint}</Hint>}
+          {divisibilityError && <FieldError>{divisibilityError}</FieldError>}
 
           {variant === "CoinForItem" && (
             <>
