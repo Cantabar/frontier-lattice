@@ -1,20 +1,24 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import styled from "styled-components";
 import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { useIdentity } from "../../hooks/useIdentity";
+import { useMyStructures } from "../../hooks/useStructures";
 import { useNotifications } from "../../hooks/useNotifications";
-import { formatAmount } from "../../lib/format";
+import { formatAmount, truncateAddress } from "../../lib/format";
 import type { TrustlessContractData } from "../../lib/types";
+import type { InventoryItemEntry } from "../../hooks/useSsuInventory";
 import {
   buildFillWithCoins,
-  buildFillWithItems,
   buildFillItemForCoin,
+  buildFillCoinForItemComposite,
+  buildFillItemForItemComposite,
   buildClaimFreeItems,
   buildClaimFreeCoins,
   buildDeliverTransport,
 } from "../../lib/sui";
 import { SsuPickerField } from "../shared/SsuPickerField";
+import { SsuItemPickerField } from "../shared/SsuItemPickerField";
 import { ItemBadge } from "../shared/ItemBadge";
 import { PrimaryButton } from "../shared/Button";
 
@@ -51,6 +55,17 @@ const Info = styled.div`
   line-height: 1.5;
 `;
 
+const ReadOnlyField = styled.div`
+  background: ${({ theme }) => theme.colors.surface.bg};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: 14px;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+  font-family: monospace;
+`;
+
 const SubmitButton = styled(PrimaryButton)`
   font-size: 14px;
 `;
@@ -68,6 +83,7 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
   const suiClient = useSuiClient();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
   const { push } = useNotifications();
+  const { structures } = useMyStructures();
 
   // Coin fill fields
   const [fillAmount, setFillAmount] = useState("");
@@ -75,9 +91,19 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
   // Free-claim quantity field
   const [claimQuantity, setClaimQuantity] = useState("");
 
-  // Item fill fields
-  const [ssuId, setSsuId] = useState("");
+  // Item fill fields (CoinForItem / ItemForItem)
+  const [sourceSsuId, setSourceSsuId] = useState("");
+  const [selectedTypeId, setSelectedTypeId] = useState("");
+  const [selectedQty, setSelectedQty] = useState(0);
+
+  // Transport deliver — still needs manual item ID
   const [itemId, setItemId] = useState("");
+
+  // Resolve the filler's selected source SSU to get OwnerCap info
+  const sourceSsu = useMemo(
+    () => structures.find((s) => s.id === sourceSsuId),
+    [structures, sourceSsuId],
+  );
 
   const variant = contract.contractType.variant;
 
@@ -96,6 +122,28 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
   })();
   const isItemFill = variant === "CoinForItem" || variant === "ItemForItem";
   const isTransportDeliver = variant === "Transport" && contract.status === "InProgress";
+
+  // Destination SSU is already specified in the contract for item-fill types
+  const destinationSsuId = (() => {
+    const ct = contract.contractType;
+    if (ct.variant === "CoinForItem") return ct.destinationSsuId;
+    if (ct.variant === "ItemForItem") return ct.destinationSsuId;
+    return "";
+  })();
+
+  // Wanted type for item-fill filtering
+  const wantedTypeId = (() => {
+    const ct = contract.contractType;
+    if (ct.variant === "CoinForItem") return ct.wantedTypeId;
+    if (ct.variant === "ItemForItem") return ct.wantedTypeId;
+    return undefined;
+  })();
+
+  function handleItemSelected(entry: InventoryItemEntry) {
+    setSelectedTypeId(String(entry.typeId));
+    // Default to min(available, remaining)
+    setSelectedQty(Math.min(entry.quantity, Math.max(remaining, 0)));
+  }
 
   function modalTitle(): string {
     if (isTransportDeliver) return "Deliver Items";
@@ -154,19 +202,43 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           result = await signAndExecute({ transaction: tx as any });
         }
-      } else if (isItemFill) {
-        const tx = buildFillWithItems({
-          contractId: contract.id,
-          destinationSsuId: ssuId,
-          posterCharacterId: contract.posterId,
-          fillerCharacterId: characterId,
-          itemId,
-        });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = await signAndExecute({ transaction: tx as any });
+      } else if (isItemFill && sourceSsu) {
+        const capParams = {
+          fillerSsuId: sourceSsuId,
+          fillerOwnerCapId: sourceSsu.ownerCapId,
+          fillerOwnerCapVersion: sourceSsu.ownerCapVersion,
+          fillerOwnerCapDigest: sourceSsu.ownerCapDigest,
+          typeId: Number(selectedTypeId),
+          quantity: selectedQty,
+        };
+        if (variant === "CoinForItem") {
+          const tx = buildFillCoinForItemComposite({
+            contractId: contract.id,
+            destinationSsuId,
+            posterCharacterId: contract.posterId,
+            fillerCharacterId: characterId,
+            ...capParams,
+          });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result = await signAndExecute({ transaction: tx as any });
+        } else {
+          // ItemForItem
+          const ct = contract.contractType;
+          const contractSourceSsu = ct.variant === "ItemForItem" ? ct.sourceSsuId : "";
+          const tx = buildFillItemForItemComposite({
+            contractId: contract.id,
+            sourceSsuId: contractSourceSsu,
+            destinationSsuId,
+            posterCharacterId: contract.posterId,
+            fillerCharacterId: characterId,
+            ...capParams,
+          });
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result = await signAndExecute({ transaction: tx as any });
+        }
       } else if (isTransportDeliver) {
         const ct = contract.contractType;
-        const destSsu = ct.variant === "Transport" ? ct.destinationSsuId : ssuId;
+        const destSsu = ct.variant === "Transport" ? ct.destinationSsuId : "";
         const tx = buildDeliverTransport({
           contractId: contract.id,
           destinationSsuId: destSsu,
@@ -197,7 +269,7 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
       if (isZeroCoinTarget && (variant === "ItemForCoin" || variant === "CoinForCoin")) return Number(claimQuantity) > 0;
       return Number(fillAmount) > 0;
     }
-    if (isItemFill) return !!ssuId && !!itemId;
+    if (isItemFill) return !!sourceSsuId && !!selectedTypeId && selectedQty > 0;
     if (isTransportDeliver) return !!itemId;
     return false;
   })();
@@ -277,9 +349,41 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
       {isItemFill && (
         <>
           <Label>Destination SSU</Label>
-          <SsuPickerField value={ssuId} onChange={setSsuId} />
-          <Label>Item Object ID</Label>
-          <Input placeholder="0x..." value={itemId} onChange={(e) => setItemId(e.target.value)} />
+          <ReadOnlyField>{truncateAddress(destinationSsuId, 12, 8)}</ReadOnlyField>
+
+          <Label>Your Source SSU</Label>
+          <SsuPickerField
+            value={sourceSsuId}
+            onChange={(id) => {
+              setSourceSsuId(id);
+              setSelectedTypeId("");
+              setSelectedQty(0);
+            }}
+            placeholder="Select one of your SSUs…"
+          />
+
+          <Label>Item</Label>
+          <SsuItemPickerField
+            ssuId={sourceSsuId}
+            ownerCapId={sourceSsu?.ownerCapId ?? ""}
+            value={selectedTypeId}
+            onChange={handleItemSelected}
+            filterTypeId={wantedTypeId}
+            placeholder="Select matching item…"
+          />
+
+          {selectedQty > 0 && contract.allowPartial && (
+            <>
+              <Label>Quantity (max {Math.min(selectedQty, Math.max(remaining, 0)).toLocaleString()})</Label>
+              <Input
+                type="number"
+                min="1"
+                max={Math.min(selectedQty, Math.max(remaining, 0)) || undefined}
+                value={selectedQty}
+                onChange={(e) => setSelectedQty(Math.max(1, Number(e.target.value)))}
+              />
+            </>
+          )}
         </>
       )}
 
