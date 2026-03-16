@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
+import { TransactionStepper } from "../shared/TransactionStepper";
+import { useTransactionPhase } from "../../hooks/useTransactionPhase";
 import { useIdentity } from "../../hooks/useIdentity";
 import { useMyStructures } from "../../hooks/useStructures";
 import type { TrustlessContractVariant } from "../../lib/types";
@@ -21,17 +23,13 @@ import { TribePickerField } from "../shared/TribePickerField";
 import { PrimaryButton } from "../shared/Button";
 
 // ---------------------------------------------------------------------------
-// Creation-phase tracking
+// Creation-phase steps (shared stepper)
 // ---------------------------------------------------------------------------
-type CreationPhase = null | "preparing" | "signing" | "confirming";
-
-const PHASE_LABELS: Record<Exclude<CreationPhase, null>, string> = {
-  preparing: "Preparing",
-  signing: "Waiting for wallet",
-  confirming: "Confirming on chain",
-};
-
-const PHASE_ORDER: Exclude<CreationPhase, null>[] = ["preparing", "signing", "confirming"];
+const CREATION_STEPS = [
+  { key: "preparing", label: "Preparing" },
+  { key: "signing", label: "Waiting for wallet" },
+  { key: "confirming", label: "Confirming on chain" },
+];
 
 const Label = styled.label`
   display: block;
@@ -157,70 +155,6 @@ const FieldError = styled.div`
 `;
 
 // ---------------------------------------------------------------------------
-// Progress stepper
-// ---------------------------------------------------------------------------
-
-const pulse = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-`;
-
-const StepperWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: ${({ theme }) => theme.spacing.xs};
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-`;
-
-const StepDot = styled.div<{ $state: "done" | "active" | "pending" }>`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: ${({ $state, theme }) =>
-    $state === "done"
-      ? theme.colors.primary.main
-      : $state === "active"
-        ? theme.colors.primary.main
-        : theme.colors.surface.border};
-  animation: ${({ $state }) => ($state === "active" ? pulse : "none")} 1.2s ease-in-out infinite;
-`;
-
-const StepConnector = styled.div<{ $done: boolean }>`
-  width: 24px;
-  height: 2px;
-  background: ${({ $done, theme }) =>
-    $done ? theme.colors.primary.main : theme.colors.surface.border};
-`;
-
-const StepLabel = styled.span<{ $active: boolean }>`
-  font-size: 11px;
-  font-weight: ${({ $active }) => ($active ? 600 : 400)};
-  color: ${({ $active, theme }) =>
-    $active ? theme.colors.text.primary : theme.colors.text.muted};
-  white-space: nowrap;
-`;
-
-function CreationStepper({ phase }: { phase: Exclude<CreationPhase, null> }) {
-  const activeIdx = PHASE_ORDER.indexOf(phase);
-  return (
-    <StepperWrapper>
-      {PHASE_ORDER.map((p, i) => {
-        const state = i < activeIdx ? "done" : i === activeIdx ? "active" : "pending";
-        return (
-          <span key={p} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {i > 0 && <StepConnector $done={i <= activeIdx} />}
-            <StepDot $state={state} />
-            <StepLabel $active={state === "active"}>{PHASE_LABELS[p]}</StepLabel>
-          </span>
-        );
-      })}
-    </StepperWrapper>
-  );
-}
-
-// ---------------------------------------------------------------------------
 
 const VARIANT_DESCRIPTIONS: Record<TrustlessContractVariant, string> = {
   CoinForCoin: "Offer coins, receive different coins",
@@ -323,8 +257,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false);
-  const [creationPhase, setCreationPhase] = useState<CreationPhase>(null);
-  const isBusy = creationPhase !== null;
+  const { phase: creationPhase, setPhase: setCreationPhase, isBusy, phaseLabel } = useTransactionPhase(CREATION_STEPS);
 
   // --- Extension check: SSUs that need CormAuth ---
   const CORM_EXT = "corm_auth::CormAuth";
@@ -764,10 +697,10 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
         </>
       )}
 
-      {creationPhase && <CreationStepper phase={creationPhase} />}
+      <TransactionStepper steps={CREATION_STEPS} currentStep={creationPhase} />
 
       <SubmitButton $fullWidth onClick={handleCreate} disabled={isBusy || isEnabling || ssusNeedingExtension.length > 0}>
-        {creationPhase ? PHASE_LABELS[creationPhase] + "…" : "Create Contract"}
+        {isBusy ? phaseLabel + "…" : "Create Contract"}
       </SubmitButton>
     </Modal>
   );

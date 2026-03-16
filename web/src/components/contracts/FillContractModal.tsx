@@ -2,6 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import styled from "styled-components";
 import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
+import { TransactionStepper } from "../shared/TransactionStepper";
+import { useTransactionPhase } from "../../hooks/useTransactionPhase";
 import { useIdentity } from "../../hooks/useIdentity";
 import { useMyStructures } from "../../hooks/useStructures";
 import { useNotifications } from "../../hooks/useNotifications";
@@ -91,6 +93,11 @@ const RequirementNote = styled.div`
 
 // ---------------------------------------------------------------------------
 
+const FILL_STEPS = [
+  { key: "signing", label: "Waiting for wallet" },
+  { key: "confirming", label: "Confirming on chain" },
+];
+
 interface Props {
   contract: TrustlessContractData;
   onClose: () => void;
@@ -105,9 +112,10 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
     characterOwnerCapDigest,
   } = useIdentity();
   const suiClient = useSuiClient();
-  const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const { push } = useNotifications();
   const { structures } = useMyStructures();
+  const { phase: fillPhase, setPhase: setFillPhase, isBusy, phaseLabel } = useTransactionPhase(FILL_STEPS);
 
   // Coin fill fields
   const [fillAmount, setFillAmount] = useState("");
@@ -243,6 +251,7 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
 
   async function handleSubmit() {
     if (!characterId) return;
+    setFillPhase("signing");
 
     try {
       let result;
@@ -351,6 +360,7 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
       }
 
       // Wait for the transaction to be indexed before refreshing UI
+      setFillPhase("confirming");
       if (result) {
         await suiClient.waitForTransaction({ digest: result.digest });
       }
@@ -359,6 +369,7 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
       onFilled?.();
       onClose();
     } catch (err) {
+      setFillPhase(null);
       push({ level: "error", title: "Fill Failed", message: String(err), source: "fill-contract" });
     }
   }
@@ -375,7 +386,7 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
   })();
 
   return (
-    <Modal title={modalTitle()} onClose={onClose}>
+    <Modal title={modalTitle()} onClose={onClose} disableClose={isBusy}>
       <Info>
         {variant === "ItemForCoin" && contract.contractType.variant === "ItemForCoin" ? (
           <>
@@ -527,8 +538,10 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
         </>
       )}
 
-      <SubmitButton $fullWidth onClick={handleSubmit} disabled={!isValid || isPending}>
-        {isPending ? "Submitting…" : "Submit"}
+      <TransactionStepper steps={FILL_STEPS} currentStep={fillPhase} />
+
+      <SubmitButton $fullWidth onClick={handleSubmit} disabled={!isValid || isBusy}>
+        {isBusy ? phaseLabel + "…" : "Submit"}
       </SubmitButton>
     </Modal>
   );
