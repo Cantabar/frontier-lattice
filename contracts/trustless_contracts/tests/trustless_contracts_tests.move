@@ -16,7 +16,8 @@ use world::{
     storage_unit::{Self, StorageUnit},
     test_helpers::{Self, admin, tenant, user_a, user_b},
 };
-use trustless_contracts::trustless_contracts::{Self, Contract, TrustlessAuth};
+use corm_auth::corm_auth::CormAuth;
+use trustless_contracts::trustless_contracts::{Self, Contract};
 
 // === Test coin witnesses ===
 public struct ESCROW has drop {}
@@ -254,7 +255,7 @@ fun authorize_and_mint(
             ts::most_recent_receiving_ticket<OwnerCap<StorageUnit>>(&character_id),
             ts.ctx(),
         );
-        storage_unit.authorize_extension<TrustlessAuth>(&owner_cap);
+        storage_unit.authorize_extension<CormAuth>(&owner_cap);
         character.return_owner_cap(owner_cap, receipt);
         ts::return_shared(storage_unit);
         ts::return_shared(character);

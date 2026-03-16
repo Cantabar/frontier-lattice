@@ -16,9 +16,10 @@
 /// Partial fulfillment: multiple fillers can contribute toward a target quantity.
 /// Each fill releases proportional escrow. The contract auto-completes when fully filled.
 ///
-/// Item escrow uses the SSU extension pattern: our `TrustlessAuth` witness is
-/// registered on SSUs, giving us deposit/withdraw authority. Items are locked in
-/// open inventory (contract-controlled, not owner-withdrawable).
+/// Item escrow uses the SSU extension pattern: the shared `CormAuth` witness
+/// (from the `corm_auth` package) is registered on SSUs, giving any Corm
+/// contract module deposit/withdraw authority. Items are locked in open
+/// inventory (contract-controlled, not owner-withdrawable).
 ///
 /// Filler access control uses the world contract's in-game tribe designation
 /// (`character.tribe(): u32`) and/or specific Character IDs.
@@ -37,6 +38,7 @@ use sui::{
     event,
     table::{Self, Table},
 };
+use corm_auth::corm_auth::{Self, CormAuth};
 use world::character::Character;
 use world::inventory;
 use world::storage_unit::StorageUnit;
@@ -63,15 +65,6 @@ const EContractFull: u64 = 17;
 const ESourceSsuMismatch: u64 = 18;
 const EItemContractRequiresItemCancel: u64 = 19;
 const EContractNotCompleted: u64 = 20;
-
-// === Auth Witness ===
-
-/// Typed witness for SSU extension authorization.
-/// SSU owners register this via `storage_unit::authorize_extension<TrustlessAuth>()`
-/// to grant our module deposit/withdraw authority on their SSU.
-public struct TrustlessAuth has drop {}
-
-fun trustless_auth(): TrustlessAuth { TrustlessAuth {} }
 
 // === Enums ===
 
@@ -456,10 +449,10 @@ public fun create_item_for_coin<CE, CF>(
     let offered_quantity = inventory::quantity(&item);
 
     // Deposit to open inventory (locked by our extension)
-    source_ssu.deposit_to_open_inventory<TrustlessAuth>(
+    source_ssu.deposit_to_open_inventory<CormAuth>(
         character,
         item,
-        trustless_auth(),
+        corm_auth::auth(),
         ctx,
     );
 
@@ -548,10 +541,10 @@ public fun create_item_for_item<CE, CF>(
     let offered_quantity = inventory::quantity(&item);
 
     // Deposit to open inventory (locked by our extension)
-    source_ssu.deposit_to_open_inventory<TrustlessAuth>(
+    source_ssu.deposit_to_open_inventory<CormAuth>(
         character,
         item,
-        trustless_auth(),
+        corm_auth::auth(),
         ctx,
     );
 
@@ -824,10 +817,10 @@ public fun fill_with_items<CE, CF>(
     };
 
     // Deposit item to poster's owned inventory at destination SSU
-    destination_ssu.deposit_to_owned<TrustlessAuth>(
+    destination_ssu.deposit_to_owned<CormAuth>(
         poster_character,
         item,
-        trustless_auth(),
+        corm_auth::auth(),
         ctx,
     );
 
@@ -940,17 +933,17 @@ public fun fill_item_for_coin<CE, CF>(
 
     // Release proportional items to filler from open inventory
     if (items_to_release > 0) {
-        let released_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+        let released_item = source_ssu.withdraw_from_open_inventory<CormAuth>(
             filler_character,
-            trustless_auth(),
+            corm_auth::auth(),
             offered_type_id,
             items_to_release,
             ctx,
         );
-        source_ssu.deposit_to_owned<TrustlessAuth>(
+        source_ssu.deposit_to_owned<CormAuth>(
             filler_character,
             released_item,
-            trustless_auth(),
+            corm_auth::auth(),
             ctx,
         );
         contract.items_released = contract.items_released + items_to_release;
@@ -975,17 +968,17 @@ public fun fill_item_for_coin<CE, CF>(
         // Return any rounding dust items to poster
         let dust_items = offered_quantity - contract.items_released;
         if (dust_items > 0) {
-            let dust = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+            let dust = source_ssu.withdraw_from_open_inventory<CormAuth>(
                 poster_character,
-                trustless_auth(),
+                corm_auth::auth(),
                 offered_type_id,
                 dust_items,
                 ctx,
             );
-            source_ssu.deposit_to_owned<TrustlessAuth>(
+            source_ssu.deposit_to_owned<CormAuth>(
                 poster_character,
                 dust,
-                trustless_auth(),
+                corm_auth::auth(),
                 ctx,
             );
             contract.items_released = contract.items_released + dust_items;
@@ -1052,17 +1045,17 @@ public fun claim_free_items<CE, CF>(
 
     // Release items from open inventory to filler's owned inventory
     let (offered_type_id, _) = get_offered_item_info(&contract.contract_type);
-    let released_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+    let released_item = source_ssu.withdraw_from_open_inventory<CormAuth>(
         filler_character,
-        trustless_auth(),
+        corm_auth::auth(),
         offered_type_id,
         claim_amount,
         ctx,
     );
-    source_ssu.deposit_to_owned<TrustlessAuth>(
+    source_ssu.deposit_to_owned<CormAuth>(
         filler_character,
         released_item,
-        trustless_auth(),
+        corm_auth::auth(),
         ctx,
     );
     contract.items_released = contract.items_released + claim_amount;
@@ -1207,10 +1200,10 @@ public fun fill_item_for_item<CE, CF>(
     };
 
     // Deposit filler's items to poster's owned inventory at destination SSU
-    destination_ssu.deposit_to_owned<TrustlessAuth>(
+    destination_ssu.deposit_to_owned<CormAuth>(
         poster_character,
         item,
-        trustless_auth(),
+        corm_auth::auth(),
         ctx,
     );
 
@@ -1232,17 +1225,17 @@ public fun fill_item_for_item<CE, CF>(
 
     // Release proportional offered items from source open inventory to filler
     if (items_to_release > 0) {
-        let released_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+        let released_item = source_ssu.withdraw_from_open_inventory<CormAuth>(
             filler_character,
-            trustless_auth(),
+            corm_auth::auth(),
             offered_type_id,
             items_to_release,
             ctx,
         );
-        source_ssu.deposit_to_owned<TrustlessAuth>(
+        source_ssu.deposit_to_owned<CormAuth>(
             filler_character,
             released_item,
-            trustless_auth(),
+            corm_auth::auth(),
             ctx,
         );
         contract.items_released = contract.items_released + items_to_release;
@@ -1261,17 +1254,17 @@ public fun fill_item_for_item<CE, CF>(
         // Return any rounding dust items to poster
         let dust_items = offered_quantity - contract.items_released;
         if (dust_items > 0) {
-            let dust = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+            let dust = source_ssu.withdraw_from_open_inventory<CormAuth>(
                 poster_character,
-                trustless_auth(),
+                corm_auth::auth(),
                 offered_type_id,
                 dust_items,
                 ctx,
             );
-            source_ssu.deposit_to_owned<TrustlessAuth>(
+            source_ssu.deposit_to_owned<CormAuth>(
                 poster_character,
                 dust,
-                trustless_auth(),
+                corm_auth::auth(),
                 ctx,
             );
             contract.items_released = contract.items_released + dust_items;
@@ -1328,10 +1321,10 @@ public fun fill_item_for_item_same_ssu<CE, CF>(
     };
 
     // Deposit filler's items to poster's owned inventory at the SSU
-    ssu.deposit_to_owned<TrustlessAuth>(
+    ssu.deposit_to_owned<CormAuth>(
         poster_character,
         item,
-        trustless_auth(),
+        corm_auth::auth(),
         ctx,
     );
 
@@ -1353,17 +1346,17 @@ public fun fill_item_for_item_same_ssu<CE, CF>(
 
     // Release proportional offered items from source open inventory to filler
     if (items_to_release > 0) {
-        let released_item = ssu.withdraw_from_open_inventory<TrustlessAuth>(
+        let released_item = ssu.withdraw_from_open_inventory<CormAuth>(
             filler_character,
-            trustless_auth(),
+            corm_auth::auth(),
             offered_type_id,
             items_to_release,
             ctx,
         );
-        ssu.deposit_to_owned<TrustlessAuth>(
+        ssu.deposit_to_owned<CormAuth>(
             filler_character,
             released_item,
-            trustless_auth(),
+            corm_auth::auth(),
             ctx,
         );
         contract.items_released = contract.items_released + items_to_release;
@@ -1382,17 +1375,17 @@ public fun fill_item_for_item_same_ssu<CE, CF>(
         // Return any rounding dust items to poster
         let dust_items = offered_quantity - contract.items_released;
         if (dust_items > 0) {
-            let dust = ssu.withdraw_from_open_inventory<TrustlessAuth>(
+            let dust = ssu.withdraw_from_open_inventory<CormAuth>(
                 poster_character,
-                trustless_auth(),
+                corm_auth::auth(),
                 offered_type_id,
                 dust_items,
                 ctx,
             );
-            ssu.deposit_to_owned<TrustlessAuth>(
+            ssu.deposit_to_owned<CormAuth>(
                 poster_character,
                 dust,
-                trustless_auth(),
+                corm_auth::auth(),
                 ctx,
             );
             contract.items_released = contract.items_released + dust_items;
@@ -1473,10 +1466,10 @@ public fun deliver_transport<CE, CF>(
     let fill_amount = if (item_qty > remaining) { remaining } else { item_qty };
 
     // Deposit item to poster's owned inventory at destination SSU
-    destination_ssu.deposit_to_owned<TrustlessAuth>(
+    destination_ssu.deposit_to_owned<CormAuth>(
         poster_character,
         item,
-        trustless_auth(),
+        corm_auth::auth(),
         ctx,
     );
 
@@ -1641,17 +1634,17 @@ public fun cancel_item_contract<CE, CF>(
 
     // Return remaining items from open inventory to poster
     if (items_remaining > 0) {
-        let returned_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+        let returned_item = source_ssu.withdraw_from_open_inventory<CormAuth>(
             poster_character,
-            trustless_auth(),
+            corm_auth::auth(),
             offered_type_id,
             items_remaining,
             ctx,
         );
-        source_ssu.deposit_to_owned<TrustlessAuth>(
+        source_ssu.deposit_to_owned<CormAuth>(
             poster_character,
             returned_item,
-            trustless_auth(),
+            corm_auth::auth(),
             ctx,
         );
     };
@@ -1793,17 +1786,17 @@ public fun expire_item_contract<CE, CF>(
 
     // Return remaining items from open inventory to poster
     if (items_remaining > 0) {
-        let returned_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+        let returned_item = source_ssu.withdraw_from_open_inventory<CormAuth>(
             poster_character,
-            trustless_auth(),
+            corm_auth::auth(),
             offered_type_id,
             items_remaining,
             ctx,
         );
-        source_ssu.deposit_to_owned<TrustlessAuth>(
+        source_ssu.deposit_to_owned<CormAuth>(
             poster_character,
             returned_item,
-            trustless_auth(),
+            corm_auth::auth(),
             ctx,
         );
     };
@@ -1926,17 +1919,17 @@ public fun cleanup_completed_item_contract<CE, CF>(
 
     // Return any remaining items from open inventory to poster
     if (items_remaining > 0) {
-        let returned_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+        let returned_item = source_ssu.withdraw_from_open_inventory<CormAuth>(
             poster_character,
-            trustless_auth(),
+            corm_auth::auth(),
             offered_type_id,
             items_remaining,
             ctx,
         );
-        source_ssu.deposit_to_owned<TrustlessAuth>(
+        source_ssu.deposit_to_owned<CormAuth>(
             poster_character,
             returned_item,
-            trustless_auth(),
+            corm_auth::auth(),
             ctx,
         );
     };
