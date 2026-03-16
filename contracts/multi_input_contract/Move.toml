@@ -7,3 +7,4 @@ localnet = "ca6ba8e0"
 
 [dependencies]
 world = { local = "../../../world-contracts/contracts/world" }
+corm_auth = { local = "../corm_auth" }

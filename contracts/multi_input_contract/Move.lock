@@ -16,11 +16,17 @@ use_environment = "localnet"
 manifest_digest = "CC15CB146CA1113370B03476BFF694B88F43F77D8DEE7C23CC0C78AB0634420D"
 deps = { MoveStdlib = "MoveStdlib" }
 
+[pinned.localnet.corm_auth]
+source = { local = "../corm_auth" }
+use_environment = "localnet"
+manifest_digest = "EAE83E4C2C7D5B4EF605145EE3703A5AF265593E686986BA5E58EE3F5D5E884F"
+deps = { std = "MoveStdlib", sui = "Sui" }
+
 [pinned.localnet.multi_input_contract]
 source = { root = true }
 use_environment = "localnet"
-manifest_digest = "67C3D4EFFF744664641B85E46ACFC5E0F9FB532FDAFCD56ABE95953906C7CE94"
-deps = { std = "MoveStdlib", sui = "Sui", world = "world" }
+manifest_digest = "4E7F929536407494361A37A5896BA8DCF6F39E351BC6F9FE1CF10FD4DAEE6F84"
+deps = { corm_auth = "corm_auth", std = "MoveStdlib", sui = "Sui", world = "world" }
 
 [pinned.localnet.world]
 source = { local = "../../../world-contracts/contracts/world" }

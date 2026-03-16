@@ -17,11 +17,11 @@
 /// Design principles:
 /// - Generic over coin type C (phantom): deploy with C = EVE for EVE Frontier.
 /// - Objects as live state, events as history. Contracts deleted on cancel/expire.
-/// - Trustless: item delivery verified via SSU MultiInputAuth extension.
-/// - Standalone: only depends on `world` contracts.
+/// - Trustless: item delivery verified via SSU CormAuth extension.
+/// - Standalone: depends on `world` contracts and `corm_auth`.
 ///
-/// SSU setup: the poster's destination SSU must have `MultiInputAuth`
-/// authorised via `storage_unit::authorize_extension<MultiInputAuth>()`.
+/// SSU setup: the poster's destination SSU must have `CormAuth`
+/// authorised via `storage_unit::authorize_extension<CormAuth>()`.
 module multi_input_contract::multi_input_contract;
 
 use std::string::String;
@@ -32,6 +32,7 @@ use sui::{
     event,
     table::{Self, Table},
 };
+use corm_auth::corm_auth::{Self, CormAuth};
 use world::character::Character;
 use world::inventory;
 use world::storage_unit::StorageUnit;
@@ -52,15 +53,6 @@ const ENotPoster: u64 = 11;
 const EContractComplete: u64 = 12;
 const EDescriptionEmpty: u64 = 13;
 const EDuplicateSlot: u64 = 14;
-
-// === Auth Witness ===
-
-/// Typed witness for SSU extension authorisation.
-/// Poster must call `storage_unit::authorize_extension<MultiInputAuth>()`
-/// on their destination SSU before creating the contract.
-public struct MultiInputAuth has drop {}
-
-fun multi_input_auth(): MultiInputAuth { MultiInputAuth {} }
 
 // === Structs ===
 
@@ -268,10 +260,10 @@ public fun fill_slot<C>(
     let fill_amount = if (item_qty > slot_remaining) { slot_remaining } else { item_qty };
 
     // Deposit item to poster's owned inventory at destination SSU.
-    destination_ssu.deposit_to_owned<MultiInputAuth>(
+    destination_ssu.deposit_to_owned<CormAuth>(
         poster_character,
         item,
-        multi_input_auth(),
+        corm_auth::auth(),
         ctx,
     );
 
