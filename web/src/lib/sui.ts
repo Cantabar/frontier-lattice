@@ -948,6 +948,175 @@ export function buildFillWithItems(params: {
   return tx;
 }
 
+/**
+ * Composite PTB: withdraw an item from the filler's SSU and fill a CoinForItem
+ * contract in one transaction.
+ *
+ * Steps:
+ * 1. Borrow OwnerCap<StorageUnit> from filler's Character
+ * 2. Withdraw item from filler's SSU
+ * 3. Return OwnerCap to filler's Character
+ * 4. Call fill_with_items (deposits item to poster's destination SSU, pays escrow)
+ */
+export function buildFillCoinForItemComposite(params: {
+  contractId: string;
+  destinationSsuId: string;
+  posterCharacterId: string;
+  fillerCharacterId: string;
+  fillerSsuId: string;
+  fillerOwnerCapId: string;
+  fillerOwnerCapVersion: string;
+  fillerOwnerCapDigest: string;
+  typeId: number;
+  quantity: number;
+}): Transaction {
+  const tx = new Transaction();
+  const pkg = worldPkg();
+  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
+
+  // 1. Borrow OwnerCap<StorageUnit> from filler's Character
+  const [ownerCap, receipt] = tx.moveCall({
+    target: `${pkg}::character::borrow_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerCharacterId),
+      tx.object(
+        Inputs.ReceivingRef({
+          objectId: params.fillerOwnerCapId,
+          version: params.fillerOwnerCapVersion,
+          digest: params.fillerOwnerCapDigest,
+        }),
+      ),
+    ],
+  });
+
+  // 2. Withdraw item from filler's SSU (returns transit Item)
+  const [item] = tx.moveCall({
+    target: `${pkg}::storage_unit::withdraw_by_owner`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerSsuId),
+      tx.object(params.fillerCharacterId),
+      ownerCap,
+      tx.pure.u64(params.typeId),
+      tx.pure.u32(params.quantity),
+    ],
+  });
+
+  // 3. Return OwnerCap to filler's Character
+  tx.moveCall({
+    target: `${pkg}::character::return_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerCharacterId),
+      ownerCap,
+      receipt,
+    ],
+  });
+
+  // 4. Fill the contract (deposits item to poster's destination SSU)
+  tx.moveCall({
+    target: tcTarget("fill_with_items"),
+    typeArguments: tcTypes(),
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(params.destinationSsuId),
+      tx.object(params.posterCharacterId),
+      tx.object(params.fillerCharacterId),
+      item,
+      tx.object(SUI_CLOCK),
+    ],
+  });
+
+  return tx;
+}
+
+/**
+ * Composite PTB: withdraw an item from the filler's SSU and fill an ItemForItem
+ * contract in one transaction.
+ *
+ * Steps:
+ * 1. Borrow OwnerCap<StorageUnit> from filler's Character
+ * 2. Withdraw item from filler's SSU
+ * 3. Return OwnerCap to filler's Character
+ * 4. Call fill_item_for_item (deposits wanted items at destination SSU,
+ *    releases proportional offered items from source SSU)
+ */
+export function buildFillItemForItemComposite(params: {
+  contractId: string;
+  sourceSsuId: string;
+  destinationSsuId: string;
+  posterCharacterId: string;
+  fillerCharacterId: string;
+  fillerSsuId: string;
+  fillerOwnerCapId: string;
+  fillerOwnerCapVersion: string;
+  fillerOwnerCapDigest: string;
+  typeId: number;
+  quantity: number;
+}): Transaction {
+  const tx = new Transaction();
+  const pkg = worldPkg();
+  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
+
+  // 1. Borrow OwnerCap<StorageUnit> from filler's Character
+  const [ownerCap, receipt] = tx.moveCall({
+    target: `${pkg}::character::borrow_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerCharacterId),
+      tx.object(
+        Inputs.ReceivingRef({
+          objectId: params.fillerOwnerCapId,
+          version: params.fillerOwnerCapVersion,
+          digest: params.fillerOwnerCapDigest,
+        }),
+      ),
+    ],
+  });
+
+  // 2. Withdraw item from filler's SSU (returns transit Item)
+  const [item] = tx.moveCall({
+    target: `${pkg}::storage_unit::withdraw_by_owner`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerSsuId),
+      tx.object(params.fillerCharacterId),
+      ownerCap,
+      tx.pure.u64(params.typeId),
+      tx.pure.u32(params.quantity),
+    ],
+  });
+
+  // 3. Return OwnerCap to filler's Character
+  tx.moveCall({
+    target: `${pkg}::character::return_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.fillerCharacterId),
+      ownerCap,
+      receipt,
+    ],
+  });
+
+  // 4. Fill the contract (deposits wanted items at destination, releases offered from source)
+  tx.moveCall({
+    target: tcTarget("fill_item_for_item"),
+    typeArguments: tcTypes(),
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(params.sourceSsuId),
+      tx.object(params.destinationSsuId),
+      tx.object(params.posterCharacterId),
+      tx.object(params.fillerCharacterId),
+      item,
+      tx.object(SUI_CLOCK),
+    ],
+  });
+
+  return tx;
+}
+
 export function buildFillItemForCoin(params: {
   contractId: string;
   sourceSsuId: string;
