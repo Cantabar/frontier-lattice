@@ -58,9 +58,10 @@ const SubmitButton = styled(PrimaryButton)`
 interface Props {
   contract: TrustlessContractData;
   onClose: () => void;
+  onFilled?: () => void;
 }
 
-export function FillContractModal({ contract, onClose }: Props) {
+export function FillContractModal({ contract, onClose, onFilled }: Props) {
   const { characterId } = useIdentity();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
   const { push } = useNotifications();
@@ -146,6 +147,7 @@ export function FillContractModal({ contract, onClose }: Props) {
       }
 
       push({ level: "info", title: "Contract Filled", message: "Transaction submitted successfully.", source: "fill-contract" });
+      onFilled?.();
       onClose();
     } catch (err) {
       push({ level: "error", title: "Fill Failed", message: String(err), source: "fill-contract" });

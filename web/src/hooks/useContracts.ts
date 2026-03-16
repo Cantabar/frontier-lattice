@@ -2,8 +2,9 @@
  * Hooks for reading Trustless Contracts data.
  */
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useSuiClientQuery } from "@mysten/dapp-kit";
+import { useSuiClient, useSuiClientQuery } from "@mysten/dapp-kit";
 import { config } from "../config";
 import { getTrustlessContractHistory } from "../lib/indexer";
 import type {
@@ -139,9 +140,12 @@ function objectToContract(objectId: string, fields: Record<string, unknown>): Tr
 // Hooks
 // ---------------------------------------------------------------------------
 
-/** Fetch active contracts from on-chain ContractCreatedEvent emissions. */
+/** Fetch active contracts from on-chain ContractCreatedEvent emissions,
+ *  enriched with live object state (filled_quantity, status). */
 export function useActiveContracts() {
-  const { data, isLoading, error, refetch } = useSuiClientQuery(
+  const client = useSuiClient();
+
+  const { data, isLoading: eventsLoading, error, refetch } = useSuiClientQuery(
     "queryEvents",
     {
       query: {
@@ -153,9 +157,37 @@ export function useActiveContracts() {
     { enabled: pkg !== "0x0" },
   );
 
-  const contracts: TrustlessContractData[] = (data?.data ?? []).map(eventToContract);
+  const eventContracts: TrustlessContractData[] = (data?.data ?? []).map(eventToContract);
+  const contractIds = eventContracts.map((c) => c.id).filter((id) => id.startsWith("0x"));
 
-  return { contracts, isLoading, error, refetch };
+  // Batch-fetch live object state so filled_quantity & status are current
+  const { data: liveObjects, isLoading: objectsLoading } = useQuery({
+    queryKey: ["contractLiveState", contractIds],
+    queryFn: () =>
+      client.multiGetObjects({
+        ids: contractIds,
+        options: { showContent: true },
+      }),
+    enabled: contractIds.length > 0,
+    refetchInterval: 15_000,
+  });
+
+  const contracts = useMemo(() => {
+    if (!liveObjects) return eventContracts;
+    const liveMap = new Map<string, Record<string, unknown>>();
+    for (const obj of liveObjects) {
+      if (obj.data?.objectId) {
+        const fields = (obj.data.content as { fields?: Record<string, unknown> })?.fields;
+        if (fields) liveMap.set(obj.data.objectId, fields);
+      }
+    }
+    return eventContracts.map((ec) => {
+      const fields = liveMap.get(ec.id);
+      return fields ? objectToContract(ec.id, fields) : ec;
+    });
+  }, [eventContracts, liveObjects]);
+
+  return { contracts, isLoading: eventsLoading || objectsLoading, error, refetch };
 }
 
 /** Fetch a single contract shared object for live state (balances, filled qty). */
@@ -166,7 +198,7 @@ export function useContractObject(contractId: string | undefined) {
       id: contractId!,
       options: { showContent: true },
     },
-    { enabled: !!contractId },
+    { enabled: !!contractId, refetchInterval: 10_000 },
   );
 
   const objectId = data?.data?.objectId ?? "";

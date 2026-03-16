@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import styled from "styled-components";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import { useQueryClient } from "@tanstack/react-query";
 import type { TrustlessContractData } from "../../lib/types";
 import { truncateAddress, formatAmount, formatDeadline, contractTypeLabel } from "../../lib/format";
 import { CharacterDisplay } from "../shared/CharacterDisplay";
@@ -129,12 +130,27 @@ interface Props {
 export function ContractDetail({ contract: initial }: Props) {
   const { characterId } = useIdentity();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
+  const queryClient = useQueryClient();
   const { push } = useNotifications();
   const [showFill, setShowFill] = useState(false);
 
   // Fetch live object state for up-to-date balances/fill qty
   const { contract: live } = useContractObject(initial.id);
   const c = live ?? initial;
+
+  /** Invalidate cached contract state so the UI refreshes after a fill. */
+  const handleFilled = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["contractLiveState"] });
+    queryClient.invalidateQueries({
+      predicate: (query) => {
+        if (!Array.isArray(query.queryKey)) return false;
+        // useSuiClientQuery keys: the method name sits at index 0 or 1
+        return query.queryKey.some(
+          (k) => k === "getObject" || k === "queryEvents",
+        );
+      },
+    });
+  }, [queryClient]);
 
   const isPoster = characterId === c.posterId;
   const isCourier = c.courierId != null && characterId === c.courierId;
@@ -425,7 +441,7 @@ export function ContractDetail({ contract: initial }: Props) {
       </Wrapper>
 
       {showFill && (
-        <FillContractModal contract={c} onClose={() => setShowFill(false)} />
+        <FillContractModal contract={c} onClose={() => setShowFill(false)} onFilled={handleFilled} />
       )}
     </>
   );
