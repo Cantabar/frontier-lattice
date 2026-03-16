@@ -326,10 +326,10 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
   const [creationPhase, setCreationPhase] = useState<CreationPhase>(null);
   const isBusy = creationPhase !== null;
 
-  // --- Extension check: SSUs that need TrustlessAuth ---
-  const TRUSTLESS_EXT = "trustless_contracts::TrustlessAuth";
+  // --- Extension check: SSUs that need CormAuth ---
+  const CORM_EXT = "corm_auth::CormAuth";
 
-  /** SSU IDs selected by the current variant that lack the TrustlessAuth extension. */
+  /** SSU IDs selected by the current variant that lack the CormAuth extension. */
   const ssusNeedingExtension = useMemo(() => {
     const ids: string[] = [];
     switch (variant) {
@@ -351,7 +351,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
     // Deduplicate then filter to SSUs missing the correct extension
     return [...new Set(ids)].filter((id) => {
       const ssu = structures.find((s) => s.id === id);
-      return ssu && !(ssu.extension?.includes(TRUSTLESS_EXT) ?? false);
+      return ssu && !(ssu.extension?.includes(CORM_EXT) ?? false);
     });
   }, [variant, sourceSsuId, transportSourceSsuId, destinationSsuId, i4iDestinationSsuId, structures]);
 
@@ -360,7 +360,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
     () =>
       ssusNeedingExtension.some((id) => {
         const ssu = structures.find((s) => s.id === id);
-        return ssu?.extension != null && !ssu.extension.includes(TRUSTLESS_EXT);
+        return ssu?.extension != null && !ssu.extension.includes(CORM_EXT);
       }),
     [ssusNeedingExtension, structures],
   );

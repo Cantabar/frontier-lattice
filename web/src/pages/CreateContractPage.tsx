@@ -380,7 +380,7 @@ export function CreateContractPage() {
   const isBusy = creationPhase !== null;
 
   // --- Extension check ---
-  const TRUSTLESS_EXT = "trustless_contracts::TrustlessAuth";
+  const CORM_EXT = "corm_auth::CormAuth";
 
   const ssusNeedingExtension = useMemo(() => {
     const ids: string[] = [];
@@ -402,7 +402,7 @@ export function CreateContractPage() {
     }
     return [...new Set(ids)].filter((id) => {
       const ssu = structures.find((s) => s.id === id);
-      return ssu && !(ssu.extension?.includes(TRUSTLESS_EXT) ?? false);
+      return ssu && !(ssu.extension?.includes(CORM_EXT) ?? false);
     });
   }, [variant, sourceSsuId, transportSourceSsuId, destinationSsuId, i4iDestinationSsuId, structures]);
 
@@ -410,7 +410,7 @@ export function CreateContractPage() {
     () =>
       ssusNeedingExtension.some((id) => {
         const ssu = structures.find((s) => s.id === id);
-        return ssu?.extension != null && !ssu.extension.includes(TRUSTLESS_EXT);
+        return ssu?.extension != null && !ssu.extension.includes(CORM_EXT);
       }),
     [ssusNeedingExtension, structures],
   );

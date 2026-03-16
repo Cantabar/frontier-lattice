@@ -226,7 +226,7 @@ public fun create<C>(
 ///
 /// The item's `type_id` determines which slot to fill. Items are deposited
 /// to the poster's owned inventory at the destination SSU via the
-/// `MultiInputAuth` extension. The filler receives a proportional bounty
+/// `CormAuth` extension. The filler receives a proportional bounty
 /// payout immediately. If this fill completes the contract, any remaining
 /// bounty dust also goes to the filler.
 ///

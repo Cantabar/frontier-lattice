@@ -548,7 +548,7 @@ export function buildCreateMultiInputContract(params: {
 
 /**
  * Fill a slot by withdrawing an item from the filler's SSU and delivering it
- * to the poster's destination SSU via the MultiInputAuth extension.
+ * to the poster's destination SSU via the CormAuth extension.
  *
  * Supports both owned SSUs (OwnerCap<StorageUnit>) and non-owned SSUs
  * (OwnerCap<Character>) via the `access` parameter.
@@ -1254,9 +1254,9 @@ function getDappUrl(ssuId: string): string {
 }
 
 /**
- * Authorize the TrustlessAuth extension on a StorageUnit so the
- * trustless-contracts package can deposit/withdraw items, then
- * set the SSU metadata URL to the dApp delivery route.
+ * Authorize the CormAuth extension on a StorageUnit so Corm contract
+ * packages can deposit/withdraw items, then set the SSU metadata URL
+ * to the dApp delivery route.
  *
  * Follows the same borrow/return OwnerCap pattern as online/offline.
  */
@@ -1270,7 +1270,7 @@ export function buildAuthorizeExtension(params: {
   const tx = new Transaction();
   const pkg = worldPkg();
   const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
-  const authTypeArg = `${tcPkg()}::trustless_contracts::TrustlessAuth`;
+  const authTypeArg = `${packages.cormAuth}::corm_auth::CormAuth`;
 
   // 1. Borrow OwnerCap<StorageUnit> from Character
   const [ownerCap, receipt] = tx.moveCall({

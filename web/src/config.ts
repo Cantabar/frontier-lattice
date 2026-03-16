@@ -15,6 +15,7 @@ export const config = {
     forgePlanner: import.meta.env.VITE_FORGE_PLANNER_PACKAGE_ID ?? "0x0",
     multiInputContract: import.meta.env.VITE_MULTI_INPUT_CONTRACT_PACKAGE_ID ?? "0x0",
     trustlessContracts: import.meta.env.VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID ?? "0x0",
+    cormAuth: import.meta.env.VITE_CORM_AUTH_PACKAGE_ID ?? "0x0",
     world: import.meta.env.VITE_WORLD_PACKAGE_ID ?? "0x0",
   },
 

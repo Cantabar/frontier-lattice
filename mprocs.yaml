@@ -44,6 +44,7 @@ procs:
       echo "Waiting for contracts to be published..."
       until grep -q '^PACKAGE_TRIBE=0x' .env 2>/dev/null \
         && grep -q '^PACKAGE_FORGE_PLANNER=0x' .env 2>/dev/null \
+        && grep -q '^PACKAGE_CORM_AUTH=0x' .env 2>/dev/null \
         && grep -q '^PACKAGE_TRUSTLESS_CONTRACTS=0x' .env 2>/dev/null; do
         sleep 2
       done
@@ -64,6 +65,7 @@ procs:
       echo "Waiting for VITE_* package IDs in .env..."
       until grep -q '^VITE_TRIBE_PACKAGE_ID=0x' .env 2>/dev/null \
         && grep -q '^VITE_FORGE_PLANNER_PACKAGE_ID=0x' .env 2>/dev/null \
+        && grep -q '^VITE_CORM_AUTH_PACKAGE_ID=0x' .env 2>/dev/null \
         && grep -q '^VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID=0x' .env 2>/dev/null \
         && grep -q '^VITE_WORLD_PACKAGE_ID=0x' .env 2>/dev/null \
         && grep -q '^VITE_ENERGY_CONFIG_ID=0x' .env 2>/dev/null; do

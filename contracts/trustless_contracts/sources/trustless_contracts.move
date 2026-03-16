@@ -422,7 +422,7 @@ public fun create_coin_for_item<CE, CF>(
 
 /// Create an ItemForCoin
 /// Items are moved to open inventory (contract-controlled) via our extension.
-/// The SSU must have TrustlessAuth registered as its extension.
+/// The SSU must have CormAuth registered as its extension.
 ///
 /// The caller must pass in a transit `Item` that was withdrawn from the source SSU
 /// in the same PTB (via `withdraw_by_owner`). Our module deposits it to open

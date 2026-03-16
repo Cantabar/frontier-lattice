@@ -240,7 +240,7 @@ fun online_test_ssu(
     clock.destroy_for_testing();
 }
 
-/// Authorizes TrustlessAuth on the SSU and mints items to poster's owned inventory.
+/// Authorizes CormAuth on the SSU and mints items to poster's owned inventory.
 fun authorize_and_mint(
     ts: &mut ts::Scenario,
     user: address,
