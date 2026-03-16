@@ -131,6 +131,7 @@ function objectToContract(objectId: string, fields: Record<string, unknown>): Tr
     courierAddress: fields.courier_address ? String(fields.courier_address) : undefined,
     allowedCharacters: (fields.allowed_characters as string[]) ?? [],
     allowedTribes: (fields.allowed_tribes as number[]) ?? [],
+    itemsReleased: fields.items_released != null ? Number(fields.items_released) : undefined,
   };
 }
 

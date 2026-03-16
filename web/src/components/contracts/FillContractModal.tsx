@@ -72,10 +72,18 @@ export function FillContractModal({ contract, onClose }: Props) {
   const [ssuId, setSsuId] = useState("");
   const [itemId, setItemId] = useState("");
 
-  const remaining = Number(contract.targetQuantity) - Number(contract.filledQuantity);
   const variant = contract.contractType.variant;
 
   const isCoinFill = variant === "CoinForCoin" || variant === "ItemForCoin";
+
+  // For ItemForCoin the filler cares about items remaining, not coins.
+  const remaining = (() => {
+    if (variant === "ItemForCoin" && contract.contractType.variant === "ItemForCoin") {
+      const offered = contract.contractType.offeredQuantity;
+      return offered - (contract.itemsReleased ?? 0);
+    }
+    return Number(contract.targetQuantity) - Number(contract.filledQuantity);
+  })();
   const isItemFill = variant === "CoinForItem" || variant === "ItemForItem";
   const isTransportDeliver = variant === "Transport" && contract.status === "InProgress";
 
@@ -154,15 +162,22 @@ export function FillContractModal({ contract, onClose }: Props) {
   return (
     <Modal title={modalTitle()} onClose={onClose}>
       <Info>
-        Remaining: {remaining.toLocaleString()} / {Number(contract.targetQuantity).toLocaleString()}
+        {variant === "ItemForCoin" && contract.contractType.variant === "ItemForCoin" ? (
+          <>
+            Items remaining: {remaining.toLocaleString()} / {contract.contractType.offeredQuantity.toLocaleString()}
+            <div>Item: <ItemBadge typeId={contract.contractType.offeredTypeId} /></div>
+            <div>Price: {formatAmount(contract.contractType.wantedAmount)} SUI</div>
+          </>
+        ) : (
+          <>
+            Remaining: {remaining.toLocaleString()} / {Number(contract.targetQuantity).toLocaleString()}
+          </>
+        )}
         {contract.escrowAmount !== "0" && (
           <> — Escrow: {formatAmount(contract.escrowAmount)} SUI</>
         )}
         {variant === "CoinForItem" && contract.contractType.variant === "CoinForItem" && (
           <div>Wanted: <ItemBadge typeId={contract.contractType.wantedTypeId} /></div>
-        )}
-        {variant === "ItemForCoin" && contract.contractType.variant === "ItemForCoin" && (
-          <div>Item: <ItemBadge typeId={contract.contractType.offeredTypeId} /></div>
         )}
         {variant === "ItemForItem" && contract.contractType.variant === "ItemForItem" && (
           <div>Wanted: <ItemBadge typeId={contract.contractType.wantedTypeId} /></div>

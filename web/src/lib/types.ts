@@ -186,6 +186,8 @@ export interface TrustlessContractData {
   courierAddress?: string;
   allowedCharacters: string[];
   allowedTribes: number[];
+  /** Items released to fillers so far (ItemForCoin / ItemForItem only; absent for event-sourced data). */
+  itemsReleased?: number;
 }
 
 // ============================================================
