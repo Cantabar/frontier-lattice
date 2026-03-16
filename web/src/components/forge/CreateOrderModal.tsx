@@ -4,6 +4,8 @@ import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { buildCreateOrder } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
+import { useEscrowCoinDecimals } from "../../hooks/useCoinDecimals";
+import { toBaseUnits } from "../../lib/coinUtils";
 import type { TribeCapData } from "../../lib/types";
 import { ItemPickerField } from "../shared/ItemPickerField";
 import { PrimaryButton } from "../shared/Button";
@@ -53,6 +55,7 @@ interface Props {
 
 export function CreateOrderModal({ tribeId, registryId, cap, onClose }: Props) {
   const { characterId } = useIdentity();
+  const { decimals, symbol: coinSymbol } = useEscrowCoinDecimals();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
   const [description, setDescription] = useState("");
@@ -70,7 +73,7 @@ export function CreateOrderModal({ tribeId, registryId, cap, onClose }: Props) {
       description,
       outputTypeId: Number(outputTypeId),
       runCount: Number(runCount),
-      bountyAmount: Math.round(Number(bounty) * 1e9),
+      bountyAmount: toBaseUnits(bounty, decimals),
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await signAndExecute({ transaction: tx as any });
@@ -103,7 +106,7 @@ export function CreateOrderModal({ tribeId, registryId, cap, onClose }: Props) {
         </div>
       </Row>
 
-      <Label>Bounty (SUI)</Label>
+      <Label>Bounty ({coinSymbol})</Label>
       <Input
         type="number"
         placeholder="Reward for fulfilling this order"

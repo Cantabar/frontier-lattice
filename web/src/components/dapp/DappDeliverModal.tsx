@@ -3,6 +3,8 @@ import styled from "styled-components";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { useIdentity } from "../../hooks/useIdentity";
+import { useFillCoinDecimals } from "../../hooks/useCoinDecimals";
+import { toBaseUnits } from "../../lib/coinUtils";
 import { formatAmount } from "../../lib/format";
 import type { TrustlessContractData } from "../../lib/types";
 import type { InventoryItemEntry } from "../../hooks/useSsuInventory";
@@ -85,6 +87,7 @@ interface Props {
 
 export function DappDeliverModal({ contract, ssuId, inventory, onClose, onSuccess }: Props) {
   const { characterId } = useIdentity();
+  const { decimals, symbol: coinSymbol } = useFillCoinDecimals();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
   const [error, setError] = useState<string | null>(null);
 
@@ -128,7 +131,7 @@ export function DappDeliverModal({ contract, ssuId, inventory, onClose, onSucces
 
     try {
       if (isCoinFill) {
-        const amount = Math.round(Number(fillAmount) * 1e9);
+        const amount = toBaseUnits(fillAmount, decimals);
         if (variant === "CoinForCoin") {
           const tx = buildFillWithCoins({
             contractId: contract.id,
@@ -189,7 +192,7 @@ export function DappDeliverModal({ contract, ssuId, inventory, onClose, onSucces
       <Info>
         Remaining: {remaining.toLocaleString()} / {Number(contract.targetQuantity).toLocaleString()}
         {contract.escrowAmount !== "0" && (
-          <> — Reward: {formatAmount(contract.escrowAmount)} SUI (held in escrow)</>
+          <> — Reward: {formatAmount(contract.escrowAmount, decimals)} {coinSymbol} (held in escrow)</>
         )}
       </Info>
 
@@ -217,7 +220,7 @@ export function DappDeliverModal({ contract, ssuId, inventory, onClose, onSucces
 
       {isCoinFill && (
         <>
-          <Label>Fill Amount (SUI)</Label>
+          <Label>Fill Amount ({coinSymbol})</Label>
           <Input
             type="number"
             placeholder="0.0"

@@ -4,7 +4,8 @@ import { useCurrentAccount, useSignAndExecuteTransaction } from "@mysten/dapp-ki
 import type { TribeData, TribeCapData, TreasuryProposalData } from "../../lib/types";
 import { formatAmount, formatDeadline } from "../../lib/format";
 import { CopyableId } from "../shared/CopyableId";
-import { parseCoinSymbol, isNativeSui } from "../../lib/coinUtils";
+import { isNativeSui, toBaseUnits } from "../../lib/coinUtils";
+import { useCoinDecimals } from "../../hooks/useCoinDecimals";
 import { useCoinObjectIds } from "../../hooks/useCoinTypes";
 import { buildDepositToTreasury, buildWithdrawFromTreasury, buildProposeTreasurySpend, buildVoteOnProposal, buildExecuteProposal } from "../../lib/sui";
 import { PrimaryButton, SecondaryButton as SharedSecondary } from "../shared/Button";
@@ -96,14 +97,14 @@ interface Props {
 export function TreasuryPanel({ tribe, cap, proposals }: Props) {
   const account = useCurrentAccount();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
-  const coinSymbol = parseCoinSymbol(tribe.coinType);
+  const { decimals, symbol: coinSymbol } = useCoinDecimals(tribe.coinType);
   const { objectIds: coinObjectIds } = useCoinObjectIds(tribe.coinType);
 
   /* Deposit */
   const [depositAmount, setDepositAmount] = useState("");
 
   async function handleDeposit() {
-    const amount = Math.round(Number(depositAmount) * 1e9);
+    const amount = toBaseUnits(depositAmount, decimals);
     if (!amount) return;
     const tx = buildDepositToTreasury({
       tribeId: tribe.id,
@@ -121,7 +122,7 @@ export function TreasuryPanel({ tribe, cap, proposals }: Props) {
 
   async function handleWithdraw() {
     if (!cap) return;
-    const amount = Math.round(Number(withdrawAmount) * 1e9);
+    const amount = toBaseUnits(withdrawAmount, decimals);
     if (!amount) return;
     const tx = buildWithdrawFromTreasury({ tribeId: tribe.id, capId: cap.id, amount, recipient: account!.address, coinType: tribe.coinType });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- duplicate @mysten/sui in dep tree
@@ -137,7 +138,7 @@ export function TreasuryPanel({ tribe, cap, proposals }: Props) {
 
   async function handlePropose() {
     if (!cap) return;
-    const amount = Math.round(Number(propAmount) * 1e9);
+    const amount = toBaseUnits(propAmount, decimals);
     const deadlineMs = Date.now() + Number(propDeadlineHours) * 3600 * 1000;
     const tx = buildProposeTreasurySpend({
       tribeId: tribe.id,
@@ -171,7 +172,7 @@ export function TreasuryPanel({ tribe, cap, proposals }: Props) {
   return (
     <Panel>
       <SectionTitle>Treasury</SectionTitle>
-      <Balance>{formatAmount(tribe.treasuryBalance)} {coinSymbol}</Balance>
+      <Balance>{formatAmount(tribe.treasuryBalance, decimals)} {coinSymbol}</Balance>
 
       {/* Deposit */}
       <Row>
@@ -253,7 +254,7 @@ export function TreasuryPanel({ tribe, cap, proposals }: Props) {
                   To <CopyableId id={p.recipient} /> · {formatDeadline(p.deadlineMs)} ·{" "}
                   {p.voteCount} vote{p.voteCount !== 1 && "s"}
                 </ProposalMeta>
-                <ProposalAmount>{formatAmount(p.amount)} {coinSymbol}</ProposalAmount>
+                <ProposalAmount>{formatAmount(p.amount, decimals)} {coinSymbol}</ProposalAmount>
                 {cap && (
                   <Row style={{ marginTop: 8, marginBottom: 0 }}>
                     <SharedSecondary onClick={() => handleVote(p.id)}>Vote</SharedSecondary>

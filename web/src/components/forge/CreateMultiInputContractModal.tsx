@@ -12,6 +12,8 @@ import { useBlueprints } from "../../hooks/useBlueprints";
 import { useMyStructures } from "../../hooks/useStructures";
 import { useNotifications } from "../../hooks/useNotifications";
 import { buildCreateMultiInputContract } from "../../lib/sui";
+import { toBaseUnits } from "../../lib/coinUtils";
+import { useEscrowCoinDecimals } from "../../hooks/useCoinDecimals";
 import { buildRecipeMap, expandToBomDepth, slotsToArrays, depthLabel } from "../../lib/bom";
 
 const Label = styled.label`
@@ -143,6 +145,7 @@ export function CreateMultiInputContractModal({ onClose }: Props) {
   const { structures } = useMyStructures();
   const { push } = useNotifications();
   const queryClient = useQueryClient();
+  const { decimals, symbol: coinSymbol } = useEscrowCoinDecimals();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
 
   const ssus = useMemo(
@@ -201,7 +204,7 @@ export function CreateMultiInputContractModal({ onClose }: Props) {
     const deadlineMs = Date.now() + Number(deadlineHours) * 60 * 60 * 1000;
     const tx = buildCreateMultiInputContract({
       characterId,
-      bountyAmount: Math.round(Number(bounty) * 1e9),
+      bountyAmount: toBaseUnits(bounty, decimals),
       description: description.trim(),
       destinationSsuId,
       typeIds,
@@ -285,7 +288,7 @@ export function CreateMultiInputContractModal({ onClose }: Props) {
 
       <Row>
         <div>
-          <Label>Bounty (SUI)</Label>
+          <Label>Bounty ({coinSymbol})</Label>
           <Input
             type="number"
             min={0}
