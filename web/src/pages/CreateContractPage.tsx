@@ -14,11 +14,13 @@ import {
   buildCreateTransport,
   buildAuthorizeExtension,
 } from "../lib/sui";
+import { contractTypeLabel, formatAmount } from "../lib/format";
 import { ItemPickerField } from "../components/shared/ItemPickerField";
 import { SsuPickerField } from "../components/shared/SsuPickerField";
 import { SsuItemPickerField } from "../components/shared/SsuItemPickerField";
 import { CharacterPickerField } from "../components/shared/CharacterPickerField";
 import { TribePickerField } from "../components/shared/TribePickerField";
+import { ItemBadge } from "../components/shared/ItemBadge";
 import { PrimaryButton, SecondaryButton } from "../components/shared/Button";
 
 // ---------------------------------------------------------------------------
@@ -39,7 +41,30 @@ const PHASE_ORDER: Exclude<CreationPhase, null>[] = ["preparing", "signing", "co
 // ---------------------------------------------------------------------------
 
 const Page = styled.div`
-  max-width: 820px;
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: ${({ theme }) => theme.spacing.lg};
+  align-items: start;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const FormColumn = styled.div`
+  min-width: 0;
+`;
+
+const SidebarColumn = styled.div`
+  position: sticky;
+  top: ${({ theme }) => theme.spacing.lg};
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.md};
+
+  @media (max-width: 960px) {
+    position: static;
+  }
 `;
 
 const PageHeader = styled.div`
@@ -211,6 +236,100 @@ const ButtonRow = styled.div`
   gap: ${({ theme }) => theme.spacing.md};
   justify-content: flex-end;
   margin-top: ${({ theme }) => theme.spacing.md};
+`;
+
+// ---------------------------------------------------------------------------
+// Sidebar / Preview
+// ---------------------------------------------------------------------------
+
+const SidebarPanel = styled.div`
+  background: ${({ theme }) => theme.colors.surface.raised};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.md};
+`;
+
+const SidebarTitle = styled.h3`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
+const PreviewTypeTag = styled.span`
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: ${({ theme }) => theme.radii.sm};
+  background: ${({ theme }) => theme.colors.surface.overlay};
+  color: ${({ theme }) => theme.colors.module.trustlessContracts};
+`;
+
+const PreviewRestrictedTag = styled.span`
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: ${({ theme }) => theme.radii.sm};
+  background: ${({ theme }) => theme.colors.primary.subtle};
+  color: ${({ theme }) => theme.colors.primary.muted};
+  margin-left: ${({ theme }) => theme.spacing.xs};
+`;
+
+const PreviewSummary = styled.p`
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  margin: ${({ theme }) => theme.spacing.sm} 0;
+`;
+
+const PreviewMeta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.spacing.sm};
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.text.muted};
+`;
+
+const PreviewAmount = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.primary.muted};
+`;
+
+const DescriptionText = styled.p`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  line-height: 1.5;
+  margin: 0;
+`;
+
+const ChecklistList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xs};
+`;
+
+const ChecklistItem = styled.li<{ $done: boolean }>`
+  font-size: 13px;
+  color: ${({ $done, theme }) =>
+    $done ? theme.colors.text.muted : theme.colors.text.primary};
+  text-decoration: ${({ $done }) => ($done ? "line-through" : "none")};
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+
+  &::before {
+    content: ${({ $done }) => ($done ? "'✓'" : "'○'")};
+    color: ${({ $done, theme }) =>
+      $done ? theme.colors.primary.main : theme.colors.text.muted};
+    font-size: 14px;
+    flex-shrink: 0;
+  }
 `;
 
 // ---------------------------------------------------------------------------
@@ -579,8 +698,97 @@ export function CreateContractPage() {
     }
   })();
 
+  // ---- Preview helpers ----
+  const previewSummary = useMemo(() => {
+    switch (variant) {
+      case "CoinForCoin": {
+        const e = Number(escrow) || 0;
+        const w = Number(wantedAmount) || 0;
+        return { offering: `${e} SUI`, wanting: `${w} SUI` };
+      }
+      case "CoinForItem": {
+        const e = Number(escrow) || 0;
+        return { offering: `${e} SUI`, wantedTypeId: Number(wantedTypeId) || 0, wantedQty: Number(wantedQuantity) || 0 };
+      }
+      case "ItemForCoin":
+        return { offeredTypeId: Number(itemId) || 0, offeredQty: Number(offeredQuantity) || 0, wanting: `${Number(itemWantedAmount) || 0} SUI` };
+      case "ItemForItem":
+        return { offeredTypeId: Number(itemId) || 0, offeredQty: Number(offeredQuantity) || 0, wantedTypeId: Number(i4iWantedTypeId) || 0, wantedQty: Number(i4iWantedQuantity) || 0 };
+      case "Transport": {
+        const e = Number(escrow) || 0;
+        return { offering: `${e} SUI`, itemTypeId: Number(transportItemTypeId) || 0, itemQty: Number(transportItemQuantity) || 0 };
+      }
+    }
+  }, [variant, escrow, wantedAmount, wantedTypeId, wantedQuantity, itemId, offeredQuantity, itemWantedAmount, i4iWantedTypeId, i4iWantedQuantity, transportItemTypeId, transportItemQuantity]);
+
+  const checklist = useMemo(() => {
+    const items: { label: string; done: boolean }[] = [];
+    switch (variant) {
+      case "CoinForCoin":
+        items.push({ label: "Set reward amount", done: isValidCoinAmount(escrow) && Number(escrow) > 0 });
+        items.push({ label: "Set wanted amount", done: isValidCoinAmount(wantedAmount) && Number(wantedAmount) > 0 });
+        break;
+      case "CoinForItem":
+        items.push({ label: "Set reward amount", done: isValidCoinAmount(escrow) });
+        items.push({ label: "Select wanted item", done: !!wantedTypeId });
+        items.push({ label: "Set wanted quantity", done: Number(wantedQuantity) > 0 });
+        items.push({ label: "Select destination SSU", done: !!destinationSsuId });
+        break;
+      case "ItemForCoin":
+        items.push({ label: "Select source SSU", done: !!sourceSsuId });
+        items.push({ label: "Select item to offer", done: !!itemId });
+        items.push({ label: "Set quantity", done: Number(offeredQuantity) > 0 });
+        items.push({ label: "Set wanted amount", done: isValidCoinAmount(itemWantedAmount) });
+        break;
+      case "ItemForItem":
+        items.push({ label: "Select source SSU", done: !!sourceSsuId });
+        items.push({ label: "Select item to offer", done: !!itemId });
+        items.push({ label: "Set offered quantity", done: Number(offeredQuantity) > 0 });
+        items.push({ label: "Select wanted item", done: !!i4iWantedTypeId });
+        items.push({ label: "Set wanted quantity", done: Number(i4iWantedQuantity) > 0 });
+        items.push({ label: "Select destination SSU", done: !!i4iDestinationSsuId });
+        break;
+      case "Transport":
+        items.push({ label: "Set reward amount", done: isValidCoinAmount(escrow) });
+        items.push({ label: "Select source SSU", done: !!transportSourceSsuId });
+        items.push({ label: "Select item", done: !!transportItemTypeId });
+        items.push({ label: "Set item quantity", done: Number(transportItemQuantity) > 0 });
+        items.push({ label: "Select destination SSU", done: !!destinationSsuId });
+        items.push({ label: "Set required stake", done: Number(requiredStake) > 0 });
+        break;
+    }
+    return items;
+  }, [variant, escrow, wantedAmount, wantedTypeId, wantedQuantity, destinationSsuId, sourceSsuId, itemId, offeredQuantity, itemWantedAmount, i4iWantedTypeId, i4iWantedQuantity, i4iDestinationSsuId, transportSourceSsuId, transportItemTypeId, transportItemQuantity, requiredStake]);
+
+  const isRestricted = allowedCharacters.length > 0 || allowedTribes.length > 0;
+
+  function renderPreviewSummary() {
+    const p = previewSummary;
+    switch (variant) {
+      case "CoinForCoin":
+        return <>Offering {(p as { offering: string }).offering} for {(p as { wanting: string }).wanting}</>;
+      case "CoinForItem": {
+        const s = p as { offering: string; wantedTypeId: number; wantedQty: number };
+        return <>Offering {s.offering} for {s.wantedTypeId ? <ItemBadge typeId={s.wantedTypeId} showQuantity={s.wantedQty || undefined} /> : "…"}</>;
+      }
+      case "ItemForCoin": {
+        const s = p as { offeredTypeId: number; offeredQty: number; wanting: string };
+        return <>{s.offeredTypeId ? <ItemBadge typeId={s.offeredTypeId} showQuantity={s.offeredQty || undefined} /> : "…"} for {s.wanting}</>;
+      }
+      case "ItemForItem": {
+        const s = p as { offeredTypeId: number; offeredQty: number; wantedTypeId: number; wantedQty: number };
+        return <>{s.offeredTypeId ? <ItemBadge typeId={s.offeredTypeId} showQuantity={s.offeredQty || undefined} /> : "…"} for {s.wantedTypeId ? <ItemBadge typeId={s.wantedTypeId} showQuantity={s.wantedQty || undefined} /> : "…"}</>;
+      }
+      case "Transport": {
+        const s = p as { offering: string; itemTypeId: number; itemQty: number };
+        return <>Deliver {s.itemTypeId ? <ItemBadge typeId={s.itemTypeId} showQuantity={s.itemQty || undefined} /> : "…"} for {s.offering}</>;
+      }
+    }
+  }
+
   return (
     <Page>
+      <FormColumn>
       <PageHeader>
         <BackButton onClick={() => navigate("/contracts")} disabled={isBusy}>← Back</BackButton>
         <PageTitle>Create Trustless Contract</PageTitle>
@@ -840,6 +1048,46 @@ export function CreateContractPage() {
           </SubmitButton>
         </ButtonRow>
       </FormCard>
+      </FormColumn>
+
+      <SidebarColumn>
+        {/* Live Preview */}
+        <SidebarPanel>
+          <SidebarTitle>Preview</SidebarTitle>
+          <div>
+            <PreviewTypeTag>{contractTypeLabel(variant)}</PreviewTypeTag>
+            {isRestricted && <PreviewRestrictedTag>Restricted</PreviewRestrictedTag>}
+          </div>
+          <PreviewSummary>{renderPreviewSummary()}</PreviewSummary>
+          <PreviewMeta>
+            {(variant === "CoinForCoin" || variant === "CoinForItem" || variant === "Transport") && Number(escrow) > 0 && (
+              <PreviewAmount>
+                {formatAmount(String(Math.round(Number(escrow) * 1e9)))} SUI reward
+              </PreviewAmount>
+            )}
+            <span>{Number(deadlineHours) > 0 ? `${deadlineHours}h deadline` : "No deadline"}</span>
+            {allowPartial && <span>Partial OK</span>}
+          </PreviewMeta>
+        </SidebarPanel>
+
+        {/* Contract Type Info */}
+        <SidebarPanel>
+          <SidebarTitle>About This Type</SidebarTitle>
+          <DescriptionText>{VARIANT_DESCRIPTIONS[variant]}</DescriptionText>
+        </SidebarPanel>
+
+        {/* Validation Checklist */}
+        <SidebarPanel>
+          <SidebarTitle>Checklist</SidebarTitle>
+          <ChecklistList>
+            {checklist.map((item) => (
+              <ChecklistItem key={item.label} $done={item.done}>
+                {item.label}
+              </ChecklistItem>
+            ))}
+          </ChecklistList>
+        </SidebarPanel>
+      </SidebarColumn>
     </Page>
   );
 }
