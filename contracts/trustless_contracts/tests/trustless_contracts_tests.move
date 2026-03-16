@@ -1681,3 +1681,183 @@ fun test_fill_item_for_coin_full() {
 
     ts::end(ts);
 }
+
+// =========================================================================
+// Divisibility — CoinForCoin creation rejected when not divisible
+// =========================================================================
+
+#[test]
+#[expected_failure(abort_code = trustless_contracts::ENotDivisible)]
+fun test_not_divisible_coin_for_coin() {
+    let mut ts = ts::begin(@0x0);
+    let (poster_id, _) = setup_characters(&mut ts);
+
+    ts::next_tx(&mut ts, user_a());
+    {
+        let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
+        // 1000 % 300 != 0 — should abort
+        let escrow = coin::mint_for_testing<ESCROW>(1000, ts::ctx(&mut ts));
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        trustless_contracts::create_coin_for_coin<ESCROW, FILL>(
+            &poster, escrow, 300, true, FAR_FUTURE_MS,
+            vector[], vector[], &clock, ts::ctx(&mut ts),
+        );
+
+        clock.destroy_for_testing();
+        ts::return_shared(poster);
+    };
+
+    ts::end(ts);
+}
+
+// =========================================================================
+// Divisibility — CoinForItem creation rejected when not divisible
+// =========================================================================
+
+#[test]
+#[expected_failure(abort_code = trustless_contracts::ENotDivisible)]
+fun test_not_divisible_coin_for_item() {
+    let mut ts = ts::begin(@0x0);
+    let (poster_id, _) = setup_characters(&mut ts);
+    let dest_ssu_id = object::id_from_address(@0x42);
+
+    ts::next_tx(&mut ts, user_a());
+    {
+        let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
+        // 1000 % 3 != 0 — should abort
+        let escrow = coin::mint_for_testing<ESCROW>(1000, ts::ctx(&mut ts));
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        trustless_contracts::create_coin_for_item<ESCROW, FILL>(
+            &poster, escrow, 88069, 3, dest_ssu_id, true, FAR_FUTURE_MS,
+            vector[], vector[], &clock, ts::ctx(&mut ts),
+        );
+
+        clock.destroy_for_testing();
+        ts::return_shared(poster);
+    };
+
+    ts::end(ts);
+}
+
+// =========================================================================
+// Divisibility — Transport creation rejected when stake not divisible
+// =========================================================================
+
+#[test]
+#[expected_failure(abort_code = trustless_contracts::ENotDivisible)]
+fun test_not_divisible_transport() {
+    let mut ts = ts::begin(@0x0);
+    let (poster_id, _) = setup_characters(&mut ts);
+    let source_ssu_id = object::id_from_address(@0x41);
+    let dest_ssu_id = object::id_from_address(@0x42);
+
+    ts::next_tx(&mut ts, user_a());
+    {
+        let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
+        // payment 1000 % 10 == 0, but stake 333 % 10 != 0 — should abort
+        let escrow = coin::mint_for_testing<ESCROW>(1000, ts::ctx(&mut ts));
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        trustless_contracts::create_transport<ESCROW, FILL>(
+            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, 333, FAR_FUTURE_MS,
+            vector[], vector[], &clock, ts::ctx(&mut ts),
+        );
+
+        clock.destroy_for_testing();
+        ts::return_shared(poster);
+    };
+
+    ts::end(ts);
+}
+
+// =========================================================================
+// Zero dust — multiple partial fills leave exactly 0 remaining
+// =========================================================================
+
+#[test]
+fun test_zero_dust_multi_partial_fills() {
+    let mut ts = ts::begin(@0x0);
+    let (poster_id, filler_id) = setup_characters(&mut ts);
+
+    // Create: 900 ESCROW for 300 FILL (unit price = 3)
+    ts::next_tx(&mut ts, user_a());
+    {
+        let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
+        let escrow = coin::mint_for_testing<ESCROW>(900, ts::ctx(&mut ts));
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        trustless_contracts::create_coin_for_coin<ESCROW, FILL>(
+            &poster, escrow, 300, true, FAR_FUTURE_MS,
+            vector[], vector[], &clock, ts::ctx(&mut ts),
+        );
+
+        clock.destroy_for_testing();
+        ts::return_shared(poster);
+    };
+
+    // Fill 1: 100 of 300 → payout = 100 * 3 = 300
+    ts::next_tx(&mut ts, user_b());
+    {
+        let mut contract = ts::take_shared<Contract<ESCROW, FILL>>(&ts);
+        let filler = ts::take_shared_by_id<Character>(&ts, filler_id);
+        let fill_coin = coin::mint_for_testing<FILL>(100, ts::ctx(&mut ts));
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        trustless_contracts::fill_with_coins(
+            &mut contract, fill_coin, &filler, &clock, ts::ctx(&mut ts),
+        );
+
+        assert!(trustless_contracts::contract_filled_quantity(&contract) == 100);
+        assert!(trustless_contracts::contract_escrow_balance(&contract) == 600);
+
+        clock.destroy_for_testing();
+        ts::return_shared(contract);
+        ts::return_shared(filler);
+    };
+
+    // Fill 2: 100 of 300 → payout = 100 * 3 = 300
+    ts::next_tx(&mut ts, user_b());
+    {
+        let mut contract = ts::take_shared<Contract<ESCROW, FILL>>(&ts);
+        let filler = ts::take_shared_by_id<Character>(&ts, filler_id);
+        let fill_coin = coin::mint_for_testing<FILL>(100, ts::ctx(&mut ts));
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        trustless_contracts::fill_with_coins(
+            &mut contract, fill_coin, &filler, &clock, ts::ctx(&mut ts),
+        );
+
+        assert!(trustless_contracts::contract_filled_quantity(&contract) == 200);
+        assert!(trustless_contracts::contract_escrow_balance(&contract) == 300);
+
+        clock.destroy_for_testing();
+        ts::return_shared(contract);
+        ts::return_shared(filler);
+    };
+
+    // Fill 3 (final): 100 of 300 → drains remaining 300
+    ts::next_tx(&mut ts, user_b());
+    {
+        let mut contract = ts::take_shared<Contract<ESCROW, FILL>>(&ts);
+        let filler = ts::take_shared_by_id<Character>(&ts, filler_id);
+        let fill_coin = coin::mint_for_testing<FILL>(100, ts::ctx(&mut ts));
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        trustless_contracts::fill_with_coins(
+            &mut contract, fill_coin, &filler, &clock, ts::ctx(&mut ts),
+        );
+
+        // Exactly zero dust
+        assert!(trustless_contracts::contract_filled_quantity(&contract) == 300);
+        assert!(trustless_contracts::contract_escrow_balance(&contract) == 0);
+        assert!(trustless_contracts::contract_fill_pool_balance(&contract) == 0);
+
+        clock.destroy_for_testing();
+        ts::return_shared(contract);
+        ts::return_shared(filler);
+    };
+
+    ts::end(ts);
+}

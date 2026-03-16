@@ -65,6 +65,8 @@ const EContractFull: u64 = 17;
 const ESourceSsuMismatch: u64 = 18;
 const EItemContractRequiresItemCancel: u64 = 19;
 const EContractNotCompleted: u64 = 20;
+const ENotDivisible: u64 = 21;
+const EFillNotMultiple: u64 = 22;
 
 // === Enums ===
 
@@ -293,6 +295,10 @@ public fun create_coin_for_coin<CE, CF>(
     let offered_amount = escrow_coin.value();
     // At least one side must be non-zero; a 0/0 contract is meaningless.
     assert!(offered_amount > 0 || wanted_amount > 0, EWantedAmountZero);
+    // Divisibility guard: ensure clean unit price exists (no rounding dust).
+    if (offered_amount > 0 && wanted_amount > 0) {
+        assert!(offered_amount % wanted_amount == 0, ENotDivisible);
+    };
 
     let poster_id = character.id();
     let poster_address = character.character_address();
@@ -368,6 +374,9 @@ public fun create_coin_for_item<CE, CF>(
     assert!(wanted_quantity > 0, EZeroQuantity);
 
     let offered_amount = escrow_coin.value();
+    // Divisibility guard: escrow must divide evenly by wanted quantity.
+    assert!(offered_amount % (wanted_quantity as u64) == 0, ENotDivisible);
+
     let poster_id = character.id();
     let poster_address = character.character_address();
 
@@ -447,6 +456,10 @@ public fun create_item_for_coin<CE, CF>(
     let source_ssu_id = object::id(source_ssu);
     let offered_type_id = inventory::type_id(&item);
     let offered_quantity = inventory::quantity(&item);
+    // Divisibility guard: wanted coins must divide evenly by offered item count.
+    if (wanted_amount > 0) {
+        assert!(wanted_amount % (offered_quantity as u64) == 0, ENotDivisible);
+    };
 
     // Deposit to open inventory (locked by our extension)
     source_ssu.deposit_to_open_inventory<CormAuth>(
@@ -533,6 +546,8 @@ public fun create_item_for_item<CE, CF>(
     assert!(deadline_ms > clock.timestamp_ms(), EDeadlineInPast);
     assert!(inventory::quantity(&item) > 0, EZeroQuantity);
     assert!(wanted_quantity > 0, EZeroQuantity);
+    // Divisibility guard: offered items must divide evenly by wanted items.
+    assert!((inventory::quantity(&item) as u64) % (wanted_quantity as u64) == 0, ENotDivisible);
 
     let poster_id = character.id();
     let poster_address = character.character_address();
@@ -620,6 +635,9 @@ public fun create_transport<CE, CF>(
     assert!(required_stake > 0, EInsufficientStake);
 
     let payment_amount = escrow_coin.value();
+    // Divisibility guard: payment and stake must divide evenly by item quantity.
+    assert!(payment_amount % (item_quantity as u64) == 0, ENotDivisible);
+    assert!(required_stake % (item_quantity as u64) == 0, ENotDivisible);
     let poster_id = character.id();
     let poster_address = character.character_address();
 
@@ -734,12 +752,19 @@ public fun fill_with_coins<CE, CF>(
 
     contract.filled_quantity = contract.filled_quantity + fill_amount;
 
-    // Calculate proportional escrow payout
-    let payout_amount = (fill_amount * contract.escrow_amount) / contract.target_quantity;
+    // Calculate escrow payout using exact multiplication (no rounding dust).
+    // On the final fill, drain all remaining escrow as a safety net.
+    let is_final = (contract.filled_quantity == contract.target_quantity);
+    let payout_amount = if (is_final) {
+        contract.escrow.value()
+    } else {
+        let unit_price = contract.escrow_amount / contract.target_quantity;
+        fill_amount * unit_price
+    };
 
     let contract_id = object::id(contract);
 
-    // For CoinForCoin: release proportional escrow to filler
+    // For CoinForCoin: release escrow to filler
     if (is_coin_for_coin(&contract.contract_type) && payout_amount > 0) {
         let payout = coin::take(&mut contract.escrow, payout_amount, ctx);
         transfer::public_transfer(payout, filler_character.character_address());
@@ -762,7 +787,7 @@ public fun fill_with_coins<CE, CF>(
     });
 
     // Auto-complete if fully filled
-    if (contract.filled_quantity == contract.target_quantity) {
+    if (is_final) {
         contract.status = ContractStatus::Completed;
         event::emit(ContractCompletedEvent {
             contract_id,
@@ -834,19 +859,21 @@ public fun fill_with_items<CE, CF>(
 
     contract.filled_quantity = contract.filled_quantity + fill_amount;
 
-    // Calculate proportional escrow payout to filler
-    let payout_amount = (fill_amount * contract.escrow_amount) / contract.target_quantity;
+    // Calculate escrow payout using exact multiplication (no rounding dust).
+    // On the final fill, drain all remaining escrow.
+    let is_final = (contract.filled_quantity == contract.target_quantity);
+    let payout_amount = if (is_final) {
+        contract.escrow.value()
+    } else {
+        let unit_price = contract.escrow_amount / contract.target_quantity;
+        fill_amount * unit_price
+    };
 
     let contract_id = object::id(contract);
 
-    // Release proportional escrow coins to filler
-    if (payout_amount > 0 && contract.escrow.value() > 0) {
-        let actual_payout = if (payout_amount > contract.escrow.value()) {
-            contract.escrow.value()
-        } else {
-            payout_amount
-        };
-        let payout = coin::take(&mut contract.escrow, actual_payout, ctx);
+    // Release escrow coins to filler
+    if (payout_amount > 0) {
+        let payout = coin::take(&mut contract.escrow, payout_amount, ctx);
         transfer::public_transfer(payout, filler_character.character_address());
     };
 
@@ -859,7 +886,7 @@ public fun fill_with_items<CE, CF>(
     });
 
     // Auto-complete if fully filled
-    if (contract.filled_quantity == contract.target_quantity) {
+    if (is_final) {
         contract.status = ContractStatus::Completed;
         event::emit(ContractCompletedEvent {
             contract_id,
@@ -925,13 +952,24 @@ public fun fill_item_for_coin<CE, CF>(
 
     contract.filled_quantity = contract.filled_quantity + fill_amount;
 
-    // Calculate proportional item release
+    // Calculate item release using exact division (no rounding dust).
+    // Divisibility enforced at creation: wanted_amount % offered_quantity == 0.
     let (offered_type_id, offered_quantity) = get_offered_item_info(&contract.contract_type);
-    let items_to_release = ((fill_amount * (offered_quantity as u64)) / contract.target_quantity as u32);
+    let coins_per_item = contract.target_quantity / (offered_quantity as u64);
+    // Validate fill is a multiple of the per-item cost
+    assert!(fill_amount % coins_per_item == 0, EFillNotMultiple);
+
+    let is_final = (contract.filled_quantity == contract.target_quantity);
+    let items_to_release = if (is_final) {
+        // Final fill: release all remaining items
+        (offered_quantity - contract.items_released)
+    } else {
+        (fill_amount / coins_per_item as u32)
+    };
 
     let contract_id = object::id(contract);
 
-    // Release proportional items to filler from open inventory
+    // Release items to filler from open inventory
     if (items_to_release > 0) {
         let released_item = source_ssu.withdraw_from_open_inventory<CormAuth>(
             filler_character,
@@ -949,7 +987,7 @@ public fun fill_item_for_coin<CE, CF>(
         contract.items_released = contract.items_released + items_to_release;
     };
 
-    // Release fill_pool coins to poster proportionally
+    // Release fill_pool coins to poster
     let poster_payout = fill_amount;
     if (poster_payout > 0) {
         let payout = coin::take(&mut contract.fill_pool, poster_payout, ctx);
@@ -964,26 +1002,7 @@ public fun fill_item_for_coin<CE, CF>(
         remaining_quantity: contract.target_quantity - contract.filled_quantity,
     });
 
-    if (contract.filled_quantity == contract.target_quantity) {
-        // Return any rounding dust items to poster
-        let dust_items = offered_quantity - contract.items_released;
-        if (dust_items > 0) {
-            let dust = source_ssu.withdraw_from_open_inventory<CormAuth>(
-                poster_character,
-                corm_auth::auth(),
-                offered_type_id,
-                dust_items,
-                ctx,
-            );
-            source_ssu.deposit_to_owned<CormAuth>(
-                poster_character,
-                dust,
-                corm_auth::auth(),
-                ctx,
-            );
-            contract.items_released = contract.items_released + dust_items;
-        };
-
+    if (is_final) {
         contract.status = ContractStatus::Completed;
         event::emit(ContractCompletedEvent {
             contract_id,
@@ -1217,13 +1236,21 @@ public fun fill_item_for_item<CE, CF>(
 
     contract.filled_quantity = contract.filled_quantity + fill_amount;
 
-    // Calculate proportional offered items to release to filler
+    // Calculate offered items using exact multiplication (no rounding dust).
+    // Divisibility enforced at creation: offered_quantity % wanted_quantity == 0.
     let (offered_type_id, offered_quantity) = get_offered_item_info(&contract.contract_type);
-    let items_to_release = ((fill_amount * (offered_quantity as u64)) / contract.target_quantity as u32);
+    let offered_per_wanted = (offered_quantity as u64) / contract.target_quantity;
+    let is_final = (contract.filled_quantity == contract.target_quantity);
+    let items_to_release = if (is_final) {
+        // Final fill: release all remaining items
+        (offered_quantity - contract.items_released)
+    } else {
+        (fill_amount * offered_per_wanted as u32)
+    };
 
     let contract_id = object::id(contract);
 
-    // Release proportional offered items from source open inventory to filler
+    // Release offered items from source open inventory to filler
     if (items_to_release > 0) {
         let released_item = source_ssu.withdraw_from_open_inventory<CormAuth>(
             filler_character,
@@ -1250,26 +1277,7 @@ public fun fill_item_for_item<CE, CF>(
     });
 
     // Auto-complete if fully filled
-    if (contract.filled_quantity == contract.target_quantity) {
-        // Return any rounding dust items to poster
-        let dust_items = offered_quantity - contract.items_released;
-        if (dust_items > 0) {
-            let dust = source_ssu.withdraw_from_open_inventory<CormAuth>(
-                poster_character,
-                corm_auth::auth(),
-                offered_type_id,
-                dust_items,
-                ctx,
-            );
-            source_ssu.deposit_to_owned<CormAuth>(
-                poster_character,
-                dust,
-                corm_auth::auth(),
-                ctx,
-            );
-            contract.items_released = contract.items_released + dust_items;
-        };
-
+    if (is_final) {
         contract.status = ContractStatus::Completed;
         event::emit(ContractCompletedEvent {
             contract_id,
@@ -1338,13 +1346,21 @@ public fun fill_item_for_item_same_ssu<CE, CF>(
 
     contract.filled_quantity = contract.filled_quantity + fill_amount;
 
-    // Calculate proportional offered items to release to filler
+    // Calculate offered items using exact multiplication (no rounding dust).
+    // Divisibility enforced at creation: offered_quantity % wanted_quantity == 0.
     let (offered_type_id, offered_quantity) = get_offered_item_info(&contract.contract_type);
-    let items_to_release = ((fill_amount * (offered_quantity as u64)) / contract.target_quantity as u32);
+    let offered_per_wanted = (offered_quantity as u64) / contract.target_quantity;
+    let is_final = (contract.filled_quantity == contract.target_quantity);
+    let items_to_release = if (is_final) {
+        // Final fill: release all remaining items
+        (offered_quantity - contract.items_released)
+    } else {
+        (fill_amount * offered_per_wanted as u32)
+    };
 
     let contract_id = object::id(contract);
 
-    // Release proportional offered items from source open inventory to filler
+    // Release offered items from source open inventory to filler
     if (items_to_release > 0) {
         let released_item = ssu.withdraw_from_open_inventory<CormAuth>(
             filler_character,
@@ -1371,26 +1387,7 @@ public fun fill_item_for_item_same_ssu<CE, CF>(
     });
 
     // Auto-complete if fully filled
-    if (contract.filled_quantity == contract.target_quantity) {
-        // Return any rounding dust items to poster
-        let dust_items = offered_quantity - contract.items_released;
-        if (dust_items > 0) {
-            let dust = ssu.withdraw_from_open_inventory<CormAuth>(
-                poster_character,
-                corm_auth::auth(),
-                offered_type_id,
-                dust_items,
-                ctx,
-            );
-            ssu.deposit_to_owned<CormAuth>(
-                poster_character,
-                dust,
-                corm_auth::auth(),
-                ctx,
-            );
-            contract.items_released = contract.items_released + dust_items;
-        };
-
+    if (is_final) {
         contract.status = ContractStatus::Completed;
         event::emit(ContractCompletedEvent {
             contract_id,
@@ -1483,20 +1480,23 @@ public fun deliver_transport<CE, CF>(
 
     contract.filled_quantity = contract.filled_quantity + fill_amount;
 
-    // Proportional payment from escrow
-    let payment = (fill_amount * contract.escrow_amount) / contract.target_quantity;
-    // Proportional stake return
-    let stake_return = (fill_amount * contract.stake_amount) / contract.target_quantity;
+    // Exact payment and stake return (no rounding dust).
+    // Divisibility enforced at creation: payment % quantity == 0, stake % quantity == 0.
+    let is_final = (contract.filled_quantity == contract.target_quantity);
+    let payment_per_item = contract.escrow_amount / contract.target_quantity;
+    let stake_per_item = contract.stake_amount / contract.target_quantity;
+    let payment = if (is_final) { contract.escrow.value() } else { fill_amount * payment_per_item };
+    let stake_return = if (is_final) { contract.courier_stake.value() } else { fill_amount * stake_per_item };
 
     let contract_id = object::id(contract);
     let courier_addr = courier_character.character_address();
 
-    if (payment > 0 && contract.escrow.value() >= payment) {
+    if (payment > 0) {
         let payout = coin::take(&mut contract.escrow, payment, ctx);
         transfer::public_transfer(payout, courier_addr);
     };
 
-    if (stake_return > 0 && contract.courier_stake.value() >= stake_return) {
+    if (stake_return > 0) {
         let returned = coin::take(&mut contract.courier_stake, stake_return, ctx);
         transfer::public_transfer(returned, courier_addr);
     };
@@ -1510,19 +1510,7 @@ public fun deliver_transport<CE, CF>(
         remaining_quantity: contract.target_quantity - contract.filled_quantity,
     });
 
-    if (contract.filled_quantity == contract.target_quantity) {
-        // Release any remaining escrow dust and stake dust to courier
-        let escrow_dust = contract.escrow.value();
-        if (escrow_dust > 0) {
-            let dust = coin::take(&mut contract.escrow, escrow_dust, ctx);
-            transfer::public_transfer(dust, courier_addr);
-        };
-        let stake_dust = contract.courier_stake.value();
-        if (stake_dust > 0) {
-            let dust = coin::take(&mut contract.courier_stake, stake_dust, ctx);
-            transfer::public_transfer(dust, courier_addr);
-        };
-
+    if (is_final) {
         contract.status = ContractStatus::Completed;
         event::emit(ContractCompletedEvent {
             contract_id,
