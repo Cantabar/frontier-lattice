@@ -634,14 +634,14 @@ export function CreateContractPage() {
                 </div>
               </Row>
               <Label>Destination SSU</Label>
-              <SsuPickerField value={destinationSsuId} onChange={setDestinationSsuId} />
+              <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} />
             </>
           )}
 
           {variant === "ItemForCoin" && (
             <>
               <Label>Source SSU</Label>
-              <SsuPickerField value={sourceSsuId} onChange={setSourceSsuId} />
+              <SsuPickerField value={sourceSsuId} onChange={(id) => setSourceSsuId(id)} />
               {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
               <Row>
                 <div>
@@ -683,7 +683,7 @@ export function CreateContractPage() {
           {variant === "ItemForItem" && (
             <>
               <Label>Source SSU</Label>
-              <SsuPickerField value={sourceSsuId} onChange={setSourceSsuId} />
+              <SsuPickerField value={sourceSsuId} onChange={(id) => setSourceSsuId(id)} />
               {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
               <Row>
                 <div>
@@ -729,7 +729,7 @@ export function CreateContractPage() {
                 </div>
               </Row>
               <Label>Destination SSU</Label>
-              <SsuPickerField value={i4iDestinationSsuId} onChange={setI4iDestinationSsuId} />
+              <SsuPickerField value={i4iDestinationSsuId} onChange={(id) => setI4iDestinationSsuId(id)} />
               {submitted && !i4iDestinationSsuId && <FieldError>Required</FieldError>}
             </>
           )}
@@ -737,7 +737,7 @@ export function CreateContractPage() {
           {variant === "Transport" && (
             <>
               <Label>Source SSU (pickup)</Label>
-              <SsuPickerField value={transportSourceSsuId} onChange={setTransportSourceSsuId} />
+              <SsuPickerField value={transportSourceSsuId} onChange={(id) => setTransportSourceSsuId(id)} />
               {submitted && !transportSourceSsuId && <FieldError>Required</FieldError>}
               <Row>
                 <div>
@@ -769,7 +769,7 @@ export function CreateContractPage() {
                 </div>
               </Row>
               <Label>Destination SSU (delivery)</Label>
-              <SsuPickerField value={destinationSsuId} onChange={setDestinationSsuId} />
+              <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} />
               {submitted && !destinationSsuId && <FieldError>Required</FieldError>}
               <Label>Required Stake (SUI)</Label>
               <Input type="number" placeholder="0.0" value={requiredStake} onChange={(e) => setRequiredStake(e.target.value)} />

@@ -14,6 +14,31 @@ import type { Role, StructureMoveType } from "./types";
 const { packages, coinType: defaultCoinType } = config;
 const SUI_CLOCK = "0x6";
 
+// ============================================================
+// Shared types for SSU item withdrawal access modes
+// ============================================================
+
+/**
+ * Discriminated union for how to withdraw items from an SSU.
+ *
+ * - `ssuOwner`: The filler owns the SSU. Uses OwnerCap<StorageUnit>.
+ * - `character`: The filler has a player inventory on a non-owned SSU.
+ *   Uses OwnerCap<Character> via withdraw_by_owner<Character>.
+ */
+export type ItemAccessMode =
+  | {
+      mode: "ssuOwner";
+      ownerCapId: string;
+      ownerCapVersion: string;
+      ownerCapDigest: string;
+    }
+  | {
+      mode: "character";
+      ownerCapId: string;
+      ownerCapVersion: string;
+      ownerCapDigest: string;
+    };
+
 /** Resolve coin type: use explicit override or fall back to config default. */
 function ct(override?: string): string {
   return override ?? defaultCoinType;
@@ -525,11 +550,8 @@ export function buildCreateMultiInputContract(params: {
  * Fill a slot by withdrawing an item from the filler's SSU and delivering it
  * to the poster's destination SSU via the MultiInputAuth extension.
  *
- * Steps:
- * 1. Borrow OwnerCap<StorageUnit> from filler's Character
- * 2. Withdraw item from filler's SSU
- * 3. Return OwnerCap to filler's Character
- * 4. Call fill_slot (deposits item to poster's SSU, pays bounty proportionally)
+ * Supports both owned SSUs (OwnerCap<StorageUnit>) and non-owned SSUs
+ * (OwnerCap<Character>) via the `access` parameter.
  */
 export function buildFillMultiInputSlot(params: {
   contractId: string;
@@ -537,58 +559,23 @@ export function buildFillMultiInputSlot(params: {
   posterCharId: string;
   fillerCharId: string;
   fillerSsuId: string;
-  fillerOwnerCapId: string;
-  fillerOwnerCapVersion: string;
-  fillerOwnerCapDigest: string;
+  access: ItemAccessMode;
   typeId: number;
   quantity: number;
   coinType?: string;
 }): Transaction {
   const tx = new Transaction();
-  const pkg = worldPkg();
-  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
 
-  // 1. Borrow OwnerCap<StorageUnit> from filler's Character
-  const [ownerCap, receipt] = tx.moveCall({
-    target: `${pkg}::character::borrow_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerCharId),
-      tx.object(
-        Inputs.ReceivingRef({
-          objectId: params.fillerOwnerCapId,
-          version: params.fillerOwnerCapVersion,
-          digest: params.fillerOwnerCapDigest,
-        }),
-      ),
-    ],
-  });
+  const item = appendBorrowWithdrawReturn(
+    tx,
+    params.access,
+    params.fillerCharId,
+    params.fillerSsuId,
+    params.typeId,
+    params.quantity,
+  );
 
-  // 2. Withdraw item from filler's SSU (returns transit Item)
-  const [item] = tx.moveCall({
-    target: `${pkg}::storage_unit::withdraw_by_owner`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerSsuId),
-      tx.object(params.fillerCharId),
-      ownerCap,
-      tx.pure.u64(params.typeId),
-      tx.pure.u32(params.quantity),
-    ],
-  });
-
-  // 3. Return OwnerCap to filler's Character
-  tx.moveCall({
-    target: `${pkg}::character::return_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerCharId),
-      ownerCap,
-      receipt,
-    ],
-  });
-
-  // 4. Fill the slot (deposits item to poster's destination SSU, pays bounty)
+  // Fill the slot (deposits item to poster's destination SSU, pays bounty)
   tx.moveCall({
     target: micTarget("fill_slot"),
     typeArguments: [ct(params.coinType)],
@@ -952,11 +939,8 @@ export function buildFillWithItems(params: {
  * Composite PTB: withdraw an item from the filler's SSU and fill a CoinForItem
  * contract in one transaction.
  *
- * Steps:
- * 1. Borrow OwnerCap<StorageUnit> from filler's Character
- * 2. Withdraw item from filler's SSU
- * 3. Return OwnerCap to filler's Character
- * 4. Call fill_with_items (deposits item to poster's destination SSU, pays escrow)
+ * Supports both owned SSUs (OwnerCap<StorageUnit>) and non-owned SSUs
+ * (OwnerCap<Character>) via the `access` parameter.
  */
 export function buildFillCoinForItemComposite(params: {
   contractId: string;
@@ -964,57 +948,22 @@ export function buildFillCoinForItemComposite(params: {
   posterCharacterId: string;
   fillerCharacterId: string;
   fillerSsuId: string;
-  fillerOwnerCapId: string;
-  fillerOwnerCapVersion: string;
-  fillerOwnerCapDigest: string;
+  access: ItemAccessMode;
   typeId: number;
   quantity: number;
 }): Transaction {
   const tx = new Transaction();
-  const pkg = worldPkg();
-  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
 
-  // 1. Borrow OwnerCap<StorageUnit> from filler's Character
-  const [ownerCap, receipt] = tx.moveCall({
-    target: `${pkg}::character::borrow_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerCharacterId),
-      tx.object(
-        Inputs.ReceivingRef({
-          objectId: params.fillerOwnerCapId,
-          version: params.fillerOwnerCapVersion,
-          digest: params.fillerOwnerCapDigest,
-        }),
-      ),
-    ],
-  });
+  const item = appendBorrowWithdrawReturn(
+    tx,
+    params.access,
+    params.fillerCharacterId,
+    params.fillerSsuId,
+    params.typeId,
+    params.quantity,
+  );
 
-  // 2. Withdraw item from filler's SSU (returns transit Item)
-  const [item] = tx.moveCall({
-    target: `${pkg}::storage_unit::withdraw_by_owner`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerSsuId),
-      tx.object(params.fillerCharacterId),
-      ownerCap,
-      tx.pure.u64(params.typeId),
-      tx.pure.u32(params.quantity),
-    ],
-  });
-
-  // 3. Return OwnerCap to filler's Character
-  tx.moveCall({
-    target: `${pkg}::character::return_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerCharacterId),
-      ownerCap,
-      receipt,
-    ],
-  });
-
-  // 4. Fill the contract (deposits item to poster's destination SSU)
+  // Fill the contract (deposits item to poster's destination SSU)
   tx.moveCall({
     target: tcTarget("fill_with_items"),
     typeArguments: tcTypes(),
@@ -1035,12 +984,8 @@ export function buildFillCoinForItemComposite(params: {
  * Composite PTB: withdraw an item from the filler's SSU and fill an ItemForItem
  * contract in one transaction.
  *
- * Steps:
- * 1. Borrow OwnerCap<StorageUnit> from filler's Character
- * 2. Withdraw item from filler's SSU
- * 3. Return OwnerCap to filler's Character
- * 4. Call fill_item_for_item (deposits wanted items at destination SSU,
- *    releases proportional offered items from source SSU)
+ * Supports both owned SSUs (OwnerCap<StorageUnit>) and non-owned SSUs
+ * (OwnerCap<Character>) via the `access` parameter.
  */
 export function buildFillItemForItemComposite(params: {
   contractId: string;
@@ -1049,57 +994,22 @@ export function buildFillItemForItemComposite(params: {
   posterCharacterId: string;
   fillerCharacterId: string;
   fillerSsuId: string;
-  fillerOwnerCapId: string;
-  fillerOwnerCapVersion: string;
-  fillerOwnerCapDigest: string;
+  access: ItemAccessMode;
   typeId: number;
   quantity: number;
 }): Transaction {
   const tx = new Transaction();
-  const pkg = worldPkg();
-  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
 
-  // 1. Borrow OwnerCap<StorageUnit> from filler's Character
-  const [ownerCap, receipt] = tx.moveCall({
-    target: `${pkg}::character::borrow_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerCharacterId),
-      tx.object(
-        Inputs.ReceivingRef({
-          objectId: params.fillerOwnerCapId,
-          version: params.fillerOwnerCapVersion,
-          digest: params.fillerOwnerCapDigest,
-        }),
-      ),
-    ],
-  });
+  const item = appendBorrowWithdrawReturn(
+    tx,
+    params.access,
+    params.fillerCharacterId,
+    params.fillerSsuId,
+    params.typeId,
+    params.quantity,
+  );
 
-  // 2. Withdraw item from filler's SSU (returns transit Item)
-  const [item] = tx.moveCall({
-    target: `${pkg}::storage_unit::withdraw_by_owner`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerSsuId),
-      tx.object(params.fillerCharacterId),
-      ownerCap,
-      tx.pure.u64(params.typeId),
-      tx.pure.u32(params.quantity),
-    ],
-  });
-
-  // 3. Return OwnerCap to filler's Character
-  tx.moveCall({
-    target: `${pkg}::character::return_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.fillerCharacterId),
-      ownerCap,
-      receipt,
-    ],
-  });
-
-  // 4. Fill the contract (deposits wanted items at destination, releases offered from source)
+  // Fill the contract (deposits wanted items at destination, releases offered from source)
   tx.moveCall({
     target: tcTarget("fill_item_for_item"),
     typeArguments: tcTypes(),
@@ -1374,6 +1284,71 @@ export function buildAuthorizeExtension(params: {
 // ============================================================
 
 const worldPkg = () => packages.world;
+
+/**
+ * Shared helper: borrow OwnerCap → withdraw item → return OwnerCap.
+ *
+ * Supports both OwnerCap<StorageUnit> (SSU owner) and OwnerCap<Character>
+ * (player inventory on non-owned SSU) via the `access` discriminant.
+ *
+ * Returns the transit Item result from withdraw_by_owner.
+ */
+function appendBorrowWithdrawReturn(
+  tx: Transaction,
+  access: ItemAccessMode,
+  characterId: string,
+  ssuId: string,
+  typeId: number,
+  quantity: number,
+) {
+  const pkg = worldPkg();
+  const typeArg =
+    access.mode === "ssuOwner"
+      ? `${pkg}::storage_unit::StorageUnit`
+      : `${pkg}::character::Character`;
+
+  // 1. Borrow OwnerCap<T> from Character
+  const [ownerCap, receipt] = tx.moveCall({
+    target: `${pkg}::character::borrow_owner_cap`,
+    typeArguments: [typeArg],
+    arguments: [
+      tx.object(characterId),
+      tx.object(
+        Inputs.ReceivingRef({
+          objectId: access.ownerCapId,
+          version: access.ownerCapVersion,
+          digest: access.ownerCapDigest,
+        }),
+      ),
+    ],
+  });
+
+  // 2. Withdraw item from SSU (returns transit Item)
+  const [item] = tx.moveCall({
+    target: `${pkg}::storage_unit::withdraw_by_owner`,
+    typeArguments: [typeArg],
+    arguments: [
+      tx.object(ssuId),
+      tx.object(characterId),
+      ownerCap,
+      tx.pure.u64(typeId),
+      tx.pure.u32(quantity),
+    ],
+  });
+
+  // 3. Return OwnerCap<T> to Character
+  tx.moveCall({
+    target: `${pkg}::character::return_owner_cap`,
+    typeArguments: [typeArg],
+    arguments: [
+      tx.object(characterId),
+      ownerCap,
+      receipt,
+    ],
+  });
+
+  return item;
+}
 
 /** Maps StructureMoveType → { module name, full type argument }. */
 function structureMoveInfo(moveType: StructureMoveType) {
