@@ -53,6 +53,7 @@ const ENotPoster: u64 = 11;
 const EContractComplete: u64 = 12;
 const EDescriptionEmpty: u64 = 13;
 const EDuplicateSlot: u64 = 14;
+const EContractNotComplete: u64 = 15;
 
 // === Structs ===
 
@@ -394,6 +395,37 @@ public fun expire<C>(
         poster_id,
         bounty_returned,
     });
+
+    fills.drop();
+    slots.drop();
+    id.delete();
+}
+
+/// Garbage-collect a completed multi-input contract.
+/// Anyone can call this. The object is destroyed and the storage rebate
+/// is returned to the transaction sender.
+public fun cleanup<C>(
+    contract: MultiInputContract<C>,
+    ctx: &mut TxContext,
+) {
+    assert!(contract.total_filled == contract.total_required, EContractNotComplete);
+
+    let MultiInputContract {
+        id,
+        poster_address,
+        bounty,
+        fills,
+        slots,
+        ..
+    } = contract;
+
+    // Return any remaining bounty dust to poster
+    if (bounty.value() > 0) {
+        let coin = coin::from_balance(bounty, ctx);
+        transfer::public_transfer(coin, poster_address);
+    } else {
+        bounty.destroy_zero();
+    };
 
     fills.drop();
     slots.drop();
