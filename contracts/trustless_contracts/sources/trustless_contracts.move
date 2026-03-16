@@ -641,16 +641,17 @@ public fun create_item_for_item<CE, CF>(
     transfer::share_object(contract);
 }
 
-/// Create a Transport contract. Poster locks coin payment, wants items delivered
-/// from a source SSU to a destination SSU. Courier must post a coin stake.
+/// Create a Transport contract. Poster locks coin payment and items, wants
+/// items delivered from a source SSU to a destination SSU. Items are locked in
+/// the source SSU's open inventory (CormAuth-controlled) until a courier accepts.
+/// Courier must post a coin stake.
 /// When `use_owner_inventory` is true, delivered items are deposited into the
 /// destination SSU's main owner inventory instead of the poster's player inventory.
 public fun create_transport<CE, CF>(
     character: &Character,
     escrow_coin: Coin<CE>,
-    item_type_id: u64,
-    item_quantity: u32,
-    source_ssu_id: ID,
+    source_ssu: &mut StorageUnit,
+    item: inventory::Item,
     destination_ssu_id: ID,
     required_stake: u64,
     use_owner_inventory: bool,
@@ -661,6 +662,8 @@ public fun create_transport<CE, CF>(
     ctx: &mut TxContext,
 ) {
     assert!(deadline_ms > clock.timestamp_ms(), EDeadlineInPast);
+    let item_type_id = inventory::type_id(&item);
+    let item_quantity = inventory::quantity(&item);
     assert!(item_quantity > 0, EZeroQuantity);
     assert!(required_stake > 0, EInsufficientStake);
 
@@ -670,6 +673,15 @@ public fun create_transport<CE, CF>(
     assert!(required_stake % (item_quantity as u64) == 0, ENotDivisible);
     let poster_id = character.id();
     let poster_address = character.character_address();
+    let source_ssu_id = object::id(source_ssu);
+
+    // Lock items in open inventory (controlled by CormAuth extension)
+    source_ssu.deposit_to_open_inventory<CormAuth>(
+        character,
+        item,
+        corm_auth::auth(),
+        ctx,
+    );
 
     let contract_type = ContractType::Transport {
         item_type_id,
@@ -1462,11 +1474,15 @@ public fun fill_item_for_item_same_ssu<CE, CF>(
 // === Transport Functions ===
 
 /// Courier accepts a transport contract by locking a coin stake.
+/// Items are withdrawn from the source SSU's open inventory and deposited
+/// to the courier's player inventory so they can transport them.
 public fun accept_transport<CE, CF>(
     contract: &mut Contract<CE, CF>,
     stake_coin: Coin<CF>,
     courier_character: &Character,
+    source_ssu: &mut StorageUnit,
     clock: &Clock,
+    ctx: &mut TxContext,
 ) {
     assert!(contract.status == ContractStatus::Open, EContractNotOpen);
     assert!(clock.timestamp_ms() <= contract.deadline_ms, EContractExpired);
@@ -1479,10 +1495,31 @@ public fun accept_transport<CE, CF>(
 
     assert!(stake_coin.value() >= contract.stake_amount, EInsufficientStake);
 
+    // Verify source SSU matches the contract
+    let source_ssu_id = get_source_ssu_id(&contract.contract_type);
+    assert!(object::id(source_ssu) == source_ssu_id, ESourceSsuMismatch);
+
     contract.courier_stake.join(stake_coin.into_balance());
     contract.courier_id = option::some(courier_id);
     contract.courier_address = option::some(courier_character.character_address());
     contract.status = ContractStatus::InProgress;
+
+    // Transfer items from open inventory to courier's player inventory
+    let (item_type_id, item_quantity) = get_transport_item_info(&contract.contract_type);
+    let item = source_ssu.withdraw_from_open_inventory<CormAuth>(
+        courier_character,
+        corm_auth::auth(),
+        item_type_id,
+        item_quantity,
+        ctx,
+    );
+    source_ssu.deposit_to_owned<CormAuth>(
+        courier_character,
+        item,
+        corm_auth::auth(),
+        ctx,
+    );
+    contract.items_released = item_quantity;
 
     event::emit(TransportAcceptedEvent {
         contract_id: object::id(contract),
@@ -1593,9 +1630,9 @@ public fun deliver_transport<CE, CF>(
 
 // === Lifecycle Functions ===
 
-/// Cancel an open coin-only contract (CoinForCoin, CoinForItem, Transport).
-/// Item-bearing contracts (ItemForCoin, ItemForItem) must use cancel_item_contract.
-/// Only the poster can cancel. Cannot cancel InProgress transport (courier has stake).
+/// Cancel an open coin-only contract (CoinForCoin, CoinForItem).
+/// Item-bearing contracts (ItemForCoin, ItemForItem, Transport) must use cancel_item_contract.
+/// Only the poster can cancel.
 public fun cancel_contract<CE, CF>(
     contract: Contract<CE, CF>,
     poster_character: &Character,
@@ -1605,7 +1642,7 @@ public fun cancel_contract<CE, CF>(
     assert!(poster_character.id() == contract.poster_id, ENotPoster);
     // Item-bearing contracts must use cancel_item_contract
     assert!(
-        !is_item_for_coin(&contract.contract_type) && !is_item_for_item(&contract.contract_type),
+        !has_item_escrow(&contract.contract_type),
         EItemContractRequiresItemCancel,
     );
 
@@ -1652,7 +1689,7 @@ public fun cancel_contract<CE, CF>(
     id.delete();
 }
 
-/// Cancel an item-bearing contract (ItemForCoin or ItemForItem).
+/// Cancel an item-bearing contract (ItemForCoin, ItemForItem, or Transport).
 /// Returns remaining escrowed items from SSU open inventory to poster's owned inventory.
 /// Only the poster can cancel. Contract must be Open.
 public fun cancel_item_contract<CE, CF>(
@@ -1664,7 +1701,7 @@ public fun cancel_item_contract<CE, CF>(
     assert!(contract.status == ContractStatus::Open, EContractNotOpen);
     assert!(poster_character.id() == contract.poster_id, ENotPoster);
     assert!(
-        is_item_for_coin(&contract.contract_type) || is_item_for_item(&contract.contract_type),
+        has_item_escrow(&contract.contract_type),
         EWrongContractType,
     );
 
@@ -1747,7 +1784,7 @@ public fun expire_contract<CE, CF>(
     assert!(clock.timestamp_ms() > contract.deadline_ms, EContractNotExpired);
     // Item-bearing contracts must use expire_item_contract
     assert!(
-        !is_item_for_coin(&contract.contract_type) && !is_item_for_item(&contract.contract_type),
+        !has_item_escrow(&contract.contract_type),
         EItemContractRequiresItemCancel,
     );
 
@@ -1804,8 +1841,10 @@ public fun expire_contract<CE, CF>(
     id.delete();
 }
 
-/// Expire an item-bearing contract (ItemForCoin or ItemForItem) after deadline.
-/// Returns remaining escrowed items to poster's owned inventory.
+/// Expire an item-bearing contract (ItemForCoin, ItemForItem, or Transport) after
+/// deadline. Returns remaining escrowed items to poster's owned inventory.
+/// For InProgress transports, items_released == item_quantity so no items remain
+/// in open inventory; only coins/stake are handled.
 /// Anyone can call this (poster_character is a shared object needed for deposit).
 public fun expire_item_contract<CE, CF>(
     contract: Contract<CE, CF>,
@@ -1816,7 +1855,7 @@ public fun expire_item_contract<CE, CF>(
 ) {
     assert!(clock.timestamp_ms() > contract.deadline_ms, EContractNotExpired);
     assert!(
-        is_item_for_coin(&contract.contract_type) || is_item_for_item(&contract.contract_type),
+        has_item_escrow(&contract.contract_type),
         EWrongContractType,
     );
 
@@ -1898,7 +1937,7 @@ public fun expire_item_contract<CE, CF>(
 
 // === Cleanup Functions ===
 
-/// Garbage-collect a completed coin-only contract (CoinForCoin, CoinForItem, Transport).
+/// Garbage-collect a completed coin-only contract (CoinForCoin, CoinForItem).
 /// Anyone can call this. The object is destroyed and storage rebate is returned.
 public fun cleanup_completed_contract<CE, CF>(
     contract: Contract<CE, CF>,
@@ -1906,7 +1945,7 @@ public fun cleanup_completed_contract<CE, CF>(
 ) {
     assert!(contract.status == ContractStatus::Completed, EContractNotCompleted);
     assert!(
-        !is_item_for_coin(&contract.contract_type) && !is_item_for_item(&contract.contract_type),
+        !has_item_escrow(&contract.contract_type),
         EItemContractRequiresItemCancel,
     );
 
@@ -1944,7 +1983,7 @@ public fun cleanup_completed_contract<CE, CF>(
     id.delete();
 }
 
-/// Garbage-collect a completed item-bearing contract (ItemForCoin, ItemForItem).
+/// Garbage-collect a completed item-bearing contract (ItemForCoin, ItemForItem, Transport).
 /// All items should already have been released during fills; this is a safety
 /// valve in case rounding dust remains.
 public fun cleanup_completed_item_contract<CE, CF>(
@@ -1955,7 +1994,7 @@ public fun cleanup_completed_item_contract<CE, CF>(
 ) {
     assert!(contract.status == ContractStatus::Completed, EContractNotCompleted);
     assert!(
-        is_item_for_coin(&contract.contract_type) || is_item_for_item(&contract.contract_type),
+        has_item_escrow(&contract.contract_type),
         EWrongContractType,
     );
 
@@ -2133,6 +2172,7 @@ fun get_offered_item_info(ct: &ContractType): (u64, u32) {
     match (ct) {
         ContractType::ItemForCoin { offered_type_id, offered_quantity, .. } => (*offered_type_id, *offered_quantity),
         ContractType::ItemForItem { offered_type_id, offered_quantity, .. } => (*offered_type_id, *offered_quantity),
+        ContractType::Transport { item_type_id, item_quantity, .. } => (*item_type_id, *item_quantity),
         _ => abort EWrongContractType,
     }
 }
@@ -2148,6 +2188,7 @@ fun get_source_ssu_id(ct: &ContractType): ID {
     match (ct) {
         ContractType::ItemForCoin { source_ssu_id, .. } => *source_ssu_id,
         ContractType::ItemForItem { source_ssu_id, .. } => *source_ssu_id,
+        ContractType::Transport { source_ssu_id, .. } => *source_ssu_id,
         _ => abort EWrongContractType,
     }
 }
@@ -2167,7 +2208,7 @@ fun get_c4c_wanted_amount(ct: &ContractType): u64 {
 }
 
 fun has_item_escrow(ct: &ContractType): bool {
-    is_item_for_coin(ct) || is_item_for_item(ct)
+    is_item_for_coin(ct) || is_item_for_item(ct) || is_transport(ct)
 }
 
 // === Test-only Helpers ===
