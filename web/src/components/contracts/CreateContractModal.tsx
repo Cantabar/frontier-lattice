@@ -628,6 +628,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
                 ssuId={sourceSsuId}
                 ownerCapId={getOwnerCapId(sourceSsuId)}
                 value={itemId}
+                ownerOnly
                 onChange={(entry) => {
                   setItemId(String(entry.typeId));
                   setOfferedQuantity(String(entry.quantity));
@@ -670,6 +671,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
                 ssuId={sourceSsuId}
                 ownerCapId={getOwnerCapId(sourceSsuId)}
                 value={itemId}
+                ownerOnly
                 onChange={(entry) => {
                   setItemId(String(entry.typeId));
                   setOfferedQuantity(String(entry.quantity));
@@ -724,6 +726,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
                 ssuId={transportSourceSsuId}
                 ownerCapId={getOwnerCapId(transportSourceSsuId)}
                 value={transportItemTypeId}
+                ownerOnly
                 onChange={(entry) => {
                   setTransportItemTypeId(String(entry.typeId));
                   setTransportItemQuantity(String(entry.quantity));

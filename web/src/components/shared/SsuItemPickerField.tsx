@@ -75,6 +75,8 @@ interface Props {
   placeholder?: string;
   /** When set, only items matching this typeId are shown. */
   filterTypeId?: number;
+  /** When true, only items from the owner inventory slot are shown (excludes open storage & other player slots). */
+  ownerOnly?: boolean;
 }
 
 export function SsuItemPickerField({
@@ -85,6 +87,7 @@ export function SsuItemPickerField({
   disabled,
   placeholder = "Select an item from this SSU…",
   filterTypeId,
+  ownerOnly,
 }: Props) {
   const [open, setOpen] = useState(false);
   const { getItem } = useItems();
@@ -131,6 +134,7 @@ export function SsuItemPickerField({
           ownerCapId={ownerCapId}
           value={value}
           filterTypeId={filterTypeId}
+          ownerOnly={ownerOnly}
           onSelect={onChange}
           onClose={() => setOpen(false)}
         />

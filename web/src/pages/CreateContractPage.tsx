@@ -968,6 +968,7 @@ export function CreateContractPage() {
                     ssuId={sourceSsuId}
                     ownerCapId={getOwnerCapId(sourceSsuId)}
                     value={itemId}
+                    ownerOnly
                     onChange={(entry) => {
                       setItemId(String(entry.typeId));
                       setOfferedQuantity(String(entry.quantity));
@@ -1016,6 +1017,7 @@ export function CreateContractPage() {
                     ssuId={sourceSsuId}
                     ownerCapId={getOwnerCapId(sourceSsuId)}
                     value={itemId}
+                    ownerOnly
                     onChange={(entry) => {
                       setItemId(String(entry.typeId));
                       setOfferedQuantity(String(entry.quantity));
@@ -1070,6 +1072,7 @@ export function CreateContractPage() {
                     ssuId={transportSourceSsuId}
                     ownerCapId={getOwnerCapId(transportSourceSsuId)}
                     value={transportItemTypeId}
+                    ownerOnly
                     onChange={(entry) => {
                       setTransportItemTypeId(String(entry.typeId));
                       setTransportItemQuantity(String(entry.quantity));

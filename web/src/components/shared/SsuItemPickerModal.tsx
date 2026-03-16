@@ -145,6 +145,8 @@ interface Props {
   value: string;
   /** When set, only items matching this typeId are shown. */
   filterTypeId?: number;
+  /** When true, only items from the owner inventory slot are shown (excludes open storage & other player slots). */
+  ownerOnly?: boolean;
   onSelect: (entry: InventoryItemEntry) => void;
   onClose: () => void;
 }
@@ -154,6 +156,7 @@ export function SsuItemPickerModal({
   ownerCapId,
   value,
   filterTypeId,
+  ownerOnly,
   onSelect,
   onClose,
 }: Props) {
@@ -164,7 +167,8 @@ export function SsuItemPickerModal({
   // Deduplicate inventory entries (sum quantities per typeId)
   const items = useMemo(() => {
     const map = new Map<number, InventoryItemEntry>();
-    for (const slot of slots) {
+    const filteredSlots = ownerOnly ? slots.filter((s) => s.kind === "owner") : slots;
+    for (const slot of filteredSlots) {
       for (const entry of slot.items) {
         if (filterTypeId != null && entry.typeId !== filterTypeId) continue;
         const existing = map.get(entry.typeId);
@@ -180,7 +184,7 @@ export function SsuItemPickerModal({
       const bName = getItem(b.typeId)?.name ?? "";
       return aName.localeCompare(bName);
     });
-  }, [slots, getItem, filterTypeId]);
+  }, [slots, getItem, filterTypeId, ownerOnly]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
