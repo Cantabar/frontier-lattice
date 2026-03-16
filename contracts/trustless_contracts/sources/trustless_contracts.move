@@ -156,6 +156,10 @@ public struct Contract<phantom CE, phantom CF> has key {
     allowed_tribes: vector<u32>,
     /// Items withdrawn from open inventory so far (ItemForCoin / ItemForItem only)
     items_released: u32,
+    /// When true, item deposits at the destination SSU go to the SSU's main
+    /// owner inventory (`deposit_item`) instead of the poster's player
+    /// inventory (`deposit_to_owned`). Set by the poster at creation time.
+    use_owner_inventory: bool,
 }
 
 // === Events ===
@@ -172,6 +176,7 @@ public struct ContractCreatedEvent has copy, drop {
     stake_amount: u64,
     allowed_characters: vector<ID>,
     allowed_tribes: vector<u32>,
+    use_owner_inventory: bool,
 }
 
 public struct ContractFilledEvent has copy, drop {
@@ -335,6 +340,7 @@ public fun create_coin_for_coin<CE, CF>(
         allowed_characters,
         allowed_tribes,
         items_released: 0,
+        use_owner_inventory: false,
     };
 
     let contract_id = object::id(&contract);
@@ -350,6 +356,7 @@ public fun create_coin_for_coin<CE, CF>(
         stake_amount: 0,
         allowed_characters: contract.allowed_characters,
         allowed_tribes: contract.allowed_tribes,
+        use_owner_inventory: false,
     });
 
     transfer::share_object(contract);
@@ -357,6 +364,8 @@ public fun create_coin_for_coin<CE, CF>(
 
 /// Create a CoinForItem contract. Poster locks Coin<CE>, wants items at an SSU.
 /// `target_quantity` is the wanted item quantity (as u64 for partial fill math).
+/// When `use_owner_inventory` is true, filled items are deposited into the SSU's
+/// main owner inventory instead of the poster's player inventory.
 public fun create_coin_for_item<CE, CF>(
     character: &Character,
     escrow_coin: Coin<CE>,
@@ -364,6 +373,7 @@ public fun create_coin_for_item<CE, CF>(
     wanted_quantity: u32,
     destination_ssu_id: ID,
     allow_partial: bool,
+    use_owner_inventory: bool,
     deadline_ms: u64,
     allowed_characters: vector<ID>,
     allowed_tribes: vector<u32>,
@@ -409,6 +419,7 @@ public fun create_coin_for_item<CE, CF>(
         allowed_characters,
         allowed_tribes,
         items_released: 0,
+        use_owner_inventory,
     };
 
     let contract_id = object::id(&contract);
@@ -424,6 +435,7 @@ public fun create_coin_for_item<CE, CF>(
         stake_amount: 0,
         allowed_characters: contract.allowed_characters,
         allowed_tribes: contract.allowed_tribes,
+        use_owner_inventory,
     });
 
     transfer::share_object(contract);
@@ -506,6 +518,7 @@ public fun create_item_for_coin<CE, CF>(
         allowed_characters,
         allowed_tribes,
         items_released: 0,
+        use_owner_inventory: false,
     };
 
     let contract_id = object::id(&contract);
@@ -521,6 +534,7 @@ public fun create_item_for_coin<CE, CF>(
         stake_amount: 0,
         allowed_characters: contract.allowed_characters,
         allowed_tribes: contract.allowed_tribes,
+        use_owner_inventory: false,
     });
 
     transfer::share_object(contract);
@@ -529,6 +543,8 @@ public fun create_item_for_coin<CE, CF>(
 /// Create an ItemForItem contract. Poster locks items at a source SSU, wants
 /// items deposited at a destination SSU. Like ItemForCoin, the caller must
 /// pass a transit `Item` withdrawn from the source SSU in the same PTB.
+/// When `use_owner_inventory` is true, filled items are deposited into the
+/// destination SSU's main owner inventory instead of the poster's player inventory.
 public fun create_item_for_item<CE, CF>(
     character: &Character,
     source_ssu: &mut StorageUnit,
@@ -537,6 +553,7 @@ public fun create_item_for_item<CE, CF>(
     wanted_quantity: u32,
     destination_ssu_id: ID,
     allow_partial: bool,
+    use_owner_inventory: bool,
     deadline_ms: u64,
     allowed_characters: vector<ID>,
     allowed_tribes: vector<u32>,
@@ -594,6 +611,7 @@ public fun create_item_for_item<CE, CF>(
         allowed_characters,
         allowed_tribes,
         items_released: 0,
+        use_owner_inventory,
     };
 
     let contract_id = object::id(&contract);
@@ -609,6 +627,7 @@ public fun create_item_for_item<CE, CF>(
         stake_amount: 0,
         allowed_characters: contract.allowed_characters,
         allowed_tribes: contract.allowed_tribes,
+        use_owner_inventory,
     });
 
     transfer::share_object(contract);
@@ -616,6 +635,8 @@ public fun create_item_for_item<CE, CF>(
 
 /// Create a Transport contract. Poster locks coin payment, wants items delivered
 /// from a source SSU to a destination SSU. Courier must post a coin stake.
+/// When `use_owner_inventory` is true, delivered items are deposited into the
+/// destination SSU's main owner inventory instead of the poster's player inventory.
 public fun create_transport<CE, CF>(
     character: &Character,
     escrow_coin: Coin<CE>,
@@ -624,6 +645,7 @@ public fun create_transport<CE, CF>(
     source_ssu_id: ID,
     destination_ssu_id: ID,
     required_stake: u64,
+    use_owner_inventory: bool,
     deadline_ms: u64,
     allowed_characters: vector<ID>,
     allowed_tribes: vector<u32>,
@@ -672,6 +694,7 @@ public fun create_transport<CE, CF>(
         allowed_characters,
         allowed_tribes,
         items_released: 0,
+        use_owner_inventory,
     };
 
     let contract_id = object::id(&contract);
@@ -687,6 +710,7 @@ public fun create_transport<CE, CF>(
         stake_amount: required_stake,
         allowed_characters: contract.allowed_characters,
         allowed_tribes: contract.allowed_tribes,
+        use_owner_inventory,
     });
 
     transfer::share_object(contract);
@@ -841,13 +865,22 @@ public fun fill_with_items<CE, CF>(
         assert!(fill_amount == remaining, EInsufficientFill);
     };
 
-    // Deposit item to poster's owned inventory at destination SSU
-    destination_ssu.deposit_to_owned<CormAuth>(
-        poster_character,
-        item,
-        corm_auth::auth(),
-        ctx,
-    );
+    // Deposit item at destination SSU: owner inventory or poster's player inventory
+    if (contract.use_owner_inventory) {
+        destination_ssu.deposit_item<CormAuth>(
+            poster_character,
+            item,
+            corm_auth::auth(),
+            ctx,
+        );
+    } else {
+        destination_ssu.deposit_to_owned<CormAuth>(
+            poster_character,
+            item,
+            corm_auth::auth(),
+            ctx,
+        );
+    };
 
     // Track fill
     if (contract.fills.contains(filler_id)) {
@@ -1218,13 +1251,22 @@ public fun fill_item_for_item<CE, CF>(
         assert!(fill_amount == remaining, EInsufficientFill);
     };
 
-    // Deposit filler's items to poster's owned inventory at destination SSU
-    destination_ssu.deposit_to_owned<CormAuth>(
-        poster_character,
-        item,
-        corm_auth::auth(),
-        ctx,
-    );
+    // Deposit filler's items at destination SSU: owner inventory or poster's player inventory
+    if (contract.use_owner_inventory) {
+        destination_ssu.deposit_item<CormAuth>(
+            poster_character,
+            item,
+            corm_auth::auth(),
+            ctx,
+        );
+    } else {
+        destination_ssu.deposit_to_owned<CormAuth>(
+            poster_character,
+            item,
+            corm_auth::auth(),
+            ctx,
+        );
+    };
 
     // Track fill
     if (contract.fills.contains(filler_id)) {
@@ -1328,13 +1370,22 @@ public fun fill_item_for_item_same_ssu<CE, CF>(
         assert!(fill_amount == remaining, EInsufficientFill);
     };
 
-    // Deposit filler's items to poster's owned inventory at the SSU
-    ssu.deposit_to_owned<CormAuth>(
-        poster_character,
-        item,
-        corm_auth::auth(),
-        ctx,
-    );
+    // Deposit filler's items at the SSU: owner inventory or poster's player inventory
+    if (contract.use_owner_inventory) {
+        ssu.deposit_item<CormAuth>(
+            poster_character,
+            item,
+            corm_auth::auth(),
+            ctx,
+        );
+    } else {
+        ssu.deposit_to_owned<CormAuth>(
+            poster_character,
+            item,
+            corm_auth::auth(),
+            ctx,
+        );
+    };
 
     // Track fill
     if (contract.fills.contains(filler_id)) {
@@ -1462,13 +1513,22 @@ public fun deliver_transport<CE, CF>(
 
     let fill_amount = if (item_qty > remaining) { remaining } else { item_qty };
 
-    // Deposit item to poster's owned inventory at destination SSU
-    destination_ssu.deposit_to_owned<CormAuth>(
-        poster_character,
-        item,
-        corm_auth::auth(),
-        ctx,
-    );
+    // Deposit item at destination SSU: owner inventory or poster's player inventory
+    if (contract.use_owner_inventory) {
+        destination_ssu.deposit_item<CormAuth>(
+            poster_character,
+            item,
+            corm_auth::auth(),
+            ctx,
+        );
+    } else {
+        destination_ssu.deposit_to_owned<CormAuth>(
+            poster_character,
+            item,
+            corm_auth::auth(),
+            ctx,
+        );
+    };
 
     // Track fill
     if (contract.fills.contains(courier_id)) {
@@ -1966,6 +2026,7 @@ public fun contract_courier_id<CE, CF>(c: &Contract<CE, CF>): Option<ID> { c.cou
 public fun contract_allowed_characters<CE, CF>(c: &Contract<CE, CF>): vector<ID> { c.allowed_characters }
 public fun contract_allowed_tribes<CE, CF>(c: &Contract<CE, CF>): vector<u32> { c.allowed_tribes }
 public fun contract_items_released<CE, CF>(c: &Contract<CE, CF>): u32 { c.items_released }
+public fun contract_use_owner_inventory<CE, CF>(c: &Contract<CE, CF>): bool { c.use_owner_inventory }
 
 public fun filler_contribution<CE, CF>(c: &Contract<CE, CF>, filler_id: ID): u64 {
     if (c.fills.contains(filler_id)) {

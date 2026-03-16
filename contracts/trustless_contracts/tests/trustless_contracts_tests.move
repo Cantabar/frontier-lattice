@@ -725,7 +725,7 @@ fun test_expire_transport_forfeits_stake() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_transport<ESCROW, FILL>(
-            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, stake_amount, 100,
+            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, stake_amount, false, 100,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 
@@ -1135,7 +1135,7 @@ fun test_transport_create_and_accept() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_transport<ESCROW, FILL>(
-            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, stake_amount, FAR_FUTURE_MS,
+            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, stake_amount, false, FAR_FUTURE_MS,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 
@@ -1195,7 +1195,7 @@ fun test_transport_insufficient_stake() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_transport<ESCROW, FILL>(
-            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, 200, FAR_FUTURE_MS,
+            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, 200, false, FAR_FUTURE_MS,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 
@@ -1238,7 +1238,7 @@ fun test_create_coin_for_item() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_coin_for_item<ESCROW, FILL>(
-            &poster, escrow, 88069, 10, dest_ssu_id, true, FAR_FUTURE_MS,
+            &poster, escrow, 88069, 10, dest_ssu_id, true, false, FAR_FUTURE_MS,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 
@@ -1730,7 +1730,7 @@ fun test_not_divisible_coin_for_item() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_coin_for_item<ESCROW, FILL>(
-            &poster, escrow, 88069, 3, dest_ssu_id, true, FAR_FUTURE_MS,
+            &poster, escrow, 88069, 3, dest_ssu_id, true, false, FAR_FUTURE_MS,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 
@@ -1761,7 +1761,7 @@ fun test_not_divisible_transport() {
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
         trustless_contracts::create_transport<ESCROW, FILL>(
-            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, 333, FAR_FUTURE_MS,
+            &poster, escrow, 42, 10, source_ssu_id, dest_ssu_id, 333, false, FAR_FUTURE_MS,
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
 
