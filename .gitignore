@@ -38,3 +38,5 @@ mprocs.log
 
 # mprocs coordination markers
 .world-ready
+
+dev-tools/transfer_exploit_poc

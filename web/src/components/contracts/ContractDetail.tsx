@@ -219,14 +219,6 @@ export function ContractDetail({ contract: initial }: Props) {
             <Value>{formatDeadline(c.deadlineMs)}</Value>
           </div>
           <div>
-            <Label>Target Quantity</Label>
-            <Value>{c.targetQuantity}</Value>
-          </div>
-          <div>
-            <Label>Filled</Label>
-            <Value>{c.filledQuantity} / {c.targetQuantity}</Value>
-          </div>
-          <div>
             <Label>Poster</Label>
             <Value><CharacterDisplay characterId={c.posterId} /></Value>
           </div>
@@ -234,6 +226,24 @@ export function ContractDetail({ contract: initial }: Props) {
             <Label>Partial Fill</Label>
             <Value>{c.allowPartial ? "Yes" : "No"}</Value>
           </div>
+          {c.contractType.variant === "CoinForCoin" && (
+            <>
+              <div>
+                <Label>Offered Amount</Label>
+                <Value>{formatAmount(c.contractType.offeredAmount)} SUI</Value>
+              </div>
+              <div>
+                <Label>Wanted Amount</Label>
+                <Value>{formatAmount(c.contractType.wantedAmount)} SUI</Value>
+              </div>
+              {c.allowPartial && (
+                <div>
+                  <Label>Filled</Label>
+                  <Value>{formatAmount(c.filledQuantity)} / {formatAmount(c.contractType.wantedAmount)} SUI</Value>
+                </div>
+              )}
+            </>
+          )}
           {c.contractType.variant === "Transport" && (
             <>
               <div>
@@ -260,6 +270,12 @@ export function ContractDetail({ contract: initial }: Props) {
                 <Label>Destination SSU</Label>
                 <Value>{truncateAddress(c.contractType.destinationSsuId)}</Value>
               </div>
+              {c.allowPartial && (
+                <div>
+                  <Label>Filled</Label>
+                  <Value>{c.filledQuantity} / {c.contractType.wantedQuantity.toLocaleString()}</Value>
+                </div>
+              )}
             </>
           )}
           {c.contractType.variant === "ItemForCoin" && (
@@ -280,6 +296,12 @@ export function ContractDetail({ contract: initial }: Props) {
                 <Label>Source SSU</Label>
                 <Value>{truncateAddress(c.contractType.sourceSsuId)}</Value>
               </div>
+              {c.allowPartial && (
+                <div>
+                  <Label>Filled</Label>
+                  <Value>{formatAmount(c.filledQuantity)} / {formatAmount(c.contractType.wantedAmount)} SUI</Value>
+                </div>
+              )}
             </>
           )}
           {c.contractType.variant === "ItemForItem" && (
@@ -308,6 +330,12 @@ export function ContractDetail({ contract: initial }: Props) {
                 <Label>Destination SSU</Label>
                 <Value>{truncateAddress(c.contractType.destinationSsuId)}</Value>
               </div>
+              {c.allowPartial && (
+                <div>
+                  <Label>Filled</Label>
+                  <Value>{c.filledQuantity} / {c.contractType.wantedQuantity.toLocaleString()}</Value>
+                </div>
+              )}
             </>
           )}
           {c.contractType.variant === "Transport" && (
@@ -328,6 +356,12 @@ export function ContractDetail({ contract: initial }: Props) {
                 <Label>Destination SSU (delivery)</Label>
                 <Value>{truncateAddress(c.contractType.destinationSsuId)}</Value>
               </div>
+              {c.allowPartial && (
+                <div>
+                  <Label>Delivered</Label>
+                  <Value>{c.filledQuantity} / {c.contractType.itemQuantity.toLocaleString()}</Value>
+                </div>
+              )}
             </>
           )}
         </DetailGrid>
