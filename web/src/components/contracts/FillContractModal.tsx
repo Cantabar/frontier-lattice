@@ -91,6 +91,12 @@ const RequirementNote = styled.div`
   opacity: 0.7;
 `;
 
+const Hint = styled.div`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.text.muted};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+`;
+
 const CostCallout = styled.div`
   background: ${({ theme }) => theme.colors.primary.subtle};
   border: 1px solid ${({ theme }) => theme.colors.primary.main};
@@ -199,8 +205,10 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
 
   const variant = contract.contractType.variant;
   const isItemForCoin = variant === "ItemForCoin";
+  const isCoinForCoin = variant === "CoinForCoin";
+  const isCoinForItem = variant === "CoinForItem";
 
-  const isCoinFill = variant === "CoinForCoin" || variant === "ItemForCoin";
+  const isCoinFill = isCoinForCoin || isItemForCoin;
 
   // When the contract wants 0 coins the filler just needs to claim it.
   const isZeroCoinTarget = isCoinFill && contract.targetQuantity === "0";
@@ -252,6 +260,24 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
     // Ceiling division
     return Number((total + divisor - 1n) / divisor);
   }, [fillItemQty, isItemForCoin, perUnitPriceMist, contract]);
+
+  // Unit price for CoinForCoin (MIST per unit of fill)
+  const c4cUnitPrice = useMemo(() => {
+    if (!isCoinForCoin || contract.contractType.variant !== "CoinForCoin") return 0;
+    const e = Number(contract.escrowAmount);
+    const t = Number(contract.targetQuantity);
+    if (t === 0) return 0;
+    return e / t;
+  }, [contract, isCoinForCoin]);
+
+  // Unit price for CoinForItem (MIST per item)
+  const c4iUnitPrice = useMemo(() => {
+    if (!isCoinForItem || contract.contractType.variant !== "CoinForItem") return 0;
+    const e = Number(contract.escrowAmount);
+    const t = Number(contract.targetQuantity);
+    if (t === 0) return 0;
+    return e / t;
+  }, [contract, isCoinForItem]);
 
   // Full-fill SUI amount for non-partial coin fills (human-readable)
   const requiredFillSui = useMemo(() => {
@@ -464,6 +490,9 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
         ) : (
           <>
             Remaining: {remaining.toLocaleString()} / {Number(contract.targetQuantity).toLocaleString()}
+            {isCoinForItem && c4iUnitPrice > 0 && (
+              <div>Unit price: {formatAmount(String(Math.round(c4iUnitPrice)))} SUI per item</div>
+            )}
           </>
         )}
         {!isItemForCoin && contract.escrowAmount !== "0" && (
@@ -503,15 +532,25 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
 
       {isCoinFill && !isZeroCoinTarget && !isItemForCoin && (
         <>
-          <Label>Fill Amount (SUI)</Label>
+          <Label>Fill Amount (SUI){contract.allowPartial && remaining > 0 ? ` (max ${formatAmount(String(remaining))})` : ""}</Label>
           {contract.allowPartial ? (
-            <Input
-              type="number"
-              placeholder="0.0"
-              value={fillAmount}
-              onChange={(e) => setFillAmount(e.target.value)}
-              autoFocus
-            />
+            <>
+              <Input
+                type="number"
+                placeholder="0.0"
+                value={fillAmount}
+                onChange={(e) => setFillAmount(e.target.value)}
+                autoFocus
+              />
+              {remaining > 0 && (
+                <Hint>
+                  <a href="#" onClick={(e) => { e.preventDefault(); setFillAmount((remaining / 1e9).toString()); }} style={{ color: "inherit", textDecoration: "underline" }}>
+                    Fill remaining ({formatAmount(String(remaining))} SUI)
+                  </a>
+                  {c4cUnitPrice > 0 && <> · Unit price: {formatAmount(String(Math.round(c4cUnitPrice)))} SUI per unit</>}
+                </Hint>
+              )}
+            </>
           ) : (
             <ReadOnlyField>{requiredFillSui} SUI</ReadOnlyField>
           )}
@@ -522,15 +561,25 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
         <>
           <Label>Item Quantity{remaining > 0 ? ` (max ${remaining.toLocaleString()})` : ""}</Label>
           {contract.allowPartial ? (
-            <Input
-              type="number"
-              min="1"
-              max={remaining || undefined}
-              placeholder="1"
-              value={fillItemQty}
-              onChange={(e) => setFillItemQty(e.target.value)}
-              autoFocus
-            />
+            <>
+              <Input
+                type="number"
+                min="1"
+                step="1"
+                max={remaining || undefined}
+                placeholder="1"
+                value={fillItemQty}
+                onChange={(e) => setFillItemQty(e.target.value)}
+                autoFocus
+              />
+              {remaining > 0 && (
+                <Hint>
+                  <a href="#" onClick={(e) => { e.preventDefault(); setFillItemQty(String(remaining)); }} style={{ color: "inherit", textDecoration: "underline" }}>
+                    Fill remaining ({remaining.toLocaleString()} items)
+                  </a>
+                </Hint>
+              )}
+            </>
           ) : (
             <ReadOnlyField>{remaining.toLocaleString()} items</ReadOnlyField>
           )}
