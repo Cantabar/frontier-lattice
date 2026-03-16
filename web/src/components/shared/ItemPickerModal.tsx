@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import styled from "styled-components";
 import { useItems, type ItemEntry } from "../../hooks/useItems";
+import { PortalTooltip } from "./PortalTooltip";
 
 // ── Tier color map (matches theme.colors.tier) ─────────────────
 
@@ -12,6 +13,25 @@ const TIER_COLOR: Record<string, string> = {
   Experimental: "#ab47bc",
   Exotic: "#ffd740",
 };
+
+const TIER_ORDER: Record<string, number> = {
+  Basic: 0,
+  Standard: 1,
+  Enhanced: 2,
+  Prototype: 3,
+  Experimental: 4,
+  Exotic: 5,
+};
+
+const TIERS = Object.keys(TIER_ORDER);
+
+type SortKey = "name" | "tier" | "typeId";
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "name", label: "Name" },
+  { key: "tier", label: "Tier" },
+  { key: "typeId", label: "Type ID" },
+];
 
 // ── Styled components ──────────────────────────────────────────
 
@@ -214,6 +234,72 @@ const Empty = styled.p`
   padding: ${({ theme }) => theme.spacing.lg} 0;
 `;
 
+// ── Sort bar styled components ─────────────────────────────────
+
+const SortBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+`;
+
+const SortLabel = styled.span`
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: ${({ theme }) => theme.colors.text.muted};
+  padding-right: 2px;
+  white-space: nowrap;
+  user-select: none;
+`;
+
+const SortButton = styled.button<{ $active: boolean }>`
+  padding: 3px 8px;
+  border: 1px solid
+    ${({ $active, theme }) =>
+      $active ? theme.colors.secondary.accent : theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  background: ${({ $active, theme }) =>
+    $active ? theme.colors.secondary.accentMuted : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.text.primary : theme.colors.text.muted};
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.secondary.accent};
+  }
+`;
+
+const TierChip = styled(Chip)<{ $tierColor?: string }>`
+  ${({ $active, $tierColor }) =>
+    $active && $tierColor
+      ? `border-color: ${$tierColor}; color: ${$tierColor}; background: ${$tierColor}18;`
+      : ""}
+  ${({ $active, $tierColor }) =>
+    !$active && $tierColor ? `color: ${$tierColor};` : ""}
+`;
+
+const CountBadge = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.text.muted};
+  white-space: nowrap;
+`;
+
+const InfoRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: ${({ theme }) => theme.spacing.sm};
+`;
+
+const TooltipText = styled.span`
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.text.primary};
+`;
+
 // ── Tag filter definitions ─────────────────────────────────────
 
 const SLOT_TAGS = [
@@ -228,6 +314,41 @@ const SIZE_TAGS = [
   { tag: "medium_size", label: "M" },
   { tag: "large_size", label: "L" },
 ] as const;
+
+// ── Truncation-aware item card ─────────────────────────────────
+
+function ItemCardWithTooltip({ item, onSelect }: { item: ItemEntry; onSelect: (item: ItemEntry) => void }) {
+  const nameRef = useRef<HTMLSpanElement>(null);
+  const cardRef = useRef<HTMLButtonElement>(null);
+  const [hovered, setHovered] = useState(false);
+
+  const isTruncated = useCallback(() => {
+    const el = nameRef.current;
+    if (!el) return false;
+    return el.scrollHeight > el.clientHeight;
+  }, []);
+
+  const tierColor = item.metaGroupName ? TIER_COLOR[item.metaGroupName] : undefined;
+
+  return (
+    <>
+      <Card
+        ref={cardRef}
+        $tierColor={tierColor}
+        onClick={() => onSelect(item)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <Icon src={`/${item.icon}`} alt={item.name} loading="lazy" />
+        <ItemName ref={nameRef}>{item.name}</ItemName>
+        {item.groupName && <GroupName>{item.groupName}</GroupName>}
+      </Card>
+      <PortalTooltip targetRef={cardRef} visible={hovered && isTruncated()}>
+        <TooltipText>{item.name}</TooltipText>
+      </PortalTooltip>
+    </>
+  );
+}
 
 // ── Component ──────────────────────────────────────────────────
 
@@ -244,6 +365,9 @@ export function ItemPickerModal({ onSelect, onClose }: Props) {
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [activeSlots, setActiveSlots] = useState<Set<string>>(new Set());
   const [activeSizes, setActiveSizes] = useState<Set<string>>(new Set());
+  const [activeTier, setActiveTier] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   // Derive unique categories from items
   const categories = useMemo(
@@ -289,8 +413,35 @@ export function ItemPickerModal({ onSelect, onClose }: Props) {
       list = list.filter((i) => i.tags.some((t) => activeSizes.has(t)));
     }
 
+    if (activeTier) {
+      list = list.filter((i) => i.metaGroupName === activeTier);
+    }
+
     return list;
-  }, [items, activeCategory, activeGroup, query, activeSlots, activeSizes]);
+  }, [items, activeCategory, activeGroup, query, activeSlots, activeSizes, activeTier]);
+
+  // Apply sorting
+  const sorted = useMemo(() => {
+    if (!sortKey) return filtered;
+
+    const dir = sortDir === "asc" ? 1 : -1;
+
+    return [...filtered].sort((a, b) => {
+      switch (sortKey) {
+        case "name":
+          return a.name.localeCompare(b.name) * dir;
+        case "tier": {
+          const ra = a.metaGroupName != null ? (TIER_ORDER[a.metaGroupName] ?? 999) : 999;
+          const rb = b.metaGroupName != null ? (TIER_ORDER[b.metaGroupName] ?? 999) : 999;
+          return (ra - rb) * dir;
+        }
+        case "typeId":
+          return (a.typeId - b.typeId) * dir;
+        default:
+          return 0;
+      }
+    });
+  }, [filtered, sortKey, sortDir]);
 
   function handleSelect(item: ItemEntry) {
     onSelect(item.typeId);
@@ -304,6 +455,15 @@ export function ItemPickerModal({ onSelect, onClose }: Props) {
       else next.add(tag);
       return next;
     });
+  }
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
   }
 
   return (
@@ -368,21 +528,57 @@ export function ItemPickerModal({ onSelect, onClose }: Props) {
               </Chip>
             ))}
           </ChipFamily>
+
+          {/* Tier filter */}
+          <ChipFamily>
+            <ChipLabel>Tier:</ChipLabel>
+            <TierChip $active={activeTier === null} onClick={() => setActiveTier(null)}>
+              All
+            </TierChip>
+            {TIERS.map((t) => (
+              <TierChip
+                key={t}
+                $active={activeTier === t}
+                $tierColor={TIER_COLOR[t]}
+                onClick={() => setActiveTier(activeTier === t ? null : t)}
+              >
+                {t}
+              </TierChip>
+            ))}
+          </ChipFamily>
         </FiltersRow>
+
+        {/* Sort bar + result count */}
+        <InfoRow>
+          <SortBar>
+            <SortLabel>Sort</SortLabel>
+            {SORT_OPTIONS.map(({ key, label }) => (
+              <SortButton
+                key={key}
+                $active={sortKey === key}
+                onClick={() => handleSort(key)}
+              >
+                {label}
+                {sortKey === key && (sortDir === "asc" ? " ▲" : " ▼")}
+              </SortButton>
+            ))}
+            {sortKey && (
+              <SortButton
+                $active={false}
+                onClick={() => { setSortKey(null); setSortDir("asc"); }}
+              >
+                ✕
+              </SortButton>
+            )}
+          </SortBar>
+          <CountBadge>{sorted.length} items</CountBadge>
+        </InfoRow>
 
         {/* Item grid */}
         <Grid>
-          {filtered.length === 0 && <Empty>No items found</Empty>}
-          {filtered.map((item) => (
-            <Card
-              key={item.typeId}
-              $tierColor={item.metaGroupName ? TIER_COLOR[item.metaGroupName] : undefined}
-              onClick={() => handleSelect(item)}
-            >
-              <Icon src={`/${item.icon}`} alt={item.name} loading="lazy" />
-              <ItemName>{item.name}</ItemName>
-              {item.groupName && <GroupName>{item.groupName}</GroupName>}
-            </Card>
+          {sorted.length === 0 && <Empty>No items found</Empty>}
+          {sorted.map((item) => (
+            <ItemCardWithTooltip key={item.typeId} item={item} onSelect={handleSelect} />
           ))}
         </Grid>
       </Panel>
