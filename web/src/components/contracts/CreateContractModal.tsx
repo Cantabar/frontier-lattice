@@ -319,6 +319,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
   const [allowedTribes, setAllowedTribes] = useState<number[]>([]);
 
   // UI state
+  const isValidCoinAmount = (v: string) => v !== "" && !isNaN(Number(v)) && Number(v) >= 0;
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false);
@@ -505,15 +506,15 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
     if (!characterId) return false;
     switch (variant) {
       case "CoinForCoin":
-        return Number(escrow) > 0 && Number(wantedAmount) > 0;
+        return isValidCoinAmount(escrow) && isValidCoinAmount(wantedAmount);
       case "CoinForItem":
-        return Number(escrow) > 0 && Number(wantedQuantity) > 0 && !!destinationSsuId;
+        return isValidCoinAmount(escrow) && Number(wantedQuantity) > 0 && !!destinationSsuId;
       case "ItemForCoin":
-        return !!sourceSsuId && !!itemId && Number(offeredQuantity) > 0 && Number(itemWantedAmount) > 0;
+        return !!sourceSsuId && !!itemId && Number(offeredQuantity) > 0 && isValidCoinAmount(itemWantedAmount);
       case "ItemForItem":
         return !!sourceSsuId && !!itemId && Number(offeredQuantity) > 0 && Number(i4iWantedQuantity) > 0 && !!i4iDestinationSsuId;
       case "Transport":
-        return Number(escrow) > 0 && Number(transportItemQuantity) > 0 && !!transportSourceSsuId && !!destinationSsuId && Number(requiredStake) > 0;
+        return isValidCoinAmount(escrow) && Number(transportItemQuantity) > 0 && !!transportSourceSsuId && !!destinationSsuId && Number(requiredStake) > 0;
     }
   })();
 
@@ -534,6 +535,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
         <div>
           <Label>Escrow Amount (SUI)</Label>
           <Input type="number" placeholder="0.0" value={escrow} onChange={(e) => setEscrow(e.target.value)} />
+          {submitted && !isValidCoinAmount(escrow) && <FieldError>Enter a valid amount</FieldError>}
         </div>
       )}
 
@@ -541,6 +543,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
         <div>
           <Label>Wanted Amount (SUI)</Label>
           <Input type="number" placeholder="0.0" value={wantedAmount} onChange={(e) => setWantedAmount(e.target.value)} />
+          {submitted && !isValidCoinAmount(wantedAmount) && <FieldError>Enter a valid amount</FieldError>}
         </div>
       )}
 
@@ -598,7 +601,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
           </Row>
           <Label>Wanted Amount (SUI)</Label>
           <Input type="number" placeholder="0.0" value={itemWantedAmount} onChange={(e) => setItemWantedAmount(e.target.value)} />
-          {submitted && !(Number(itemWantedAmount) > 0) && <FieldError>Must be greater than 0</FieldError>}
+          {submitted && !isValidCoinAmount(itemWantedAmount) && <FieldError>Enter a valid amount</FieldError>}
         </>
       )}
 
@@ -695,6 +698,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
           {submitted && !destinationSsuId && <FieldError>Required</FieldError>}
           <Label>Required Stake (SUI)</Label>
           <Input type="number" placeholder="0.0" value={requiredStake} onChange={(e) => setRequiredStake(e.target.value)} />
+          {submitted && !(Number(requiredStake) > 0) && <FieldError>Must be greater than 0</FieldError>}
         </>
       )}
 
