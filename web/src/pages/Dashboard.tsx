@@ -6,6 +6,7 @@ import { useIdentity } from "../hooks/useIdentity";
 import { useTribe } from "../hooks/useTribe";
 import { getStats, getEvents } from "../lib/indexer";
 import { timeAgo, formatAmount } from "../lib/format";
+import { useCoinDecimals } from "../hooks/useCoinDecimals";
 import { CopyableId } from "../components/shared/CopyableId";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { useNotifications } from "../hooks/useNotifications";
@@ -139,6 +140,7 @@ export function Dashboard() {
   const { unreadCount } = useNotifications();
   const tribeId = tribeCaps[0]?.tribeId;
   const { tribe } = useTribe(tribeId);
+  const { decimals: treasuryDecimals, symbol: treasurySymbol } = useCoinDecimals(tribe?.coinType ?? "");
 
   const { data: stats } = useQuery({
     queryKey: ["stats"],
@@ -201,7 +203,7 @@ export function Dashboard() {
         </OverviewCard>
         <OverviewCard>
           <CardLabel>Treasury</CardLabel>
-          <CardValue>{tribe ? formatAmount(tribe.treasuryBalance) : "—"}</CardValue>
+          <CardValue>{tribe ? `${formatAmount(tribe.treasuryBalance, treasuryDecimals)} ${treasurySymbol}` : "—"}</CardValue>
         </OverviewCard>
         <OverviewCard>
           <CardLabel>Total Events</CardLabel>

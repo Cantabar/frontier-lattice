@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import styled from "styled-components";
 import type { TrustlessContractData } from "../../lib/types";
 import { formatAmount, formatDeadline, contractTypeLabel } from "../../lib/format";
+import { useEscrowCoinDecimals, useFillCoinDecimals } from "../../hooks/useCoinDecimals";
 import { StatusBadge } from "../shared/StatusBadge";
 import { CharacterDisplay } from "../shared/CharacterDisplay";
 import { ItemBadge } from "../shared/ItemBadge";
@@ -83,22 +84,26 @@ const ProgressFill = styled.div<{ $pct: number }>`
 
 // ---------------------------------------------------------------------------
 
-function contractSummary(c: TrustlessContractData): ReactNode {
+function contractSummary(
+  c: TrustlessContractData,
+  ce: { decimals: number; symbol: string },
+  cf: { decimals: number; symbol: string },
+): ReactNode {
   const ct = c.contractType;
   switch (ct.variant) {
     case "CoinForCoin":
-      return <>Offering {formatAmount(ct.offeredAmount)} SUI for {formatAmount(ct.wantedAmount)} SUI</>;
+      return <>Offering {formatAmount(ct.offeredAmount, ce.decimals)} {ce.symbol} for {formatAmount(ct.wantedAmount, cf.decimals)} {cf.symbol}</>;
     case "CoinForItem":
-      return <>Offering {formatAmount(ct.offeredAmount)} SUI for <ItemBadge typeId={ct.wantedTypeId} showQuantity={ct.wantedQuantity} /></>;
+      return <>Offering {formatAmount(ct.offeredAmount, ce.decimals)} {ce.symbol} for <ItemBadge typeId={ct.wantedTypeId} showQuantity={ct.wantedQuantity} /></>;
     case "ItemForCoin": {
       const released = c.itemsReleased ?? 0;
       const remaining = ct.offeredQuantity - released;
-      return <><ItemBadge typeId={ct.offeredTypeId} showQuantity={remaining > 0 && released > 0 ? remaining : ct.offeredQuantity} />{released > 0 ? " remaining" : ""} for {formatAmount(ct.wantedAmount)} SUI</>;
+      return <><ItemBadge typeId={ct.offeredTypeId} showQuantity={remaining > 0 && released > 0 ? remaining : ct.offeredQuantity} />{released > 0 ? " remaining" : ""} for {formatAmount(ct.wantedAmount, cf.decimals)} {cf.symbol}</>;
     }
     case "ItemForItem":
       return <><ItemBadge typeId={ct.offeredTypeId} showQuantity={ct.offeredQuantity} /> for <ItemBadge typeId={ct.wantedTypeId} showQuantity={ct.wantedQuantity} /></>;
     case "Transport":
-      return <>Deliver <ItemBadge typeId={ct.itemTypeId} showQuantity={ct.itemQuantity} /> for {formatAmount(ct.paymentAmount)} SUI</>;
+      return <>Deliver <ItemBadge typeId={ct.itemTypeId} showQuantity={ct.itemQuantity} /> for {formatAmount(ct.paymentAmount, ce.decimals)} {ce.symbol}</>;
   }
 }
 
@@ -113,6 +118,8 @@ interface Props {
 }
 
 export function ContractCard({ contract, onClick }: Props) {
+  const ce = useEscrowCoinDecimals();
+  const cf = useFillCoinDecimals();
   const filled = Number(contract.filledQuantity);
   const target = Number(contract.targetQuantity);
   const pct = target > 0 ? Math.min(100, (filled / target) * 100) : 0;
@@ -127,10 +134,10 @@ export function ContractCard({ contract, onClick }: Props) {
         </div>
         <StatusBadge status={statusVariant(contract.status)} />
       </TopRow>
-      <Summary>{contractSummary(contract)}</Summary>
+      <Summary>{contractSummary(contract, ce, cf)}</Summary>
       <Meta>
         {contract.escrowAmount !== "0" && (
-          <Amount>{formatAmount(contract.escrowAmount)} SUI reward</Amount>
+          <Amount>{formatAmount(contract.escrowAmount, ce.decimals)} {ce.symbol} reward</Amount>
         )}
         <span>Poster: <CharacterDisplay characterId={contract.posterId} showPortrait={false} /></span>
         <span>{formatDeadline(contract.deadlineMs)}</span>

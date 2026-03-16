@@ -21,6 +21,7 @@ import {
   buildCleanupCompletedItemContract,
 } from "../../lib/sui";
 import { FillContractModal } from "./FillContractModal";
+import { useEscrowCoinDecimals, useFillCoinDecimals } from "../../hooks/useCoinDecimals";
 import { PrimaryButton, SecondaryButton as SharedSecondary, DangerButton as SharedDanger } from "../shared/Button";
 
 const Wrapper = styled.div`
@@ -138,6 +139,8 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
   const queryClient = useQueryClient();
   const { push } = useNotifications();
+  const { decimals: ceDecimals, symbol: ceSymbol } = useEscrowCoinDecimals();
+  const { decimals: cfDecimals, symbol: cfSymbol } = useFillCoinDecimals();
   const [showFill, setShowFill] = useState(false);
 
   // Fetch live object state for up-to-date balances/fill qty
@@ -288,7 +291,7 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
         <DetailGrid>
           <div>
             <Label>Reward</Label>
-            <Value>{formatAmount(c.escrowAmount)} SUI</Value>
+            <Value>{formatAmount(c.escrowAmount, ceDecimals)} {ceSymbol}</Value>
             <span style={{ fontSize: 11, color: "inherit", opacity: 0.6 }}>Held in escrow</span>
           </div>
           <div>
@@ -307,16 +310,16 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
             <>
               <div>
                 <Label>Offered Amount</Label>
-                <Value>{formatAmount(c.contractType.offeredAmount)} SUI</Value>
+                <Value>{formatAmount(c.contractType.offeredAmount, ceDecimals)} {ceSymbol}</Value>
               </div>
               <div>
                 <Label>Wanted Amount</Label>
-                <Value>{formatAmount(c.contractType.wantedAmount)} SUI</Value>
+                <Value>{formatAmount(c.contractType.wantedAmount, cfDecimals)} {cfSymbol}</Value>
               </div>
               {c.allowPartial && (
                 <div>
                   <Label>Filled</Label>
-                  <Value>{formatAmount(c.filledQuantity)} / {formatAmount(c.contractType.wantedAmount)} SUI</Value>
+                  <Value>{formatAmount(c.filledQuantity, cfDecimals)} / {formatAmount(c.contractType.wantedAmount, cfDecimals)} {cfSymbol}</Value>
                 </div>
               )}
             </>
@@ -329,7 +332,7 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
               </div>
               <div>
                 <Label>Required Stake</Label>
-                <Value>{formatAmount(c.stakeAmount)} SUI</Value>
+                <Value>{formatAmount(c.stakeAmount, ceDecimals)} {ceSymbol}</Value>
               </div>
             </>
           )}
@@ -371,13 +374,13 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
               </div>
               <div>
                 <Label>Total Price</Label>
-                <Value>{formatAmount(c.contractType.wantedAmount)} SUI</Value>
+                <Value>{formatAmount(c.contractType.wantedAmount, cfDecimals)} {cfSymbol}</Value>
               </div>
               <div>
                 <Label>Price per Item</Label>
                 <Value>
                   {c.contractType.offeredQuantity > 0
-                    ? `${formatAmount(String(Math.round(Number(c.contractType.wantedAmount) / c.contractType.offeredQuantity)))} SUI`
+                    ? `${formatAmount(String(Math.round(Number(c.contractType.wantedAmount) / c.contractType.offeredQuantity)), cfDecimals)} ${cfSymbol}`
                     : "—"}
                 </Value>
               </div>

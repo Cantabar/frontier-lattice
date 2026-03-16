@@ -8,6 +8,7 @@ import { FillSlotModal } from "./FillSlotModal";
 import { useMultiInputContractObject, useMultiInputSlotFills } from "../../hooks/useMultiInputContracts";
 import { buildCancelMultiInputContract, buildExpireMultiInputContract } from "../../lib/sui";
 import { formatAmount, formatDeadline } from "../../lib/format";
+import { useEscrowCoinDecimals } from "../../hooks/useCoinDecimals";
 import { CopyableId } from "../shared/CopyableId";
 import type { MultiInputContractData } from "../../lib/types";
 
@@ -113,6 +114,7 @@ interface Props {
 }
 
 export function MultiInputContractDetail({ contract, characterId, onClose }: Props) {
+  const { decimals, symbol: coinSymbol } = useEscrowCoinDecimals();
   const { contract: liveContract } = useMultiInputContractObject(contract.id);
   const { fills } = useMultiInputSlotFills(contract.id);
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
@@ -162,8 +164,8 @@ export function MultiInputContractDetail({ contract, characterId, onClose }: Pro
         <MetaRow>
           <BountyAmount>
             {liveBountyBalance
-              ? `${formatAmount(liveBountyBalance)} SUI remaining`
-              : `${formatAmount(contract.bountyAmount)} SUI bounty`}
+              ? `${formatAmount(liveBountyBalance, decimals)} ${coinSymbol} remaining`
+              : `${formatAmount(contract.bountyAmount, decimals)} ${coinSymbol} bounty`}
           </BountyAmount>
           <span>{formatDeadline(contract.deadlineMs)}</span>
           <span>ID: <CopyableId id={contract.id} /></span>

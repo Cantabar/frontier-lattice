@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import type { MultiInputContractData } from "../../lib/types";
 import { formatAmount, formatDeadline } from "../../lib/format";
+import { useEscrowCoinDecimals } from "../../hooks/useCoinDecimals";
 import { CopyableId } from "../shared/CopyableId";
 import { CharacterDisplay } from "../shared/CharacterDisplay";
 
@@ -96,6 +97,7 @@ interface Props {
 }
 
 export function MultiInputContractCard({ contract, liveFilledTotal, onClick }: Props) {
+  const { decimals, symbol: coinSymbol } = useEscrowCoinDecimals();
   const total = contract.totalRequired;
   const filled = liveFilledTotal ?? contract.totalFilled;
   const pct = total > 0 ? Math.min(100, (filled / total) * 100) : 0;
@@ -117,7 +119,7 @@ export function MultiInputContractCard({ contract, liveFilledTotal, onClick }: P
       </Description>
 
       <Meta>
-        <BountyAmount>{formatAmount(contract.bountyAmount)} SUI bounty</BountyAmount>
+        <BountyAmount>{formatAmount(contract.bountyAmount, decimals)} {coinSymbol} bounty</BountyAmount>
         <span>Poster: <CharacterDisplay characterId={contract.posterId} showPortrait={false} /></span>
         <span>{formatDeadline(contract.deadlineMs)}</span>
         {total > 0 && <span>{filled.toLocaleString()} / {total.toLocaleString()} units</span>}

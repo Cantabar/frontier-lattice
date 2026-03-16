@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import styled from "styled-components";
 import type { TrustlessContractData } from "../../lib/types";
 import { formatAmount, formatDeadline, contractTypeLabel } from "../../lib/format";
+import { useEscrowCoinDecimals, useFillCoinDecimals } from "../../hooks/useCoinDecimals";
 import { StatusBadge } from "../shared/StatusBadge";
 import { ItemBadge } from "../shared/ItemBadge";
 import { PrimaryButton, SecondaryButton } from "../shared/Button";
@@ -99,11 +100,15 @@ const ViewButton = styled(SecondaryButton)`
 // Helpers
 // ---------------------------------------------------------------------------
 
-function wantedSummary(c: TrustlessContractData): ReactNode {
+function wantedSummary(
+  c: TrustlessContractData,
+  ce: { decimals: number; symbol: string },
+  cf: { decimals: number; symbol: string },
+): ReactNode {
   const ct = c.contractType;
   switch (ct.variant) {
     case "CoinForCoin":
-      return <>Wants {formatAmount(ct.wantedAmount)} SUI</>;
+      return <>Wants {formatAmount(ct.wantedAmount, cf.decimals)} {cf.symbol}</>;
     case "CoinForItem":
       return (
         <>
@@ -116,7 +121,7 @@ function wantedSummary(c: TrustlessContractData): ReactNode {
       return (
         <>
           Offers <ItemBadge typeId={ct.offeredTypeId} showQuantity={remaining > 0 && released > 0 ? remaining : ct.offeredQuantity} />
-          {released > 0 ? " remaining" : ""} for {formatAmount(ct.wantedAmount)} SUI
+          {released > 0 ? " remaining" : ""} for {formatAmount(ct.wantedAmount, cf.decimals)} {cf.symbol}
         </>
       );
     }
@@ -135,19 +140,23 @@ function wantedSummary(c: TrustlessContractData): ReactNode {
   }
 }
 
-function rewardLabel(c: TrustlessContractData): string {
+function rewardLabel(
+  c: TrustlessContractData,
+  ce: { decimals: number; symbol: string },
+  cf: { decimals: number; symbol: string },
+): string {
   const ct = c.contractType;
   switch (ct.variant) {
     case "CoinForItem":
-      return `${formatAmount(ct.offeredAmount)} SUI reward`;
+      return `${formatAmount(ct.offeredAmount, ce.decimals)} ${ce.symbol} reward`;
     case "ItemForItem":
       return "Item swap";
     case "Transport":
-      return `${formatAmount(ct.paymentAmount)} SUI payment`;
+      return `${formatAmount(ct.paymentAmount, ce.decimals)} ${ce.symbol} payment`;
     case "CoinForCoin":
-      return `${formatAmount(ct.offeredAmount)} SUI offered`;
+      return `${formatAmount(ct.offeredAmount, ce.decimals)} ${ce.symbol} offered`;
     case "ItemForCoin":
-      return `${formatAmount(ct.wantedAmount)} SUI wanted`;
+      return `${formatAmount(ct.wantedAmount, cf.decimals)} ${cf.symbol} wanted`;
     default:
       return "";
   }
@@ -169,6 +178,8 @@ interface Props {
 }
 
 export function DappContractCard({ contract, canFulfill, onDeliver, onView }: Props) {
+  const ce = useEscrowCoinDecimals();
+  const cf = useFillCoinDecimals();
   const filled = Number(contract.filledQuantity);
   const target = Number(contract.targetQuantity);
   const pct = target > 0 ? Math.min(100, (filled / target) * 100) : 0;
@@ -180,12 +191,12 @@ export function DappContractCard({ contract, canFulfill, onDeliver, onView }: Pr
         <StatusBadge status={statusVariant(contract.status)} />
       </TopRow>
 
-      <Summary>{wantedSummary(contract)}</Summary>
+      <Summary>{wantedSummary(contract, ce, cf)}</Summary>
 
       <Meta>
-        <Reward>{rewardLabel(contract)}</Reward>
+        <Reward>{rewardLabel(contract, ce, cf)}</Reward>
         {contract.escrowAmount !== "0" && (
-          <span>{formatAmount(contract.escrowAmount)} SUI reward</span>
+          <span>{formatAmount(contract.escrowAmount, ce.decimals)} {ce.symbol} reward</span>
         )}
         <span>{formatDeadline(contract.deadlineMs)}</span>
         {contract.allowPartial && <span>Partial OK</span>}
