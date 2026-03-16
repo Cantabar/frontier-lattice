@@ -13,6 +13,7 @@ import { TribePage } from "./pages/TribePage";
 import { ForgePlanner } from "./pages/ForgePlanner";
 import { EventExplorer } from "./pages/EventExplorer";
 import { TrustlessContracts } from "./pages/TrustlessContracts";
+import { CreateContractPage } from "./pages/CreateContractPage";
 import { TribeListPage } from "./pages/TribeListPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { MyStructuresPage } from "./pages/MyStructuresPage";
@@ -81,6 +82,7 @@ export default function App() {
               <Route path="/tribes" element={<TribeListPage />} />
               <Route path="/tribe/:tribeId" element={<TribePage />} />
               <Route path="/contracts" element={<TrustlessContracts />} />
+              <Route path="/contracts/create" element={<CreateContractPage />} />
               <Route path="/forge" element={<ForgePlanner />} />
               <Route path="/events" element={<EventExplorer />} />
               <Route path="/structures" element={<MyStructuresPage />} />

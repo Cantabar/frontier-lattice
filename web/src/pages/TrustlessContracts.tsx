@@ -1,10 +1,10 @@
 import { useState } from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 import { useIdentity } from "../hooks/useIdentity";
 import { useActiveContracts } from "../hooks/useContracts";
 import { ContractCard } from "../components/contracts/ContractCard";
 import { ContractDetail } from "../components/contracts/ContractDetail";
-import { CreateContractModal } from "../components/contracts/CreateContractModal";
 import { ContractHistory } from "../components/contracts/ContractHistory";
 import { canViewContract } from "../lib/contractVisibility";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
@@ -86,13 +86,13 @@ const SectionLabel = styled.h2`
 type StatusTab = "all" | "Open" | "InProgress" | "Completed";
 
 export function TrustlessContracts() {
+  const navigate = useNavigate();
   const { characterId, inGameTribeId } = useIdentity();
   const { contracts, isLoading, refetch } = useActiveContracts();
 
   const [statusTab, setStatusTab] = useState<StatusTab>("all");
   const [typeFilter, setTypeFilter] = useState<TrustlessContractVariant | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
 
   const filtered = contracts.filter((c) => {
     if (!canViewContract(c, { characterId, inGameTribeId })) return false;
@@ -107,7 +107,7 @@ export function TrustlessContracts() {
     <Page>
       <Header>
         <Title>Trustless Contracts</Title>
-        {characterId && <PrimaryButton onClick={() => setShowCreate(true)}>+ Create Contract</PrimaryButton>}
+        {characterId && <PrimaryButton onClick={() => navigate("/contracts/create")}>+ Create Contract</PrimaryButton>}
       </Header>
 
       {selectedId && contracts.find((c) => c.id === selectedId) ? (
@@ -153,13 +153,6 @@ export function TrustlessContracts() {
 
       <SectionLabel>Contract History</SectionLabel>
       <ContractHistory />
-
-      {showCreate && (
-        <CreateContractModal
-          onClose={() => setShowCreate(false)}
-          onCreated={() => refetch()}
-        />
-      )}
     </Page>
   );
 }
