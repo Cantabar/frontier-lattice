@@ -86,21 +86,29 @@ write_env_var SPONSOR_ADDRESSES    "$ADMIN_ADDRESS"
 # Also regenerate if either existing player key collides with the (possibly new) admin key.
 EXISTING_PA=$(grep '^PLAYER_A_PRIVATE_KEY=' "$WORLD_ENV" 2>/dev/null | cut -d= -f2)
 EXISTING_PB=$(grep '^PLAYER_B_PRIVATE_KEY=' "$WORLD_ENV" 2>/dev/null | cut -d= -f2)
+EXISTING_PC=$(grep '^PLAYER_C_PRIVATE_KEY=' "$WORLD_ENV" 2>/dev/null | cut -d= -f2)
 if ! grep -q '^PLAYER_A_PRIVATE_KEY=suiprivkey' "$WORLD_ENV" 2>/dev/null \
+   || ! grep -q '^PLAYER_C_PRIVATE_KEY=suiprivkey' "$WORLD_ENV" 2>/dev/null \
    || [ "$EXISTING_PA" = "$ADMIN_PRIVATE_KEY" ] \
-   || [ "$EXISTING_PB" = "$ADMIN_PRIVATE_KEY" ]; then
+   || [ "$EXISTING_PB" = "$ADMIN_PRIVATE_KEY" ] \
+   || [ "$EXISTING_PC" = "$ADMIN_PRIVATE_KEY" ]; then
   echo "Generating player keypairs for localnet..."
   PLAYER_A_ADDR=$(sui client new-address ed25519 --json 2>/dev/null | jq -r '.address')
   PLAYER_B_ADDR=$(sui client new-address ed25519 --json 2>/dev/null | jq -r '.address')
+  PLAYER_C_ADDR=$(sui client new-address ed25519 --json 2>/dev/null | jq -r '.address')
   PLAYER_A_KEY=$(sui keytool export --key-identity "$PLAYER_A_ADDR" --json 2>/dev/null | jq -r '.exportedPrivateKey')
   PLAYER_B_KEY=$(sui keytool export --key-identity "$PLAYER_B_ADDR" --json 2>/dev/null | jq -r '.exportedPrivateKey')
+  PLAYER_C_KEY=$(sui keytool export --key-identity "$PLAYER_C_ADDR" --json 2>/dev/null | jq -r '.exportedPrivateKey')
   # Validate player keys differ from admin key
-  if [ "$PLAYER_A_KEY" = "$ADMIN_PRIVATE_KEY" ] || [ "$PLAYER_B_KEY" = "$ADMIN_PRIVATE_KEY" ]; then
+  if [ "$PLAYER_A_KEY" = "$ADMIN_PRIVATE_KEY" ] \
+     || [ "$PLAYER_B_KEY" = "$ADMIN_PRIVATE_KEY" ] \
+     || [ "$PLAYER_C_KEY" = "$ADMIN_PRIVATE_KEY" ]; then
     echo "ERROR: Generated player key is identical to admin key. Aborting." >&2
     exit 1
   fi
   write_env_var PLAYER_A_PRIVATE_KEY "$PLAYER_A_KEY"
   write_env_var PLAYER_B_PRIVATE_KEY "$PLAYER_B_KEY"
+  write_env_var PLAYER_C_PRIVATE_KEY "$PLAYER_C_KEY"
   sui client switch --address "$ADMIN_ADDRESS" 2>/dev/null
 fi
 
@@ -108,10 +116,12 @@ fi
 # Derive addresses from private keys via keytool import (idempotent)
 PLAYER_A_KEY=$(grep '^PLAYER_A_PRIVATE_KEY=' "$WORLD_ENV" | cut -d= -f2)
 PLAYER_B_KEY=$(grep '^PLAYER_B_PRIVATE_KEY=' "$WORLD_ENV" | cut -d= -f2)
+PLAYER_C_KEY=$(grep '^PLAYER_C_PRIVATE_KEY=' "$WORLD_ENV" | cut -d= -f2)
 PLAYER_A_ADDR=$(sui keytool import "$PLAYER_A_KEY" ed25519 --json 2>/dev/null | jq -r '.suiAddress')
 PLAYER_B_ADDR=$(sui keytool import "$PLAYER_B_KEY" ed25519 --json 2>/dev/null | jq -r '.suiAddress')
-echo "Funding player accounts ($PLAYER_A_ADDR, $PLAYER_B_ADDR)..."
-for ADDR in "$PLAYER_A_ADDR" "$PLAYER_B_ADDR"; do
+PLAYER_C_ADDR=$(sui keytool import "$PLAYER_C_KEY" ed25519 --json 2>/dev/null | jq -r '.suiAddress')
+echo "Funding player accounts ($PLAYER_A_ADDR, $PLAYER_B_ADDR, $PLAYER_C_ADDR)..."
+for ADDR in "$PLAYER_A_ADDR" "$PLAYER_B_ADDR" "$PLAYER_C_ADDR"; do
   sui client switch --address "$ADDR" 2>/dev/null
   sui client faucet 2>&1 || true
   sleep 2
@@ -136,6 +146,10 @@ bash "$WORLD_DIR/scripts/seed-world.sh" localnet
 # ── Create NWN + empty SSU for Player B (frontier-corm specific) ─────
 echo "=== Seeding Player B NWN + SSU ==="
 (cd "$WORLD_DIR" && NODE_PATH="$WORLD_DIR/node_modules" npx tsx "$PROJECT_ROOT/scripts/seed-player-b-ssu.ts")
+
+# ── Create NWN + empty SSU for Player C (frontier-corm specific) ─────
+echo "=== Seeding Player C NWN + SSU ==="
+(cd "$WORLD_DIR" && NODE_PATH="$WORLD_DIR/node_modules" npx tsx "$PROJECT_ROOT/scripts/seed-player-c-ssu.ts")
 
 # ── Seed all items into SSU (frontier-corm specific) ────────────────
 echo "Requesting additional gas for item seeding..."
