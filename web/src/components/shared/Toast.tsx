@@ -56,6 +56,7 @@ const ToastItem = styled.div<{ $level: string; $exiting: boolean }>`
   pointer-events: auto;
   min-width: 320px;
   max-width: 420px;
+  overflow: hidden;
   background: ${({ theme }) => theme.colors.surface.overlay};
   border: 1px solid ${({ $level, theme }) => levelColor($level, theme)};
   border-left: 4px solid ${({ $level, theme }) => levelColor($level, theme)};
@@ -79,6 +80,10 @@ const ToastTitle = styled.span<{ $level: string }>`
   font-size: 13px;
   font-weight: 600;
   color: ${({ $level, theme }) => levelColor($level, theme)};
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const CloseBtn = styled.button`
@@ -99,6 +104,8 @@ const ToastMessage = styled.div`
   font-size: 12px;
   color: ${({ theme }) => theme.colors.text.secondary};
   line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 `;
 
 // ---------------------------------------------------------------------------
