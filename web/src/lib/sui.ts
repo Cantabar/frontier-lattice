@@ -862,10 +862,13 @@ export function buildCreateItemForItem(params: {
 
 export function buildCreateTransport(params: {
   characterId: string;
-  escrowAmount: number;
-  itemTypeId: number;
-  itemQuantity: number;
   sourceSsuId: string;
+  typeId: number;
+  quantity: number;
+  ownerCapId: string;
+  ownerCapVersion: string;
+  ownerCapDigest: string;
+  escrowAmount: number;
   destinationSsuId: string;
   requiredStake: number;
   useOwnerInventory: boolean;
@@ -874,16 +877,61 @@ export function buildCreateTransport(params: {
   allowedTribes: number[];
 }): Transaction {
   const tx = new Transaction();
+  const pkg = worldPkg();
+  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
+
+  // 1. Borrow OwnerCap<StorageUnit> from Character
+  const [ownerCap, receipt] = tx.moveCall({
+    target: `${pkg}::character::borrow_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.characterId),
+      tx.object(
+        Inputs.ReceivingRef({
+          objectId: params.ownerCapId,
+          version: params.ownerCapVersion,
+          digest: params.ownerCapDigest,
+        }),
+      ),
+    ],
+  });
+
+  // 2. Withdraw item from SSU
+  const [item] = tx.moveCall({
+    target: `${pkg}::storage_unit::withdraw_by_owner`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.sourceSsuId),
+      tx.object(params.characterId),
+      ownerCap,
+      tx.pure.u64(params.typeId),
+      tx.pure.u32(params.quantity),
+    ],
+  });
+
+  // 3. Return OwnerCap to Character
+  tx.moveCall({
+    target: `${pkg}::character::return_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.characterId),
+      ownerCap,
+      receipt,
+    ],
+  });
+
+  // 4. Split escrow coins
   const [escrow] = tx.splitCoins(tx.gas, [params.escrowAmount]);
+
+  // 5. Create the transport contract (consumes transit Item, locks in open inventory)
   tx.moveCall({
     target: tcTarget("create_transport"),
     typeArguments: tcTypes(),
     arguments: [
       tx.object(params.characterId),
       escrow,
-      tx.pure.u64(params.itemTypeId),
-      tx.pure.u32(params.itemQuantity),
-      tx.pure.id(params.sourceSsuId),
+      tx.object(params.sourceSsuId),
+      item,
       tx.pure.id(params.destinationSsuId),
       tx.pure.u64(params.requiredStake),
       tx.pure.bool(params.useOwnerInventory),
@@ -1145,6 +1193,7 @@ export function buildAcceptTransport(params: {
   contractId: string;
   stakeAmount: number;
   characterId: string;
+  sourceSsuId: string;
 }): Transaction {
   const tx = new Transaction();
   const [stake] = tx.splitCoins(tx.gas, [params.stakeAmount]);
@@ -1155,6 +1204,7 @@ export function buildAcceptTransport(params: {
       tx.object(params.contractId),
       stake,
       tx.object(params.characterId),
+      tx.object(params.sourceSsuId),
       tx.object(SUI_CLOCK),
     ],
   });
@@ -1211,6 +1261,43 @@ export function buildExpireTrustlessContract(params: {
     typeArguments: tcTypes(),
     arguments: [
       tx.object(params.contractId),
+      tx.object(SUI_CLOCK),
+    ],
+  });
+  return tx;
+}
+
+export function buildCancelItemContract(params: {
+  contractId: string;
+  posterCharacterId: string;
+  sourceSsuId: string;
+}): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: tcTarget("cancel_item_contract"),
+    typeArguments: tcTypes(),
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(params.posterCharacterId),
+      tx.object(params.sourceSsuId),
+    ],
+  });
+  return tx;
+}
+
+export function buildExpireItemContract(params: {
+  contractId: string;
+  posterCharacterId: string;
+  sourceSsuId: string;
+}): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: tcTarget("expire_item_contract"),
+    typeArguments: tcTypes(),
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(params.posterCharacterId),
+      tx.object(params.sourceSsuId),
       tx.object(SUI_CLOCK),
     ],
   });

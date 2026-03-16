@@ -16,7 +16,9 @@ import {
   buildFillItemForCoin,
   buildAcceptTransport,
   buildCancelTrustlessContract,
+  buildCancelItemContract,
   buildExpireTrustlessContract,
+  buildExpireItemContract,
   buildCleanupCompletedContract,
   buildCleanupCompletedItemContract,
 } from "../../lib/sui";
@@ -204,7 +206,18 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
   async function handleCancel() {
     if (!characterId) return;
     try {
-      const tx = buildCancelTrustlessContract({ contractId: c.id, characterId });
+      const isItemContract =
+        c.contractType.variant === "ItemForCoin" || c.contractType.variant === "ItemForItem" || c.contractType.variant === "Transport";
+      let tx;
+      if (isItemContract) {
+        const sourceSsuId =
+          c.contractType.variant === "ItemForCoin" ? c.contractType.sourceSsuId :
+          c.contractType.variant === "ItemForItem" ? c.contractType.sourceSsuId :
+          c.contractType.variant === "Transport" ? c.contractType.sourceSsuId : "";
+        tx = buildCancelItemContract({ contractId: c.id, posterCharacterId: c.posterId, sourceSsuId });
+      } else {
+        tx = buildCancelTrustlessContract({ contractId: c.id, characterId });
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await signAndExecute({ transaction: tx as any });
       await suiClient.waitForTransaction({ digest: result.digest });
@@ -218,7 +231,18 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
 
   async function handleExpire() {
     try {
-      const tx = buildExpireTrustlessContract({ contractId: c.id });
+      const isItemContract =
+        c.contractType.variant === "ItemForCoin" || c.contractType.variant === "ItemForItem" || c.contractType.variant === "Transport";
+      let tx;
+      if (isItemContract) {
+        const sourceSsuId =
+          c.contractType.variant === "ItemForCoin" ? c.contractType.sourceSsuId :
+          c.contractType.variant === "ItemForItem" ? c.contractType.sourceSsuId :
+          c.contractType.variant === "Transport" ? c.contractType.sourceSsuId : "";
+        tx = buildExpireItemContract({ contractId: c.id, posterCharacterId: c.posterId, sourceSsuId });
+      } else {
+        tx = buildExpireTrustlessContract({ contractId: c.id });
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await signAndExecute({ transaction: tx as any });
       await suiClient.waitForTransaction({ digest: result.digest });
@@ -234,11 +258,12 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
     try {
       let result;
       const isItemContract =
-        c.contractType.variant === "ItemForCoin" || c.contractType.variant === "ItemForItem";
+        c.contractType.variant === "ItemForCoin" || c.contractType.variant === "ItemForItem" || c.contractType.variant === "Transport";
       if (isItemContract) {
         const sourceSsuId =
           c.contractType.variant === "ItemForCoin" ? c.contractType.sourceSsuId :
-          c.contractType.variant === "ItemForItem" ? c.contractType.sourceSsuId : "";
+          c.contractType.variant === "ItemForItem" ? c.contractType.sourceSsuId :
+          c.contractType.variant === "Transport" ? c.contractType.sourceSsuId : "";
         const tx = buildCleanupCompletedItemContract({
           contractId: c.id,
           posterCharacterId: c.posterId,
@@ -266,6 +291,7 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
         contractId: c.id,
         stakeAmount: Number(c.contractType.requiredStake),
         characterId,
+        sourceSsuId: c.contractType.sourceSsuId,
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await signAndExecute({ transaction: tx as any });

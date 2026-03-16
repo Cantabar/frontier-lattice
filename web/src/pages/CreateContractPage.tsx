@@ -800,13 +800,17 @@ export function CreateContractPage() {
           });
           break;
         }
-        case "Transport":
+        case "Transport": {
+          const cap = await getFreshOwnerCap(transportSourceSsuId);
           tx = buildCreateTransport({
             characterId,
-            escrowAmount: toBaseUnits(escrow, ceDecimals),
-            itemTypeId: Number(transportItemTypeId),
-            itemQuantity: Number(transportItemQuantity),
             sourceSsuId: transportSourceSsuId,
+            typeId: Number(transportItemTypeId),
+            quantity: Number(transportItemQuantity),
+            ownerCapId: cap.ownerCapId,
+            ownerCapVersion: cap.ownerCapVersion,
+            ownerCapDigest: cap.ownerCapDigest,
+            escrowAmount: toBaseUnits(escrow, ceDecimals),
             destinationSsuId,
             requiredStake: toBaseUnits(requiredStake, ceDecimals),
             useOwnerInventory: structures.some((s) => s.id === destinationSsuId),
@@ -815,6 +819,7 @@ export function CreateContractPage() {
             allowedTribes: tribes,
           });
           break;
+        }
       }
 
       setCreationPhase("signing");
