@@ -19,7 +19,6 @@ import {
   buildDeliverTransport,
   type ItemAccessMode,
 } from "../../lib/sui";
-import { SsuPickerField } from "../shared/SsuPickerField";
 import { SsuItemPickerField } from "../shared/SsuItemPickerField";
 import { ItemBadge } from "../shared/ItemBadge";
 import { PrimaryButton } from "../shared/Button";
@@ -215,6 +214,15 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
       setFillAmount(requiredFillSui);
     }
   }, [contract.allowPartial, requiredFillSui]);
+
+  // For item-fill contracts, lock the source to the destination SSU.
+  // The filler's items must already be in their player inventory on that SSU.
+  useEffect(() => {
+    if (isItemFill && destinationSsuId) {
+      setSourceSsuId(destinationSsuId);
+      setSourceSsuOwned(false);
+    }
+  }, [isItemFill, destinationSsuId]);
 
   function handleItemSelected(entry: InventoryItemEntry) {
     setSelectedTypeId(String(entry.typeId));
@@ -455,18 +463,7 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
           <Label>Destination SSU</Label>
           <ReadOnlyField><CopyableId id={destinationSsuId} startLen={12} endLen={8} /></ReadOnlyField>
 
-          <Label>Your Source SSU</Label>
-          <SsuPickerField
-            value={sourceSsuId}
-            onChange={(id, owned) => {
-              setSourceSsuId(id);
-              setSourceSsuOwned(owned);
-              setSelectedTypeId("");
-              setSelectedQty(0);
-            }}
-            placeholder="Select one of your SSUs…"
-            allowManualEntry
-          />
+          <Info>Your items will be taken from your player inventory on the destination SSU.</Info>
 
           <Label>Item</Label>
           <SsuItemPickerField
