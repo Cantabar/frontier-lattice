@@ -112,6 +112,7 @@ function eventToContract(ev: { parsedJson?: unknown; id: { txDigest: string } })
     status: "Open",
     allowedCharacters: (d.allowed_characters as string[]) ?? [],
     allowedTribes: (d.allowed_tribes as number[]) ?? [],
+    useOwnerInventory: d.use_owner_inventory != null ? Boolean(d.use_owner_inventory) : undefined,
   };
 }
 
@@ -145,6 +146,7 @@ function objectToContract(objectId: string, fields: Record<string, unknown>): Tr
     allowedCharacters: (fields.allowed_characters as string[]) ?? [],
     allowedTribes: (fields.allowed_tribes as number[]) ?? [],
     itemsReleased: fields.items_released != null ? Number(fields.items_released) : undefined,
+    useOwnerInventory: fields.use_owner_inventory != null ? Boolean(fields.use_owner_inventory) : undefined,
   };
 }
 

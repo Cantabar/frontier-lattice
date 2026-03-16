@@ -188,6 +188,8 @@ export interface TrustlessContractData {
   allowedTribes: number[];
   /** Items released to fillers so far (ItemForCoin / ItemForItem only; absent for event-sourced data). */
   itemsReleased?: number;
+  /** When true, filled items are deposited to the SSU's owner inventory instead of the poster's player inventory. */
+  useOwnerInventory?: boolean;
 }
 
 // ============================================================

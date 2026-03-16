@@ -673,6 +673,7 @@ export function buildCreateCoinForItem(params: {
   wantedQuantity: number;
   destinationSsuId: string;
   allowPartial: boolean;
+  useOwnerInventory: boolean;
   deadlineMs: number;
   allowedCharacters: string[];
   allowedTribes: number[];
@@ -689,6 +690,7 @@ export function buildCreateCoinForItem(params: {
       tx.pure.u32(params.wantedQuantity),
       tx.pure.id(params.destinationSsuId),
       tx.pure.bool(params.allowPartial),
+      tx.pure.bool(params.useOwnerInventory),
       tx.pure.u64(params.deadlineMs),
       tx.pure("vector<address>", params.allowedCharacters),
       tx.pure("vector<u32>", params.allowedTribes),
@@ -787,6 +789,7 @@ export function buildCreateItemForItem(params: {
   wantedQuantity: number;
   destinationSsuId: string;
   allowPartial: boolean;
+  useOwnerInventory: boolean;
   deadlineMs: number;
   allowedCharacters: string[];
   allowedTribes: number[];
@@ -847,6 +850,7 @@ export function buildCreateItemForItem(params: {
       tx.pure.u32(params.wantedQuantity),
       tx.pure.id(params.destinationSsuId),
       tx.pure.bool(params.allowPartial),
+      tx.pure.bool(params.useOwnerInventory),
       tx.pure.u64(params.deadlineMs),
       tx.pure("vector<address>", params.allowedCharacters),
       tx.pure("vector<u32>", params.allowedTribes),
@@ -864,6 +868,7 @@ export function buildCreateTransport(params: {
   sourceSsuId: string;
   destinationSsuId: string;
   requiredStake: number;
+  useOwnerInventory: boolean;
   deadlineMs: number;
   allowedCharacters: string[];
   allowedTribes: number[];
@@ -881,6 +886,7 @@ export function buildCreateTransport(params: {
       tx.pure.id(params.sourceSsuId),
       tx.pure.id(params.destinationSsuId),
       tx.pure.u64(params.requiredStake),
+      tx.pure.bool(params.useOwnerInventory),
       tx.pure.u64(params.deadlineMs),
       tx.pure("vector<address>", params.allowedCharacters),
       tx.pure("vector<u32>", params.allowedTribes),
