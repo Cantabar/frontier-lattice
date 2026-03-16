@@ -5,6 +5,7 @@ import { EmptyState } from "../shared/EmptyState";
 import { PortalTooltip } from "../shared/PortalTooltip";
 import { ResolvedCharacterDisplay } from "../shared/CharacterDisplay";
 import { useSsuInventory } from "../../hooks/useSsuInventory";
+import { useOwnerCapCharacterIds } from "../../hooks/useOwnerCapCharacterIds";
 import { useCharacterProfiles } from "../../hooks/useCharacterProfile";
 import { useItems } from "../../hooks/useItems";
 import type { AssemblyData, CharacterProfile } from "../../lib/types";
@@ -197,7 +198,7 @@ function InventoryItemTile({ item }: { item: InventoryItemEntry }) {
   );
 }
 
-function SlotSection({ slot, profile }: { slot: InventorySlot; profile?: CharacterProfile | null }) {
+function SlotSection({ slot, profile, characterId }: { slot: InventorySlot; profile?: CharacterProfile | null; characterId?: string }) {
   const [open, setOpen] = useState(true);
   const pct = slot.maxCapacity > 0 ? (slot.usedCapacity / slot.maxCapacity) * 100 : 0;
 
@@ -216,7 +217,7 @@ function SlotSection({ slot, profile }: { slot: InventorySlot; profile?: Charact
           <SectionTitle>{label}</SectionTitle>
         ) : (
           <ResolvedCharacterDisplay
-            characterId={slot.key}
+            characterId={characterId ?? slot.key}
             profile={profile ?? null}
             size="sm"
           />
@@ -254,12 +255,20 @@ interface Props {
 export function SsuInventoryPanel({ ssu }: Props) {
   const { slots, isLoading, error } = useSsuInventory(ssu.id, ssu.ownerCapId);
 
-  // Batch-resolve character profiles for player ("other") inventory slots
+  // "other" slot keys are OwnerCap<Character> IDs, not Character IDs.
+  // Step 1: Resolve OwnerCap IDs → Character IDs
   const otherKeys = useMemo(
     () => slots.filter((s) => s.kind === "other").map((s) => s.key),
     [slots],
   );
-  const { profiles } = useCharacterProfiles(otherKeys);
+  const { capToCharacter } = useOwnerCapCharacterIds(otherKeys);
+
+  // Step 2: Resolve Character IDs → display profiles (name, portrait)
+  const characterIds = useMemo(
+    () => Array.from(capToCharacter.values()),
+    [capToCharacter],
+  );
+  const { profiles } = useCharacterProfiles(characterIds);
 
   // Overall SSU capacity totals
   const totalUsed = useMemo(() => slots.reduce((sum, s) => sum + s.usedCapacity, 0), [slots]);
@@ -288,13 +297,17 @@ export function SsuInventoryPanel({ ssu }: Props) {
           </CapacityLabel>
         </OverallCapacityRow>
         <SlotsStack>
-          {slots.map((slot) => (
-            <SlotSection
-              key={slot.key}
-              slot={slot}
-              profile={slot.kind === "other" ? profiles.get(slot.key) : undefined}
-            />
-          ))}
+          {slots.map((slot) => {
+            const charId = slot.kind === "other" ? capToCharacter.get(slot.key) : undefined;
+            return (
+              <SlotSection
+                key={slot.key}
+                slot={slot}
+                characterId={charId}
+                profile={charId ? profiles.get(charId) : undefined}
+              />
+            );
+          })}
         </SlotsStack>
         </>
       )}
