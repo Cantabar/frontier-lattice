@@ -459,6 +459,14 @@ public fun create_item_for_coin<CE, CF>(
         wanted_amount,
     };
 
+    // When wanted_amount is 0 (free distribution), track items available
+    // instead of coins to collect so partial-fill math stays valid.
+    let effective_target = if (wanted_amount == 0) {
+        (offered_quantity as u64)
+    } else {
+        wanted_amount
+    };
+
     let contract = Contract<CE, CF> {
         id: object::new(ctx),
         poster_id,
@@ -470,7 +478,7 @@ public fun create_item_for_coin<CE, CF>(
         courier_stake: balance::zero<CF>(),
         courier_id: option::none(),
         courier_address: option::none(),
-        target_quantity: wanted_amount,
+        target_quantity: effective_target,
         filled_quantity: 0,
         allow_partial,
         require_stake: false,
@@ -489,7 +497,7 @@ public fun create_item_for_coin<CE, CF>(
         poster_id,
         contract_type,
         escrow_amount: 0,
-        target_quantity: wanted_amount,
+        target_quantity: effective_target,
         deadline_ms,
         allow_partial,
         require_stake: false,
@@ -978,6 +986,93 @@ public fun fill_item_for_coin<CE, CF>(
             poster_id: contract.poster_id,
             total_filled: contract.filled_quantity,
             total_escrow_paid: contract.target_quantity,
+        });
+    };
+}
+
+/// Claim items from a free ItemForCoin contract (wanted_amount = 0).
+/// No coins required. Filler specifies how many items to claim.
+public fun claim_free_items<CE, CF>(
+    contract: &mut Contract<CE, CF>,
+    source_ssu: &mut StorageUnit,
+    filler_character: &Character,
+    quantity: u32,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    assert!(contract.status == ContractStatus::Open, EContractNotOpen);
+    assert!(clock.timestamp_ms() <= contract.deadline_ms, EContractExpired);
+    assert!(is_item_for_coin(&contract.contract_type), EWrongContractType);
+    assert!(get_wanted_coin_amount(&contract.contract_type) == 0, EWrongContractType);
+    assert!(quantity > 0, EZeroQuantity);
+
+    let filler_id = filler_character.id();
+    assert!(filler_id != contract.poster_id, ESelfFill);
+    verify_filler_access(contract, filler_character);
+
+    // Verify source SSU matches
+    let source_ssu_id = get_source_ssu_id(&contract.contract_type);
+    assert!(object::id(source_ssu) == source_ssu_id, ESourceSsuMismatch);
+
+    let remaining = contract.target_quantity - contract.filled_quantity;
+    assert!(remaining > 0, EContractFull);
+
+    // Cap to remaining
+    let claim_amount = if ((quantity as u64) > remaining) {
+        (remaining as u32)
+    } else {
+        quantity
+    };
+
+    if (!contract.allow_partial) {
+        assert!((claim_amount as u64) == remaining, EInsufficientFill);
+    };
+
+    // Track fill (by items, since target_quantity == offered_quantity for free contracts)
+    let fill_amount = (claim_amount as u64);
+    if (contract.fills.contains(filler_id)) {
+        let existing = contract.fills.borrow_mut(filler_id);
+        *existing = *existing + fill_amount;
+    } else {
+        contract.fills.add(filler_id, fill_amount);
+    };
+
+    contract.filled_quantity = contract.filled_quantity + fill_amount;
+
+    // Release items from open inventory to filler's owned inventory
+    let (offered_type_id, _) = get_offered_item_info(&contract.contract_type);
+    let released_item = source_ssu.withdraw_from_open_inventory<TrustlessAuth>(
+        filler_character,
+        trustless_auth(),
+        offered_type_id,
+        claim_amount,
+        ctx,
+    );
+    source_ssu.deposit_to_owned<TrustlessAuth>(
+        filler_character,
+        released_item,
+        trustless_auth(),
+        ctx,
+    );
+    contract.items_released = contract.items_released + claim_amount;
+
+    let contract_id = object::id(contract);
+
+    event::emit(ContractFilledEvent {
+        contract_id,
+        filler_id,
+        fill_quantity: fill_amount,
+        payout_amount: 0,
+        remaining_quantity: contract.target_quantity - contract.filled_quantity,
+    });
+
+    if (contract.filled_quantity == contract.target_quantity) {
+        contract.status = ContractStatus::Completed;
+        event::emit(ContractCompletedEvent {
+            contract_id,
+            poster_id: contract.poster_id,
+            total_filled: contract.filled_quantity,
+            total_escrow_paid: 0,
         });
     };
 }
@@ -1791,6 +1886,13 @@ fun get_source_ssu_id(ct: &ContractType): ID {
     match (ct) {
         ContractType::ItemForCoin { source_ssu_id, .. } => *source_ssu_id,
         ContractType::ItemForItem { source_ssu_id, .. } => *source_ssu_id,
+        _ => abort EWrongContractType,
+    }
+}
+
+fun get_wanted_coin_amount(ct: &ContractType): u64 {
+    match (ct) {
+        ContractType::ItemForCoin { wanted_amount, .. } => *wanted_amount,
         _ => abort EWrongContractType,
     }
 }
