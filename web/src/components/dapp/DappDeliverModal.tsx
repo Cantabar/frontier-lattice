@@ -142,7 +142,8 @@ export function DappDeliverModal({ contract, ssuId, inventory, onClose, onSucces
           const tx = buildFillItemForCoin({
             contractId: contract.id,
             sourceSsuId: sourceSsu,
-            characterId,
+            posterCharacterId: contract.posterId,
+            fillerCharacterId: characterId,
             fillAmount: amount,
           });
           await signAndExecute({ transaction: tx as never });

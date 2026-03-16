@@ -114,7 +114,8 @@ export function FillContractModal({ contract, onClose }: Props) {
           const tx = buildFillItemForCoin({
             contractId: contract.id,
             sourceSsuId: sourceSsu,
-            characterId,
+            posterCharacterId: contract.posterId,
+            fillerCharacterId: characterId,
             fillAmount: amount,
           });
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
