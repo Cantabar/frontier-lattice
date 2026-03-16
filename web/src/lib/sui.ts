@@ -1027,6 +1027,48 @@ export function buildFillItemForItemComposite(params: {
   return tx;
 }
 
+/**
+ * Variant of buildFillItemForItemComposite for contracts where source SSU ==
+ * destination SSU. SUI forbids two &mut refs to the same object in one call,
+ * so this calls `fill_item_for_item_same_ssu` which takes a single SSU param.
+ */
+export function buildFillItemForItemSameSsuComposite(params: {
+  contractId: string;
+  ssuId: string;
+  posterCharacterId: string;
+  fillerCharacterId: string;
+  fillerSsuId: string;
+  access: ItemAccessMode;
+  typeId: number;
+  quantity: number;
+}): Transaction {
+  const tx = new Transaction();
+
+  const item = appendBorrowWithdrawReturn(
+    tx,
+    params.access,
+    params.fillerCharacterId,
+    params.fillerSsuId,
+    params.typeId,
+    params.quantity,
+  );
+
+  tx.moveCall({
+    target: tcTarget("fill_item_for_item_same_ssu"),
+    typeArguments: tcTypes(),
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(params.ssuId),
+      tx.object(params.posterCharacterId),
+      tx.object(params.fillerCharacterId),
+      item,
+      tx.object(SUI_CLOCK),
+    ],
+  });
+
+  return tx;
+}
+
 export function buildFillItemForCoin(params: {
   contractId: string;
   sourceSsuId: string;

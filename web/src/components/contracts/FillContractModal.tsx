@@ -14,6 +14,7 @@ import {
   buildFillItemForCoin,
   buildFillCoinForItemComposite,
   buildFillItemForItemComposite,
+  buildFillItemForItemSameSsuComposite,
   buildClaimFreeItems,
   buildClaimFreeCoins,
   buildDeliverTransport,
@@ -309,17 +310,29 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
           // ItemForItem
           const ct = contract.contractType;
           const contractSourceSsu = ct.variant === "ItemForItem" ? ct.sourceSsuId : "";
-          const tx = buildFillItemForItemComposite({
-            contractId: contract.id,
-            sourceSsuId: contractSourceSsu,
-            destinationSsuId,
-            posterCharacterId: contract.posterId,
-            fillerCharacterId: characterId,
-            fillerSsuId: sourceSsuId,
-            access: accessMode,
-            typeId: Number(selectedTypeId),
-            quantity: selectedQty,
-          });
+          const sameSsu = contractSourceSsu === destinationSsuId;
+          const tx = sameSsu
+            ? buildFillItemForItemSameSsuComposite({
+                contractId: contract.id,
+                ssuId: contractSourceSsu,
+                posterCharacterId: contract.posterId,
+                fillerCharacterId: characterId,
+                fillerSsuId: sourceSsuId,
+                access: accessMode,
+                typeId: Number(selectedTypeId),
+                quantity: selectedQty,
+              })
+            : buildFillItemForItemComposite({
+                contractId: contract.id,
+                sourceSsuId: contractSourceSsu,
+                destinationSsuId,
+                posterCharacterId: contract.posterId,
+                fillerCharacterId: characterId,
+                fillerSsuId: sourceSsuId,
+                access: accessMode,
+                typeId: Number(selectedTypeId),
+                quantity: selectedQty,
+              });
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           result = await signAndExecute({ transaction: tx as any });
         }
