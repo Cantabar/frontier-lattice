@@ -140,7 +140,8 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
 
       // Parse the created Tribe object ID from the transaction response
       let tribeObjectId: string | null = null;
-      const changes = (result as { objectChanges?: { type: string; objectType?: string; objectId?: string }[] }).objectChanges;
+      const txResult = result as { digest?: string; objectChanges?: { type: string; objectType?: string; objectId?: string }[] };
+      const changes = txResult.objectChanges;
       if (changes) {
         const tribeObj = changes.find(
           (c) => c.type === "created" && c.objectType?.includes("::tribe::Tribe<"),
@@ -159,9 +160,15 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
         });
       }
 
-      // Invalidate caches so tribe list and identity refresh
+      // Wait for the transaction to be indexed so refetches return the new TribeCap
+      if (txResult.digest) {
+        await client.waitForTransaction({ digest: txResult.digest });
+      }
+
+      // Invalidate caches so tribe list, identity, and auto-join state refresh
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["tribes"] }),
+        queryClient.invalidateQueries({ queryKey: ["autoJoinLookup"] }),
         queryClient.invalidateQueries({
           predicate: (query) =>
             Array.isArray(query.queryKey) && query.queryKey[1] === "getOwnedObjects",

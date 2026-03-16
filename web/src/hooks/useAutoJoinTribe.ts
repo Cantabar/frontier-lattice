@@ -83,7 +83,10 @@ export function useAutoJoinTribe(): AutoJoinState {
 
   const tribeObjectId = eventTribe?.id ?? registryTribeId ?? null;
   const tribeName = eventTribe?.name ?? (inGameTribeId ? tribeInfo.get(inGameTribeId)?.name ?? null : null);
-  const eligible = isCandidate && !!tribeObjectId && !justJoinedRef.current;
+  // Suppress the banner if the user is the leader (i.e. tribe creator) — their
+  // TribeCap may still be in-flight but they should never be prompted to "join".
+  const isLeaderOfTribe = !!eventTribe && eventTribe.leaderCharacterId === characterId;
+  const eligible = isCandidate && !!tribeObjectId && !justJoinedRef.current && !isLeaderOfTribe;
   const isLoading = identityLoading || (isCandidate && !eventTribe && registryLoading);
 
   const join = useCallback(async () => {
