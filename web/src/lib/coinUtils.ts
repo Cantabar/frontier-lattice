@@ -41,3 +41,22 @@ export function parseCoinModule(coinType: string): string {
 export function isNativeSui(coinType: string): boolean {
   return coinType === "0x2::sui::SUI";
 }
+
+/** Default decimals for native SUI (1 SUI = 10^9 MIST). */
+export const SUI_DECIMALS = 9;
+
+/**
+ * Convert a human-readable coin amount to its smallest on-chain unit.
+ * e.g. toBaseUnits("1.5", 9) → 1_500_000_000
+ */
+export function toBaseUnits(humanAmount: string | number, decimals: number): number {
+  return Math.round(Number(humanAmount) * 10 ** decimals);
+}
+
+/**
+ * Convert a base-unit (smallest denomination) amount to human-readable.
+ * e.g. fromBaseUnits(1_500_000_000, 9) → 1.5
+ */
+export function fromBaseUnits(baseUnits: string | number, decimals: number): number {
+  return Number(baseUnits) / 10 ** decimals;
+}
