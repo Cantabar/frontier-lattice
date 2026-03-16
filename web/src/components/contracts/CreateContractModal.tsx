@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import styled, { keyframes } from "styled-components";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
@@ -393,6 +393,18 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
   // Reset item selections when the associated SSU changes
   useEffect(() => { setItemId(""); setOfferedQuantity(""); setAvailableQuantity(0); }, [sourceSsuId]);
   useEffect(() => { setTransportItemTypeId(""); setTransportItemQuantity(""); setTransportAvailableQuantity(0); }, [transportSourceSsuId]);
+
+  // Auto-sync ItemForItem destination SSU from source SSU, unless the user
+  // has deliberately picked a different destination.
+  const prevSourceSsuId = useRef(sourceSsuId);
+  useEffect(() => {
+    if (sourceSsuId) {
+      setI4iDestinationSsuId((prev) =>
+        prev === "" || prev === prevSourceSsuId.current ? sourceSsuId : prev,
+      );
+    }
+    prevSourceSsuId.current = sourceSsuId;
+  }, [sourceSsuId]);
 
   async function handleCreate() {
     setSubmitted(true);
