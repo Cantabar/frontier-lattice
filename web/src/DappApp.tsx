@@ -7,7 +7,7 @@
 
 import { Routes, Route } from "react-router-dom";
 import styled from "styled-components";
-import { ConnectButton } from "@mysten/dapp-kit";
+import { WalletButton } from "./components/shared/WalletButton";
 
 import { IdentityContext, useIdentityResolver } from "./hooks/useIdentity";
 import { SsuDeliveryDapp } from "./pages/SsuDeliveryDapp";
@@ -56,7 +56,7 @@ export default function DappApp() {
       <Shell>
         <TopBar>
           <Brand>Frontier Corm</Brand>
-          <ConnectButton />
+          <WalletButton />
         </TopBar>
         <Content>
           <Routes>

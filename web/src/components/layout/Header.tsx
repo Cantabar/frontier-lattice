@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { ConnectButton } from "@mysten/dapp-kit";
+import { WalletButton } from "../shared/WalletButton";
 import { useNavigate } from "react-router-dom";
 import { useIdentity } from "../../hooks/useIdentity";
 import { useNotifications } from "../../hooks/useNotifications";
@@ -127,7 +127,7 @@ export function Header() {
           &#x1F514;
           {unreadCount > 0 && <UnreadBadge>{unreadCount}</UnreadBadge>}
         </BellButton>
-        <ConnectButton />
+        <WalletButton />
       </Controls>
     </HeaderBar>
   );
