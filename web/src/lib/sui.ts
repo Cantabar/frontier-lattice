@@ -786,6 +786,93 @@ export function buildCreateItemForCoin(params: {
   return tx;
 }
 
+/**
+ * Build a single PTB that creates multiple ItemForCoin contracts.
+ *
+ * Borrows the OwnerCap<StorageUnit> once, performs N withdraw + create pairs,
+ * then returns the cap — minimising commands vs N separate transactions.
+ */
+export function buildCreateItemForCoinBatch(params: {
+  characterId: string;
+  sourceSsuId: string;
+  ownerCapId: string;
+  ownerCapVersion: string;
+  ownerCapDigest: string;
+  items: {
+    typeId: number;
+    quantity: number;
+    wantedAmount: number;
+  }[];
+  allowPartial: boolean;
+  deadlineMs: number;
+  allowedCharacters: string[];
+  allowedTribes: number[];
+}): Transaction {
+  const tx = new Transaction();
+  const pkg = worldPkg();
+  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
+
+  // 1. Borrow OwnerCap<StorageUnit> from Character (once)
+  const [ownerCap, receipt] = tx.moveCall({
+    target: `${pkg}::character::borrow_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.characterId),
+      tx.object(
+        Inputs.ReceivingRef({
+          objectId: params.ownerCapId,
+          version: params.ownerCapVersion,
+          digest: params.ownerCapDigest,
+        }),
+      ),
+    ],
+  });
+
+  // 2. For each item: withdraw from SSU + create contract
+  for (const entry of params.items) {
+    const [item] = tx.moveCall({
+      target: `${pkg}::storage_unit::withdraw_by_owner`,
+      typeArguments: [suTypeArg],
+      arguments: [
+        tx.object(params.sourceSsuId),
+        tx.object(params.characterId),
+        ownerCap,
+        tx.pure.u64(entry.typeId),
+        tx.pure.u32(entry.quantity),
+      ],
+    });
+
+    tx.moveCall({
+      target: tcTarget("item_for_coin", "create"),
+      typeArguments: tcTypes(),
+      arguments: [
+        tx.object(params.characterId),
+        tx.object(params.sourceSsuId),
+        item,
+        tx.pure.u64(entry.wantedAmount),
+        tx.pure.bool(params.allowPartial),
+        tx.pure.u64(params.deadlineMs),
+        tx.pure("vector<address>", params.allowedCharacters),
+        tx.pure("vector<u32>", params.allowedTribes),
+        tx.object(SUI_CLOCK),
+      ],
+    });
+  }
+
+  // 3. Return OwnerCap to Character (once)
+  tx.moveCall({
+    target: `${pkg}::character::return_owner_cap`,
+    typeArguments: [suTypeArg],
+    arguments: [
+      tx.object(params.characterId),
+      ownerCap,
+      receipt,
+    ],
+  });
+
+  return tx;
+}
+
 export function buildCreateItemForItem(params: {
   characterId: string;
   sourceSsuId: string;
