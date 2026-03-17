@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { useSuiClientQuery } from "@mysten/dapp-kit";
+import { useIdentity } from "../hooks/useIdentity";
 import { useContractsForSsu } from "../hooks/useContractsForSsu";
 import { useSsuInventory } from "../hooks/useSsuInventory";
 import { DappContractCard } from "../components/dapp/DappContractCard";
@@ -82,6 +83,7 @@ const Count = styled.span`
 
 export function SsuDeliveryDapp() {
   const { ssuId } = useParams<{ ssuId: string }>();
+  const { characterOwnerCapId } = useIdentity();
   const [deliverTarget, setDeliverTarget] = useState<TrustlessContractData | null>(null);
 
   // Fetch SSU object for name/metadata
@@ -99,8 +101,16 @@ export function SsuDeliveryDapp() {
   // Fetch inventory for this SSU
   const { slots, isLoading: invLoading } = useSsuInventory(ssuId, ownerCapId, !!ssuId && !!ownerCapId);
 
-  // Flatten all inventory items from all slots
+  // Flatten all inventory items from all slots (for SSU summary display)
   const allItems = useMemo(() => slots.flatMap((s) => s.items), [slots]);
+
+  // Items from the current user's player inventory slot only
+  const userItems = useMemo(
+    () => slots
+      .filter((s) => s.key === characterOwnerCapId)
+      .flatMap((s) => s.items),
+    [slots, characterOwnerCapId],
+  );
 
   const totalItemCount = useMemo(
     () => allItems.reduce((sum, i) => sum + i.quantity, 0),
@@ -111,13 +121,13 @@ export function SsuDeliveryDapp() {
     [allItems],
   );
 
-  // Fetch and filter contracts for this SSU
+  // Fetch and filter contracts for this SSU using only the user's items
   const {
     fulfillableContracts,
     otherContracts,
     isLoading: contractsLoading,
     refetch,
-  } = useContractsForSsu(ssuId, allItems);
+  } = useContractsForSsu(ssuId, userItems);
 
   const isLoading = ssuLoading || invLoading || contractsLoading;
 
@@ -202,7 +212,7 @@ export function SsuDeliveryDapp() {
         <DappDeliverModal
           contract={deliverTarget}
           ssuId={ssuId}
-          inventory={allItems}
+          inventory={userItems}
           onClose={() => setDeliverTarget(null)}
           onSuccess={() => refetch()}
         />

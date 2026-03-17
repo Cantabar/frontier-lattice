@@ -677,6 +677,7 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
             value={selectedTypeId}
             onChange={handleItemSelected}
             filterTypeId={wantedTypeId}
+            ownerOnly
             placeholder="Select matching item…"
           />
 
