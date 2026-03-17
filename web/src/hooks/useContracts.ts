@@ -93,6 +93,16 @@ function parseStatus(raw: unknown): TrustlessContractStatus {
   return "Open";
 }
 
+/** Extract contract variant from a Move struct type name (e.g. "…::coin_for_coin::CoinForCoinContract<…>"). */
+function variantFromMoveType(moveType: string): string {
+  if (moveType.includes("::coin_for_coin::")) return "CoinForCoin";
+  if (moveType.includes("::coin_for_item::")) return "CoinForItem";
+  if (moveType.includes("::item_for_coin::")) return "ItemForCoin";
+  if (moveType.includes("::item_for_item::")) return "ItemForItem";
+  if (moveType.includes("::transport::")) return "Transport";
+  return "CoinForCoin"; // fallback
+}
+
 /** Map fully-qualified event type suffix → contract variant for creation events. */
 function variantFromEventType(eventType: string): string {
   if (eventType.includes("CoinForCoinCreatedEvent")) return "CoinForCoin";
@@ -144,7 +154,7 @@ function eventToContract(ev: { type: string; parsedJson?: unknown; id: { txDiges
   };
 }
 
-function objectToContract(objectId: string, fields: Record<string, unknown>): TrustlessContractData {
+function objectToContract(objectId: string, fields: Record<string, unknown>, moveType?: string): TrustlessContractData {
   const ct = (fields.contract_type as Record<string, unknown>) ?? {};
   let status = parseStatus(fields.status);
 
@@ -156,11 +166,19 @@ function objectToContract(objectId: string, fields: Record<string, unknown>): Tr
     status = "Completed";
   }
 
+  // On-chain contract structs are flat (no nested contract_type field).
+  // When contract_type is absent, infer the variant from the Move type name
+  // and build the contract type from the top-level fields.
+  const hasContractType = Object.keys(ct).length > 0;
+  const contractType = hasContractType
+    ? parseContractType(ct)
+    : contractTypeFromEvent(variantFromMoveType(moveType ?? ""), fields as Record<string, unknown>);
+
   return {
     id: objectId,
     posterId: String(fields.poster_id ?? ""),
     posterAddress: String(fields.poster_address ?? ""),
-    contractType: parseContractType(ct),
+    contractType,
     escrowAmount: String(fields.escrow_amount ?? "0"),
     targetQuantity: String(fields.target_quantity ?? "0"),
     filledQuantity: String(fields.filled_quantity ?? "0"),
@@ -231,17 +249,19 @@ export function useActiveContracts() {
 
   const contracts = useMemo(() => {
     if (!liveObjects) return eventContracts;
-    const liveMap = new Map<string, Record<string, unknown>>();
+    const liveMap = new Map<string, { fields: Record<string, unknown>; moveType: string }>();
     for (const obj of liveObjects) {
       if (obj.data?.objectId) {
-        const fields = (obj.data.content as { fields?: Record<string, unknown> })?.fields;
-        if (fields) liveMap.set(obj.data.objectId, fields);
+        const content = obj.data.content as { fields?: Record<string, unknown>; type?: string } | undefined;
+        const fields = content?.fields;
+        const moveType = content?.type ?? "";
+        if (fields) liveMap.set(obj.data.objectId, { fields, moveType });
       }
     }
     return eventContracts
       .map((ec) => {
-        const fields = liveMap.get(ec.id);
-        return fields ? objectToContract(ec.id, fields) : ec;
+        const live = liveMap.get(ec.id);
+        return live ? objectToContract(ec.id, live.fields, live.moveType) : ec;
       })
       // Exclude contracts whose objects were deleted (cleaned up)
       .filter((ec) => liveMap.has(ec.id));
@@ -262,8 +282,10 @@ export function useContractObject(contractId: string | undefined) {
   );
 
   const objectId = data?.data?.objectId ?? "";
-  const fields = (data?.data?.content as { fields?: Record<string, unknown> })?.fields;
-  const contract = fields && objectId ? objectToContract(objectId, fields) : null;
+  const content = data?.data?.content as { fields?: Record<string, unknown>; type?: string } | undefined;
+  const fields = content?.fields;
+  const moveType = content?.type ?? "";
+  const contract = fields && objectId ? objectToContract(objectId, fields, moveType) : null;
 
   return { contract, isLoading, error };
 }
