@@ -1,0 +1,6 @@
+node_modules
+dist
+circuits/build
+circuits/*.ptau
+*.md
+.env*
