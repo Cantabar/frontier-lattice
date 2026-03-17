@@ -10,6 +10,7 @@ import {
   buildCreateCoinForCoin,
   buildCreateCoinForItem,
   buildCreateItemForCoin,
+  buildCreateItemForCoinBatch,
   buildCreateItemForItem,
   buildCreateTransport,
   buildAuthorizeExtension,
@@ -18,12 +19,18 @@ import { contractTypeLabel, formatAmount, formatRate } from "../lib/format";
 import { ItemPickerField } from "../components/shared/ItemPickerField";
 import { SsuPickerField } from "../components/shared/SsuPickerField";
 import { SsuItemPickerField } from "../components/shared/SsuItemPickerField";
+import { SsuMultiItemPickerModal } from "../components/shared/SsuMultiItemPickerModal";
 import { CharacterPickerField } from "../components/shared/CharacterPickerField";
 import { TribePickerField } from "../components/shared/TribePickerField";
 import { ItemBadge } from "../components/shared/ItemBadge";
+import { BulkItemEditor } from "../components/contracts/BulkItemEditor";
+import { BatchProgressPanel, type BatchState, type BatchStatus } from "../components/contracts/BatchProgressPanel";
 import { PrimaryButton, SecondaryButton } from "../components/shared/Button";
 import { toBaseUnits, fromBaseUnits } from "../lib/coinUtils";
 import { useEscrowCoinDecimals, useFillCoinDecimals } from "../hooks/useCoinDecimals";
+import type { BulkItemRow } from "../lib/bulkItemForCoin";
+import { hasAnyError, rowsToPayloads, chunkPayloads } from "../lib/bulkItemForCoin";
+import { useItems } from "../hooks/useItems";
 
 // ---------------------------------------------------------------------------
 // Creation-phase tracking
@@ -513,7 +520,16 @@ export function CreateContractPage() {
   const [submitted, setSubmitted] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false);
   const [creationPhase, setCreationPhase] = useState<CreationPhase>(null);
-  const isBusy = creationPhase !== null;
+
+  // Bulk ItemForCoin state
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkRows, setBulkRows] = useState<BulkItemRow[]>([]);
+  const [bulkPickerOpen, setBulkPickerOpen] = useState(false);
+  const [bulkBatches, setBulkBatches] = useState<BatchState[]>([]);
+  const bulkBusy = bulkBatches.length > 0 && bulkBatches.some((b) => b.status !== "succeeded" && b.status !== "failed" && b.status !== "pending");
+  const { getItem } = useItems();
+
+  const isBusy = creationPhase !== null || bulkBusy;
 
   // ---------------------------------------------------------------------------
   // Divisibility validation — prevents rounding dust on partial fills.
@@ -847,6 +863,9 @@ export function CreateContractPage() {
       case "CoinForItem":
         return isValidCoinAmount(escrow) && Number(wantedQuantity) > 0 && !!destinationSsuId;
       case "ItemForCoin":
+        if (bulkMode) {
+          return !!sourceSsuId && bulkRows.length > 0 && !hasAnyError(bulkRows, allowPartial, cfDecimals, cfSymbol);
+        }
         return !!sourceSsuId && !!itemId && Number(offeredQuantity) > 0 && isValidCoinAmount(itemWantedAmount);
       case "ItemForItem":
         return !!sourceSsuId && !!itemId && Number(offeredQuantity) > 0 && Number(i4iWantedQuantity) > 0 && !!i4iDestinationSsuId;
@@ -854,6 +873,83 @@ export function CreateContractPage() {
         return isValidCoinAmount(escrow) && Number(transportItemQuantity) > 0 && !!transportSourceSsuId && !!destinationSsuId && Number(requiredStake) > 0;
     }
   })();
+
+  // Reset bulk state when SSU changes
+  useEffect(() => { if (bulkMode) { setBulkRows([]); setBulkBatches([]); } }, [sourceSsuId]);
+
+  /** Bulk ItemForCoin creation: chunk payloads, sign sequentially. */
+  async function handleBulkCreate() {
+    setSubmitted(true);
+    if (!characterId || !isValid || !sourceSsuId) return;
+    setError(null);
+
+    const payloads = rowsToPayloads(bulkRows, cfDecimals);
+    const chunks = chunkPayloads(payloads);
+    const deadlineMs = Date.now() + Number(deadlineHours) * 3600 * 1000;
+
+    // Initialise batch state
+    const initial: BatchState[] = chunks.map((items) => ({ items, status: "pending" as BatchStatus }));
+    setBulkBatches(initial);
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+
+      // Update status: preparing
+      setBulkBatches((prev) =>
+        prev.map((b, idx) => (idx === i ? { ...b, status: "preparing" } : b)),
+      );
+
+      try {
+        const cap = await getFreshOwnerCap(sourceSsuId);
+        const tx = buildCreateItemForCoinBatch({
+          characterId,
+          sourceSsuId,
+          ownerCapId: cap.ownerCapId,
+          ownerCapVersion: cap.ownerCapVersion,
+          ownerCapDigest: cap.ownerCapDigest,
+          items: chunk.map((p) => ({ typeId: p.typeId, quantity: p.quantity, wantedAmount: p.wantedAmount })),
+          allowPartial,
+          deadlineMs,
+          allowedCharacters,
+          allowedTribes,
+        });
+
+        // Sign
+        setBulkBatches((prev) =>
+          prev.map((b, idx) => (idx === i ? { ...b, status: "signing" } : b)),
+        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = await signAndExecute({ transaction: tx as any });
+
+        // Confirm
+        setBulkBatches((prev) =>
+          prev.map((b, idx) => (idx === i ? { ...b, status: "confirming" } : b)),
+        );
+        await suiClient.waitForTransaction({ digest: result.digest });
+
+        setBulkBatches((prev) =>
+          prev.map((b, idx) => (idx === i ? { ...b, status: "succeeded" } : b)),
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Transaction failed";
+        setBulkBatches((prev) =>
+          prev.map((b, idx) => (idx === i ? { ...b, status: "failed", error: msg } : b)),
+        );
+        // Stop on failure — remaining batches stay pending
+        setError(`Transaction ${i + 1} failed: ${msg}`);
+        break;
+      }
+    }
+
+    await refetchContracts();
+    // Navigate only if ALL succeeded
+    setBulkBatches((prev) => {
+      if (prev.every((b) => b.status === "succeeded")) {
+        navigate("/contracts");
+      }
+      return prev;
+    });
+  }
 
   // ---- Preview helpers ----
   const previewSummary = useMemo(() => {
@@ -897,9 +993,14 @@ export function CreateContractPage() {
         break;
       case "ItemForCoin":
         items.push({ label: "Select source SSU", done: !!sourceSsuId });
-        items.push({ label: "Select item to offer", done: !!itemId });
-        items.push({ label: "Set quantity", done: Number(offeredQuantity) > 0 });
-        items.push({ label: "Set wanted amount", done: isValidCoinAmount(itemWantedAmount) });
+        if (bulkMode) {
+          items.push({ label: "Select items", done: bulkRows.length > 0 });
+          items.push({ label: "Set prices for all items", done: bulkRows.length > 0 && !hasAnyError(bulkRows, allowPartial, cfDecimals, cfSymbol) });
+        } else {
+          items.push({ label: "Select item to offer", done: !!itemId });
+          items.push({ label: "Set quantity", done: Number(offeredQuantity) > 0 });
+          items.push({ label: "Set wanted amount", done: isValidCoinAmount(itemWantedAmount) });
+        }
         break;
       case "ItemForItem":
         items.push({ label: "Select source SSU", done: !!sourceSsuId });
@@ -933,6 +1034,10 @@ export function CreateContractPage() {
         return <>Offering {s.offering} for {s.wantedTypeId ? <ItemBadge typeId={s.wantedTypeId} showQuantity={s.wantedQty || undefined} /> : "…"}</>;
       }
       case "ItemForCoin": {
+        if (bulkMode && bulkRows.length > 0) {
+          const totalItems = bulkRows.reduce((s, r) => s + r.quantity, 0);
+          return <>{bulkRows.length} items ({totalItems.toLocaleString()} units total)</>;
+        }
         const s = p as { offeredTypeId: number; offeredQty: number; wanting: string; perUnit: string | null };
         return <>{s.offeredTypeId ? <ItemBadge typeId={s.offeredTypeId} showQuantity={s.offeredQty || undefined} /> : "…"} for {s.wanting}{s.perUnit && <> ({s.perUnit} {cfSymbol}/item)</>}</>;
       }
@@ -1017,49 +1122,132 @@ export function CreateContractPage() {
 
           {variant === "ItemForCoin" && (
             <>
+              {/* Mode toggle */}
+              <Row>
+                <div>
+                  <Label>Creation Mode</Label>
+                  <Row>
+                    <SecondaryButton
+                      style={{ fontWeight: !bulkMode ? 700 : 400, opacity: !bulkMode ? 1 : 0.6 }}
+                      onClick={() => { setBulkMode(false); setBulkBatches([]); }}
+                      disabled={isBusy}
+                    >
+                      Single
+                    </SecondaryButton>
+                    <SecondaryButton
+                      style={{ fontWeight: bulkMode ? 700 : 400, opacity: bulkMode ? 1 : 0.6 }}
+                      onClick={() => { setBulkMode(true); setBulkBatches([]); }}
+                      disabled={isBusy}
+                    >
+                      Bulk
+                    </SecondaryButton>
+                  </Row>
+                </div>
+              </Row>
+
               <Label>Source SSU</Label>
               <SsuPickerField value={sourceSsuId} onChange={(id) => setSourceSsuId(id)} />
               {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
-              <Row>
-                <div>
-                  <Label>Item</Label>
-                  <SsuItemPickerField
-                    ssuId={sourceSsuId}
-                    ownerCapId={getOwnerCapId(sourceSsuId)}
-                    value={itemId}
-                    ownerOnly
-                    onChange={(entry) => {
-                      setItemId(String(entry.typeId));
-                      setOfferedQuantity(String(entry.quantity));
-                      setAvailableQuantity(entry.quantity);
-                    }}
-                  />
-                  {submitted && !itemId && <FieldError>Required</FieldError>}
-                </div>
-                <div>
-                  <Label>Quantity{availableQuantity > 0 ? ` (max ${availableQuantity.toLocaleString()})` : ""}</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max={availableQuantity || undefined}
-                    value={offeredQuantity}
-                    onChange={(e) => setOfferedQuantity(e.target.value)}
-                  />
-                  {submitted && !(Number(offeredQuantity) > 0) && <FieldError>Must be greater than 0</FieldError>}
-                  {Number(offeredQuantity) > availableQuantity && availableQuantity > 0 && (
-                    <FieldError>Exceeds available ({availableQuantity.toLocaleString()})</FieldError>
+
+              {!bulkMode ? (
+                /* ---- Single mode (existing) ---- */
+                <>
+                  <Row>
+                    <div>
+                      <Label>Item</Label>
+                      <SsuItemPickerField
+                        ssuId={sourceSsuId}
+                        ownerCapId={getOwnerCapId(sourceSsuId)}
+                        value={itemId}
+                        ownerOnly
+                        onChange={(entry) => {
+                          setItemId(String(entry.typeId));
+                          setOfferedQuantity(String(entry.quantity));
+                          setAvailableQuantity(entry.quantity);
+                        }}
+                      />
+                      {submitted && !itemId && <FieldError>Required</FieldError>}
+                    </div>
+                    <div>
+                      <Label>Quantity{availableQuantity > 0 ? ` (max ${availableQuantity.toLocaleString()})` : ""}</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max={availableQuantity || undefined}
+                        value={offeredQuantity}
+                        onChange={(e) => setOfferedQuantity(e.target.value)}
+                      />
+                      {submitted && !(Number(offeredQuantity) > 0) && <FieldError>Must be greater than 0</FieldError>}
+                      {Number(offeredQuantity) > availableQuantity && availableQuantity > 0 && (
+                        <FieldError>Exceeds available ({availableQuantity.toLocaleString()})</FieldError>
+                      )}
+                    </div>
+                  </Row>
+                  <Label>Wanted Amount ({cfSymbol})</Label>
+                  <Input type="number" placeholder="0.0" value={itemWantedAmount} onChange={(e) => setItemWantedAmount(e.target.value)} />
+                  {submitted && !isValidCoinAmount(itemWantedAmount) && <FieldError>Enter a valid amount</FieldError>}
+                  {itemWantedAmount === "0" && <Hint>Items will be offered for free &mdash; fillers can claim without paying.</Hint>}
+                  {Number(offeredQuantity) > 0 && Number(itemWantedAmount) > 0 && (
+                    <Hint>
+                      Price per item: {(Number(itemWantedAmount) / Number(offeredQuantity)).toFixed(4)} {cfSymbol}
+                      &nbsp;·&nbsp; Total for {Number(offeredQuantity).toLocaleString()} items: {itemWantedAmount} {cfSymbol}
+                    </Hint>
                   )}
-                </div>
-              </Row>
-              <Label>Wanted Amount ({cfSymbol})</Label>
-              <Input type="number" placeholder="0.0" value={itemWantedAmount} onChange={(e) => setItemWantedAmount(e.target.value)} />
-              {submitted && !isValidCoinAmount(itemWantedAmount) && <FieldError>Enter a valid amount</FieldError>}
-              {itemWantedAmount === "0" && <Hint>Items will be offered for free &mdash; fillers can claim without paying.</Hint>}
-              {Number(offeredQuantity) > 0 && Number(itemWantedAmount) > 0 && (
-                <Hint>
-                  Price per item: {(Number(itemWantedAmount) / Number(offeredQuantity)).toFixed(4)} {cfSymbol}
-                  &nbsp;·&nbsp; Total for {Number(offeredQuantity).toLocaleString()} items: {itemWantedAmount} {cfSymbol}
-                </Hint>
+                </>
+              ) : (
+                /* ---- Bulk mode ---- */
+                <>
+                  <Hint>
+                    Select multiple items to create one contract per item. Shared options (deadline,
+                    partial fill, access) apply to all contracts.
+                  </Hint>
+                  <SecondaryButton
+                    disabled={!sourceSsuId || !getOwnerCapId(sourceSsuId) || isBusy}
+                    onClick={() => setBulkPickerOpen(true)}
+                    style={{ marginBottom: 12 }}
+                  >
+                    + Add Items ({bulkRows.length} selected)
+                  </SecondaryButton>
+
+                  {bulkPickerOpen && (
+                    <SsuMultiItemPickerModal
+                      ssuId={sourceSsuId}
+                      ownerCapId={getOwnerCapId(sourceSsuId)}
+                      alreadySelected={new Set(bulkRows.map((r) => r.typeId))}
+                      onConfirm={(entries) => {
+                        setBulkRows((prev) => {
+                          const existing = new Map(prev.map((r) => [r.typeId, r]));
+                          return entries.map((e) => {
+                            const info = getItem(e.typeId);
+                            const prev = existing.get(e.typeId);
+                            return prev ?? {
+                              typeId: e.typeId,
+                              itemName: info?.name ?? `Type ${e.typeId}`,
+                              quantity: e.quantity,
+                              availableQuantity: e.quantity,
+                              priceMode: "unit" as const,
+                              priceInput: "",
+                            };
+                          });
+                        });
+                      }}
+                      onClose={() => setBulkPickerOpen(false)}
+                    />
+                  )}
+
+                  <BulkItemEditor
+                    rows={bulkRows}
+                    onChange={setBulkRows}
+                    allowPartial={allowPartial}
+                    decimals={cfDecimals}
+                    symbol={cfSymbol}
+                    submitted={submitted}
+                  />
+
+                  {submitted && bulkRows.length === 0 && (
+                    <FieldError>Select at least one item</FieldError>
+                  )}
+                </>
               )}
             </>
           )}
@@ -1217,13 +1405,28 @@ export function CreateContractPage() {
 
         {creationPhase && <CreationStepper phase={creationPhase} />}
 
+        {bulkBatches.length > 0 && (
+          <BatchProgressPanel batches={bulkBatches} totalContracts={bulkRows.length} />
+        )}
+
         <ButtonRow>
           <SecondaryButton onClick={() => navigate("/contracts")} disabled={isBusy}>
             Cancel
           </SecondaryButton>
-          <SubmitButton onClick={handleCreate} disabled={isBusy || isEnabling || ssusNeedingExtension.length > 0}>
-            {creationPhase ? PHASE_LABELS[creationPhase] + "…" : "Create Contract"}
-          </SubmitButton>
+          {variant === "ItemForCoin" && bulkMode ? (
+            <SubmitButton
+              onClick={handleBulkCreate}
+              disabled={isBusy || isEnabling || ssusNeedingExtension.length > 0}
+            >
+              {bulkBusy
+                ? "Creating…"
+                : `Create ${bulkRows.length} Contract${bulkRows.length !== 1 ? "s" : ""} (${chunkPayloads(rowsToPayloads(bulkRows, cfDecimals)).length} tx)`}
+            </SubmitButton>
+          ) : (
+            <SubmitButton onClick={handleCreate} disabled={isBusy || isEnabling || ssusNeedingExtension.length > 0}>
+              {creationPhase ? PHASE_LABELS[creationPhase] + "…" : "Create Contract"}
+            </SubmitButton>
+          )}
         </ButtonRow>
       </FormCard>
       </FormColumn>
