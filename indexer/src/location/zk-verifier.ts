@@ -29,7 +29,9 @@ async function loadSnarkjs(): Promise<typeof import("snarkjs")> {
 // ============================================================
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ARTIFACTS_DIR = resolve(__dirname, "../../circuits/artifacts");
+const ARTIFACTS_DIR = process.env.ZK_ARTIFACTS_DIR
+  ? resolve(process.env.ZK_ARTIFACTS_DIR)
+  : resolve(__dirname, "../../circuits/artifacts");
 
 interface VKey {
   protocol: string;
