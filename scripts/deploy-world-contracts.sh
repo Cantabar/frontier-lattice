@@ -157,13 +157,6 @@ echo "=== Seeding Player B NWN + SSU ==="
 echo "=== Seeding Player C NWN + SSU ==="
 (cd "$WORLD_DIR" && NODE_PATH="$WORLD_DIR/node_modules" npx tsx "$PROJECT_ROOT/scripts/seed-player-c-ssu.ts")
 
-# ── Seed all items into SSU (frontier-corm specific) ────────────────
-echo "Requesting additional gas for item seeding..."
-request_gas 5
-
-echo "=== Seeding all items into SSU ==="
-(cd "$WORLD_DIR" && NODE_PATH="$WORLD_DIR/node_modules" npx tsx "$PROJECT_ROOT/scripts/seed-ores.ts")
-
 # ── Write world package ID to frontier-corm .env for the web UI ────
 WORLD_IDS_FILE="$WORLD_DIR/deployments/localnet/extracted-object-ids.json"
 if [ -f "$WORLD_IDS_FILE" ]; then
@@ -192,5 +185,12 @@ if [ -f "$WORLD_IDS_FILE" ]; then
 else
   echo "WARNING: $WORLD_IDS_FILE not found — VITE_WORLD_PACKAGE_ID not set" >&2
 fi
+
+# ── Seed all items into SSU (frontier-corm specific) ────────────────
+echo "Requesting additional gas for item seeding..."
+request_gas 5
+
+echo "=== Seeding all items into SSU ==="
+(cd "$WORLD_DIR" && NODE_PATH="$WORLD_DIR/node_modules" npx tsx "$PROJECT_ROOT/scripts/seed-ores.ts")
 
 echo "World contracts deployed, configured, and seeded."
