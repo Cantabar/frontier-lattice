@@ -43,6 +43,9 @@ dev-tools/*
 !dev-tools/dev-wallet
 !dev-tools/give-item-helper
 
+# TypeScript incremental build cache
+*.tsbuildinfo
+
 # ZK circuit generated artifacts
 indexer/circuits/build/
 indexer/circuits/*.ptau
