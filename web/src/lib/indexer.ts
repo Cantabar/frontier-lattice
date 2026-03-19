@@ -151,13 +151,17 @@ export function getEventTypes() {
 
 // ---- Shadow Location Network ----
 
-async function authedGet<T>(path: string, authHeader: string): Promise<T> {
+async function authedGet<T>(
+  path: string,
+  authHeader: string,
+  options?: { silent?: boolean },
+): Promise<T> {
   const res = await fetch(`${base}${path}`, {
     headers: { Authorization: authHeader },
   });
   if (!res.ok) {
     const error = new Error(`Indexer ${res.status}: ${await res.text()}`);
-    notifyError(error, path);
+    if (!options?.silent) notifyError(error, path);
     throw error;
   }
   return res.json();
@@ -255,6 +259,7 @@ export function getTlk(tribeId: string, authHeader: string) {
   return authedGet<{ tribe_id: string; tlk_version: number; wrapped_key: string }>(
     `/locations/keys/${tribeId}`,
     authHeader,
+    { silent: true },
   );
 }
 
