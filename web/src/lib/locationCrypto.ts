@@ -138,6 +138,44 @@ export async function decryptLocation(
 }
 
 // ============================================================
+// Signature-Derived X25519 Keypair
+//
+// Standard SUI wallets only expose signPersonalMessage — never
+// the raw Ed25519 private key.  To derive a stable X25519 keypair
+// that any wallet can reproduce:
+//   1. Sign a fixed deterministic message via signPersonalMessage.
+//   2. SHA-256 the full SUI signature blob → 32-byte seed.
+//   3. Use the seed as an X25519 private key.
+//
+// Ed25519 signatures are deterministic (RFC 8032), so the same
+// wallet always produces the same derived X25519 keypair.
+// ============================================================
+
+/** The fixed message signed by the wallet to derive the X25519 keypair. */
+export const X25519_KEYGEN_MESSAGE = "frontier-corm:x25519-keygen:v1";
+
+/** Encode the keygen message as bytes for signPersonalMessage. */
+export function getKeygenMessageBytes(): Uint8Array {
+  return new TextEncoder().encode(X25519_KEYGEN_MESSAGE);
+}
+
+/**
+ * Derive an X25519 keypair from a wallet signature.
+ *
+ * @param signatureB64  The base64-encoded SUI signature returned by signPersonalMessage
+ * @returns  X25519 public and private keys (32 bytes each)
+ */
+export async function deriveX25519Keypair(
+  signatureB64: string,
+): Promise<{ x25519Pub: Uint8Array; x25519Priv: Uint8Array }> {
+  const sigBytes = base64ToBytes(signatureB64);
+  const hash = await crypto.subtle.digest("SHA-256", sigBytes as Uint8Array<ArrayBuffer>);
+  const x25519Priv = new Uint8Array(hash);
+  const x25519Pub = x25519.getPublicKey(x25519Priv);
+  return { x25519Pub, x25519Priv };
+}
+
+// ============================================================
 // X25519 TLK Unwrap
 //
 // The server wraps TLKs as: ephPub(32) ‖ nonce(12) ‖ ciphertext(32) ‖ tag(16)
@@ -163,15 +201,15 @@ async function deriveWrappingKey(sharedSecret: Uint8Array): Promise<Uint8Array> 
 }
 
 /**
- * Unwrap a TLK blob using the member's Ed25519 secret key.
+ * Unwrap a TLK blob using the caller's X25519 private key.
  *
- * @param wrappedKeyB64  Base64-encoded wrapped key from the server
- * @param ed25519SecretKey  The user's Ed25519 private key bytes (32 or 64 bytes)
+ * @param wrappedKeyB64    Base64-encoded wrapped key from the server
+ * @param x25519PrivateKey  32-byte X25519 private key (e.g. from deriveX25519Keypair)
  * @returns  The raw 32-byte AES-256 TLK
  */
 export async function unwrapTlk(
   wrappedKeyB64: string,
-  ed25519SecretKey: Uint8Array,
+  x25519PrivateKey: Uint8Array,
 ): Promise<Uint8Array> {
   const wrapped = base64ToBytes(wrappedKeyB64);
 
@@ -181,14 +219,8 @@ export async function unwrapTlk(
   const ciphertext = wrapped.slice(44, 76);
   const tag = wrapped.slice(76, 92);
 
-  // Convert Ed25519 secret key to X25519 secret key
-  // For Ed25519, the first 32 bytes of the 64-byte secret are the seed
-  const seed = ed25519SecretKey.length === 64
-    ? ed25519SecretKey.slice(0, 32)
-    : ed25519SecretKey;
-
   // X25519 shared secret
-  const shared = x25519.getSharedSecret(seed, ephPub);
+  const shared = x25519.getSharedSecret(x25519PrivateKey, ephPub);
   const wrappingKey = await deriveWrappingKey(shared);
 
   // AES-256-GCM decrypt — Web Crypto expects ciphertext ‖ tag concatenated

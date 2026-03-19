@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import styled from "styled-components";
-import { useCurrentAccount } from "@mysten/dapp-kit";
+import { useCurrentAccount, useSignPersonalMessage } from "@mysten/dapp-kit";
 import { useIdentity } from "../hooks/useIdentity";
 import { useLocationPods, type DecryptedPod } from "../hooks/useLocationPods";
 import { useTlkStatus } from "../hooks/useTlkStatus";
@@ -22,7 +22,13 @@ import { CopyableId } from "../components/shared/CopyableId";
 import { solarSystemName } from "../lib/solarSystems";
 import { truncateAddress, timeAgo } from "../lib/format";
 import { ASSEMBLY_TYPES } from "../lib/types";
-import { ed25519PubToX25519, bytesToBase64 } from "../lib/locationCrypto";
+import { registerPublicKey } from "../lib/indexer";
+import {
+  bytesToBase64,
+  getKeygenMessageBytes,
+  deriveX25519Keypair,
+  unwrapTlk,
+} from "../lib/locationCrypto";
 
 // ============================================================
 // Styled primitives
@@ -207,11 +213,12 @@ const PendingAddress = styled.span`
 export function LocationsPage() {
   const account = useCurrentAccount();
   const { tribeCaps, address } = useIdentity();
+  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
   const tribeId = tribeCaps[0]?.tribeId ?? null;
   const isOfficer =
     tribeCaps[0]?.role === "Leader" || tribeCaps[0]?.role === "Officer";
 
-  const { pods, isLoading: podsLoading, error: podsError, fetchPods, deletePod } =
+  const { pods, isLoading: podsLoading, error: podsError, fetchPods, deletePod, getAuthHeader } =
     useLocationPods();
   const tlk = useTlkStatus();
   const distribution = useTlkDistribution(tribeId, tlk.tlkBytes);
@@ -219,6 +226,8 @@ export function LocationsPage() {
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [unlockLoading, setUnlockLoading] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
 
   // Fetch TLK status when tribe is known
   useEffect(() => {
@@ -278,16 +287,83 @@ export function LocationsPage() {
     }
   }
 
-  async function handleInitializeTlk() {
-    if (!tribeId || !account?.publicKey) return;
-    // Derive the caller's X25519 public key from their wallet Ed25519 key
-    const x25519Pub = ed25519PubToX25519(new Uint8Array(account.publicKey));
-    await tlk.initialize({
-      tribeId,
-      memberPublicKeys: [{ address, x25519Pub: bytesToBase64(x25519Pub) }],
+  /**
+   * Sign the deterministic keygen message and derive an X25519 keypair.
+   * Shared by both init and unlock flows.
+   */
+  async function deriveX25519() {
+    const { signature } = await signPersonalMessage({
+      message: getKeygenMessageBytes(),
     });
-    // Refresh status after init
-    await tlk.fetchStatus(tribeId);
+    return deriveX25519Keypair(signature);
+  }
+
+  async function handleInitializeTlk() {
+    if (!tribeId) return;
+    setUnlockLoading(true);
+    setUnlockError(null);
+    try {
+      // 1. Derive X25519 keypair from wallet signature
+      const { x25519Pub, x25519Priv } = await deriveX25519();
+
+      // 2. Initialize TLK — server generates key and wraps to our X25519 pub
+      await tlk.initialize({
+        tribeId,
+        memberPublicKeys: [{ address, x25519Pub: bytesToBase64(x25519Pub) }],
+      });
+
+      // 3. Fetch the wrapped TLK and auto-unlock
+      await tlk.fetchStatus(tribeId);
+      // Re-read wrappedKey after fetchStatus updated state
+      // (fetchStatus is async and sets state, so we re-fetch inline)
+      const authHeader = await getAuthHeader();
+      const { getTlk: getTlkApi } = await import("../lib/indexer");
+      const result = await getTlkApi(tribeId, authHeader);
+      const tlkBytes = await unwrapTlk(result.wrapped_key, x25519Priv);
+      tlk.setUnwrappedTlk(tlkBytes, result.tlk_version);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to initialize TLK";
+      setUnlockError(msg);
+    } finally {
+      setUnlockLoading(false);
+    }
+  }
+
+  async function handleUnlockTlk() {
+    if (!tribeId) return;
+    setUnlockLoading(true);
+    setUnlockError(null);
+    try {
+      // 1. Derive X25519 keypair from wallet signature
+      const { x25519Pub, x25519Priv } = await deriveX25519();
+
+      // 2. Register derived public key (idempotent upsert)
+      const authHeader = await getAuthHeader();
+      await registerPublicKey(authHeader, {
+        tribeId,
+        x25519Pub: bytesToBase64(x25519Pub),
+      });
+
+      // 3. Attempt to unwrap if we have a wrapped key
+      if (tlk.wrappedKey && tlk.tlkVersion != null) {
+        const tlkBytes = await unwrapTlk(tlk.wrappedKey, x25519Priv);
+        tlk.setUnwrappedTlk(tlkBytes, tlk.tlkVersion);
+      } else {
+        // No wrapped key yet — re-fetch in case it was just granted
+        await tlk.fetchStatus(tribeId);
+        // If still no key, the user needs to wait for an existing member to grant access
+        if (!tlk.wrappedKey) {
+          setUnlockError(
+            "Your public key has been registered. An existing member with the TLK must grant you access.",
+          );
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to unlock TLK";
+      setUnlockError(msg);
+    } finally {
+      setUnlockLoading(false);
+    }
   }
 
   if (!account) {
@@ -336,7 +412,10 @@ export function LocationsPage() {
         isOfficer={isOfficer}
         isLoading={tlk.isLoading}
         onInitialize={handleInitializeTlk}
+        onUnlock={handleUnlockTlk}
+        unlockLoading={unlockLoading}
       />
+      {unlockError && <ErrorText>{unlockError}</ErrorText>}
 
       {/* Summary cards */}
       {tlk.tlkBytes && (

@@ -2,25 +2,23 @@
  * Shadow Location Network — TLK key distribution hook.
  *
  * Handles the lifecycle of distributing the Tribe Location Key to members:
- *   - Auto-registers the caller's X25519 public key with the indexer
  *   - Fetches the list of tribe members who have registered but don't
  *     yet have a wrapped TLK (pending members)
  *   - Provides a wrapForMember() action that wraps the TLK client-side
  *     and submits the wrapped blob via the indexer
+ *
+ * Public key registration is handled by the unlock/init flows in
+ * LocationsPage.tsx using a signature-derived X25519 keypair.
  */
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useCurrentAccount } from "@mysten/dapp-kit";
+import { useState, useCallback, useEffect } from "react";
 import { useLocationPods } from "./useLocationPods";
 import {
-  registerPublicKey,
   getPendingMembers as fetchPendingMembers,
   wrapTlkForMember,
   type PendingMember,
 } from "../lib/indexer";
 import {
-  ed25519PubToX25519,
-  bytesToBase64,
   base64ToBytes,
   wrapTlk,
 } from "../lib/locationCrypto";
@@ -52,38 +50,16 @@ export function useTlkDistribution(
   tribeId: string | null,
   tlkBytes: Uint8Array | null,
 ): UseTlkDistributionReturn {
-  const account = useCurrentAccount();
   const { getAuthHeader } = useLocationPods();
 
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Track whether we've auto-registered for the current tribeId
-  const registeredRef = useRef<string | null>(null);
-
-  // Auto-register the caller's X25519 public key on mount / tribe change
-  useEffect(() => {
-    if (!tribeId || !account?.publicKey || registeredRef.current === tribeId) return;
-
-    const doRegister = async () => {
-      try {
-        const authHeader = await getAuthHeader();
-        const x25519Pub = ed25519PubToX25519(new Uint8Array(account.publicKey));
-        await registerPublicKey(authHeader, {
-          tribeId,
-          x25519Pub: bytesToBase64(x25519Pub),
-        });
-        registeredRef.current = tribeId;
-      } catch {
-        // Non-critical — registration will be retried on next page load
-        console.warn("[tlk-distribution] Failed to auto-register public key");
-      }
-    };
-
-    doRegister();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tribeId, account?.publicKey]);
+  // NOTE: Public key registration now happens inside the unlock/init flows
+  // in LocationsPage.tsx using the signature-derived X25519 keypair.
+  // The old auto-registration derived keys from ed25519PubToX25519(account.publicKey)
+  // which produced keys the user could never unwrap with (no access to Ed25519 secret).
 
   const refreshPending = useCallback(
     async (tid: string) => {

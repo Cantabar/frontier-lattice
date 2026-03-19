@@ -65,6 +65,8 @@ interface Props {
   isOfficer: boolean;
   isLoading: boolean;
   onInitialize: () => void;
+  onUnlock: () => void;
+  unlockLoading: boolean;
 }
 
 export function TlkStatusBanner({
@@ -74,6 +76,8 @@ export function TlkStatusBanner({
   isOfficer,
   isLoading,
   onInitialize,
+  onUnlock,
+  unlockLoading,
 }: Props) {
   if (!isInitialized) {
     return (
@@ -111,6 +115,9 @@ export function TlkStatusBanner({
         Tribe Location Key is initialized. Unlock to view and register encrypted locations.
       </Text>
       {tlkVersion != null && <VersionLabel>TLK v{tlkVersion}</VersionLabel>}
+      <PrimaryButton onClick={onUnlock} disabled={unlockLoading}>
+        {unlockLoading ? "Unlocking…" : "Unlock TLK"}
+      </PrimaryButton>
     </Banner>
   );
 }
