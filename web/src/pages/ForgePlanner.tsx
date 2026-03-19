@@ -1,7 +1,6 @@
 import { useState, useCallback } from "react";
 import styled from "styled-components";
 import { useIdentity } from "../hooks/useIdentity";
-import { useManufacturingHistory } from "../hooks/useOrders";
 import { useBlueprints } from "../hooks/useBlueprints";
 import { useActiveMultiInputContracts, useMultiInputContractObject } from "../hooks/useMultiInputContracts";
 import { canViewContract } from "../lib/contractVisibility";
@@ -14,8 +13,6 @@ import { MultiInputContractDetail } from "../components/forge/MultiInputContract
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
 import { PrimaryButton } from "../components/shared/Button";
-import { timeAgo } from "../lib/format";
-import { CopyableId } from "../components/shared/CopyableId";
 import type { MultiInputContractData } from "../lib/types";
 
 // ── Page-level tab type ────────────────────────────────────────
@@ -91,29 +88,7 @@ const OrdersHeader = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
-const EventRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  background: ${({ theme }) => theme.colors.surface.raised};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  font-size: 13px;
-  margin-bottom: ${({ theme }) => theme.spacing.xs};
-`;
-
-const EventName = styled.span`
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.module.forgePlanner};
-`;
-
-const Meta = styled.span`
-  color: ${({ theme }) => theme.colors.text.muted};
-  font-size: 12px;
-`;
-
-// ── Helpers ────────────────────────────────────────────────────
+// ── Helpers
 
 /** Thin wrapper so each card can independently fetch live fill totals. */
 function ContractCardWithLiveState({
@@ -136,11 +111,9 @@ function ContractCardWithLiveState({
 // ── Page component ─────────────────────────────────────────────
 
 export function ForgePlanner() {
-  const { characterId, inGameTribeId, tribeCaps } = useIdentity();
-  const tribeId = tribeCaps[0]?.tribeId;
+  const { characterId, inGameTribeId } = useIdentity();
 
   const { blueprints, recipesForOptimizer } = useBlueprints();
-  const { data: historyData, isLoading: historyLoading } = useManufacturingHistory(tribeId);
   const { contracts: allContracts, isLoading: contractsLoading } = useActiveMultiInputContracts();
   const contracts = allContracts.filter((c) => canViewContract(c, { characterId, inGameTribeId }));
 
@@ -213,30 +186,6 @@ export function ForgePlanner() {
                 contract={c}
                 onClick={() => setSelectedContract(c)}
               />
-            ))
-          )}
-
-          <SectionLabel>Manufacturing History</SectionLabel>
-          {!tribeId ? (
-            <EmptyState
-              title="No tribe selected"
-              description="Connect your wallet and join a tribe to see manufacturing history."
-            />
-          ) : historyLoading ? (
-            <LoadingSpinner />
-          ) : !historyData?.events?.length ? (
-            <EmptyState title="No manufacturing events" />
-          ) : (
-            historyData.events.map((ev) => (
-              <EventRow key={ev.id}>
-                <div>
-                  <EventName>{ev.event_name.replace("Event", "")}</EventName>
-                  {ev.character_id && (
-                    <Meta> · <CopyableId id={ev.character_id} /></Meta>
-                  )}
-                </div>
-                <Meta>{timeAgo(ev.timestamp_ms)}</Meta>
-              </EventRow>
             ))
           )}
         </>

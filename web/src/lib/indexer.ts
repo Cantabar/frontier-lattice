@@ -98,14 +98,6 @@ export function getLeaderboard(tribeId: string, limit = 50) {
   );
 }
 
-// ---- Domain feeds ----
-
-export function getManufacturingFeed(tribeId: string, params: PaginationParams = {}) {
-  return get<{ events: ArchivedEvent[] }>(
-    `/manufacturing/${tribeId}${qs({ limit: params.limit, offset: params.offset, order: params.order })}`,
-  );
-}
-
 // ---- Proof ----
 
 export function getEventProof(eventId: number) {

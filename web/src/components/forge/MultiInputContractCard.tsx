@@ -32,7 +32,7 @@ const TypeTag = styled.span`
   font-weight: 600;
   border-radius: ${({ theme }) => theme.radii.sm};
   background: ${({ theme }) => theme.colors.surface.overlay};
-  color: ${({ theme }) => theme.colors.module.forgePlanner};
+  color: ${({ theme }) => theme.colors.module.forge};
 `;
 
 const RestrictedTag = styled.span`
@@ -84,7 +84,7 @@ const ProgressTrack = styled.div`
 const ProgressFill = styled.div<{ $pct: number }>`
   height: 100%;
   width: ${({ $pct }) => $pct}%;
-  background: ${({ theme }) => theme.colors.module.forgePlanner};
+  background: ${({ theme }) => theme.colors.module.forge};
   border-radius: 2px;
   transition: width 0.2s ease;
 `;

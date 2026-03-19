@@ -12,7 +12,6 @@ export const config = {
   /** On-chain package IDs (set after deployment) */
   packages: {
     tribe: import.meta.env.VITE_TRIBE_PACKAGE_ID ?? "0x0",
-    forgePlanner: import.meta.env.VITE_FORGE_PLANNER_PACKAGE_ID ?? "0x0",
     trustlessContracts: import.meta.env.VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID ?? "0x0",
     cormAuth: import.meta.env.VITE_CORM_AUTH_PACKAGE_ID ?? "0x0",
     world: import.meta.env.VITE_WORLD_PACKAGE_ID ?? "0x0",

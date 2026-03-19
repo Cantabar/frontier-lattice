@@ -344,9 +344,9 @@ const TimeBadge = styled.span`
 const MultiOutputBadge = styled.span`
   font-size: 10px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.module.forgePlanner};
+  color: ${({ theme }) => theme.colors.module.forge};
   background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.module.forgePlanner};
+  border: 1px solid ${({ theme }) => theme.colors.module.forge};
   border-radius: 3px;
   padding: 0 4px;
 `;

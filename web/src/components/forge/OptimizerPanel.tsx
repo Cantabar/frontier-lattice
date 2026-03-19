@@ -64,7 +64,7 @@ const TreeNode = styled.div<{ $depth: number }>`
 const CraftBadge = styled.span`
   font-size: 11px;
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.module.forgePlanner};
+  color: ${({ theme }) => theme.colors.module.forge};
 `;
 
 const RawBadge = styled.span`

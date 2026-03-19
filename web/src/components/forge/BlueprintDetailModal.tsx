@@ -127,7 +127,7 @@ const ItemGroup = styled.span`
 const Arrow = styled.div`
   text-align: center;
   font-size: 20px;
-  color: ${({ theme }) => theme.colors.module.forgePlanner};
+  color: ${({ theme }) => theme.colors.module.forge};
   padding: ${({ theme }) => theme.spacing.xs} 0;
 `;
 

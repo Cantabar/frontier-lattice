@@ -107,17 +107,15 @@ const NavButton = styled.button`
   }
 `;
 
-type ModuleFilter = "all" | "tribe" | "trustlessContracts" | "forgePlanner";
+type ModuleFilter = "all" | "tribe" | "trustlessContracts";
 
 const MODULE_COLORS: Record<string, string> = {
   tribe: "#00E5FF",
   trustlessContracts: "#7C4DFF",
-  forgePlanner: "#69F0AE",
 };
 
 function moduleOf(eventName: string): string {
-  if (eventName.includes("Contract") || eventName.includes("Transport")) return "trustlessContracts";
-  if (eventName.includes("Recipe") || eventName.includes("Order") || eventName.includes("Manufacturing")) return "forgePlanner";
+  if (eventName.includes("Contract") || eventName.includes("Transport") || eventName.includes("Slot") || eventName.includes("MultiInput")) return "trustlessContracts";
   return "tribe";
 }
 
@@ -147,14 +145,14 @@ export function EventExplorer() {
       </Header>
 
       <FilterRow>
-        {(["all", "tribe", "trustlessContracts", "forgePlanner"] as ModuleFilter[]).map((m) => (
+        {(["all", "tribe", "trustlessContracts"] as ModuleFilter[]).map((m) => (
           <FilterChip
             key={m}
             $active={moduleFilter === m}
 $color={m === "all" ? "#F0F4F8" : MODULE_COLORS[m]}
             onClick={() => setModuleFilter(m)}
           >
-            {m === "all" ? "All" : m === "trustlessContracts" ? "Contracts" : m === "forgePlanner" ? "Forge" : "Tribe"}
+            {m === "all" ? "All" : m === "trustlessContracts" ? "Contracts" : "Tribe"}
           </FilterChip>
         ))}
       </FilterRow>
@@ -173,7 +171,7 @@ $color={m === "all" ? "#F0F4F8" : MODULE_COLORS[m]}
             return (
               <EventRow key={ev.id} onClick={() => setProofEventId(ev.id)}>
 <ModuleBadge $color={MODULE_COLORS[mod] ?? "#78909C"}>
-                  {mod === "trustlessContracts" ? "CONTRACTS" : mod === "forgePlanner" ? "FORGE" : "TRIBE"}
+                  {mod === "trustlessContracts" ? "CONTRACTS" : "TRIBE"}
                 </ModuleBadge>
                 <EventName>{ev.event_name.replace("Event", "")}</EventName>
                 {ev.character_id && <Meta><CopyableId id={ev.character_id} /></Meta>}

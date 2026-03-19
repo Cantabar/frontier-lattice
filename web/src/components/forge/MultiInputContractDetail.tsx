@@ -73,7 +73,7 @@ const TrackWrap = styled.div`
 const TrackFill = styled.div<{ $pct: number }>`
   height: 100%;
   width: ${({ $pct }) => $pct}%;
-  background: ${({ theme }) => theme.colors.module.forgePlanner};
+  background: ${({ theme }) => theme.colors.module.forge};
   border-radius: 2px;
   transition: width 0.2s ease;
 `;
@@ -89,7 +89,7 @@ const OverallTrack = styled.div`
 const OverallFill = styled.div<{ $pct: number }>`
   height: 100%;
   width: ${({ $pct }) => $pct}%;
-  background: ${({ theme }) => theme.colors.module.forgePlanner};
+  background: ${({ theme }) => theme.colors.module.forge};
   border-radius: 3px;
   transition: width 0.2s ease;
 `;
