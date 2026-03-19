@@ -54,7 +54,14 @@ export function formatRate(
 /** Human-readable relative time: "2m ago", "3h ago", "5d ago". */
 export function timeAgo(timestampMs: string | number): string {
   const now = Date.now();
-  const then = typeof timestampMs === "string" ? Number(timestampMs) : timestampMs;
+  let then: number;
+  if (typeof timestampMs === "number") {
+    then = timestampMs;
+  } else {
+    const numeric = Number(timestampMs);
+    then = Number.isFinite(numeric) ? numeric : new Date(timestampMs).getTime();
+  }
+  if (Number.isNaN(then)) return "—";
   const diff = now - then;
 
   if (diff < 0) return "just now";
