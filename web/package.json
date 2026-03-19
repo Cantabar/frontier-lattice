@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "build:blueprints": "node ../scripts/build-blueprints.mjs"
+    "build:blueprints": "node ../scripts/build-blueprints.mjs",
+    "fetch-solar-systems": "node ../scripts/fetch-solar-systems.mjs"
   },
   "dependencies": {
     "@mysten/dapp-kit": "^0.14.0",

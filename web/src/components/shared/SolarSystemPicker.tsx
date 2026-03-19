@@ -3,7 +3,7 @@
  *
  * Features:
  *   - Debounced substring search (prefix-prioritised)
- *   - Region shown in muted text next to each match
+ *   - System ID shown in muted text next to each match
  *   - Keyboard navigation (↑ / ↓ / Enter / Escape)
  *   - Allows clearing the selection
  *   - Also accepts a raw numeric ID typed directly
@@ -81,7 +81,7 @@ const SystemName = styled.span`
   font-weight: 500;
 `;
 
-const RegionLabel = styled.span`
+const SystemId = styled.span`
   font-size: 11px;
   color: ${({ theme }) => theme.colors.text.muted};
   flex-shrink: 0;
@@ -214,7 +214,7 @@ export function SolarSystemPicker({
               onMouseDown={() => handleSelect(entry)}
             >
               <SystemName>{entry.name}</SystemName>
-              <RegionLabel>{entry.region}</RegionLabel>
+              <SystemId>#{entry.id}</SystemId>
             </Option>
           ))}
         </Dropdown>

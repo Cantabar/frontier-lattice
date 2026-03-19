@@ -18,7 +18,7 @@ import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../components/shared/Button";
 import { CopyableId } from "../components/shared/CopyableId";
-import { solarSystemName, solarSystemRegion } from "../lib/solarSystems";
+import { solarSystemName } from "../lib/solarSystems";
 import { truncateAddress, timeAgo } from "../lib/format";
 import { ASSEMBLY_TYPES } from "../lib/types";
 
@@ -95,8 +95,9 @@ const GroupName = styled.span`
   color: ${({ theme }) => theme.colors.text.primary};
 `;
 
-const GroupRegion = styled.span`
+const GroupId = styled.span`
   font-size: 12px;
+  font-family: ${({ theme }) => theme.fonts.mono};
   color: ${({ theme }) => theme.colors.text.muted};
 `;
 
@@ -335,7 +336,7 @@ export function LocationsPage() {
           <div key={sysId}>
             <GroupHeader>
               <GroupName>{solarSystemName(sysId)}</GroupName>
-              <GroupRegion>{solarSystemRegion(sysId)}</GroupRegion>
+              <GroupId>#{sysId}</GroupId>
               <GroupCount>
                 {groupPods.length} structure{groupPods.length !== 1 ? "s" : ""}
               </GroupCount>

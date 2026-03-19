@@ -16,7 +16,7 @@ import { useMyStructures } from "../../hooks/useStructures";
 import { useLocationPods } from "../../hooks/useLocationPods";
 import { ASSEMBLY_TYPES } from "../../lib/types";
 import { truncateAddress } from "../../lib/format";
-import { solarSystemName, solarSystemRegion } from "../../lib/solarSystems";
+import { solarSystemName } from "../../lib/solarSystems";
 import type { SolarSystemEntry } from "../../lib/solarSystems";
 import type { LocationData } from "../../lib/locationCrypto";
 
@@ -294,7 +294,7 @@ export function RegisterLocationModal({
             <div>
               <SummaryLabel>Solar System</SummaryLabel>
               <SummaryValue>
-                {solarSystemName(solarSystem.id)} ({solarSystemRegion(solarSystem.id)})
+                {solarSystemName(solarSystem.id)}
               </SummaryValue>
             </div>
             <div>

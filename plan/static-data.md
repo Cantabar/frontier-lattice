@@ -480,3 +480,67 @@ Resolution: `types.json` → `marketGroupID` → `marketgroups.json` → `parent
 - **Primary navigation**: Category → Group (2-level tree, 100% coverage)
 - **Filters/facets**: Tags for slot type, size, and role
 - **Tier badge/indicator**: `metaGroupID` for rarity/quality coloring
+
+---
+
+## Solar System / Starmap Data
+
+### Static data files
+
+#### `res__staticdata_starmapcache.json`
+24,426 solar systems keyed by system ID (e.g. `"30000001"`).
+
+Fields per system:
+- `center` — `[x, y, z]` float64 coordinates (galactic absolute, meters)
+- `constellationID` — integer
+- `regionID` — integer
+- `factionID` — integer (nullable)
+- `sunTypeID` — integer
+- `neighbours` — array of neighbor system IDs with jump types
+
+**No `name` field exists.** System names are stored separately in the localization file.
+
+#### `res__localizationfsd_localization_fsd_en-us.json`
+Contains ~23,301 map name entries (messageIDs 825730–860000) with system, constellation,
+and region names interleaved. Names are keyed by sequential `messageID`, **not** by
+system ID. There is no mapping table between `messageID` and `systemID` in the available
+static data.
+
+Attempted approaches to derive a mapping:
+- Walking the region→constellation→system hierarchy and assuming sequential messageID
+  assignment — produced incorrect mappings (messageIDs are not assigned in hierarchy order).
+- Cross-referencing with the World API confirmed the ordering does not match.
+
+### World API comparison
+The Stillness World API (`/v2/solarsystems`) provides 24,502 systems with:
+- `id` — system ID
+- `name` — human-readable name (e.g. "A 2560")
+- `constellationId`, `regionId`
+- `location: { x, y, z }` — exact integer coordinates
+
+The API has 76 more systems than the starmap cache (24,502 vs 24,426).
+
+### Coordinate precision comparison
+Starmap cache uses float64; API uses exact integers.
+
+- Max absolute error per axis: ~1.4e12 meters (~9.4 AU, ~0.0001 LY)
+- Max relative distance error: ~2.6e-4 (tested on systems 30000004↔30000005)
+- For a "within 10 LY" proximity claim: error margin is 0.001% — negligible
+- For sub-LY proximity claims: error is still only ~9 AU
+
+Float64 precision is adequate for display and coarse proximity, but the API's exact
+integers are preferred for cryptographic commitments (Poseidon hashes) and on-chain
+verifiable proximity claims where bit-exact values matter.
+
+### Coordinate handling notes
+- Z-axis values can reach ~7.6e19, exceeding JS `Number.MAX_SAFE_INTEGER` (9e15).
+  Must use BigInt in TypeScript / string representation in JSON.
+- On-chain representation adds `1 << 255` to each component (unsigned offset).
+- Axis transform for 3D rendering: `(x, y, z)_api → (x, z, -y)_display` per
+  [scetrov coordinate docs](https://frontier.scetrov.live/develop/coordinate_systems/).
+
+### Conclusion
+The World API is the only reliable source for solar system data — it pairs IDs with
+names (which the static data cannot) and provides exact integer coordinates. The build
+script `scripts/fetch-solar-systems.ts` fetches from the API and commits the result as
+`web/src/data/solar-systems.json`.
