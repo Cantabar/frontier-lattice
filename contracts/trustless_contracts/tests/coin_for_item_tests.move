@@ -13,7 +13,7 @@ use world::{
     test_helpers::{user_a, user_b},
 };
 use corm_auth::corm_auth::CormAuth;
-use trustless_contracts::test_helpers::{Self, ESCROW, FILL};
+use trustless_contracts::test_helpers::{Self, ESCROW};
 use trustless_contracts::coin_for_item::{Self, CoinForItemContract};
 use trustless_contracts::contract_utils;
 
@@ -33,7 +33,7 @@ fun test_create_coin_for_item() {
         let escrow = coin::mint_for_testing<ESCROW>(test_helpers::escrow_amount(), ts::ctx(&mut ts));
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
-        coin_for_item::create<ESCROW, FILL>(
+        coin_for_item::create<ESCROW>(
             &poster, escrow, test_helpers::item_type_id(), test_helpers::item_quantity(),
             dest_ssu_id, true, false, test_helpers::far_future_ms(),
             vector[], vector[], &clock, ts::ctx(&mut ts),
@@ -45,7 +45,7 @@ fun test_create_coin_for_item() {
 
     ts::next_tx(&mut ts, user_a());
     {
-        let contract = ts::take_shared<CoinForItemContract<ESCROW, FILL>>(&ts);
+        let contract = ts::take_shared<CoinForItemContract<ESCROW>>(&ts);
         assert!(coin_for_item::poster_id(&contract) == poster_id);
         assert!(coin_for_item::escrow_amount(&contract) == test_helpers::escrow_amount());
         assert!(coin_for_item::target_quantity(&contract) == (test_helpers::item_quantity() as u64));
@@ -92,7 +92,7 @@ fun test_fill_coin_for_item_to_player_inventory() {
         let escrow = coin::mint_for_testing<ESCROW>(test_helpers::escrow_amount(), ts::ctx(&mut ts));
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
-        coin_for_item::create<ESCROW, FILL>(
+        coin_for_item::create<ESCROW>(
             &poster, escrow, test_helpers::item_type_id(), test_helpers::item_quantity(),
             object::id_from_address(object::id_to_address(&storage_id)),
             false, false, test_helpers::far_future_ms(),
@@ -106,7 +106,7 @@ fun test_fill_coin_for_item_to_player_inventory() {
     // Filler withdraws items and fills the contract
     ts::next_tx(&mut ts, user_b());
     {
-        let mut contract = ts::take_shared<CoinForItemContract<ESCROW, FILL>>(&ts);
+        let mut contract = ts::take_shared<CoinForItemContract<ESCROW>>(&ts);
         let mut storage_unit = ts::take_shared_by_id<StorageUnit>(&ts, storage_id);
         let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
         let mut filler = ts::take_shared_by_id<Character>(&ts, filler_id);
@@ -194,7 +194,7 @@ fun test_fill_coin_for_item_to_owner_inventory() {
         let escrow = coin::mint_for_testing<ESCROW>(test_helpers::escrow_amount(), ts::ctx(&mut ts));
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
-        coin_for_item::create<ESCROW, FILL>(
+        coin_for_item::create<ESCROW>(
             &poster, escrow, test_helpers::item_type_id(), test_helpers::item_quantity(),
             object::id_from_address(object::id_to_address(&storage_id)),
             false, true, test_helpers::far_future_ms(),
@@ -208,7 +208,7 @@ fun test_fill_coin_for_item_to_owner_inventory() {
     // Filler withdraws items and fills the contract
     ts::next_tx(&mut ts, user_b());
     {
-        let mut contract = ts::take_shared<CoinForItemContract<ESCROW, FILL>>(&ts);
+        let mut contract = ts::take_shared<CoinForItemContract<ESCROW>>(&ts);
         let mut storage_unit = ts::take_shared_by_id<StorageUnit>(&ts, storage_id);
         let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
         let mut filler = ts::take_shared_by_id<Character>(&ts, filler_id);
@@ -276,7 +276,7 @@ fun test_not_divisible_coin_for_item() {
         let escrow = coin::mint_for_testing<ESCROW>(1000, ts::ctx(&mut ts));
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
-        coin_for_item::create<ESCROW, FILL>(
+        coin_for_item::create<ESCROW>(
             &poster, escrow, 88069, 3, dest_ssu_id, true, false, test_helpers::far_future_ms(),
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
@@ -305,7 +305,7 @@ fun test_non_divisible_coin_for_item_no_partial() {
         let escrow = coin::mint_for_testing<ESCROW>(1000, ts::ctx(&mut ts));
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
 
-        coin_for_item::create<ESCROW, FILL>(
+        coin_for_item::create<ESCROW>(
             &poster, escrow, 88069, 3, dest_ssu_id, false, false, test_helpers::far_future_ms(),
             vector[], vector[], &clock, ts::ctx(&mut ts),
         );
@@ -316,7 +316,7 @@ fun test_non_divisible_coin_for_item_no_partial() {
 
     ts::next_tx(&mut ts, user_a());
     {
-        let contract = ts::take_shared<CoinForItemContract<ESCROW, FILL>>(&ts);
+        let contract = ts::take_shared<CoinForItemContract<ESCROW>>(&ts);
         assert!(coin_for_item::escrow_amount(&contract) == 1000);
         assert!(coin_for_item::target_quantity(&contract) == 3);
         assert!(coin_for_item::allow_partial(&contract) == false);

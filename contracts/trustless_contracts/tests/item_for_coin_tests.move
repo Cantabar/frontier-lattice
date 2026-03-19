@@ -12,7 +12,7 @@ use world::{
     storage_unit::StorageUnit,
     test_helpers::{user_a, user_b},
 };
-use trustless_contracts::test_helpers::{Self, ESCROW, FILL};
+use trustless_contracts::test_helpers::{Self, FILL};
 use trustless_contracts::item_for_coin::{Self, ItemForCoinContract};
 
 // =========================================================================
@@ -42,7 +42,7 @@ fun test_cancel_item_for_coin_returns_items() {
         character.return_owner_cap(owner_cap, receipt);
 
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
-        item_for_coin::create<ESCROW, FILL>(
+        item_for_coin::create<FILL>(
             &character, &mut storage_unit, item, test_helpers::wanted_amount(), true,
             test_helpers::far_future_ms(), vector[], vector[], &clock, ts::ctx(&mut ts),
         );
@@ -64,7 +64,7 @@ fun test_cancel_item_for_coin_returns_items() {
     ts::next_tx(&mut ts, user_a());
     {
         let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
-        let contract = ts::take_shared<ItemForCoinContract<ESCROW, FILL>>(&ts);
+        let contract = ts::take_shared<ItemForCoinContract<FILL>>(&ts);
         let mut storage_unit = ts::take_shared_by_id<StorageUnit>(&ts, storage_id);
         item_for_coin::cancel(
             contract, &poster, &mut storage_unit, ts::ctx(&mut ts),
@@ -114,7 +114,7 @@ fun test_expire_item_for_coin_returns_items() {
         character.return_owner_cap(owner_cap, receipt);
 
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
-        item_for_coin::create<ESCROW, FILL>(
+        item_for_coin::create<FILL>(
             &character, &mut storage_unit, item, test_helpers::wanted_amount(), true,
             100, vector[], vector[], &clock, ts::ctx(&mut ts),
         );
@@ -127,7 +127,7 @@ fun test_expire_item_for_coin_returns_items() {
     ts::next_tx(&mut ts, user_b());
     {
         let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
-        let contract = ts::take_shared<ItemForCoinContract<ESCROW, FILL>>(&ts);
+        let contract = ts::take_shared<ItemForCoinContract<FILL>>(&ts);
         let mut storage_unit = ts::take_shared_by_id<StorageUnit>(&ts, storage_id);
         let mut clock = clock::create_for_testing(ts::ctx(&mut ts));
         clock.set_for_testing(200);
@@ -182,7 +182,7 @@ fun test_fill_item_for_coin_full() {
         character.return_owner_cap(owner_cap, receipt);
 
         let clock = clock::create_for_testing(ts::ctx(&mut ts));
-        item_for_coin::create<ESCROW, FILL>(
+        item_for_coin::create<FILL>(
             &character, &mut storage_unit, item, test_helpers::wanted_amount(), false,
             test_helpers::far_future_ms(), vector[], vector[], &clock, ts::ctx(&mut ts),
         );
@@ -194,7 +194,7 @@ fun test_fill_item_for_coin_full() {
     // Filler fills with 500 FILL coins
     ts::next_tx(&mut ts, user_b());
     {
-        let mut contract = ts::take_shared<ItemForCoinContract<ESCROW, FILL>>(&ts);
+        let mut contract = ts::take_shared<ItemForCoinContract<FILL>>(&ts);
         let mut storage_unit = ts::take_shared_by_id<StorageUnit>(&ts, storage_id);
         let poster = ts::take_shared_by_id<Character>(&ts, poster_id);
         let filler = ts::take_shared_by_id<Character>(&ts, filler_id);

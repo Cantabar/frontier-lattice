@@ -1,6 +1,6 @@
 /// CoinForItem — trustless coin-for-item exchange with escrow.
 ///
-/// Poster locks Coin<CE> as escrow, wants items deposited at a destination SSU.
+/// Poster locks Coin<C> as escrow, wants items deposited at a destination SSU.
 /// Fillers deliver matching items and receive proportional CE.
 ///
 /// When `use_owner_inventory` is true, filled items go to the SSU's main
@@ -25,11 +25,11 @@ const EDestinationSsuMismatch: u64 = 101;
 
 // === Structs ===
 
-public struct CoinForItemContract<phantom CE, phantom CF> has key {
+public struct CoinForItemContract<phantom C> has key {
     id: UID,
     poster_id: ID,
     poster_address: address,
-    escrow: Balance<CE>,
+    escrow: Balance<C>,
     escrow_amount: u64,
     wanted_type_id: u64,
     wanted_quantity: u32,
@@ -64,9 +64,9 @@ public struct CoinForItemCreatedEvent has copy, drop {
 
 // === Public Functions ===
 
-public fun create<CE, CF>(
+public fun create<C>(
     character: &Character,
-    escrow_coin: Coin<CE>,
+    escrow_coin: Coin<C>,
     wanted_type_id: u64,
     wanted_quantity: u32,
     destination_ssu_id: ID,
@@ -89,7 +89,7 @@ public fun create<CE, CF>(
     let poster_id = character.id();
     let poster_address = character.character_address();
 
-    let contract = CoinForItemContract<CE, CF> {
+    let contract = CoinForItemContract<C> {
         id: object::new(ctx),
         poster_id,
         poster_address,
@@ -130,8 +130,8 @@ public fun create<CE, CF>(
 
 /// Fill by depositing items at the destination SSU. Filler receives
 /// proportional coin escrow.
-public fun fill<CE, CF>(
-    contract: &mut CoinForItemContract<CE, CF>,
+public fun fill<C>(
+    contract: &mut CoinForItemContract<C>,
     destination_ssu: &mut StorageUnit,
     poster_character: &Character,
     filler_character: &Character,
@@ -204,8 +204,8 @@ public fun fill<CE, CF>(
 }
 
 /// Cancel an open contract. Returns remaining escrow to poster.
-public fun cancel<CE, CF>(
-    contract: CoinForItemContract<CE, CF>,
+public fun cancel<C>(
+    contract: CoinForItemContract<C>,
     poster_character: &Character,
     ctx: &mut TxContext,
 ) {
@@ -227,8 +227,8 @@ public fun cancel<CE, CF>(
 }
 
 /// Expire after deadline. Anyone can call.
-public fun expire<CE, CF>(
-    contract: CoinForItemContract<CE, CF>,
+public fun expire<C>(
+    contract: CoinForItemContract<C>,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
@@ -251,8 +251,8 @@ public fun expire<CE, CF>(
 }
 
 /// Garbage-collect a completed contract.
-public fun cleanup<CE, CF>(
-    contract: CoinForItemContract<CE, CF>,
+public fun cleanup<C>(
+    contract: CoinForItemContract<C>,
     ctx: &mut TxContext,
 ) {
     contract_utils::assert_completed(&contract.status);
@@ -268,30 +268,30 @@ public fun cleanup<CE, CF>(
 
 // === View Functions ===
 
-public fun poster_id<CE, CF>(c: &CoinForItemContract<CE, CF>): ID { c.poster_id }
-public fun poster_address<CE, CF>(c: &CoinForItemContract<CE, CF>): address { c.poster_address }
-public fun escrow_amount<CE, CF>(c: &CoinForItemContract<CE, CF>): u64 { c.escrow_amount }
-public fun escrow_balance<CE, CF>(c: &CoinForItemContract<CE, CF>): u64 { c.escrow.value() }
-public fun wanted_type_id<CE, CF>(c: &CoinForItemContract<CE, CF>): u64 { c.wanted_type_id }
-public fun wanted_quantity<CE, CF>(c: &CoinForItemContract<CE, CF>): u32 { c.wanted_quantity }
-public fun destination_ssu_id<CE, CF>(c: &CoinForItemContract<CE, CF>): ID { c.destination_ssu_id }
-public fun use_owner_inventory<CE, CF>(c: &CoinForItemContract<CE, CF>): bool { c.use_owner_inventory }
-public fun target_quantity<CE, CF>(c: &CoinForItemContract<CE, CF>): u64 { c.target_quantity }
-public fun filled_quantity<CE, CF>(c: &CoinForItemContract<CE, CF>): u64 { c.filled_quantity }
-public fun allow_partial<CE, CF>(c: &CoinForItemContract<CE, CF>): bool { c.allow_partial }
-public fun deadline_ms<CE, CF>(c: &CoinForItemContract<CE, CF>): u64 { c.deadline_ms }
-public fun status<CE, CF>(c: &CoinForItemContract<CE, CF>): ContractStatus { c.status }
-public fun allowed_characters<CE, CF>(c: &CoinForItemContract<CE, CF>): vector<ID> { c.allowed_characters }
-public fun allowed_tribes<CE, CF>(c: &CoinForItemContract<CE, CF>): vector<u32> { c.allowed_tribes }
+public fun poster_id<C>(c: &CoinForItemContract<C>): ID { c.poster_id }
+public fun poster_address<C>(c: &CoinForItemContract<C>): address { c.poster_address }
+public fun escrow_amount<C>(c: &CoinForItemContract<C>): u64 { c.escrow_amount }
+public fun escrow_balance<C>(c: &CoinForItemContract<C>): u64 { c.escrow.value() }
+public fun wanted_type_id<C>(c: &CoinForItemContract<C>): u64 { c.wanted_type_id }
+public fun wanted_quantity<C>(c: &CoinForItemContract<C>): u32 { c.wanted_quantity }
+public fun destination_ssu_id<C>(c: &CoinForItemContract<C>): ID { c.destination_ssu_id }
+public fun use_owner_inventory<C>(c: &CoinForItemContract<C>): bool { c.use_owner_inventory }
+public fun target_quantity<C>(c: &CoinForItemContract<C>): u64 { c.target_quantity }
+public fun filled_quantity<C>(c: &CoinForItemContract<C>): u64 { c.filled_quantity }
+public fun allow_partial<C>(c: &CoinForItemContract<C>): bool { c.allow_partial }
+public fun deadline_ms<C>(c: &CoinForItemContract<C>): u64 { c.deadline_ms }
+public fun status<C>(c: &CoinForItemContract<C>): ContractStatus { c.status }
+public fun allowed_characters<C>(c: &CoinForItemContract<C>): vector<ID> { c.allowed_characters }
+public fun allowed_tribes<C>(c: &CoinForItemContract<C>): vector<u32> { c.allowed_tribes }
 
-public fun filler_contribution<CE, CF>(c: &CoinForItemContract<CE, CF>, filler_id: ID): u64 {
+public fun filler_contribution<C>(c: &CoinForItemContract<C>, filler_id: ID): u64 {
     contract_utils::filler_contribution(&c.fills, filler_id)
 }
 
 // === Test-only Helpers ===
 
 #[test_only]
-public fun destroy_for_testing<CE, CF>(contract: CoinForItemContract<CE, CF>) {
+public fun destroy_for_testing<C>(contract: CoinForItemContract<C>) {
     let CoinForItemContract { id, escrow, fills, .. } = contract;
     escrow.destroy_for_testing();
     fills.drop();

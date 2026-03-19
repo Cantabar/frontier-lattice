@@ -23,7 +23,7 @@ const EDestinationSsuMismatch: u64 = 102;
 
 // === Structs ===
 
-public struct ItemForItemContract<phantom CE, phantom CF> has key {
+public struct ItemForItemContract has key {
     id: UID,
     poster_id: ID,
     poster_address: address,
@@ -66,7 +66,7 @@ public struct ItemForItemCreatedEvent has copy, drop {
 
 // === Public Functions ===
 
-public fun create<CE, CF>(
+public fun create(
     character: &Character,
     source_ssu: &mut StorageUnit,
     item: inventory::Item,
@@ -106,7 +106,7 @@ public fun create<CE, CF>(
         ctx,
     );
 
-    let contract = ItemForItemContract<CE, CF> {
+    let contract = ItemForItemContract {
         id: object::new(ctx),
         poster_id,
         poster_address,
@@ -151,8 +151,8 @@ public fun create<CE, CF>(
 
 /// Fill by depositing wanted items at the destination SSU. Filler receives
 /// proportional offered items from the source SSU open inventory.
-public fun fill<CE, CF>(
-    contract: &mut ItemForItemContract<CE, CF>,
+public fun fill(
+    contract: &mut ItemForItemContract,
     source_ssu: &mut StorageUnit,
     destination_ssu: &mut StorageUnit,
     poster_character: &Character,
@@ -232,8 +232,8 @@ public fun fill<CE, CF>(
 
 /// Variant for when source SSU == destination SSU. SUI forbids two &mut
 /// references to the same object, so this accepts a single &mut StorageUnit.
-public fun fill_same_ssu<CE, CF>(
-    contract: &mut ItemForItemContract<CE, CF>,
+public fun fill_same_ssu(
+    contract: &mut ItemForItemContract,
     ssu: &mut StorageUnit,
     poster_character: &Character,
     filler_character: &Character,
@@ -310,8 +310,8 @@ public fun fill_same_ssu<CE, CF>(
 }
 
 /// Cancel. Returns remaining items from SSU open inventory to poster.
-public fun cancel<CE, CF>(
-    contract: ItemForItemContract<CE, CF>,
+public fun cancel(
+    contract: ItemForItemContract,
     poster_character: &Character,
     source_ssu: &mut StorageUnit,
     ctx: &mut TxContext,
@@ -342,8 +342,8 @@ public fun cancel<CE, CF>(
 }
 
 /// Expire after deadline. Returns remaining items to poster.
-public fun expire<CE, CF>(
-    contract: ItemForItemContract<CE, CF>,
+public fun expire(
+    contract: ItemForItemContract,
     poster_character: &Character,
     source_ssu: &mut StorageUnit,
     clock: &Clock,
@@ -376,8 +376,8 @@ public fun expire<CE, CF>(
 }
 
 /// Garbage-collect a completed contract.
-public fun cleanup<CE, CF>(
-    contract: ItemForItemContract<CE, CF>,
+public fun cleanup(
+    contract: ItemForItemContract,
     poster_character: &Character,
     source_ssu: &mut StorageUnit,
     ctx: &mut TxContext,
@@ -403,32 +403,32 @@ public fun cleanup<CE, CF>(
 
 // === View Functions ===
 
-public fun poster_id<CE, CF>(c: &ItemForItemContract<CE, CF>): ID { c.poster_id }
-public fun poster_address<CE, CF>(c: &ItemForItemContract<CE, CF>): address { c.poster_address }
-public fun offered_type_id<CE, CF>(c: &ItemForItemContract<CE, CF>): u64 { c.offered_type_id }
-public fun offered_quantity<CE, CF>(c: &ItemForItemContract<CE, CF>): u32 { c.offered_quantity }
-public fun source_ssu_id<CE, CF>(c: &ItemForItemContract<CE, CF>): ID { c.source_ssu_id }
-public fun wanted_type_id<CE, CF>(c: &ItemForItemContract<CE, CF>): u64 { c.wanted_type_id }
-public fun wanted_quantity<CE, CF>(c: &ItemForItemContract<CE, CF>): u32 { c.wanted_quantity }
-public fun destination_ssu_id<CE, CF>(c: &ItemForItemContract<CE, CF>): ID { c.destination_ssu_id }
-public fun use_owner_inventory<CE, CF>(c: &ItemForItemContract<CE, CF>): bool { c.use_owner_inventory }
-public fun items_released<CE, CF>(c: &ItemForItemContract<CE, CF>): u32 { c.items_released }
-public fun target_quantity<CE, CF>(c: &ItemForItemContract<CE, CF>): u64 { c.target_quantity }
-public fun filled_quantity<CE, CF>(c: &ItemForItemContract<CE, CF>): u64 { c.filled_quantity }
-public fun allow_partial<CE, CF>(c: &ItemForItemContract<CE, CF>): bool { c.allow_partial }
-public fun deadline_ms<CE, CF>(c: &ItemForItemContract<CE, CF>): u64 { c.deadline_ms }
-public fun status<CE, CF>(c: &ItemForItemContract<CE, CF>): ContractStatus { c.status }
-public fun allowed_characters<CE, CF>(c: &ItemForItemContract<CE, CF>): vector<ID> { c.allowed_characters }
-public fun allowed_tribes<CE, CF>(c: &ItemForItemContract<CE, CF>): vector<u32> { c.allowed_tribes }
+public fun poster_id(c: &ItemForItemContract): ID { c.poster_id }
+public fun poster_address(c: &ItemForItemContract): address { c.poster_address }
+public fun offered_type_id(c: &ItemForItemContract): u64 { c.offered_type_id }
+public fun offered_quantity(c: &ItemForItemContract): u32 { c.offered_quantity }
+public fun source_ssu_id(c: &ItemForItemContract): ID { c.source_ssu_id }
+public fun wanted_type_id(c: &ItemForItemContract): u64 { c.wanted_type_id }
+public fun wanted_quantity(c: &ItemForItemContract): u32 { c.wanted_quantity }
+public fun destination_ssu_id(c: &ItemForItemContract): ID { c.destination_ssu_id }
+public fun use_owner_inventory(c: &ItemForItemContract): bool { c.use_owner_inventory }
+public fun items_released(c: &ItemForItemContract): u32 { c.items_released }
+public fun target_quantity(c: &ItemForItemContract): u64 { c.target_quantity }
+public fun filled_quantity(c: &ItemForItemContract): u64 { c.filled_quantity }
+public fun allow_partial(c: &ItemForItemContract): bool { c.allow_partial }
+public fun deadline_ms(c: &ItemForItemContract): u64 { c.deadline_ms }
+public fun status(c: &ItemForItemContract): ContractStatus { c.status }
+public fun allowed_characters(c: &ItemForItemContract): vector<ID> { c.allowed_characters }
+public fun allowed_tribes(c: &ItemForItemContract): vector<u32> { c.allowed_tribes }
 
-public fun filler_contribution<CE, CF>(c: &ItemForItemContract<CE, CF>, filler_id: ID): u64 {
+public fun filler_contribution(c: &ItemForItemContract, filler_id: ID): u64 {
     contract_utils::filler_contribution(&c.fills, filler_id)
 }
 
 // === Test-only Helpers ===
 
 #[test_only]
-public fun destroy_for_testing<CE, CF>(contract: ItemForItemContract<CE, CF>) {
+public fun destroy_for_testing(contract: ItemForItemContract) {
     let ItemForItemContract { id, fills, .. } = contract;
     fills.drop();
     id.delete();

@@ -1,7 +1,7 @@
 /// ItemForCoin — trustless item-for-coin exchange with SSU escrow.
 ///
 /// Poster locks items in SSU open inventory (CormAuth-controlled), wants
-/// Coin<CF> in return. Fillers pay coins and receive proportional items.
+/// Coin<C> in return. Fillers pay coins and receive proportional items.
 ///
 /// Special case: when `wanted_amount = 0`, items are free to claim.
 /// `target_quantity` tracks items distributed instead.
@@ -25,12 +25,12 @@ const ESourceSsuMismatch: u64 = 100;
 
 // === Structs ===
 
-public struct ItemForCoinContract<phantom CE, phantom CF> has key {
+public struct ItemForCoinContract<phantom C> has key {
     id: UID,
     poster_id: ID,
     poster_address: address,
     /// Accumulated filler payments forwarded to poster.
-    fill_pool: Balance<CF>,
+    fill_pool: Balance<C>,
     offered_type_id: u64,
     offered_quantity: u32,
     source_ssu_id: ID,
@@ -67,7 +67,7 @@ public struct ItemForCoinCreatedEvent has copy, drop {
 /// Create an ItemForCoin contract. Items are moved to SSU open inventory
 /// (CormAuth-controlled). Caller passes a transit Item withdrawn from the
 /// source SSU in the same PTB.
-public fun create<CE, CF>(
+public fun create<C>(
     character: &Character,
     source_ssu: &mut StorageUnit,
     item: inventory::Item,
@@ -106,11 +106,11 @@ public fun create<CE, CF>(
         wanted_amount
     };
 
-    let contract = ItemForCoinContract<CE, CF> {
+    let contract = ItemForCoinContract<C> {
         id: object::new(ctx),
         poster_id,
         poster_address,
-        fill_pool: balance::zero<CF>(),
+        fill_pool: balance::zero<C>(),
         offered_type_id,
         offered_quantity,
         source_ssu_id,
@@ -144,14 +144,14 @@ public fun create<CE, CF>(
     transfer::share_object(contract);
 }
 
-/// Fill with coins. Filler pays Coin<CF>, receives proportional items
+/// Fill with coins. Filler pays Coin<C>, receives proportional items
 /// from the source SSU open inventory.
-public fun fill<CE, CF>(
-    contract: &mut ItemForCoinContract<CE, CF>,
+public fun fill<C>(
+    contract: &mut ItemForCoinContract<C>,
     source_ssu: &mut StorageUnit,
     _poster_character: &Character,
     filler_character: &Character,
-    mut fill_coin: Coin<CF>,
+    mut fill_coin: Coin<C>,
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
@@ -239,8 +239,8 @@ public fun fill<CE, CF>(
 
 /// Claim items from a free ItemForCoin contract (wanted_amount = 0).
 /// No coins required.
-public fun claim_free<CE, CF>(
-    contract: &mut ItemForCoinContract<CE, CF>,
+public fun claim_free<C>(
+    contract: &mut ItemForCoinContract<C>,
     source_ssu: &mut StorageUnit,
     filler_character: &Character,
     quantity: u32,
@@ -303,8 +303,8 @@ public fun claim_free<CE, CF>(
 }
 
 /// Cancel. Returns remaining items from SSU open inventory to poster.
-public fun cancel<CE, CF>(
-    contract: ItemForCoinContract<CE, CF>,
+public fun cancel<C>(
+    contract: ItemForCoinContract<C>,
     poster_character: &Character,
     source_ssu: &mut StorageUnit,
     ctx: &mut TxContext,
@@ -336,8 +336,8 @@ public fun cancel<CE, CF>(
 }
 
 /// Expire after deadline. Returns remaining items to poster.
-public fun expire<CE, CF>(
-    contract: ItemForCoinContract<CE, CF>,
+public fun expire<C>(
+    contract: ItemForCoinContract<C>,
     poster_character: &Character,
     source_ssu: &mut StorageUnit,
     clock: &Clock,
@@ -372,8 +372,8 @@ public fun expire<CE, CF>(
 }
 
 /// Garbage-collect a completed contract. Returns any remaining items.
-public fun cleanup<CE, CF>(
-    contract: ItemForCoinContract<CE, CF>,
+public fun cleanup<C>(
+    contract: ItemForCoinContract<C>,
     poster_character: &Character,
     source_ssu: &mut StorageUnit,
     ctx: &mut TxContext,
@@ -402,30 +402,30 @@ public fun cleanup<CE, CF>(
 
 // === View Functions ===
 
-public fun poster_id<CE, CF>(c: &ItemForCoinContract<CE, CF>): ID { c.poster_id }
-public fun poster_address<CE, CF>(c: &ItemForCoinContract<CE, CF>): address { c.poster_address }
-public fun fill_pool_balance<CE, CF>(c: &ItemForCoinContract<CE, CF>): u64 { c.fill_pool.value() }
-public fun offered_type_id<CE, CF>(c: &ItemForCoinContract<CE, CF>): u64 { c.offered_type_id }
-public fun offered_quantity<CE, CF>(c: &ItemForCoinContract<CE, CF>): u32 { c.offered_quantity }
-public fun source_ssu_id<CE, CF>(c: &ItemForCoinContract<CE, CF>): ID { c.source_ssu_id }
-public fun wanted_amount<CE, CF>(c: &ItemForCoinContract<CE, CF>): u64 { c.wanted_amount }
-public fun items_released<CE, CF>(c: &ItemForCoinContract<CE, CF>): u32 { c.items_released }
-public fun target_quantity<CE, CF>(c: &ItemForCoinContract<CE, CF>): u64 { c.target_quantity }
-public fun filled_quantity<CE, CF>(c: &ItemForCoinContract<CE, CF>): u64 { c.filled_quantity }
-public fun allow_partial<CE, CF>(c: &ItemForCoinContract<CE, CF>): bool { c.allow_partial }
-public fun deadline_ms<CE, CF>(c: &ItemForCoinContract<CE, CF>): u64 { c.deadline_ms }
-public fun status<CE, CF>(c: &ItemForCoinContract<CE, CF>): ContractStatus { c.status }
-public fun allowed_characters<CE, CF>(c: &ItemForCoinContract<CE, CF>): vector<ID> { c.allowed_characters }
-public fun allowed_tribes<CE, CF>(c: &ItemForCoinContract<CE, CF>): vector<u32> { c.allowed_tribes }
+public fun poster_id<C>(c: &ItemForCoinContract<C>): ID { c.poster_id }
+public fun poster_address<C>(c: &ItemForCoinContract<C>): address { c.poster_address }
+public fun fill_pool_balance<C>(c: &ItemForCoinContract<C>): u64 { c.fill_pool.value() }
+public fun offered_type_id<C>(c: &ItemForCoinContract<C>): u64 { c.offered_type_id }
+public fun offered_quantity<C>(c: &ItemForCoinContract<C>): u32 { c.offered_quantity }
+public fun source_ssu_id<C>(c: &ItemForCoinContract<C>): ID { c.source_ssu_id }
+public fun wanted_amount<C>(c: &ItemForCoinContract<C>): u64 { c.wanted_amount }
+public fun items_released<C>(c: &ItemForCoinContract<C>): u32 { c.items_released }
+public fun target_quantity<C>(c: &ItemForCoinContract<C>): u64 { c.target_quantity }
+public fun filled_quantity<C>(c: &ItemForCoinContract<C>): u64 { c.filled_quantity }
+public fun allow_partial<C>(c: &ItemForCoinContract<C>): bool { c.allow_partial }
+public fun deadline_ms<C>(c: &ItemForCoinContract<C>): u64 { c.deadline_ms }
+public fun status<C>(c: &ItemForCoinContract<C>): ContractStatus { c.status }
+public fun allowed_characters<C>(c: &ItemForCoinContract<C>): vector<ID> { c.allowed_characters }
+public fun allowed_tribes<C>(c: &ItemForCoinContract<C>): vector<u32> { c.allowed_tribes }
 
-public fun filler_contribution<CE, CF>(c: &ItemForCoinContract<CE, CF>, filler_id: ID): u64 {
+public fun filler_contribution<C>(c: &ItemForCoinContract<C>, filler_id: ID): u64 {
     contract_utils::filler_contribution(&c.fills, filler_id)
 }
 
 // === Test-only Helpers ===
 
 #[test_only]
-public fun destroy_for_testing<CE, CF>(contract: ItemForCoinContract<CE, CF>) {
+public fun destroy_for_testing<C>(contract: ItemForCoinContract<C>) {
     let ItemForCoinContract { id, fill_pool, fills, .. } = contract;
     fill_pool.destroy_for_testing();
     fills.drop();
