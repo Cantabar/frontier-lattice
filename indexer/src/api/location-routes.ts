@@ -10,6 +10,8 @@
 import { Router, type Request, type Response } from "express";
 import type pg from "pg";
 import { verifyWalletAuth, generateTlk, wrapTlk } from "../location/crypto.js";
+// Note: wrapTlk is still used by /keys/init and /keys/rotate (server-generated TLK).
+// The /keys/wrap endpoint now accepts client-produced wrapped blobs instead.
 import {
   upsertLocationPod,
   getLocationPodsByTribe,
@@ -241,61 +243,54 @@ export function createLocationRouter(pool: pg.Pool): Router {
   });
 
   // ================================================================
-  // POST /keys/wrap — Wrap existing TLK to a new member
+  // POST /keys/wrap — Store a client-wrapped TLK for a new member
   //
-  // Body: { tribeId, newMemberAddress, newMemberX25519Pub }
+  // Body: { tribeId, newMemberAddress, wrappedKey }
   //
-  // An existing member calls this to add a new member. The server
-  // re-generates the wrap (since it holds the TLK transiently during
-  // init/rotation).
-  //
-  // NOTE: For maximum security the TLK would be passed from member
-  // to member client-side. This server-assisted path is a pragmatic
-  // hackathon compromise — the server sees the TLK only during
-  // init and rotation, not during normal operation.
+  // An existing member unwraps their own TLK client-side, wraps it
+  // to the new member's X25519 public key, and submits the wrapped
+  // blob here. The server never sees the plaintext TLK.
   // ================================================================
   router.post("/keys/wrap", async (req: Request, res: Response) => {
     const address = await authenticate(req, res);
     if (!address) return;
 
-    const { tribeId, newMemberAddress, newMemberX25519Pub } = req.body as {
+    const { tribeId, newMemberAddress, wrappedKey } = req.body as {
       tribeId: string;
       newMemberAddress: string;
-      newMemberX25519Pub: string;
+      wrappedKey: string; // base64-encoded wrapped TLK blob (92 bytes)
     };
 
-    if (!tribeId || !newMemberAddress || !newMemberX25519Pub) {
-      res.status(400).json({ error: "tribeId, newMemberAddress, and newMemberX25519Pub required" });
+    if (!tribeId || !newMemberAddress || !wrappedKey) {
+      res.status(400).json({ error: "tribeId, newMemberAddress, and wrappedKey required" });
       return;
     }
 
     try {
-      // Verify caller has a TLK (i.e., is a member)
+      // Verify caller has a TLK (i.e., is an existing location-sharing member)
       const callerTlk = await getTlkForMember(pool, tribeId, address);
       if (!callerTlk) {
         res.status(403).json({ error: "Caller is not a location-sharing member of this tribe" });
         return;
       }
 
-      // Generate a fresh TLK and re-wrap to all existing members + the new one
-      // This is the server-assisted path; the old TLK remains valid for existing PODs
-      const latestVersion = await getLatestTlkVersion(pool, tribeId);
-      const newVersion = latestVersion + 1;
-      const tlk = generateTlk();
+      // Store the client-produced wrapped blob at the current TLK version
+      const wrappedBuf = Buffer.from(wrappedKey, "base64");
+      if (wrappedBuf.length !== 92) {
+        res.status(400).json({ error: "Invalid wrapped key length — expected 92 bytes" });
+        return;
+      }
 
-      // Wrap to new member
-      const x25519Pub = Buffer.from(newMemberX25519Pub, "base64");
-      const wrapped = wrapTlk(tlk, x25519Pub);
-      await upsertTlk(pool, tribeId, newMemberAddress, wrapped, newVersion);
+      await upsertTlk(pool, tribeId, newMemberAddress, wrappedBuf, callerTlk.tlk_version);
 
       res.json({
         tribe_id: tribeId,
-        tlk_version: newVersion,
+        tlk_version: callerTlk.tlk_version,
         member: newMemberAddress,
       });
     } catch (err) {
-      console.error("[locations] Failed to wrap TLK for new member:", err);
-      res.status(500).json({ error: "Failed to wrap TLK" });
+      console.error("[locations] Failed to store wrapped TLK for new member:", err);
+      res.status(500).json({ error: "Failed to store wrapped TLK" });
     }
   });
 

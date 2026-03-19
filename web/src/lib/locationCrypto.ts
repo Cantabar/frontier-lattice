@@ -214,6 +214,67 @@ export async function unwrapTlk(
 }
 
 // ============================================================
+// X25519 TLK Wrap (client-side, for adding new tribe members)
+//
+// Mirrors the server's wrapTlk format: ephPub(32) ‖ nonce(12) ‖ ciphertext(32) ‖ tag(16)
+// An existing member unwraps their TLK, then wraps it to a new
+// member's X25519 public key using this function.
+// ============================================================
+
+/**
+ * Wrap a plaintext TLK for a specific member's X25519 public key.
+ *
+ * This is the client-side counterpart of the server's wrapTlk().
+ * The output format is identical: ephPub(32) ‖ nonce(12) ‖ ciphertext(32) ‖ tag(16) = 92 bytes.
+ *
+ * @param tlk             Raw 32-byte AES key (unwrapped from the caller's own wrapped TLK)
+ * @param memberX25519Pub Target member's X25519 public key (32 bytes)
+ * @returns               Base64-encoded wrapped key blob
+ */
+export async function wrapTlk(
+  tlk: Uint8Array,
+  memberX25519Pub: Uint8Array,
+): Promise<string> {
+  // Generate ephemeral X25519 keypair
+  const ephPriv = x25519.utils.randomPrivateKey();
+  const ephPub = x25519.getPublicKey(ephPriv);
+
+  // ECDH → shared secret
+  const shared = x25519.getSharedSecret(ephPriv, memberX25519Pub);
+  const wrappingKey = await deriveWrappingKey(shared);
+
+  // AES-256-GCM encrypt the TLK
+  const key = await crypto.subtle.importKey(
+    "raw",
+    wrappingKey.buffer as ArrayBuffer,
+    { name: "AES-GCM" },
+    false,
+    ["encrypt"],
+  );
+
+  const nonce = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertextWithTag = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: nonce as Uint8Array<ArrayBuffer> },
+    key,
+    tlk as Uint8Array<ArrayBuffer>,
+  );
+
+  // Web Crypto returns ciphertext ‖ tag (16 bytes) concatenated
+  const ctBuf = new Uint8Array(ciphertextWithTag);
+  const ciphertext = ctBuf.slice(0, ctBuf.length - 16);
+  const tag = ctBuf.slice(ctBuf.length - 16);
+
+  // Pack: ephPub(32) + nonce(12) + ciphertext(32) + tag(16) = 92 bytes
+  const packed = new Uint8Array(32 + 12 + ciphertext.length + 16);
+  packed.set(ephPub, 0);
+  packed.set(nonce, 32);
+  packed.set(ciphertext, 44);
+  packed.set(tag, 44 + ciphertext.length);
+
+  return bytesToBase64(packed);
+}
+
+// ============================================================
 // Ed25519 → X25519 Public Key Conversion
 // ============================================================
 

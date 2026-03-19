@@ -283,6 +283,18 @@ export function rotateTlk(authHeader: string, body: {
   );
 }
 
+export function wrapTlkForMember(authHeader: string, body: {
+  tribeId: string;
+  newMemberAddress: string;
+  wrappedKey: string; // base64-encoded wrapped TLK blob produced client-side
+}) {
+  return authedPost<{ tribe_id: string; tlk_version: number; member: string }>(
+    "/locations/keys/wrap",
+    authHeader,
+    body,
+  );
+}
+
 // ---- ZK Location Proofs ----
 
 export interface ZkProofSubmission {
