@@ -11,6 +11,7 @@ import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useIdentity } from "../hooks/useIdentity";
 import { useLocationPods, type DecryptedPod } from "../hooks/useLocationPods";
 import { useTlkStatus } from "../hooks/useTlkStatus";
+import { useTlkDistribution } from "../hooks/useTlkDistribution";
 import { useMyStructures } from "../hooks/useStructures";
 import { TlkStatusBanner } from "../components/locations/TlkStatusBanner";
 import { RegisterLocationModal } from "../components/locations/RegisterLocationModal";
@@ -163,6 +164,42 @@ const ErrorText = styled.div`
   padding: ${({ theme }) => theme.spacing.sm} 0;
 `;
 
+const PendingSection = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+`;
+
+const PendingSectionHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
+`;
+
+const PendingSectionTitle = styled.h3`
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+const PendingRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  background: ${({ theme }) => theme.colors.surface.raised};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  font-size: 13px;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
+`;
+
+const PendingAddress = styled.span`
+  flex: 1;
+  font-family: ${({ theme }) => theme.fonts.mono};
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.text.muted};
+`;
+
 // ============================================================
 // Component
 // ============================================================
@@ -177,6 +214,7 @@ export function LocationsPage() {
   const { pods, isLoading: podsLoading, error: podsError, fetchPods, deletePod } =
     useLocationPods();
   const tlk = useTlkStatus();
+  const distribution = useTlkDistribution(tribeId, tlk.tlkBytes);
   const { structures } = useMyStructures();
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -316,6 +354,35 @@ export function LocationsPage() {
             <CardValue>v{tlk.tlkVersion ?? "—"}</CardValue>
           </SummaryCard>
         </SummaryGrid>
+      )}
+
+      {/* Pending members — key distribution */}
+      {tlk.tlkBytes && distribution.pendingMembers.length > 0 && (
+        <PendingSection>
+          <PendingSectionHeader>
+            <PendingSectionTitle>
+              {distribution.pendingMembers.length} member{distribution.pendingMembers.length !== 1 ? "s" : ""} awaiting TLK access
+            </PendingSectionTitle>
+            <SecondaryButton
+              onClick={() => tribeId && tlk.tlkBytes && distribution.grantAll(tribeId, tlk.tlkBytes)}
+              disabled={distribution.isLoading}
+            >
+              {distribution.isLoading ? "Granting…" : "Grant All"}
+            </SecondaryButton>
+          </PendingSectionHeader>
+          {distribution.pendingMembers.map((m) => (
+            <PendingRow key={m.address}>
+              <PendingAddress>{truncateAddress(m.address, 10, 6)}</PendingAddress>
+              <PrimaryButton
+                onClick={() => tribeId && tlk.tlkBytes && distribution.grantAccess(tribeId, m, tlk.tlkBytes)}
+                disabled={distribution.isLoading}
+              >
+                Grant
+              </PrimaryButton>
+            </PendingRow>
+          ))}
+          {distribution.error && <ErrorText>{distribution.error}</ErrorText>}
+        </PendingSection>
       )}
 
       {/* Error */}

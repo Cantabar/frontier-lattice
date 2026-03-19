@@ -287,6 +287,32 @@ export function wrapTlkForMember(authHeader: string, body: {
   );
 }
 
+// ---- TLK Key Distribution ----
+
+export interface PendingMember {
+  address: string;
+  x25519Pub: string;
+  registeredAt: string;
+}
+
+export function registerPublicKey(authHeader: string, body: {
+  tribeId: string;
+  x25519Pub: string; // base64-encoded 32-byte X25519 public key
+}) {
+  return authedPost<{ tribe_id: string; member: string; registered: boolean }>(
+    "/locations/keys/register",
+    authHeader,
+    body,
+  );
+}
+
+export function getPendingMembers(tribeId: string, authHeader: string) {
+  return authedGet<{ tribe_id: string; count: number; members: PendingMember[] }>(
+    `/locations/keys/pending/${tribeId}`,
+    authHeader,
+  );
+}
+
 // ---- ZK Location Proofs ----
 
 export interface ZkProofSubmission {
