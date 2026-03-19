@@ -163,7 +163,12 @@ async function authedGet<T>(path: string, authHeader: string): Promise<T> {
   return res.json();
 }
 
-async function authedPost<T>(path: string, authHeader: string, body: unknown): Promise<T> {
+async function authedPost<T>(
+  path: string,
+  authHeader: string,
+  body: unknown,
+  options?: { silent?: boolean },
+): Promise<T> {
   const res = await fetch(`${base}${path}`, {
     method: "POST",
     headers: {
@@ -174,7 +179,7 @@ async function authedPost<T>(path: string, authHeader: string, body: unknown): P
   });
   if (!res.ok) {
     const error = new Error(`Indexer ${res.status}: ${await res.text()}`);
-    notifyError(error, path);
+    if (!options?.silent) notifyError(error, path);
     throw error;
   }
   return res.json();
@@ -303,6 +308,7 @@ export function registerPublicKey(authHeader: string, body: {
     "/locations/keys/register",
     authHeader,
     body,
+    { silent: true },
   );
 }
 
