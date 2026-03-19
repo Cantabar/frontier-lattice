@@ -3,7 +3,6 @@
  *
  * Mirrors the on-chain Move event structs from:
  *   - tribe::tribe (Phase 1)
- *   - forge_planner::forge_planner (Phase 3)
  *   - trustless_contracts::{coin_for_coin,coin_for_item,item_for_coin,item_for_item,transport,contract_utils,multi_input} (Phase 4)
  *
  * Sui emits event fields as JSON via RPC. Object IDs are hex strings.
@@ -16,7 +15,6 @@
 
 export const MODULES = {
   tribe: "tribe::tribe",
-  forgePlanner: "forge_planner::forge_planner",
   /** Shared lifecycle events (filled, completed, cancelled, expired) */
   contractUtils: "trustless_contracts::contract_utils",
   /** Per-module creation events */
@@ -83,59 +81,7 @@ export interface TreasurySpendEvent {
 }
 
 // ============================================================
-// Phase 3 — Forge Planner Events
-// ============================================================
-
-export interface RecipeRegistryCreatedEvent {
-  registry_id: string;
-  tribe_id: string;
-}
-
-export interface RecipeAddedEvent {
-  registry_id: string;
-  tribe_id: string;
-  output_type_id: string;
-  output_quantity: number;
-  input_count: string;
-  run_time: string;
-}
-
-export interface RecipeRemovedEvent {
-  registry_id: string;
-  tribe_id: string;
-  output_type_id: string;
-}
-
-export interface OrderCreatedEvent {
-  order_id: string;
-  tribe_id: string;
-  creator_id: string;
-  output_type_id: string;
-  output_quantity: number;
-  run_count: string;
-  bounty_amount: string;
-}
-
-export interface OrderFulfilledEvent {
-  order_id: string;
-  tribe_id: string;
-  creator_id: string;
-  fulfiller_id: string;
-  output_type_id: string;
-  output_quantity: number;
-  bounty_amount: string;
-}
-
-export interface OrderCancelledEvent {
-  order_id: string;
-  tribe_id: string;
-  creator_id: string;
-  output_type_id: string;
-  bounty_amount: string;
-}
-
-// ============================================================
-// Phase 4 — Trustless Contracts Events
+// Trustless Contracts Events
 // ============================================================
 
 // Per-module creation events (no generic ContractCreatedEvent exists)
@@ -318,13 +264,6 @@ export const EVENT_TYPES = [
   "TreasuryProposalCreatedEvent",
   "TreasuryProposalVotedEvent",
   "TreasurySpendEvent",
-  // Forge Planner
-  "RecipeRegistryCreatedEvent",
-  "RecipeAddedEvent",
-  "RecipeRemovedEvent",
-  "OrderCreatedEvent",
-  "OrderFulfilledEvent",
-  "OrderCancelledEvent",
   // Trustless Contracts — per-module creation events
   "CoinForCoinCreatedEvent",
   "CoinForItemCreatedEvent",
@@ -409,7 +348,6 @@ export interface IndexerConfig {
   /** Package IDs to subscribe to (one per deployed Move package) */
   packageIds: {
     tribe: string;
-    forgePlanner: string;
     trustlessContracts: string;
   };
   /** Postgres connection string */
@@ -445,7 +383,6 @@ export const DEFAULT_CONFIG: IndexerConfig = {
   suiRpcUrl: process.env.SUI_RPC_URL ?? "http://127.0.0.1:9000",
   packageIds: {
     tribe: process.env.PACKAGE_TRIBE ?? "",
-    forgePlanner: process.env.PACKAGE_FORGE_PLANNER ?? "",
     trustlessContracts: process.env.PACKAGE_TRUSTLESS_CONTRACTS ?? "",
   },
   databaseUrl: process.env.DATABASE_URL ?? "postgresql://corm:corm@localhost:5432/frontier_corm",

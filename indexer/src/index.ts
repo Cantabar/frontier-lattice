@@ -10,7 +10,6 @@
  * Environment variables (all optional, sensible defaults for local dev):
  *   SUI_RPC_URL          — Sui RPC endpoint (default: http://127.0.0.1:9000)
  *   PACKAGE_TRIBE              — Deployed tribe package ID
- *   PACKAGE_FORGE_PLANNER      — Deployed forge_planner package ID
  *   PACKAGE_TRUSTLESS_CONTRACTS — Deployed trustless_contracts package ID
  *   DATABASE_URL         — Postgres connection string (default: postgresql://corm:corm@localhost:5432/frontier_corm)
  *   API_PORT             — API server port (default: 3100)
@@ -44,7 +43,7 @@ async function main() {
       `\n  ⚠  Missing package IDs: ${missingPackages.join(", ")}`,
     );
     console.warn(
-      "     Set PACKAGE_TRIBE, PACKAGE_FORGE_PLANNER, PACKAGE_TRUSTLESS_CONTRACTS env vars.",
+      "     Set PACKAGE_TRIBE, PACKAGE_TRUSTLESS_CONTRACTS env vars.",
     );
     console.warn(
       "     The indexer will start but won't subscribe to events for missing packages.\n",

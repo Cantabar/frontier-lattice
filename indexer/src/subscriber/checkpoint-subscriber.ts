@@ -57,7 +57,7 @@ export class CheckpointSubscriber {
    */
   private buildEventTypeFilters(): string[] {
     const filters: string[] = [];
-    const { tribe, forgePlanner, trustlessContracts } = this.config.packageIds;
+    const { tribe, trustlessContracts } = this.config.packageIds;
 
     // Map event names to their package + module
     const eventModuleMap: Record<string, { packageId: string; module: string }> = {};
@@ -70,14 +70,6 @@ export class CheckpointSubscriber {
       "TreasurySpendEvent",
     ]) {
       eventModuleMap[name] = { packageId: tribe, module: "tribe" };
-    }
-
-    // Forge Planner events
-    for (const name of [
-      "RecipeRegistryCreatedEvent", "RecipeAddedEvent", "RecipeRemovedEvent",
-      "OrderCreatedEvent", "OrderFulfilledEvent", "OrderCancelledEvent",
-    ]) {
-      eventModuleMap[name] = { packageId: forgePlanner, module: "forge_planner" };
     }
 
     // Trustless Contracts — per-module creation events

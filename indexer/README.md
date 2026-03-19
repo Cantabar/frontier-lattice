@@ -10,19 +10,19 @@ Sui Checkpoints → Checkpoint Subscriber → Event Archiver → SQLite
                                               Express API ← Query Layer
 ```
 
-**Subscriber** polls Sui RPC for events from the tribe, forge_planner, and trustless_contracts packages. Each event is enriched with checkpoint metadata (sequence, digest, timestamp).
+**Subscriber** polls Sui RPC for events from the tribe and trustless_contracts packages. Each event is enriched with checkpoint metadata (sequence, digest, timestamp).
 
 **Archiver** stores events with denormalised fields (tribe_id, character_id, primary_id) and updates materialised views (reputation snapshots).
 
 **API** serves historical queries, reputation audit trails, and checkpoint inclusion proofs.
 
-## Tracked Events (21 total)
+## Tracked Events (20 total)
 
 **Tribe (8):** TribeCreatedEvent, MemberJoinedEvent, MemberRemovedEvent, ReputationUpdatedEvent, TreasuryDepositEvent, TreasuryProposalCreatedEvent, TreasuryProposalVotedEvent, TreasurySpendEvent
 
-**Forge Planner (6):** RecipeRegistryCreatedEvent, RecipeAddedEvent, RecipeRemovedEvent, OrderCreatedEvent, OrderFulfilledEvent, OrderCancelledEvent
+**Trustless Contracts (7):** CoinForCoinCreatedEvent, CoinForItemCreatedEvent, ItemForCoinCreatedEvent, ItemForItemCreatedEvent, TransportCreatedEvent, ContractFilledEvent, ContractCompletedEvent, ContractCancelledEvent, ContractExpiredEvent, TransportAcceptedEvent, TransportDeliveredEvent
 
-**Trustless Contracts (7):** ContractCreatedEvent, ContractFilledEvent, ContractCompletedEvent, ContractCancelledEvent, ContractExpiredEvent, TransportAcceptedEvent, TransportDeliveredEvent
+**Multi-Input (5):** MultiInputContractCreatedEvent, SlotFilledEvent, MultiInputContractCompletedEvent, MultiInputContractCancelledEvent, MultiInputContractExpiredEvent
 
 ## Quick Start
 
@@ -37,7 +37,6 @@ npm run dev
 |----------|---------|-------------|
 | `SUI_RPC_URL` | `http://127.0.0.1:9000` | Sui RPC endpoint |
 | `PACKAGE_TRIBE` | — | Deployed tribe package ID |
-| `PACKAGE_FORGE_PLANNER` | — | Deployed forge_planner package ID |
 | `PACKAGE_TRUSTLESS_CONTRACTS` | — | Deployed trustless_contracts package ID |
 | `DB_PATH` | `./data/frontier-corm.db` | SQLite database path |
 | `API_PORT` | `3100` | API server port |
@@ -55,7 +54,6 @@ All routes under `/api/v1`. Pagination via `?limit=50&offset=0&order=desc`.
 - `GET /events/object/:objectId` — Events for a specific object (job, order, etc.)
 - `GET /reputation/:tribeId/:characterId` — Current rep + audit trail with proofs
 - `GET /reputation/:tribeId/leaderboard` — Top members by reputation
-- `GET /manufacturing/:tribeId` — Forge Planner event history
 - `GET /proof/:eventId` — Checkpoint inclusion proof for a single event
 - `GET /event-types` — List of all tracked event types
 

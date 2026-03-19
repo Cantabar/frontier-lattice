@@ -138,27 +138,6 @@ export function createRouter(pool: pg.Pool): Router {
     res.json({ leaderboard, tribe_id: tribeId });
   });
 
-  // ---- Manufacturing (convenience: filtered Forge Planner events) ----
-
-  /**
-   * GET /manufacturing/:tribeId
-   * Manufacturing event history for a tribe.
-   */
-  router.get("/manufacturing/:tribeId", async (req: Request, res: Response) => {
-    const tribeId = req.params.tribeId as string;
-    const params = parsePagination(req);
-    const mfgEventTypes: EventTypeName[] = [
-      "RecipeRegistryCreatedEvent", "RecipeAddedEvent", "RecipeRemovedEvent",
-      "OrderCreatedEvent", "OrderFulfilledEvent", "OrderCancelledEvent",
-    ];
-
-    const events = await getEventsByTribe(pool, tribeId, params);
-    const mfgEvents = events.filter((e) =>
-      mfgEventTypes.includes(e.event_name as EventTypeName),
-    );
-    res.json({ events: hydrateEvents(mfgEvents), tribe_id: tribeId, ...params });
-  });
-
   // ---- Proof Verification ----
 
   /**

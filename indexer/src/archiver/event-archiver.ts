@@ -151,44 +151,6 @@ function extractDenormalisedFields(
         characterId: null,
       };
 
-    // -- Forge Planner events --
-    case "RecipeRegistryCreatedEvent":
-      return {
-        primaryId: str(data.registry_id),
-        tribeId: str(data.tribe_id),
-        characterId: null,
-      };
-    case "RecipeAddedEvent":
-      return {
-        primaryId: str(data.registry_id),
-        tribeId: str(data.tribe_id),
-        characterId: null,
-      };
-    case "RecipeRemovedEvent":
-      return {
-        primaryId: str(data.registry_id),
-        tribeId: str(data.tribe_id),
-        characterId: null,
-      };
-    case "OrderCreatedEvent":
-      return {
-        primaryId: str(data.order_id),
-        tribeId: str(data.tribe_id),
-        characterId: str(data.creator_id),
-      };
-    case "OrderFulfilledEvent":
-      return {
-        primaryId: str(data.order_id),
-        tribeId: str(data.tribe_id),
-        characterId: str(data.fulfiller_id),
-      };
-    case "OrderCancelledEvent":
-      return {
-        primaryId: str(data.order_id),
-        tribeId: str(data.tribe_id),
-        characterId: str(data.creator_id),
-      };
-
     // -- Trustless Contracts events (per-module creation events) --
     case "CoinForCoinCreatedEvent":
     case "CoinForItemCreatedEvent":
