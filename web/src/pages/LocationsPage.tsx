@@ -21,6 +21,7 @@ import { CopyableId } from "../components/shared/CopyableId";
 import { solarSystemName } from "../lib/solarSystems";
 import { truncateAddress, timeAgo } from "../lib/format";
 import { ASSEMBLY_TYPES } from "../lib/types";
+import { ed25519PubToX25519, bytesToBase64 } from "../lib/locationCrypto";
 
 // ============================================================
 // Styled primitives
@@ -240,11 +241,13 @@ export function LocationsPage() {
   }
 
   async function handleInitializeTlk() {
-    if (!tribeId) return;
-    // For the hackathon MVP, init with empty member list (server generates TLK
-    // and wraps to the caller). A full implementation would collect all member
-    // X25519 public keys here.
-    await tlk.initialize({ tribeId, memberPublicKeys: [] });
+    if (!tribeId || !account?.publicKey) return;
+    // Derive the caller's X25519 public key from their wallet Ed25519 key
+    const x25519Pub = ed25519PubToX25519(new Uint8Array(account.publicKey));
+    await tlk.initialize({
+      tribeId,
+      memberPublicKeys: [{ address, x25519Pub: bytesToBase64(x25519Pub) }],
+    });
     // Refresh status after init
     await tlk.fetchStatus(tribeId);
   }
