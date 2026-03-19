@@ -60,6 +60,7 @@ const VersionLabel = styled.span`
 
 interface Props {
   isInitialized: boolean;
+  hasWrappedKey: boolean;
   tlkVersion: number | null;
   isUnlocked: boolean;
   isOfficer: boolean;
@@ -71,6 +72,7 @@ interface Props {
 
 export function TlkStatusBanner({
   isInitialized,
+  hasWrappedKey,
   tlkVersion,
   isUnlocked,
   isOfficer,
@@ -104,6 +106,22 @@ export function TlkStatusBanner({
         <Dot $color="var(--color-success, #5cb85c)" />
         <Text>Encryption key unlocked — locations are decrypted for this session.</Text>
         {tlkVersion != null && <VersionLabel>TLK v{tlkVersion}</VersionLabel>}
+      </Banner>
+    );
+  }
+
+  if (!hasWrappedKey) {
+    return (
+      <Banner $variant="info">
+        <Dot $color="var(--color-primary, #00d4ff)" />
+        <Text>
+          Tribe Location Key is active. Unlock to register your key and request access from an
+          existing member.
+        </Text>
+        {tlkVersion != null && <VersionLabel>TLK v{tlkVersion}</VersionLabel>}
+        <PrimaryButton onClick={onUnlock} disabled={unlockLoading}>
+          {unlockLoading ? "Unlocking…" : "Unlock TLK"}
+        </PrimaryButton>
       </Banner>
     );
   }

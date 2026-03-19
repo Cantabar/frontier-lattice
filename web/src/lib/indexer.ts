@@ -255,6 +255,14 @@ export function deleteLocationPod(structureId: string, authHeader: string) {
   );
 }
 
+export function getTlkStatus(tribeId: string, authHeader: string) {
+  return authedGet<{ tribe_id: string; initialized: boolean; tlk_version: number; has_wrapped_key: boolean }>(
+    `/locations/keys/${tribeId}/status`,
+    authHeader,
+    { silent: true },
+  );
+}
+
 export function getTlk(tribeId: string, authHeader: string) {
   return authedGet<{ tribe_id: string; tlk_version: number; wrapped_key: string }>(
     `/locations/keys/${tribeId}`,

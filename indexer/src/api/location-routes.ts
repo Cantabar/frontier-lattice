@@ -173,6 +173,40 @@ export function createLocationRouter(pool: pg.Pool): Router {
   });
 
   // ================================================================
+  // GET /keys/:tribeId/status — Check TLK initialisation state for a tribe
+  //
+  // Returns whether a TLK has been initialised for the tribe and whether
+  // the calling member has a wrapped copy. Does NOT return key material.
+  // ================================================================
+  router.get("/keys/:tribeId/status", async (req: Request, res: Response) => {
+    const address = await authenticate(req, res);
+    if (!address) return;
+
+    const tribeId = req.params.tribeId as string;
+
+    try {
+      const latestVersion = await getLatestTlkVersion(pool, tribeId);
+      const initialized = latestVersion > 0;
+      let hasWrappedKey = false;
+
+      if (initialized) {
+        const memberTlk = await getTlkForMember(pool, tribeId, address);
+        hasWrappedKey = !!memberTlk;
+      }
+
+      res.json({
+        tribe_id: tribeId,
+        initialized,
+        tlk_version: latestVersion,
+        has_wrapped_key: hasWrappedKey,
+      });
+    } catch (err) {
+      console.error("[locations] Failed to fetch TLK status:", err);
+      res.status(500).json({ error: "Failed to fetch TLK status" });
+    }
+  });
+
+  // ================================================================
   // GET /keys/:tribeId — Fetch the caller's wrapped TLK
   // ================================================================
   router.get("/keys/:tribeId", async (req: Request, res: Response) => {

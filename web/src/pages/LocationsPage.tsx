@@ -407,6 +407,7 @@ export function LocationsPage() {
       {/* TLK banner */}
       <TlkStatusBanner
         isInitialized={tlk.isInitialized}
+        hasWrappedKey={tlk.hasWrappedKey}
         tlkVersion={tlk.tlkVersion}
         isUnlocked={!!tlk.tlkBytes}
         isOfficer={isOfficer}

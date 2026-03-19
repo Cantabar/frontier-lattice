@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useLocationPods } from "./useLocationPods";
+import { getTlkStatus as fetchTlkStatusApi } from "../lib/indexer";
 
 // ============================================================
 // Types
@@ -21,6 +22,8 @@ export interface UseTlkStatusReturn {
   tlkVersion: number | null;
   /** Whether a TLK exists for the tribe on the server. */
   isInitialized: boolean;
+  /** Whether the current user has a wrapped TLK (granted access). */
+  hasWrappedKey: boolean;
   /** Whether a fetch/unwrap/init operation is running. */
   isLoading: boolean;
   /** Last error message. */
@@ -43,9 +46,10 @@ export interface UseTlkStatusReturn {
 // ============================================================
 
 export function useTlkStatus(): UseTlkStatusReturn {
-  const { fetchWrappedTlk, initializeTlk } = useLocationPods();
+  const { fetchWrappedTlk, initializeTlk, getAuthHeader } = useLocationPods();
 
   const [isInitialized, setIsInitialized] = useState(false);
+  const [hasWrappedKey, setHasWrappedKey] = useState(false);
   const [tlkVersion, setTlkVersion] = useState<number | null>(null);
   const [wrappedKey, setWrappedKey] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -60,14 +64,20 @@ export function useTlkStatus(): UseTlkStatusReturn {
       setIsLoading(true);
       setError(null);
       try {
-        const result = await fetchWrappedTlk(tribeId);
-        if (result) {
-          setIsInitialized(true);
-          setTlkVersion(result.tlkVersion);
-          setWrappedKey(result.wrappedKey);
+        // 1. Check tribe-level TLK status (initialized? user has access?)
+        const authHeader = await getAuthHeader();
+        const status = await fetchTlkStatusApi(tribeId, authHeader);
+        setIsInitialized(status.initialized);
+        setTlkVersion(status.tlk_version || null);
+        setHasWrappedKey(status.has_wrapped_key);
+
+        // 2. If the user has a wrapped key, fetch it for later unwrap
+        if (status.has_wrapped_key) {
+          const result = await fetchWrappedTlk(tribeId);
+          if (result) {
+            setWrappedKey(result.wrappedKey);
+          }
         } else {
-          setIsInitialized(false);
-          setTlkVersion(null);
           setWrappedKey(null);
         }
       } catch (err) {
@@ -77,7 +87,7 @@ export function useTlkStatus(): UseTlkStatusReturn {
         setIsLoading(false);
       }
     },
-    [fetchWrappedTlk],
+    [getAuthHeader, fetchWrappedTlk],
   );
 
   const initialize = useCallback(
@@ -112,6 +122,7 @@ export function useTlkStatus(): UseTlkStatusReturn {
     tlkBytes: tlkBytesRef.current,
     tlkVersion,
     isInitialized,
+    hasWrappedKey,
     isLoading,
     error,
     fetchStatus,
