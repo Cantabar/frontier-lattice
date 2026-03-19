@@ -22,6 +22,7 @@ use trustless_contracts::contract_utils::{Self, ContractStatus};
 
 // === Module-specific Errors ===
 const ESourceSsuMismatch: u64 = 100;
+const ENotFreeContract: u64 = 101;
 
 // === Structs ===
 
@@ -248,7 +249,7 @@ public fun claim_free<C>(
 ) {
     contract_utils::assert_open(&contract.status);
     contract_utils::assert_not_expired(contract.deadline_ms, clock.timestamp_ms());
-    assert!(contract.wanted_amount == 0, ESourceSsuMismatch); // reuse error for simplicity
+    assert!(contract.wanted_amount == 0, ENotFreeContract);
     contract_utils::assert_nonzero_quantity((quantity as u64));
 
     let filler_id = filler_character.id();

@@ -30,13 +30,13 @@ const ETribeNameEmpty: u64 = 0;
 const ENotAuthorized: u64 = 1;
 const EAlreadyMember: u64 = 2;
 const ENotMember: u64 = 3;
-const ECannotRemoveLeader: u64 = 9;
-const ETribeMismatch: u64 = 10;
-const EInGameTribeAlreadyClaimed: u64 = 14;
-const EInGameTribeIdInvalid: u64 = 15;
-const ECharacterTribeMismatch: u64 = 16;
-const ECannotTransferToSelf: u64 = 17;
-const ERoleStale: u64 = 18;
+const ECannotRemoveLeader: u64 = 4;
+const ETribeMismatch: u64 = 5;
+const EInGameTribeAlreadyClaimed: u64 = 6;
+const EInGameTribeIdInvalid: u64 = 7;
+const ECharacterTribeMismatch: u64 = 8;
+const ECannotTransferToSelf: u64 = 9;
+const ERoleStale: u64 = 10;
 
 // === Enums ===
 public enum Role has copy, drop, store {

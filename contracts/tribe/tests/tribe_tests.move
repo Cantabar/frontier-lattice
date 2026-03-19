@@ -404,7 +404,7 @@ fun self_join_success() {
 }
 
 #[test]
-#[expected_failure(abort_code = 16)] // ECharacterTribeMismatch
+#[expected_failure(abort_code = 8)] // ECharacterTribeMismatch
 fun self_join_wrong_tribe_fails() {
     let mut ts = ts::begin(@0x0);
     let (leader_id, _) = setup_characters(&mut ts);
@@ -562,7 +562,7 @@ fun transfer_leadership_success() {
 }
 
 #[test]
-#[expected_failure(abort_code = 17)] // ECannotTransferToSelf
+#[expected_failure(abort_code = 9)] // ECannotTransferToSelf
 fun transfer_leadership_to_self_fails() {
     let mut ts = ts::begin(@0x0);
     let (leader_id, _) = setup_characters(&mut ts);
@@ -596,7 +596,7 @@ fun transfer_leadership_to_self_fails() {
 }
 
 #[test]
-#[expected_failure(abort_code = 18)] // ERoleStale
+#[expected_failure(abort_code = 10)] // ERoleStale
 fun stale_leader_cap_rejected_after_transfer() {
     let mut ts = ts::begin(@0x0);
     let (leader_id, member_id) = setup_characters(&mut ts);
@@ -657,7 +657,7 @@ fun stale_leader_cap_rejected_after_transfer() {
 }
 
 #[test]
-#[expected_failure(abort_code = 14)] // EInGameTribeAlreadyClaimed
+#[expected_failure(abort_code = 6)] // EInGameTribeAlreadyClaimed
 fun create_duplicate_in_game_tribe_fails() {
     let mut ts = ts::begin(@0x0);
     let (leader_id, member_id) = setup_characters(&mut ts);
