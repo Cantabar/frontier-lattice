@@ -5,7 +5,7 @@
  */
 
 import { config } from "../config";
-import type { ArchivedEvent, EventTypeName, PaginationParams, ReputationSnapshot } from "./types";
+import type { ArchivedEvent, EventTypeName, PaginationParams } from "./types";
 
 const base = config.indexerUrl;
 
@@ -80,21 +80,6 @@ export function getEventsByCharacter(characterId: string, params: PaginationPara
 export function getEventsByObject(objectId: string, params: PaginationParams = {}) {
   return get<{ events: ArchivedEvent[] }>(
     `/events/object/${objectId}${qs({ limit: params.limit, offset: params.offset, order: params.order })}`,
-  );
-}
-
-// ---- Reputation ----
-
-export function getReputation(tribeId: string, characterId: string) {
-  return get<{
-    snapshot: ReputationSnapshot | null;
-    audit_trail: ArchivedEvent[];
-  }>(`/reputation/${tribeId}/${characterId}`);
-}
-
-export function getLeaderboard(tribeId: string, limit = 50) {
-  return get<{ leaderboard: ReputationSnapshot[] }>(
-    `/reputation/${tribeId}/leaderboard${qs({ limit })}`,
   );
 }
 

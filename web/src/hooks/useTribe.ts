@@ -1,7 +1,7 @@
 /**
  * Hook for reading Tribe object data from Sui RPC.
  *
- * Members and reputation are stored in on-chain Tables (dynamic fields).
+ * Members are stored in an on-chain Table (dynamic fields).
  * We resolve them with getDynamicFields + getDynamicFieldObject queries.
  */
 
@@ -92,45 +92,27 @@ export function useTribe(tribeId: string | undefined) {
 
   const fields = (data?.data?.content as { fields?: Record<string, unknown> })?.fields;
   const membersTableId = (fields?.members as { fields?: { id?: { id: string } } })?.fields?.id?.id;
-  const repTableId = (fields?.reputation as { fields?: { id?: { id: string } } })?.fields?.id?.id;
 
   // Fetch member dynamic fields from the members Table
   const { data: members } = useQuery({
     queryKey: ["tribeMembers", tribeId, membersTableId],
     queryFn: async (): Promise<TribeMember[]> => {
-      if (!membersTableId || !repTableId) return [];
+      if (!membersTableId) return [];
 
-      // Get member entries from the members table
       const memberFields = await client.getDynamicFields({ parentId: membersTableId });
-      const repFields = await client.getDynamicFields({ parentId: repTableId });
 
-      // Build a reputation lookup: character_id -> score
-      const repMap = new Map<string, number>();
-      for (const rf of repFields.data) {
-        const repObj = await client.getDynamicFieldObject({ parentId: repTableId, name: rf.name });
-        const repContent = repObj.data?.content as { fields?: Record<string, unknown> } | undefined;
-        const charId = String((rf.name as { value?: unknown }).value ?? rf.name);
-        const score = Number(repContent?.fields?.value ?? 0);
-        repMap.set(charId, score);
-      }
-
-      // Build member list
       const result: TribeMember[] = [];
       for (const mf of memberFields.data) {
         const memberObj = await client.getDynamicFieldObject({ parentId: membersTableId, name: mf.name });
         const memberContent = memberObj.data?.content as { fields?: Record<string, unknown> } | undefined;
         const charId = String((mf.name as { value?: unknown }).value ?? mf.name);
         const role = parseRole(memberContent?.fields?.value);
-        result.push({
-          characterId: charId,
-          role,
-          reputation: repMap.get(charId) ?? 0,
-        });
+        result.push({ characterId: charId, role });
       }
 
       return result;
     },
-    enabled: !!membersTableId && !!repTableId,
+    enabled: !!membersTableId,
   });
 
   const tribe: TribeData | null = (() => {

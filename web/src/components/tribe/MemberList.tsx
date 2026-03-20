@@ -75,12 +75,11 @@ interface Props {
   tribeId: string;
   leaderCharacterId: string;
   cap: TribeCapData | null;
-  onUpdateReputation?: (characterId: string, currentReputation: number) => void;
   onChangeRole?: (characterId: string, currentRole: Role) => void;
   onTransferLeadership?: (characterId: string) => void;
 }
 
-export function MemberList({ members, tribeId, leaderCharacterId, cap, onUpdateReputation, onChangeRole, onTransferLeadership }: Props) {
+export function MemberList({ members, tribeId, leaderCharacterId, cap, onChangeRole, onTransferLeadership }: Props) {
   const isLeader = cap?.role === "Leader";
   const isLeaderOrOfficer = cap && (cap.role === "Leader" || cap.role === "Officer");
   const { profiles } = useCharacterProfiles(members.map((m) => m.characterId));
@@ -91,7 +90,6 @@ export function MemberList({ members, tribeId, leaderCharacterId, cap, onUpdateR
         <tr>
           <Th>Character</Th>
           <Th>Role</Th>
-          <Th>Reputation</Th>
           {(isLeader || isLeaderOrOfficer) && <Th>Actions</Th>}
         </tr>
       </thead>
@@ -107,7 +105,6 @@ export function MemberList({ members, tribeId, leaderCharacterId, cap, onUpdateR
             <Td>
               <RoleBadge $role={m.role}>{m.role}</RoleBadge>
             </Td>
-            <Td>{m.reputation}</Td>
             {(isLeader || isLeaderOrOfficer) && (
               <Td>
                 <ActionCell>
@@ -119,11 +116,6 @@ export function MemberList({ members, tribeId, leaderCharacterId, cap, onUpdateR
                   {isLeader && m.characterId !== leaderCharacterId && onChangeRole && (
                     <RepButton onClick={() => onChangeRole(m.characterId, m.role)}>
                       Role
-                    </RepButton>
-                  )}
-                  {isLeaderOrOfficer && onUpdateReputation && (
-                    <RepButton onClick={() => onUpdateReputation(m.characterId, m.reputation)}>
-                      Rep
                     </RepButton>
                   )}
                   {isLeader && m.characterId !== leaderCharacterId && cap && (

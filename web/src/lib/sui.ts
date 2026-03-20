@@ -124,29 +124,8 @@ export function buildRemoveMember(params: {
   return tx;
 }
 
-export function buildUpdateReputation(params: {
-  tribeId: string;
-  capId: string;
-  characterId: string;
-  delta: number;
-  increase: boolean;
-}): Transaction {
-  const tx = new Transaction();
-  tx.moveCall({
-    target: `${packages.tribe}::tribe::update_reputation`,
-    arguments: [
-      tx.object(params.tribeId),
-      tx.object(params.capId),
-      tx.pure.id(params.characterId),
-      tx.pure.u64(params.delta),
-      tx.pure.bool(params.increase),
-    ],
-  });
-  return tx;
-}
-
 /**
- * Atomically change a member's role by composing remove_member + add_member
+ * Atomically change a member's role
  * in a single PTB. Leader-only (remove_member requires Leader cap).
  * The new TribeCap is transferred to the member's wallet.
  */
@@ -184,27 +163,6 @@ export function buildChangeRole(params: {
 
   // Step 3: Transfer the new TribeCap to the member's wallet
   tx.transferObjects([newCap], tx.pure.address(params.memberWalletAddress));
-  return tx;
-}
-
-/**
- * Issue a RepUpdateCap for a tribe. Leader-only.
- * Transfers the cap to the specified recipient (hot wallet or contract address).
- */
-export function buildIssueRepUpdateCap(params: {
-  tribeId: string;
-  capId: string;
-  recipientAddress: string;
-}): Transaction {
-  const tx = new Transaction();
-  const [repCap] = tx.moveCall({
-    target: `${packages.tribe}::tribe::issue_rep_update_cap`,
-    arguments: [
-      tx.object(params.tribeId),
-      tx.object(params.capId),
-    ],
-  });
-  tx.transferObjects([repCap], tx.pure.address(params.recipientAddress));
   return tx;
 }
 

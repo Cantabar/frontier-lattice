@@ -24,7 +24,6 @@ export type Role = "Leader" | "Officer" | "Member";
 export interface TribeMember {
   characterId: string;
   role: Role;
-  reputation: number;
 }
 
 export interface TribeData {
@@ -371,7 +370,6 @@ export type EventTypeName =
   | "TribeCreatedEvent"
   | "MemberJoinedEvent"
   | "MemberRemovedEvent"
-  | "ReputationUpdatedEvent"
   | "TreasuryDepositEvent"
   | "TreasuryProposalCreatedEvent"
   | "TreasuryProposalVotedEvent"
@@ -412,13 +410,6 @@ export interface ArchivedEvent {
   primary_id: string | null;
   tribe_id: string | null;
   character_id: string | null;
-}
-
-export interface ReputationSnapshot {
-  tribe_id: string;
-  character_id: string;
-  score: number;
-  last_event_id: number;
 }
 
 export interface PaginationParams {

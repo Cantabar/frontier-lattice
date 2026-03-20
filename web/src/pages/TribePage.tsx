@@ -5,12 +5,9 @@ import { useIdentity } from "../hooks/useIdentity";
 import { useTribe } from "../hooks/useTribe";
 import { TribeOverview } from "../components/tribe/TribeOverview";
 import { MemberList } from "../components/tribe/MemberList";
-import { ReputationLeaderboard } from "../components/tribe/ReputationLeaderboard";
 import { CreateTribeModal } from "../components/tribe/CreateTribeModal";
 import { AddMemberModal } from "../components/tribe/AddMemberModal";
-import { UpdateReputationModal } from "../components/tribe/UpdateReputationModal";
 import { ChangeRoleModal } from "../components/tribe/ChangeRoleModal";
-import { IssueRepCapModal } from "../components/tribe/IssueRepCapModal";
 import { TransferLeadershipModal } from "../components/tribe/TransferLeadershipModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
@@ -83,9 +80,7 @@ export function TribePage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [showAddMember, setShowAddMember] = useState(false);
-  const [repTarget, setRepTarget] = useState<{ characterId: string; reputation: number } | null>(null);
   const [roleTarget, setRoleTarget] = useState<{ characterId: string; currentRole: Role } | null>(null);
-  const [showIssueRepCap, setShowIssueRepCap] = useState(false);
   const [transferTarget, setTransferTarget] = useState<string | null>(null);
 
   // Find TribeCap for this tribe (enables write actions)
@@ -171,9 +166,6 @@ export function TribePage() {
         tribeId={tribe.id}
         leaderCharacterId={tribe.leaderCharacterId}
         cap={cap}
-        onUpdateReputation={(characterId, reputation) =>
-          setRepTarget({ characterId, reputation })
-        }
         onChangeRole={(characterId, currentRole) =>
           setRoleTarget({ characterId, currentRole })
         }
@@ -182,33 +174,9 @@ export function TribePage() {
         }
       />
 
-      <SectionLabel>Reputation</SectionLabel>
-      <ReputationLeaderboard tribeId={tribe.id} />
-
-      {/* Tribe Admin (Leader only) */}
-      {isLeader && cap && (
-        <>
-          <SectionLabel>Tribe Admin</SectionLabel>
-          <ActionRow>
-            <SecondaryBtn onClick={() => setShowIssueRepCap(true)}>
-              Issue RepUpdateCap
-            </SecondaryBtn>
-          </ActionRow>
-        </>
-      )}
-
       {showCreate && <CreateTribeModal onClose={() => setShowCreate(false)} />}
       {showAddMember && cap && (
         <AddMemberModal tribeId={tribe.id} cap={cap} onClose={() => setShowAddMember(false)} />
-      )}
-      {repTarget && cap && (
-        <UpdateReputationModal
-          tribeId={tribe.id}
-          capId={cap.id}
-          characterId={repTarget.characterId}
-          currentReputation={repTarget.reputation}
-          onClose={() => setRepTarget(null)}
-        />
       )}
       {roleTarget && cap && (
         <ChangeRoleModal
@@ -217,13 +185,6 @@ export function TribePage() {
           characterId={roleTarget.characterId}
           currentRole={roleTarget.currentRole}
           onClose={() => setRoleTarget(null)}
-        />
-      )}
-      {showIssueRepCap && cap && (
-        <IssueRepCapModal
-          tribeId={tribe.id}
-          capId={cap.id}
-          onClose={() => setShowIssueRepCap(false)}
         />
       )}
       {transferTarget && cap && (
