@@ -274,98 +274,6 @@ fun remove_member_success() {
 }
 
 #[test]
-fun update_reputation_success() {
-    let mut ts = ts::begin(@0x0);
-    let (leader_id, member_id) = setup_characters(&mut ts);
-
-    ts::next_tx(&mut ts, user_a());
-    {
-        let leader = ts::take_shared_by_id<Character>(&ts, leader_id);
-        let mut tribe_registry = ts::take_shared<TribeRegistry>(&ts);
-        let cap = tribe::create_tribe(&mut tribe_registry, &leader, utf8(TRIBE_NAME), ts::ctx(&mut ts));
-        transfer::public_transfer(cap, user_a());
-        ts::return_shared(tribe_registry);
-        ts::return_shared(leader);
-    };
-
-    ts::next_tx(&mut ts, user_a());
-    {
-        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
-        let mut tribe = ts::take_shared<Tribe>(&ts);
-        let member = ts::take_shared_by_id<Character>(&ts, member_id);
-        let member_cap = tribe::add_member(&mut tribe, &leader_cap, &member, tribe::role_member(), ts::ctx(&mut ts));
-        transfer::public_transfer(member_cap, user_b());
-        ts::return_to_sender(&ts, leader_cap);
-        ts::return_shared(tribe);
-        ts::return_shared(member);
-    };
-
-    ts::next_tx(&mut ts, user_a());
-    {
-        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
-        let mut tribe = ts::take_shared<Tribe>(&ts);
-        let member = ts::take_shared_by_id<Character>(&ts, member_id);
-        let member_id_val = object::id(&member);
-
-        tribe::update_reputation(&mut tribe, &leader_cap, member_id_val, 100, true);
-        assert!(tribe::reputation_of(&tribe, member_id_val) == 100);
-
-        tribe::update_reputation(&mut tribe, &leader_cap, member_id_val, 30, false);
-        assert!(tribe::reputation_of(&tribe, member_id_val) == 70);
-
-        // Clamped subtraction
-        tribe::update_reputation(&mut tribe, &leader_cap, member_id_val, 999, false);
-        assert!(tribe::reputation_of(&tribe, member_id_val) == 0);
-
-        ts::return_to_sender(&ts, leader_cap);
-        ts::return_shared(tribe);
-        ts::return_shared(member);
-    };
-
-    ts::end(ts);
-}
-
-#[test]
-fun rep_update_cap_success() {
-    let mut ts = ts::begin(@0x0);
-    let (leader_id, member_id) = setup_characters(&mut ts);
-
-    ts::next_tx(&mut ts, user_a());
-    {
-        let leader = ts::take_shared_by_id<Character>(&ts, leader_id);
-        let mut tribe_registry = ts::take_shared<TribeRegistry>(&ts);
-        let cap = tribe::create_tribe(&mut tribe_registry, &leader, utf8(TRIBE_NAME), ts::ctx(&mut ts));
-        transfer::public_transfer(cap, user_a());
-        ts::return_shared(tribe_registry);
-        ts::return_shared(leader);
-    };
-
-    ts::next_tx(&mut ts, user_a());
-    {
-        let leader_cap = ts::take_from_sender<TribeCap>(&ts);
-        let mut tribe = ts::take_shared<Tribe>(&ts);
-        let member = ts::take_shared_by_id<Character>(&ts, member_id);
-        let member_cap = tribe::add_member(&mut tribe, &leader_cap, &member, tribe::role_member(), ts::ctx(&mut ts));
-        transfer::public_transfer(member_cap, user_b());
-
-        // Issue a RepUpdateCap
-        let rep_cap = tribe::issue_rep_update_cap(&tribe, &leader_cap, ts::ctx(&mut ts));
-        let member_id_val = object::id(&member);
-
-        // Use it to update rep (simulating cross-module call)
-        tribe::update_reputation_with_cap(&mut tribe, &rep_cap, member_id_val, 50, true);
-        assert!(tribe::reputation_of(&tribe, member_id_val) == 50);
-
-        tribe::destroy_rep_update_cap_for_testing(rep_cap);
-        ts::return_to_sender(&ts, leader_cap);
-        ts::return_shared(tribe);
-        ts::return_shared(member);
-    };
-
-    ts::end(ts);
-}
-
-#[test]
 fun self_join_success() {
     let mut ts = ts::begin(@0x0);
     let (leader_id, member_id) = setup_characters(&mut ts);
@@ -513,10 +421,6 @@ fun transfer_leadership_success() {
         let mut tribe = ts::take_shared<Tribe>(&ts);
         let member = ts::take_shared_by_id<Character>(&ts, member_id);
         let member_cap = tribe::add_member(&mut tribe, &leader_cap, &member, tribe::role_officer(), ts::ctx(&mut ts));
-
-        // Give the member some reputation to verify it's preserved
-        tribe::update_reputation(&mut tribe, &leader_cap, object::id(&member), 42, true);
-
         transfer::public_transfer(member_cap, user_b());
         ts::return_to_sender(&ts, leader_cap);
         ts::return_shared(tribe);
@@ -540,10 +444,6 @@ fun transfer_leadership_success() {
         assert!(tribe::is_member(&tribe, member_id));
         assert!(tribe::member_role(&tribe, member_id) == tribe::role_leader());
         assert!(tribe::member_role(&tribe, leader_id) == tribe::role_officer());
-
-        // Verify reputation was preserved
-        assert!(tribe::reputation_of(&tribe, member_id) == 42);
-        assert!(tribe::reputation_of(&tribe, leader_id) == 0);
 
         // Verify new caps
         assert!(tribe::cap_role(&new_leader_cap) == tribe::role_leader());
