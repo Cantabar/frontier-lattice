@@ -5,7 +5,7 @@
  * Fetches all solar systems from the Stillness World API and writes them
  * to web/src/data/solar-systems.json as compact tuples:
  *
- *   [id, "name", "x", "y", "z"]
+ *   [id, "name", constellationId, regionId, "x", "y", "z"]
  *
  * Coordinates are stored as string literals to preserve integer precision
  * (z-axis values can exceed Number.MAX_SAFE_INTEGER).
@@ -56,6 +56,8 @@ async function fetchAllSystems() {
       systems.push([
         sys.id,
         sys.name,
+        sys.constellationId,
+        sys.regionId,
         String(sys.location.x),
         String(sys.location.y),
         String(sys.location.z),
