@@ -3,7 +3,6 @@
  *
  * Tables:
  *   - events: all archived on-chain events with checkpoint proof metadata
- *   - reputation_snapshots: materialised latest reputation per tribe×character
  *   - indexer_cursor: tracks the last processed event cursor for resumability
  *
  * Run standalone to create/migrate: `tsx src/db/schema.ts`
@@ -73,15 +72,6 @@ const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_events_timestamp    ON events(timestamp_ms);
   CREATE INDEX IF NOT EXISTS idx_events_checkpoint   ON events(checkpoint_seq);
   CREATE INDEX IF NOT EXISTS idx_events_tribe_name   ON events(tribe_id, event_name);
-
-  CREATE TABLE IF NOT EXISTS reputation_snapshots (
-    tribe_id      TEXT NOT NULL,
-    character_id  TEXT NOT NULL,
-    score         INTEGER NOT NULL DEFAULT 0,
-    last_event_id INTEGER REFERENCES events(id),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (tribe_id, character_id)
-  );
 
   CREATE TABLE IF NOT EXISTS event_type_cursors (
     event_type      TEXT PRIMARY KEY,

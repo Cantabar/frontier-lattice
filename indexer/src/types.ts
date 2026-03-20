@@ -47,12 +47,6 @@ export interface MemberRemovedEvent {
   character_id: string;
 }
 
-export interface ReputationUpdatedEvent {
-  tribe_id: string;
-  character_id: string;
-  new_score: string; // u64 as string
-}
-
 export interface TreasuryDepositEvent {
   tribe_id: string;
   amount: string;
@@ -259,7 +253,6 @@ export const EVENT_TYPES = [
   "TribeCreatedEvent",
   "MemberJoinedEvent",
   "MemberRemovedEvent",
-  "ReputationUpdatedEvent",
   "TreasuryDepositEvent",
   "TreasuryProposalCreatedEvent",
   "TreasuryProposalVotedEvent",

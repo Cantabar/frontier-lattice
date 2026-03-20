@@ -1,13 +1,12 @@
 /**
  * Event Archiver — receives filtered Sui events from the subscriber,
  * enriches them with denormalised fields, stores them in SQLite with
- * checkpoint proof metadata, and updates materialised views.
+ * checkpoint proof metadata.
  *
  * The archiver is the write-side of the indexer. It:
  *   1. Extracts denormalised fields (tribe_id, character_id, primary_id)
  *      from the event JSON for efficient querying
  *   2. Inserts the event into the `events` table
- *   3. Updates `reputation_snapshots` on ReputationUpdatedEvent
  *
  * The proof chain stored per event:
  *   event_data → tx_digest → checkpoint_seq → checkpoint_digest
@@ -20,7 +19,7 @@
 
 import type pg from "pg";
 import type { ArchivedEvent, EventTypeName } from "../types.js";
-import { insertEvent, upsertReputation } from "../db/queries.js";
+import { insertEvent } from "../db/queries.js";
 
 export interface RawEventInput {
   eventType: string;
@@ -67,14 +66,8 @@ export class EventArchiver {
       character_id: characterId,
     };
 
-    const eventId = await insertEvent(this.pool, archived);
+    await insertEvent(this.pool, archived);
     this.eventCount++;
-
-    // Update materialised views
-    if (input.eventName === "ReputationUpdatedEvent" && eventId > 0) {
-      const score = Number(input.eventData.new_score ?? 0);
-      await upsertReputation(this.pool, tribeId, characterId ?? "", score, eventId);
-    }
 
     if (this.eventCount % 100 === 0) {
       console.log(`[archiver] Archived ${this.eventCount} events total`);
@@ -115,12 +108,6 @@ function extractDenormalisedFields(
         characterId: str(data.character_id),
       };
     case "MemberRemovedEvent":
-      return {
-        primaryId: str(data.tribe_id),
-        tribeId: str(data.tribe_id),
-        characterId: str(data.character_id),
-      };
-    case "ReputationUpdatedEvent":
       return {
         primaryId: str(data.tribe_id),
         tribeId: str(data.tribe_id),

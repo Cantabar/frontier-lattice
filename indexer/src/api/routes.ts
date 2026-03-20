@@ -16,9 +16,6 @@ import {
   getEventsByCharacter,
   getEventsByPrimaryId,
   getEventById,
-  getReputation,
-  getTribeLeaderboard,
-  getReputationAuditTrail,
   getStats,
   getCleanupStats,
   getCleanupJobs,
@@ -105,37 +102,6 @@ export function createRouter(pool: pg.Pool): Router {
     const params = parsePagination(req);
     const events = await getEventsByPrimaryId(pool, objectId, params);
     res.json({ events: hydrateEvents(events), object_id: objectId, ...params });
-  });
-
-  // ---- Reputation ----
-
-  /**
-   * GET /reputation/:tribeId/:characterId
-   * Current reputation snapshot + full audit trail with checkpoint proofs.
-   */
-  router.get("/reputation/:tribeId/:characterId", async (req: Request, res: Response) => {
-    const tribeId = req.params.tribeId as string;
-    const characterId = req.params.characterId as string;
-    const snapshot = await getReputation(pool, tribeId, characterId);
-    const auditTrail = await getReputationAuditTrail(pool, tribeId, characterId);
-
-    res.json({
-      snapshot: snapshot ?? null,
-      audit_trail: hydrateEvents(auditTrail),
-      tribe_id: tribeId,
-      character_id: characterId,
-    });
-  });
-
-  /**
-   * GET /reputation/:tribeId/leaderboard
-   * Top members by reputation in a tribe.
-   */
-  router.get("/reputation/:tribeId/leaderboard", async (req: Request, res: Response) => {
-    const tribeId = req.params.tribeId as string;
-    const limit = Math.min(Number(req.query.limit) || 50, 200);
-    const leaderboard = await getTribeLeaderboard(pool, tribeId, limit);
-    res.json({ leaderboard, tribe_id: tribeId });
   });
 
   // ---- Proof Verification ----

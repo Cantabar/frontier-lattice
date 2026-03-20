@@ -65,9 +65,8 @@ export class CheckpointSubscriber {
     // Tribe events
     for (const name of [
       "TribeCreatedEvent", "MemberJoinedEvent", "MemberRemovedEvent",
-      "ReputationUpdatedEvent", "TreasuryDepositEvent",
-      "TreasuryProposalCreatedEvent", "TreasuryProposalVotedEvent",
-      "TreasurySpendEvent",
+      "TreasuryDepositEvent", "TreasuryProposalCreatedEvent",
+      "TreasuryProposalVotedEvent", "TreasurySpendEvent",
     ]) {
       eventModuleMap[name] = { packageId: tribe, module: "tribe" };
     }

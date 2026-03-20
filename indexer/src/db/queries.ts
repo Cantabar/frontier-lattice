@@ -54,29 +54,6 @@ export async function insertEventsBatch(pool: pg.Pool, events: ArchivedEvent[]):
 }
 
 // ============================================================
-// Reputation Snapshot
-// ============================================================
-
-const UPSERT_REPUTATION_SQL = `
-  INSERT INTO reputation_snapshots (tribe_id, character_id, score, last_event_id, updated_at)
-  VALUES ($1, $2, $3, $4, NOW())
-  ON CONFLICT (tribe_id, character_id) DO UPDATE SET
-    score = $3,
-    last_event_id = $4,
-    updated_at = NOW()
-`;
-
-export async function upsertReputation(
-  pool: pg.Pool,
-  tribeId: string,
-  characterId: string,
-  score: number,
-  lastEventId: number,
-): Promise<void> {
-  await pool.query(UPSERT_REPUTATION_SQL, [tribeId, characterId, score, lastEventId]);
-}
-
-// ============================================================
 // Cursor
 // ============================================================
 
@@ -282,64 +259,6 @@ export async function getEventById(
 ): Promise<ArchivedEvent | undefined> {
   const result = await pool.query("SELECT * FROM events WHERE id = $1", [id]);
   return result.rows[0] as ArchivedEvent | undefined;
-}
-
-// ============================================================
-// Query: Reputation
-// ============================================================
-
-export interface ReputationSnapshot {
-  tribe_id: string;
-  character_id: string;
-  score: number;
-  last_event_id: number;
-  updated_at: string;
-}
-
-export async function getReputation(
-  pool: pg.Pool,
-  tribeId: string,
-  characterId: string,
-): Promise<ReputationSnapshot | undefined> {
-  const result = await pool.query(
-    "SELECT * FROM reputation_snapshots WHERE tribe_id = $1 AND character_id = $2",
-    [tribeId, characterId],
-  );
-  return result.rows[0] as ReputationSnapshot | undefined;
-}
-
-export async function getTribeLeaderboard(
-  pool: pg.Pool,
-  tribeId: string,
-  limit = 50,
-): Promise<ReputationSnapshot[]> {
-  const result = await pool.query(
-    `SELECT * FROM reputation_snapshots
-     WHERE tribe_id = $1
-     ORDER BY score DESC
-     LIMIT $2`,
-    [tribeId, limit],
-  );
-  return result.rows as ReputationSnapshot[];
-}
-
-/**
- * Reputation audit trail: all ReputationUpdatedEvent entries for a
- * tribe×character pair, ordered chronologically. Each event includes
- * checkpoint proof metadata for independent verification.
- */
-export async function getReputationAuditTrail(
-  pool: pg.Pool,
-  tribeId: string,
-  characterId: string,
-): Promise<ArchivedEvent[]> {
-  const result = await pool.query(
-    `SELECT * FROM events
-     WHERE tribe_id = $1 AND character_id = $2 AND event_name = 'ReputationUpdatedEvent'
-     ORDER BY id ASC`,
-    [tribeId, characterId],
-  );
-  return result.rows as ArchivedEvent[];
 }
 
 // ============================================================
