@@ -14,6 +14,7 @@ import { useItems } from "../../hooks/useItems";
 import { useCharacters } from "../../hooks/useCharacters";
 import { useAllTribes } from "../../hooks/useAllTribes";
 import { truncateAddress } from "../../lib/format";
+import { regionName, constellationName } from "../../lib/regions";
 import type { InGameTribe } from "../../lib/types";
 
 // ---------------------------------------------------------------------------
@@ -170,6 +171,10 @@ interface Props {
   onPosterChange: (id: string | null) => void;
   filterTribeId: number | null;
   onTribeChange: (id: number | null) => void;
+  filterRegionId: number | null;
+  onRegionChange: (id: number | null) => void;
+  filterConstellationId: number | null;
+  onConstellationChange: (id: number | null) => void;
   activeCount: number;
   onClearAll: () => void;
 }
@@ -183,6 +188,10 @@ export function ContractFilterPanel({
   onPosterChange,
   filterTribeId,
   onTribeChange,
+  filterRegionId,
+  onRegionChange,
+  filterConstellationId,
+  onConstellationChange,
   activeCount,
   onClearAll,
 }: Props) {
@@ -287,6 +296,54 @@ export function ContractFilterPanel({
                 </>
               ) : (
                 <Placeholder>Any tribe…</Placeholder>
+              )}
+            </Trigger>
+          </FilterGroup>
+
+          {/* Region */}
+          <FilterGroup>
+            <FilterLabel>Region</FilterLabel>
+            <Trigger
+              type="button"
+              onClick={() => {
+                const input = prompt("Enter a region ID (e.g. 10000005):");
+                if (input) {
+                  const id = Number(input);
+                  if (!Number.isNaN(id)) onRegionChange(id);
+                }
+              }}
+            >
+              {filterRegionId != null ? (
+                <>
+                  {regionName(filterRegionId)}
+                  <RemoveIcon onClick={(e) => { e.stopPropagation(); onRegionChange(null); }}>×</RemoveIcon>
+                </>
+              ) : (
+                <Placeholder>Any region…</Placeholder>
+              )}
+            </Trigger>
+          </FilterGroup>
+
+          {/* Constellation */}
+          <FilterGroup>
+            <FilterLabel>Constellation</FilterLabel>
+            <Trigger
+              type="button"
+              onClick={() => {
+                const input = prompt("Enter a constellation ID (e.g. 20000005):");
+                if (input) {
+                  const id = Number(input);
+                  if (!Number.isNaN(id)) onConstellationChange(id);
+                }
+              }}
+            >
+              {filterConstellationId != null ? (
+                <>
+                  {constellationName(filterConstellationId)}
+                  <RemoveIcon onClick={(e) => { e.stopPropagation(); onConstellationChange(null); }}>×</RemoveIcon>
+                </>
+              ) : (
+                <Placeholder>Any constellation…</Placeholder>
               )}
             </Trigger>
           </FilterGroup>

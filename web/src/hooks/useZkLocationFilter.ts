@@ -23,6 +23,11 @@ import {
   getZkProximityResults,
   type ZkFilteredResult,
 } from "../lib/indexer";
+import {
+  getRegionBounds,
+  getConstellationBounds,
+  type BoundingBox,
+} from "../lib/regions";
 
 // ============================================================
 // Types
@@ -65,6 +70,26 @@ export interface UseZkLocationFilterReturn {
     pods: DecryptedPod[],
     tribeId: string,
     bounds: RegionBounds,
+  ) => Promise<ProveResult>;
+
+  /**
+   * Generate and submit region-filter proofs for a named game region.
+   * Looks up the canonical bounding box and tags the structure on success.
+   */
+  proveRegionById: (
+    pods: DecryptedPod[],
+    tribeId: string,
+    regionId: number,
+  ) => Promise<ProveResult>;
+
+  /**
+   * Generate and submit region-filter proofs for a named constellation.
+   * Looks up the canonical bounding box and tags the structure on success.
+   */
+  proveConstellationById: (
+    pods: DecryptedPod[],
+    tribeId: string,
+    constellationId: number,
   ) => Promise<ProveResult>;
 
   /**
@@ -178,6 +203,99 @@ export function useZkLocationFilter(): UseZkLocationFilterReturn {
     [getAuthHeader],
   );
 
+  // ---- Prove Region by ID (named game region) ----
+  const proveRegionById = useCallback(
+    async (
+      pods: DecryptedPod[],
+      tribeId: string,
+      regionId: number,
+    ): Promise<ProveResult> => {
+      const bounds = getRegionBounds(regionId);
+      if (!bounds) throw new Error(`Unknown region ID: ${regionId}`);
+      return proveNamedRegion(pods, tribeId, bounds, { regionId });
+    },
+    [getAuthHeader],
+  );
+
+  // ---- Prove Constellation by ID ----
+  const proveConstellationById = useCallback(
+    async (
+      pods: DecryptedPod[],
+      tribeId: string,
+      constellationId: number,
+    ): Promise<ProveResult> => {
+      const bounds = getConstellationBounds(constellationId);
+      if (!bounds) throw new Error(`Unknown constellation ID: ${constellationId}`);
+      return proveNamedRegion(pods, tribeId, bounds, { constellationId });
+    },
+    [getAuthHeader],
+  );
+
+  // ---- Shared helper for named region/constellation proofs ----
+  async function proveNamedRegion(
+    pods: DecryptedPod[],
+    tribeId: string,
+    bounds: BoundingBox,
+    tag: { regionId?: number; constellationId?: number },
+  ): Promise<ProveResult> {
+    setIsProving(true);
+    setError(null);
+    let submitted = 0;
+    let failed = 0;
+
+    try {
+      const authHeader = await getAuthHeader();
+
+      const seen = new Set<string>();
+      const dedupedPods = pods.filter((pod) => {
+        if (pod.networkNodeId) return false;
+        if (seen.has(pod.structureId)) return false;
+        seen.add(pod.structureId);
+        return true;
+      });
+
+      for (const pod of dedupedPods) {
+        try {
+          const proof = await generateRegionProof({
+            locationHash: pod.locationHash,
+            x: pod.location.x,
+            y: pod.location.y,
+            z: pod.location.z,
+            salt: BigInt(pod.location.salt),
+            regionXMin: Number(bounds.xMin),
+            regionXMax: Number(bounds.xMax),
+            regionYMin: Number(bounds.yMin),
+            regionYMax: Number(bounds.yMax),
+            regionZMin: Number(bounds.zMin),
+            regionZMax: Number(bounds.zMax),
+          });
+
+          await submitZkProof(authHeader, {
+            structureId: pod.structureId,
+            tribeId,
+            filterType: "region",
+            publicSignals: proof.publicSignals,
+            proof: proof.proof,
+            ...(tag.regionId != null ? { regionId: tag.regionId } : {}),
+            ...(tag.constellationId != null ? { constellationId: tag.constellationId } : {}),
+          });
+
+          submitted++;
+        } catch {
+          failed++;
+        }
+      }
+
+      return { submitted, failed };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Named region proof batch failed";
+      setError(msg);
+      throw err;
+    } finally {
+      setIsProving(false);
+    }
+  }
+
   // ---- Prove Proximity ----
   const proveProximity = useCallback(
     async (
@@ -287,6 +405,8 @@ export function useZkLocationFilter(): UseZkLocationFilterReturn {
     isProving,
     error,
     proveRegion,
+    proveRegionById,
+    proveConstellationById,
     proveProximity,
     queryRegion,
     queryProximity,

@@ -325,6 +325,8 @@ export interface ZkProofSubmission {
   filterType: "region" | "proximity";
   publicSignals: string[];
   proof: Record<string, unknown>;
+  regionId?: number;
+  constellationId?: number;
 }
 
 export interface ZkFilteredResult {
@@ -391,6 +393,38 @@ export function getZkProximityResults(
 }
 
 function enc(v: string) { return encodeURIComponent(v); }
+
+// ---- Public Location Tags (no auth) ----
+
+export interface LocationTagResult {
+  tag_type: "region" | "constellation";
+  tag_id: number;
+  location_hash: string;
+  verified_at: string;
+}
+
+export interface StructureTagResult {
+  structure_id: string;
+  location_hash: string;
+  verified_at: string;
+}
+
+/** Fetch all location tags for a given structure (public, no auth). */
+export function getLocationTagsForStructure(structureId: string) {
+  return get<{ structure_id: string; tags: LocationTagResult[] }>(
+    `/locations/proofs/tags?structureId=${enc(structureId)}`,
+  );
+}
+
+/** Fetch all structures tagged with a given region or constellation (public, no auth). */
+export function getStructuresByLocationTag(
+  tagType: "region" | "constellation",
+  tagId: number,
+) {
+  return get<{ tag_type: string; tag_id: number; count: number; structures: StructureTagResult[] }>(
+    `/locations/proofs/tags?tagType=${enc(tagType)}&tagId=${tagId}`,
+  );
+}
 
 // ---- Network Node Location PODs ----
 

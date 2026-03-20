@@ -1,8 +1,10 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState, useEffect } from "react";
 import styled from "styled-components";
 import type { TrustlessContractData } from "../../lib/types";
 import { formatAmount, formatDeadline, contractTypeLabel } from "../../lib/format";
 import { useEscrowCoinDecimals, useFillCoinDecimals } from "../../hooks/useCoinDecimals";
+import { getLocationTagsForStructure, type LocationTagResult } from "../../lib/indexer";
+import { regionName, constellationName } from "../../lib/regions";
 import { StatusBadge } from "../shared/StatusBadge";
 import { CharacterDisplay } from "../shared/CharacterDisplay";
 import { ItemBadge } from "../shared/ItemBadge";
@@ -45,6 +47,17 @@ const RestrictedTag = styled.span`
   border-radius: ${({ theme }) => theme.radii.sm};
   background: ${({ theme }) => theme.colors.primary.subtle};
   color: ${({ theme }) => theme.colors.primary.muted};
+  margin-left: ${({ theme }) => theme.spacing.xs};
+`;
+
+const LocationTag = styled.span`
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: ${({ theme }) => theme.radii.sm};
+  background: ${({ theme }) => theme.colors.surface.overlay};
+  color: ${({ theme }) => theme.colors.text.muted};
   margin-left: ${({ theme }) => theme.spacing.xs};
 `;
 
@@ -117,6 +130,20 @@ interface Props {
   onClick?: () => void;
 }
 
+/** Extract the primary SSU ID from a contract for location tag lookup. */
+function getPrimarySsuId(c: TrustlessContractData): string | null {
+  const ct = c.contractType;
+  if ("sourceSsuId" in ct && ct.sourceSsuId) return ct.sourceSsuId;
+  if ("destinationSsuId" in ct && ct.destinationSsuId) return ct.destinationSsuId;
+  return null;
+}
+
+/** Format a location tag for display. */
+function formatLocationTag(tag: LocationTagResult): string {
+  if (tag.tag_type === "constellation") return constellationName(tag.tag_id);
+  return regionName(tag.tag_id);
+}
+
 export function ContractCard({ contract, onClick }: Props) {
   const ce = useEscrowCoinDecimals();
   const cf = useFillCoinDecimals();
@@ -125,12 +152,31 @@ export function ContractCard({ contract, onClick }: Props) {
   const pct = target > 0 ? Math.min(100, (filled / target) * 100) : 0;
   const isRestricted = contract.allowedCharacters.length > 0 || contract.allowedTribes.length > 0;
 
+  // Fetch location tags for the contract's SSU
+  const [locationTag, setLocationTag] = useState<LocationTagResult | null>(null);
+  const ssuId = getPrimarySsuId(contract);
+  useEffect(() => {
+    if (!ssuId) return;
+    let cancelled = false;
+    getLocationTagsForStructure(ssuId)
+      .then((res) => {
+        if (!cancelled && res.tags.length > 0) {
+          // Prefer constellation over region for more specific display
+          const constTag = res.tags.find((t) => t.tag_type === "constellation");
+          setLocationTag(constTag ?? res.tags[0]);
+        }
+      })
+      .catch(() => { /* silent */ });
+    return () => { cancelled = true; };
+  }, [ssuId]);
+
   return (
     <Card onClick={onClick}>
       <TopRow>
         <div>
           <TypeTag>{contractTypeLabel(contract.contractType.variant)}</TypeTag>
           {isRestricted && <RestrictedTag>Restricted</RestrictedTag>}
+          {locationTag && <LocationTag>{formatLocationTag(locationTag)}</LocationTag>}
         </div>
         <StatusBadge status={statusVariant(contract.status)} />
       </TopRow>

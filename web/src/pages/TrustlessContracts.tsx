@@ -137,6 +137,10 @@ export function TrustlessContracts() {
         onPosterChange={filters.setPosterCharacterId}
         filterTribeId={filters.filterTribeId}
         onTribeChange={filters.setFilterTribeId}
+        filterRegionId={filters.filterRegionId}
+        onRegionChange={filters.setFilterRegionId}
+        filterConstellationId={filters.filterConstellationId}
+        onConstellationChange={filters.setFilterConstellationId}
         activeCount={filters.activeFilterCount}
         onClearAll={filters.clearFilters}
       />

@@ -5,8 +5,9 @@
  * hook owns the filter dimensions, sort order, and derived results.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { canViewContract } from "../lib/contractVisibility";
+import { getStructuresByLocationTag, type StructureTagResult } from "../lib/indexer";
 import type {
   TrustlessContractData,
   TrustlessContractVariant,
@@ -41,6 +42,10 @@ export interface ContractFilters {
   setPosterCharacterId: (id: string | null) => void;
   filterTribeId: number | null;
   setFilterTribeId: (id: number | null) => void;
+  filterRegionId: number | null;
+  setFilterRegionId: (id: number | null) => void;
+  filterConstellationId: number | null;
+  setFilterConstellationId: (id: number | null) => void;
 
   // Sort
   sortKey: SortKey;
@@ -90,7 +95,38 @@ export function useContractFilters(
   const [offeredItemTypeId, setOfferedItemTypeId] = useState<number | null>(null);
   const [posterCharacterId, setPosterCharacterId] = useState<string | null>(null);
   const [filterTribeId, setFilterTribeId] = useState<number | null>(null);
+  const [filterRegionId, setFilterRegionId] = useState<number | null>(null);
+  const [filterConstellationId, setFilterConstellationId] = useState<number | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("newest");
+
+  // Fetch structure IDs matching the active region/constellation filter
+  const [taggedStructures, setTaggedStructures] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    const tagType = filterConstellationId != null
+      ? "constellation" as const
+      : filterRegionId != null
+        ? "region" as const
+        : null;
+    const tagId = filterConstellationId ?? filterRegionId;
+
+    if (!tagType || tagId == null) {
+      setTaggedStructures(null);
+      return;
+    }
+
+    let cancelled = false;
+    getStructuresByLocationTag(tagType, tagId)
+      .then((res) => {
+        if (!cancelled) {
+          setTaggedStructures(new Set(res.structures.map((s: StructureTagResult) => s.structure_id)));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setTaggedStructures(new Set());
+      });
+
+    return () => { cancelled = true; };
+  }, [filterRegionId, filterConstellationId]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -98,8 +134,10 @@ export function useContractFilters(
     if (offeredItemTypeId !== null) count++;
     if (posterCharacterId !== null) count++;
     if (filterTribeId !== null) count++;
+    if (filterRegionId !== null) count++;
+    if (filterConstellationId !== null) count++;
     return count;
-  }, [wantedItemTypeId, offeredItemTypeId, posterCharacterId, filterTribeId]);
+  }, [wantedItemTypeId, offeredItemTypeId, posterCharacterId, filterTribeId, filterRegionId, filterConstellationId]);
 
   const filteredAndSorted = useMemo(() => {
     let result = contracts.filter((c) => {
@@ -113,6 +151,14 @@ export function useContractFilters(
         // Show contracts available to the tribe: unrestricted OR explicitly allowing this tribe
         const hasRestriction = c.allowedTribes.length > 0;
         if (hasRestriction && !c.allowedTribes.includes(filterTribeId)) return false;
+      }
+      // Region/constellation filter: check if source/destination SSU is in the tagged set
+      if (taggedStructures !== null) {
+        const ct = c.contractType;
+        const ssuIds: string[] = [];
+        if ("sourceSsuId" in ct && ct.sourceSsuId) ssuIds.push(ct.sourceSsuId);
+        if ("destinationSsuId" in ct && ct.destinationSsuId) ssuIds.push(ct.destinationSsuId);
+        if (ssuIds.length === 0 || !ssuIds.some((id) => taggedStructures.has(id))) return false;
       }
       return true;
     });
@@ -135,13 +181,15 @@ export function useContractFilters(
     }
 
     return result;
-  }, [contracts, viewer, statusTab, typeFilter, wantedItemTypeId, offeredItemTypeId, posterCharacterId, filterTribeId, sortKey]);
+  }, [contracts, viewer, statusTab, typeFilter, wantedItemTypeId, offeredItemTypeId, posterCharacterId, filterTribeId, taggedStructures, sortKey]);
 
   function clearFilters() {
     setWantedItemTypeId(null);
     setOfferedItemTypeId(null);
     setPosterCharacterId(null);
     setFilterTribeId(null);
+    setFilterRegionId(null);
+    setFilterConstellationId(null);
   }
 
   return {
@@ -157,6 +205,10 @@ export function useContractFilters(
     setPosterCharacterId,
     filterTribeId,
     setFilterTribeId,
+    filterRegionId,
+    setFilterRegionId,
+    filterConstellationId,
+    setFilterConstellationId,
     sortKey,
     setSortKey,
     filteredAndSorted,
