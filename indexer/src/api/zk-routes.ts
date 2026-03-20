@@ -5,6 +5,7 @@
  *   POST /submit      Submit a Groth16 proof for a structure × filter.
  *   GET  /region      Query PODs with verified region-filter proofs.
  *   GET  /proximity   Query PODs with verified proximity-filter proofs.
+ *   GET  /tags        Public (no auth) query for structure location tags.
  *
  * Mount under /api/v1/locations/proofs in the main Express server.
  */
@@ -22,7 +23,17 @@ import {
   getLocationPod,
   getDerivedPodsByNetworkNode,
   upsertDerivedFilterProof,
+  upsertLocationTag,
+  getLocationTagsByStructure,
+  getStructuresByTag,
 } from "../db/location-queries.js";
+import {
+  getRegionBounds,
+  getConstellationBounds,
+  getRegion,
+  getConstellation,
+  boundsToFieldStrings,
+} from "../location/region-data.js";
 
 export function createZkRouter(pool: pg.Pool): Router {
   const router = Router();
@@ -59,8 +70,13 @@ export function createZkRouter(pool: pg.Pool): Router {
   // POST /submit — Submit a Groth16 proof for a structure × filter
   //
   // Body: {
-  //   structureId, tribeId, filterType, publicSignals, proof
+  //   structureId, tribeId, filterType, publicSignals, proof,
+  //   regionId?, constellationId?   ← optional: named region/constellation
   // }
+  //
+  // When regionId or constellationId is provided, the server validates
+  // the proof's public signals match the canonical bounding box for that
+  // game region/constellation, and stores a public location tag.
   // ================================================================
   router.post("/submit", async (req: Request, res: Response) => {
     const address = await authenticate(req, res);
@@ -72,12 +88,16 @@ export function createZkRouter(pool: pg.Pool): Router {
       filterType,
       publicSignals,
       proof,
+      regionId,
+      constellationId,
     } = req.body as {
       structureId: string;
       tribeId: string;
       filterType: "region" | "proximity";
       publicSignals: string[];
       proof: Record<string, unknown>;
+      regionId?: number;
+      constellationId?: number;
     };
 
     if (
@@ -131,8 +151,49 @@ export function createZkRouter(pool: pg.Pool): Router {
         return;
       }
 
-      // 4. Store the verified proof
-      const filterKey = buildFilterKey(filterType, publicSignals);
+      // 4. If a named region/constellation was specified, validate the proof bounds
+      if (filterType === "region" && (regionId != null || constellationId != null)) {
+        const tagType = constellationId != null ? "constellation" as const : "region" as const;
+        const tagId = constellationId ?? regionId!;
+        const bounds = constellationId != null
+          ? getConstellationBounds(constellationId)
+          : getRegionBounds(regionId!);
+
+        if (!bounds) {
+          res.status(400).json({
+            error: `Unknown ${tagType} ID: ${tagId}`,
+          });
+          return;
+        }
+
+        // Verify the proof's public signals match the canonical bounds.
+        // publicSignals layout: [locationHash, xMin, xMax, yMin, yMax, zMin, zMax]
+        const expected = boundsToFieldStrings(bounds);
+        const [, pXMin, pXMax, pYMin, pYMax, pZMin, pZMax] = publicSignals;
+        if (
+          pXMin !== expected.xMin ||
+          pXMax !== expected.xMax ||
+          pYMin !== expected.yMin ||
+          pYMax !== expected.yMax ||
+          pZMin !== expected.zMin ||
+          pZMax !== expected.zMax
+        ) {
+          res.status(422).json({
+            error: `Proof bounds do not match canonical ${tagType} ${tagId}`,
+          });
+          return;
+        }
+
+        // Store the public location tag
+        await upsertLocationTag(pool, structureId, tagType, tagId, pod.location_hash);
+      }
+
+      // 5. Store the verified proof in the filter_proofs table
+      const filterKey = regionId != null
+        ? `region:${regionId}`
+        : constellationId != null
+          ? `constellation:${constellationId}`
+          : buildFilterKey(filterType, publicSignals);
       const id = await upsertFilterProof(pool, {
         structureId,
         tribeId,
@@ -143,7 +204,7 @@ export function createZkRouter(pool: pg.Pool): Router {
         proofJson: proof,
       });
 
-      // 5. Propagate proof to derived structures if this is a Network Node
+      // 6. Propagate proof to derived structures if this is a Network Node
       let propagatedCount = 0;
       try {
         const derivedPods = await getDerivedPodsByNetworkNode(
@@ -179,6 +240,8 @@ export function createZkRouter(pool: pg.Pool): Router {
         filterType,
         verified: true,
         propagated: propagatedCount,
+        ...(regionId != null ? { regionId } : {}),
+        ...(constellationId != null ? { constellationId } : {}),
       });
     } catch (err) {
       console.error("[zk] Failed to submit proof:", err);
@@ -244,6 +307,63 @@ export function createZkRouter(pool: pg.Pool): Router {
     } catch (err) {
       console.error("[zk] Failed to query proximity proofs:", err);
       res.status(500).json({ error: "Failed to query proofs" });
+    }
+  });
+
+  // ================================================================
+  // GET /tags — Public (no auth) query for structure location tags
+  //
+  // Query params (pick one):
+  //   ?tagType=region&tagId=10000005    → structures in that region
+  //   ?structureId=0x…                  → all tags for that structure
+  // ================================================================
+  router.get("/tags", async (req: Request, res: Response) => {
+    const { tagType, tagId, structureId } = req.query as Record<string, string>;
+
+    try {
+      if (structureId) {
+        const tags = await getLocationTagsByStructure(pool, structureId);
+        res.json({
+          structure_id: structureId,
+          tags: tags.map((t) => ({
+            tag_type: t.tag_type,
+            tag_id: t.tag_id,
+            location_hash: t.location_hash,
+            verified_at: t.verified_at,
+          })),
+        });
+        return;
+      }
+
+      if (tagType && tagId) {
+        if (tagType !== "region" && tagType !== "constellation") {
+          res.status(400).json({ error: "tagType must be 'region' or 'constellation'" });
+          return;
+        }
+        const id = Number(tagId);
+        if (Number.isNaN(id)) {
+          res.status(400).json({ error: "tagId must be a number" });
+          return;
+        }
+
+        const tags = await getStructuresByTag(pool, tagType, id);
+        res.json({
+          tag_type: tagType,
+          tag_id: id,
+          count: tags.length,
+          structures: tags.map((t) => ({
+            structure_id: t.structure_id,
+            location_hash: t.location_hash,
+            verified_at: t.verified_at,
+          })),
+        });
+        return;
+      }
+
+      res.status(400).json({ error: "Provide either structureId or tagType+tagId" });
+    } catch (err) {
+      console.error("[zk] Failed to query location tags:", err);
+      res.status(500).json({ error: "Failed to query location tags" });
     }
   });
 

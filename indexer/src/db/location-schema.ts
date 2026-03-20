@@ -86,6 +86,24 @@ const LOCATION_SCHEMA_SQL = `
     ON location_filter_proofs(tribe_id, filter_type, filter_key);
   CREATE INDEX IF NOT EXISTS idx_location_filter_proofs_hash
     ON location_filter_proofs(location_hash);
-  CREATE INDEX IF NOT EXISTS idx_location_filter_proofs_source_node
+
+  -- Public location tags — unencrypted region/constellation membership per structure.
+  -- Populated when a ZK region proof is verified against a canonical game region.
+  -- Queryable without authentication.
+  CREATE TABLE IF NOT EXISTS structure_location_tags (
+    id              BIGSERIAL PRIMARY KEY,
+    structure_id    TEXT NOT NULL,
+    tag_type        TEXT NOT NULL CHECK (tag_type IN ('region', 'constellation')),
+    tag_id          INTEGER NOT NULL,
+    location_hash   TEXT NOT NULL,
+    verified_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (structure_id, tag_type, tag_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_structure_tags_lookup
+    ON structure_location_tags(tag_type, tag_id);
+  CREATE INDEX IF NOT EXISTS idx_structure_tags_structure
+    ON structure_location_tags(structure_id);
+`;
     ON location_filter_proofs(source_network_node_id);
 `;

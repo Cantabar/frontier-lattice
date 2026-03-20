@@ -258,6 +258,68 @@ export async function getMembersWithoutTlk(
 }
 
 // ============================================================
+// Structure Location Tags (public, unencrypted)
+// ============================================================
+
+export interface StructureLocationTagRow {
+  id: number;
+  structure_id: string;
+  tag_type: "region" | "constellation";
+  tag_id: number;
+  location_hash: string;
+  verified_at: string;
+}
+
+const UPSERT_LOCATION_TAG_SQL = `
+  INSERT INTO structure_location_tags (
+    structure_id, tag_type, tag_id, location_hash
+  ) VALUES ($1, $2, $3, $4)
+  ON CONFLICT (structure_id, tag_type, tag_id) DO UPDATE SET
+    location_hash = EXCLUDED.location_hash,
+    verified_at   = NOW()
+  RETURNING id
+`;
+
+export async function upsertLocationTag(
+  pool: pg.Pool,
+  structureId: string,
+  tagType: "region" | "constellation",
+  tagId: number,
+  locationHash: string,
+): Promise<number> {
+  const result = await pool.query(UPSERT_LOCATION_TAG_SQL, [
+    structureId,
+    tagType,
+    tagId,
+    locationHash,
+  ]);
+  return result.rows[0]?.id ?? 0;
+}
+
+export async function getLocationTagsByStructure(
+  pool: pg.Pool,
+  structureId: string,
+): Promise<StructureLocationTagRow[]> {
+  const result = await pool.query(
+    "SELECT * FROM structure_location_tags WHERE structure_id = $1 ORDER BY verified_at DESC",
+    [structureId],
+  );
+  return result.rows as StructureLocationTagRow[];
+}
+
+export async function getStructuresByTag(
+  pool: pg.Pool,
+  tagType: "region" | "constellation",
+  tagId: number,
+): Promise<StructureLocationTagRow[]> {
+  const result = await pool.query(
+    "SELECT * FROM structure_location_tags WHERE tag_type = $1 AND tag_id = $2 ORDER BY verified_at DESC",
+    [tagType, tagId],
+  );
+  return result.rows as StructureLocationTagRow[];
+}
+
+// ============================================================
 // ZK Location Filter Proofs
 // ============================================================
 
