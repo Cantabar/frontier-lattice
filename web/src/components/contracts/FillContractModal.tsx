@@ -414,7 +414,6 @@ export function FillContractModal({ contract, onClose, onFilled }: Props) {
           const tx = buildFillItemForCoin({
             contractId: contract.id,
             sourceSsuId: sourceSsu,
-            posterCharacterId: contract.posterId,
             fillerCharacterId: characterId,
             fillAmount: amount,
           });

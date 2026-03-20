@@ -1124,7 +1124,6 @@ export function buildFillItemForItemSameSsuComposite(params: {
 export function buildFillItemForCoin(params: {
   contractId: string;
   sourceSsuId: string;
-  posterCharacterId: string;
   fillerCharacterId: string;
   fillAmount: number;
 }): Transaction {
@@ -1136,7 +1135,6 @@ export function buildFillItemForCoin(params: {
     arguments: [
       tx.object(params.contractId),
       tx.object(params.sourceSsuId),
-      tx.object(params.posterCharacterId),
       tx.object(params.fillerCharacterId),
       fill,
       tx.object(SUI_CLOCK),
