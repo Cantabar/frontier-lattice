@@ -9,7 +9,8 @@
  *   - Also accepts a raw numeric ID typed directly
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import styled from "styled-components";
 import {
   searchSolarSystems,
@@ -45,12 +46,12 @@ const Input = styled.input`
   }
 `;
 
-const Dropdown = styled.ul`
-  position: absolute;
-  z-index: 20;
-  top: 100%;
-  left: 0;
-  right: 0;
+const Dropdown = styled.ul<{ $top: number; $left: number; $width: number }>`
+  position: fixed;
+  z-index: 200;
+  top: ${({ $top }) => $top}px;
+  left: ${({ $left }) => $left}px;
+  width: ${({ $width }) => $width}px;
   margin: 2px 0 0;
   padding: 4px 0;
   list-style: none;
@@ -113,7 +114,9 @@ export function SolarSystemPicker({
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
 
   // Sync text when value changes externally
   useEffect(() => {
@@ -181,6 +184,26 @@ export function SolarSystemPicker({
     setOpen(true);
   }
 
+  // Recalculate dropdown position when open
+  useLayoutEffect(() => {
+    if (!open || !inputRef.current) return;
+
+    function updatePos() {
+      const rect = inputRef.current!.getBoundingClientRect();
+      setDropdownPos({ top: rect.bottom, left: rect.left, width: rect.width });
+    }
+
+    updatePos();
+
+    // Re-anchor on scroll (any ancestor, including the modal) and resize
+    window.addEventListener("scroll", updatePos, true);
+    window.addEventListener("resize", updatePos);
+    return () => {
+      window.removeEventListener("scroll", updatePos, true);
+      window.removeEventListener("resize", updatePos);
+    };
+  }, [open]);
+
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -198,6 +221,7 @@ export function SolarSystemPicker({
   return (
     <Wrapper ref={wrapperRef}>
       <Input
+        ref={inputRef}
         value={text}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
@@ -205,20 +229,26 @@ export function SolarSystemPicker({
         placeholder={placeholder}
         autoComplete="off"
       />
-      {open && results.length > 0 && (
-        <Dropdown>
-          {results.map((entry, i) => (
-            <Option
-              key={entry.id}
-              $active={i === activeIdx}
-              onMouseDown={() => handleSelect(entry)}
-            >
-              <SystemName>{entry.name}</SystemName>
-              <SystemId>#{entry.id}</SystemId>
-            </Option>
-          ))}
-        </Dropdown>
-      )}
+      {open && results.length > 0 &&
+        createPortal(
+          <Dropdown
+            $top={dropdownPos.top}
+            $left={dropdownPos.left}
+            $width={dropdownPos.width}
+          >
+            {results.map((entry, i) => (
+              <Option
+                key={entry.id}
+                $active={i === activeIdx}
+                onMouseDown={() => handleSelect(entry)}
+              >
+                <SystemName>{entry.name}</SystemName>
+                <SystemId>#{entry.id}</SystemId>
+              </Option>
+            ))}
+          </Dropdown>,
+          document.body,
+        )}
     </Wrapper>
   );
 }
