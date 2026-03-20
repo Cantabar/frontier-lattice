@@ -421,7 +421,7 @@ export function MyStructuresPage() {
 
       {/* Filters */}
       <FilterRow>
-        {(["all", "Storage", "Gate", "Defense", "Industry", "Core", "Hangar", "Misc", "Beacon"] as AssemblyTypeFilter[]).map((t) => (
+        {(["all", "Storage", "Gate", "Defense", "Industry", "Core", "Hangar", "Misc"] as AssemblyTypeFilter[]).map((t) => (
           <Tab key={t} $active={typeFilter === t} onClick={() => setTypeFilter(t)}>
             {t === "all" ? "All Types" : t}
           </Tab>

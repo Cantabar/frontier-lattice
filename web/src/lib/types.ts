@@ -245,7 +245,6 @@ export type AssemblyGroup =
   | "Defense"
   | "Hangar"
   | "Misc"
-  | "Beacon"
   | "Construction";
 
 export interface AssemblyTypeInfo {
@@ -314,8 +313,8 @@ export const ASSEMBLY_TYPES: Record<number, AssemblyTypeInfo> = {
   89779: { label: "RAINMAKER II", short: "Misc", group: "Misc" },
   89780: { label: "RAINMAKER I", short: "Misc", group: "Misc" },
 
-  // ── Beacon (group 4814) ────────────────────────────────────────
-  85291: { label: "Deployable Beacon", short: "Beacon", group: "Beacon" },
+  // ── Beacon (group 4814) — rolled into Misc ─────────────────────
+  85291: { label: "Deployable Beacon", short: "Misc", group: "Misc" },
 
   // ── Construction Sites (group 5021) ────────────────────────────
   // Duplicates of the above with separate typeIDs; share the same icons.
@@ -358,7 +357,7 @@ export const ASSEMBLY_TYPES: Record<number, AssemblyTypeInfo> = {
 };
 
 /** All known assembly type categories for filtering. */
-export type AssemblyTypeFilter = "all" | "Storage" | "Gate" | "Defense" | "Industry" | "Core" | "Hangar" | "Misc" | "Beacon";
+export type AssemblyTypeFilter = "all" | "Storage" | "Gate" | "Defense" | "Industry" | "Core" | "Hangar" | "Misc";
 
 // ============================================================
 // Indexer event types (Phase 4)
