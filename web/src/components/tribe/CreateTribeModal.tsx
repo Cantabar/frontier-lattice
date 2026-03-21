@@ -17,7 +17,12 @@ const TRIBE_CREATION_STEPS = [
   { key: "signing", label: "Waiting for wallet" },
   { key: "confirming", label: "Confirming on chain" },
   { key: "indexing", label: "Syncing tribe data" },
+  { key: "verifying", label: "Loading tribe data" },
 ];
+
+/** How long (ms) to poll for valid tribe fields before giving up. */
+const VERIFY_TIMEOUT_MS = 15_000;
+const VERIFY_INTERVAL_MS = 2_000;
 
 const Label = styled.label`
   display: block;
@@ -177,6 +182,34 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
         }),
       ]);
 
+      // Poll until the tribe object is fully populated before leaving the modal
+      let verified = false;
+      if (tribeObjectId && tribeObjectId !== "pending") {
+        setStep("verifying");
+        const deadline = Date.now() + VERIFY_TIMEOUT_MS;
+        while (Date.now() < deadline) {
+          try {
+            const obj = await client.getObject({
+              id: tribeObjectId,
+              options: { showContent: true },
+            });
+            const f = (obj.data?.content as { fields?: Record<string, unknown> })?.fields;
+            if (
+              f &&
+              typeof f.name === "string" &&
+              f.name.length > 0 &&
+              Number.isFinite(Number(f.member_count))
+            ) {
+              verified = true;
+              break;
+            }
+          } catch {
+            // object may not exist yet — keep polling
+          }
+          await new Promise((r) => setTimeout(r, VERIFY_INTERVAL_MS));
+        }
+      }
+
       push({
         level: "info",
         title: "Tribe Created",
@@ -188,7 +221,7 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
       onClose();
       if (tribeObjectId && tribeObjectId !== "pending") {
         navigate(`/tribe/${tribeObjectId}`, {
-          state: { justCreated: true, tribeName: name },
+          state: { justCreated: !verified, tribeName: name },
         });
       }
     } catch (err) {
