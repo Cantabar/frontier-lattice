@@ -11,6 +11,7 @@ import { Sidebar, SidebarOpenButton } from "./components/layout/Sidebar";
 import { useSidebarState } from "./hooks/useSidebarState";
 import { Footer } from "./components/layout/Footer";
 import { AutoJoinBanner } from "./components/tribe/AutoJoinBanner";
+import { InitializeTribeBanner } from "./components/tribe/InitializeTribeBanner";
 import { Dashboard } from "./pages/Dashboard";
 import { TribePage } from "./pages/TribePage";
 import { EventExplorer } from "./pages/EventExplorer";
@@ -88,6 +89,7 @@ export default function App() {
           }
         />
         <AutoJoinBanner />
+        <InitializeTribeBanner />
         <Main>
           <Sidebar mode={sidebarMode} toggle={toggleSidebar} />
           <Content>

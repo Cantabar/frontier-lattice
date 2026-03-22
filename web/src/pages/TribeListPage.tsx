@@ -11,6 +11,7 @@ import { buildLookupTribeByGameId } from "../lib/sui";
 import { CopyableId } from "../components/shared/CopyableId";
 import { config } from "../config";
 import { PrimaryButton } from "../components/shared/Button";
+import { useInitializeTribe } from "../hooks/useInitializeTribe";
 
 const Page = styled.div``;
 
@@ -163,10 +164,18 @@ const StatusLabel = styled.span<{ $active: boolean }>`
     $active ? theme.colors.primary.main : theme.colors.text.muted};
 `;
 
+const InitRow = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing.sm};
+  align-items: center;
+  margin-top: ${({ theme }) => theme.spacing.md};
+`;
+
 export function TribeListPage() {
   const navigate = useNavigate();
   const client = useSuiClient();
   const { tribeCaps, inGameTribeId } = useIdentity();
+  const { needsInit, suggestedName, isInitializing, initialize } = useInitializeTribe();
 
   const { allTribes, isLoading } = useAllTribes();
 
@@ -174,6 +183,7 @@ export function TribeListPage() {
   const [lookupId, setLookupId] = useState("");
   const [lookupError, setLookupError] = useState("");
   const [lookupPending, setLookupPending] = useState(false);
+  const [initName, setInitName] = useState("");
 
   // User's first tribe
   const userCap = tribeCaps[0] ?? null;
@@ -249,6 +259,32 @@ export function TribeListPage() {
             title={`Game tribe #${inGameTribeId} has no on-chain tribe yet`}
             description="Initialize your tribe on-chain to unlock tribe features."
           />
+          {needsInit && (
+            <InitRow>
+              <Input
+                type="text"
+                placeholder="Tribe name"
+                value={initName || suggestedName || ""}
+                onChange={(e) => setInitName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const val = initName || suggestedName || "";
+                    if (val.trim()) initialize(val);
+                  }
+                }}
+                disabled={isInitializing}
+              />
+              <PrimaryButton
+                onClick={() => {
+                  const val = initName || suggestedName || "";
+                  if (val.trim()) initialize(val);
+                }}
+                disabled={isInitializing || !(initName || suggestedName || "").trim()}
+              >
+                {isInitializing ? "Initializing…" : "Initialize Tribe"}
+              </PrimaryButton>
+            </InitRow>
+          )}
         </>
       )}
 

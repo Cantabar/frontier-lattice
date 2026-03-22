@@ -11,6 +11,7 @@ import { CopyableId } from "../components/shared/CopyableId";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { useNotifications } from "../hooks/useNotifications";
 import { useQuickActions } from "../hooks/useQuickActions";
+import { useInitializeTribe } from "../hooks/useInitializeTribe";
 import type { ArchivedEvent } from "../lib/types";
 
 const Page = styled.div``;
@@ -192,6 +193,44 @@ const WarningTitle = styled.span`
   color: ${({ theme }) => theme.colors.warning};
 `;
 
+const InitInput = styled.input`
+  background: ${({ theme }) => theme.colors.surface.bg};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 13px;
+  width: 100%;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary.main};
+  }
+`;
+
+const InitButton = styled.button`
+  background: ${({ theme }) => theme.colors.primary.main};
+  color: ${({ theme }) => theme.colors.surface.bg};
+  border: none;
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  width: 100%;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary.hover};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
 export function Dashboard() {
   const account = useCurrentAccount();
   const { tribeCaps, characterId, isLoading: identityLoading } = useIdentity();
@@ -199,7 +238,9 @@ export function Dashboard() {
   const tribeId = tribeCaps[0]?.tribeId;
   const { tribe } = useTribe(tribeId);
   const { enabled: quickActions, toggle: toggleAction, reset: resetActions, allVariants, variantLabels, variantDescriptions } = useQuickActions();
+  const { needsInit, inGameTribeId, suggestedName, isInitializing, initialize } = useInitializeTribe();
   const [customizing, setCustomizing] = useState(false);
+  const [initName, setInitName] = useState("");
 
   const { data: stats } = useQuery({
     queryKey: ["stats"],
@@ -251,6 +292,33 @@ export function Dashboard() {
               {tribe ? `${tribe.name} (#${tribe.inGameTribeId})` : "—"}
             </CardValue>
           </ClickableCard>
+        ) : needsInit ? (
+          <OverviewCard>
+            <CardLabel>Tribe #{inGameTribeId}</CardLabel>
+            <CardValue style={{ fontSize: 13 }}>Not initialized</CardValue>
+            <InitInput
+              type="text"
+              placeholder="Tribe name"
+              value={initName || suggestedName || ""}
+              onChange={(e) => setInitName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  const val = initName || suggestedName || "";
+                  if (val.trim()) initialize(val);
+                }
+              }}
+              disabled={isInitializing}
+            />
+            <InitButton
+              onClick={() => {
+                const val = initName || suggestedName || "";
+                if (val.trim()) initialize(val);
+              }}
+              disabled={isInitializing || !(initName || suggestedName || "").trim()}
+            >
+              {isInitializing ? "Initializing…" : "Initialize Tribe"}
+            </InitButton>
+          </OverviewCard>
         ) : (
           <OverviewCard>
             <CardLabel>Tribe</CardLabel>
