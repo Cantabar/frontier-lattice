@@ -107,7 +107,6 @@ export function Sidebar() {
       <StyledLink to="/" end>
         Dashboard
       </StyledLink>
-      <SectionLabel>Tribe</SectionLabel>
       <StyledLink to="/tribes">All Tribes</StyledLink>
       {userTribeId ? (
         <StyledLink to={`/tribe/${userTribeId}`}>My Tribe</StyledLink>
@@ -115,7 +114,6 @@ export function Sidebar() {
         <DisabledNavItem>My Tribe</DisabledNavItem>
       )}
       <StyledLink to={characterId ? `/structures/${characterId}` : "/structures"}>My Structures</StyledLink>
-      <SectionLabel>Modules</SectionLabel>
       <StyledLink to="/contracts">Contracts</StyledLink>
       {userTribeId ? (
         <StyledLink to="/locations">Locations</StyledLink>
