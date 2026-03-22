@@ -1,18 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { useSuiClient } from "@mysten/dapp-kit";
 import { useIdentity } from "../hooks/useIdentity";
 import { useAllTribes } from "../hooks/useAllTribes";
 import { useTribe } from "../hooks/useTribe";
-import { CreateTribeModal } from "../components/tribe/CreateTribeModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
 import { buildLookupTribeByGameId } from "../lib/sui";
 import { CopyableId } from "../components/shared/CopyableId";
 import { config } from "../config";
 import { PrimaryButton } from "../components/shared/Button";
-import type { TribeListItem } from "../lib/types";
 
 const Page = styled.div``;
 
@@ -165,77 +163,12 @@ const StatusLabel = styled.span<{ $active: boolean }>`
     $active ? theme.colors.primary.main : theme.colors.text.muted};
 `;
 
-const SmallButton = styled.button`
-  background: ${({ theme }) => theme.colors.surface.overlay};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: 2px 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme }) => theme.colors.surface.borderHover};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const DisabledHint = styled.span`
-  font-size: 11px;
-  color: ${({ theme }) => theme.colors.text.muted};
-  margin-left: ${({ theme }) => theme.spacing.sm};
-`;
-
-/** How long (ms) to poll the indexer after creating a tribe. */
-const POLL_DURATION_MS = 15_000;
-const POLL_INTERVAL_MS = 3_000;
-
 export function TribeListPage() {
   const navigate = useNavigate();
   const client = useSuiClient();
   const { tribeCaps, inGameTribeId } = useIdentity();
-  const hasTribeCap = tribeCaps.length > 0;
 
-  // Optimistic tribe entry + polling
-  const [optimistic, setOptimistic] = useState<TribeListItem | null>(null);
-  const [refetchInterval, setRefetchInterval] = useState<number | false>(false);
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout>>();
-
-  const { allTribes, isLoading } = useAllTribes({ refetchInterval });
-  const [showCreate, setShowCreate] = useState(false);
-
-  // Clear optimistic entry once the merged list contains the real tribe
-  useEffect(() => {
-    if (
-      optimistic &&
-      allTribes.some(
-        (t) => t.onChainTribe?.id === optimistic.id || t.onChainTribe?.name === optimistic.name,
-      )
-    ) {
-      setOptimistic(null);
-      setRefetchInterval(false);
-      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-    }
-  }, [allTribes, optimistic]);
-
-  // Stop polling after the duration elapses
-  useEffect(() => {
-    return () => { if (pollTimerRef.current) clearTimeout(pollTimerRef.current); };
-  }, []);
-
-  const handleTribeCreated = useCallback((tribe: TribeListItem) => {
-    setOptimistic(tribe);
-    setRefetchInterval(POLL_INTERVAL_MS);
-    // Auto-stop polling after the duration
-    pollTimerRef.current = setTimeout(() => {
-      setRefetchInterval(false);
-    }, POLL_DURATION_MS);
-  }, []);
+  const { allTribes, isLoading } = useAllTribes();
 
   // Lookup state
   const [lookupId, setLookupId] = useState("");
@@ -290,17 +223,6 @@ export function TribeListPage() {
     <Page>
       <Header>
         <Title>Tribes</Title>
-        <div>
-          <PrimaryButton
-            onClick={() => setShowCreate(true)}
-            disabled={hasTribeCap || optimistic !== null}
-          >
-            + Initialize Tribe
-          </PrimaryButton>
-          {(hasTribeCap || optimistic !== null) && (
-            <DisabledHint>A character can only belong to 1 tribe</DisabledHint>
-          )}
-        </div>
       </Header>
 
       {/* Your Tribe */}
@@ -350,8 +272,8 @@ export function TribeListPage() {
       <SectionLabel>All Tribes</SectionLabel>
       {isLoading ? (
         <LoadingSpinner />
-      ) : allTribes.length === 0 && !optimistic ? (
-        <EmptyState title="No tribes found" description="Initialize the first tribe to get started." />
+      ) : allTribes.length === 0 ? (
+        <EmptyState title="No tribes found" description="No tribes have been initialized yet." />
       ) : (
         <Table>
           <thead>
@@ -364,26 +286,6 @@ export function TribeListPage() {
             </tr>
           </thead>
           <tbody>
-            {/* Optimistic entry (if not yet merged) */}
-            {optimistic && !allTribes.some((t) => t.onChainTribe?.id === optimistic.id) && (
-              <tr key={optimistic.id}>
-                <Td>
-                  <TribeLink to={`/tribe/${optimistic.id}`}>{optimistic.name}</TribeLink>
-                  <Ticker>#{optimistic.inGameTribeId}</Ticker>
-                </Td>
-                <Td>
-                  <StatusDot $active />
-                  <StatusLabel $active>On-Chain</StatusLabel>
-                </Td>
-                <Td>—</Td>
-                <Td>
-                  {optimistic.leaderCharacterId ? <CopyableId id={optimistic.leaderCharacterId} asCode /> : "—"}
-                </Td>
-                <Td>
-                  <CopyableId id={optimistic.id} asCode />
-                </Td>
-              </tr>
-            )}
             {allTribes.map((t) => {
               const oc = t.onChainTribe;
               const name = oc?.name ?? t.worldInfo?.name ?? `Tribe #${t.inGameTribeId}`;
@@ -419,14 +321,6 @@ export function TribeListPage() {
                   <Td>
                     {oc ? (
                       <CopyableId id={oc.id} asCode />
-                    ) : inGameTribeId === t.inGameTribeId ? (
-                      <SmallButton
-                        onClick={() => setShowCreate(true)}
-                        disabled={hasTribeCap || optimistic !== null}
-                        title={hasTribeCap || optimistic !== null ? "A character can only belong to 1 tribe" : undefined}
-                      >
-                        Initialize
-                      </SmallButton>
                     ) : (
                       "—"
                     )}
@@ -438,12 +332,6 @@ export function TribeListPage() {
         </Table>
       )}
 
-      {showCreate && (
-        <CreateTribeModal
-          onClose={() => setShowCreate(false)}
-          onCreated={handleTribeCreated}
-        />
-      )}
     </Page>
   );
 }

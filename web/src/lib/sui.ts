@@ -84,29 +84,6 @@ export function buildSelfJoinTribe(params: {
   return tx;
 }
 
-export function buildAddMember(params: {
-  tribeId: string;
-  capId: string;
-  newMemberCharacterId: string;
-  role: Role;
-  newMemberAddress: string;
-}): Transaction {
-  const tx = new Transaction();
-  const roleTarget = `${packages.tribe}::tribe::role_${params.role.toLowerCase()}`;
-  const [role] = tx.moveCall({ target: roleTarget });
-  const [memberCap] = tx.moveCall({
-    target: `${packages.tribe}::tribe::add_member`,
-    arguments: [
-      tx.object(params.tribeId),
-      tx.object(params.capId),
-      tx.object(params.newMemberCharacterId),
-      role,
-    ],
-  });
-  tx.transferObjects([memberCap], tx.pure.address(params.newMemberAddress));
-  return tx;
-}
-
 export function buildRemoveMember(params: {
   tribeId: string;
   capId: string;
