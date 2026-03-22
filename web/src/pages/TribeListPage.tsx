@@ -295,7 +295,7 @@ export function TribeListPage() {
             onClick={() => setShowCreate(true)}
             disabled={hasTribeCap || optimistic !== null}
           >
-            + Create Tribe
+            + Initialize Tribe
           </PrimaryButton>
           {(hasTribeCap || optimistic !== null) && (
             <DisabledHint>A character can only belong to 1 tribe</DisabledHint>
@@ -325,7 +325,7 @@ export function TribeListPage() {
           <SectionLabel>Your Tribe</SectionLabel>
           <EmptyState
             title={`Game tribe #${inGameTribeId} has no on-chain tribe yet`}
-            description="Create a tribe to represent your in-game tribe on-chain."
+            description="Initialize your tribe on-chain to unlock tribe features."
           />
         </>
       )}
@@ -351,7 +351,7 @@ export function TribeListPage() {
       {isLoading ? (
         <LoadingSpinner />
       ) : allTribes.length === 0 && !optimistic ? (
-        <EmptyState title="No tribes found" description="Create the first tribe to get started." />
+        <EmptyState title="No tribes found" description="Initialize the first tribe to get started." />
       ) : (
         <Table>
           <thead>
@@ -425,7 +425,7 @@ export function TribeListPage() {
                         disabled={hasTribeCap || optimistic !== null}
                         title={hasTribeCap || optimistic !== null ? "A character can only belong to 1 tribe" : undefined}
                       >
-                        Create Tribe
+                        Initialize
                       </SmallButton>
                     ) : (
                       "—"

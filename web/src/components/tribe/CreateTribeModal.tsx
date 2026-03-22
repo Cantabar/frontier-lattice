@@ -8,12 +8,13 @@ import { TransactionStepper } from "../shared/TransactionStepper";
 import { useTransactionPhase } from "../../hooks/useTransactionPhase";
 import { buildCreateTribe } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
+import { useWorldTribeInfo } from "../../hooks/useWorldTribeInfo";
 import { useNotifications } from "../../hooks/useNotifications";
 import { config } from "../../config";
 import { PrimaryButton } from "../shared/Button";
 import type { TribeListItem } from "../../lib/types";
 
-const TRIBE_CREATION_STEPS = [
+const TRIBE_INIT_STEPS = [
   { key: "signing", label: "Waiting for wallet" },
   { key: "confirming", label: "Confirming on chain" },
   { key: "indexing", label: "Syncing tribe data" },
@@ -24,31 +25,6 @@ const TRIBE_CREATION_STEPS = [
 const VERIFY_TIMEOUT_MS = 15_000;
 const VERIFY_INTERVAL_MS = 2_000;
 
-const Label = styled.label`
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text.muted};
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: ${({ theme }) => theme.spacing.xs};
-`;
-
-const Input = styled.input`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 14px;
-  margin-bottom: ${({ theme }) => theme.spacing.md};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
-`;
 
 const InfoRow = styled.div`
   display: flex;
@@ -93,10 +69,13 @@ interface Props {
 export function CreateTribeModal({ onClose, onCreated }: Props) {
   const navigate = useNavigate();
   const { characterId, inGameTribeId, address } = useIdentity();
+  const { tribeInfo } = useWorldTribeInfo();
   const { push } = useNotifications();
   const queryClient = useQueryClient();
   const client = useSuiClient();
   const hasTribe = inGameTribeId != null && inGameTribeId > 0;
+  const worldTribe = hasTribe ? tribeInfo.get(inGameTribeId!) ?? null : null;
+  const name = worldTribe?.name ?? "";
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction({
     execute: async ({ bytes, signature }) => {
       return await client.executeTransactionBlock({
@@ -110,9 +89,8 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
     },
   });
 
-  const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const { phase: step, setPhase: setStep, isBusy: busy, phaseLabel } = useTransactionPhase(TRIBE_CREATION_STEPS);
+  const { phase: step, setPhase: setStep, isBusy: busy, phaseLabel } = useTransactionPhase(TRIBE_INIT_STEPS);
 
   const misconfigured =
     config.tribeRegistryId === "0x0" || config.packages.tribe === "0x0";
@@ -123,7 +101,7 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
       const msg =
         "Tribe contracts are not configured. Publish the Move packages and set VITE_TRIBE_PACKAGE_ID / VITE_TRIBE_REGISTRY_ID in your .env file.";
       setError(msg);
-      push({ level: "error", title: "Create Tribe Failed", message: msg, source: "CreateTribeModal" });
+      push({ level: "error", title: "Initialize Tribe Failed", message: msg, source: "CreateTribeModal" });
       return;
     }
     setError(null);
@@ -212,8 +190,8 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
 
       push({
         level: "info",
-        title: "Tribe Created",
-        message: `${name} has been created on-chain.`,
+        title: "Tribe Initialized",
+        message: `${name} has been initialized on-chain.`,
         source: "CreateTribeModal",
       });
 
@@ -230,7 +208,7 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
       setError(msg);
       push({
         level: "error",
-        title: "Create Tribe Failed",
+        title: "Initialize Tribe Failed",
         message: msg,
         source: "CreateTribeModal",
       });
@@ -239,27 +217,24 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
 
   // -- View --
   return (
-    <Modal title="Create Tribe" onClose={onClose} disableClose={busy}>
+    <Modal title="Initialize Tribe" onClose={onClose} disableClose={busy}>
       {hasTribe ? (
-        <InfoRow>
-          <InfoLabel>In-Game Tribe ID</InfoLabel>
-          #{inGameTribeId}
-        </InfoRow>
+        <>
+          <InfoRow>
+            <InfoLabel>In-Game Tribe ID</InfoLabel>
+            #{inGameTribeId}
+          </InfoRow>
+          <InfoRow>
+            <InfoLabel>Tribe Name</InfoLabel>
+            {name || "Loading…"}
+          </InfoRow>
+        </>
       ) : (
         <Warning>
           Your Character has no in-game tribe assignment. You must belong to a tribe in-game before
-          creating one on-chain.
+          initializing one on-chain.
         </Warning>
       )}
-
-      <Label>Tribe Name</Label>
-      <Input
-        placeholder="e.g. Frontier Syndicate"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        autoFocus
-        disabled={!hasTribe || busy}
-      />
 
       {error && (
         <div style={{
@@ -275,10 +250,10 @@ export function CreateTribeModal({ onClose, onCreated }: Props) {
         </div>
       )}
 
-      <TransactionStepper steps={TRIBE_CREATION_STEPS} currentStep={step} />
+      <TransactionStepper steps={TRIBE_INIT_STEPS} currentStep={step} />
 
       <SubmitButton $fullWidth onClick={handleCreate} disabled={!name || !characterId || !hasTribe || busy || misconfigured}>
-        {busy ? phaseLabel + "…" : misconfigured ? "Tribe contracts not configured" : "Create Tribe"}
+        {busy ? phaseLabel + "…" : misconfigured ? "Tribe contracts not configured" : "Initialize Tribe"}
       </SubmitButton>
     </Modal>
   );

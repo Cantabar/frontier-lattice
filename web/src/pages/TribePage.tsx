@@ -98,14 +98,14 @@ export function TribePage() {
               onClick={() => setShowCreate(true)}
               disabled={hasTribeCap}
             >
-              + Create Tribe
+              + Initialize Tribe
             </PrimaryButton>
             {hasTribeCap && (
               <DisabledHint>A character can only belong to 1 tribe</DisabledHint>
             )}
           </div>
         </Header>
-        <EmptyState title="No tribe selected" description="Create a new tribe or select one from the sidebar." />
+        <EmptyState title="No tribe selected" description="Initialize a tribe or select one from the sidebar." />
         {showCreate && <CreateTribeModal onClose={() => setShowCreate(false)} />}
       </Page>
     );
@@ -119,8 +119,8 @@ export function TribePage() {
         <Title>{createdName ?? "Tribe"}</Title>
         <LoadingSpinner />
         <EmptyState
-          title="Confirming tribe on chain…"
-          description="Waiting for the network to index your new tribe. This usually takes a few seconds."
+          title="Initializing tribe on chain…"
+          description="Waiting for the network to index your tribe. This usually takes a few seconds."
         />
       </Page>
     );
@@ -153,7 +153,7 @@ export function TribePage() {
             disabled={hasTribeCap}
             title={hasTribeCap ? "A character can only belong to 1 tribe" : undefined}
           >
-            + New Tribe
+            + Initialize Tribe
           </SecondaryBtn>
         </ActionRow>
       </Header>
