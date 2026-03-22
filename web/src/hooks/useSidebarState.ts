@@ -9,12 +9,6 @@ function modeFromWidth(width: number): SidebarMode {
   return "expanded";
 }
 
-const CYCLE: Record<SidebarMode, SidebarMode> = {
-  expanded: "icons",
-  icons: "hidden",
-  hidden: "expanded",
-};
-
 export function useSidebarState() {
   const [mode, setMode] = useState<SidebarMode>(() =>
     modeFromWidth(window.innerWidth),
@@ -50,7 +44,7 @@ export function useSidebarState() {
 
   const toggle = useCallback(() => {
     setUserOverride(true);
-    setMode((m) => CYCLE[m]);
+    setMode((m) => (m === "expanded" ? "icons" : "expanded"));
   }, []);
 
   return { mode, toggle } as const;
