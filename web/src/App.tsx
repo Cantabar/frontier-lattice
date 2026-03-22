@@ -8,6 +8,7 @@ import { usePayoutWatcher } from "./hooks/usePayoutWatcher";
 import { onIndexerError } from "./lib/api";
 import { Header } from "./components/layout/Header";
 import { Sidebar } from "./components/layout/Sidebar";
+import { Footer } from "./components/layout/Footer";
 import { AutoJoinBanner } from "./components/tribe/AutoJoinBanner";
 import { Dashboard } from "./pages/Dashboard";
 import { TribePage } from "./pages/TribePage";
@@ -99,6 +100,7 @@ export default function App() {
           </Content>
         </Main>
         <ToastContainer />
+        <Footer />
       </Shell>
     </IdentityContext.Provider>
   );

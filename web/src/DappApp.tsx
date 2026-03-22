@@ -11,6 +11,7 @@ import { WalletButton } from "./components/shared/WalletButton";
 
 import { IdentityContext, useIdentityResolver } from "./hooks/useIdentity";
 import { SsuDeliveryDapp } from "./pages/SsuDeliveryDapp";
+import { Footer } from "./components/layout/Footer";
 
 // ---------------------------------------------------------------------------
 // Styled
@@ -63,6 +64,7 @@ export default function DappApp() {
             <Route path="deliver/:ssuId" element={<SsuDeliveryDapp />} />
           </Routes>
         </Content>
+        <Footer />
       </Shell>
     </IdentityContext.Provider>
   );
