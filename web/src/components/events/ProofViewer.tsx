@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { useQuery } from "@tanstack/react-query";
-import { getEventProof } from "../../lib/indexer";
+import { getEventProof } from "../../lib/api";
 import { timeAgo } from "../../lib/format";
 import { CopyableId } from "../shared/CopyableId";
 import { LoadingSpinner } from "../shared/LoadingSpinner";

@@ -3,7 +3,7 @@ import styled from "styled-components";
 import type { TrustlessContractData } from "../../lib/types";
 import { formatAmount, formatDeadline, contractTypeLabel } from "../../lib/format";
 import { useEscrowCoinDecimals, useFillCoinDecimals } from "../../hooks/useCoinDecimals";
-import { getLocationTagsForStructure, type LocationTagResult } from "../../lib/indexer";
+import { getLocationTagsForStructure, type LocationTagResult } from "../../lib/api";
 import { regionName, constellationName } from "../../lib/regions";
 import { StatusBadge } from "../shared/StatusBadge";
 import { CharacterDisplay } from "../shared/CharacterDisplay";
