@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import styled, { keyframes } from "styled-components";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { useIdentity } from "../hooks/useIdentity";
 import { useMyStructures } from "../hooks/useStructures";
@@ -432,8 +432,11 @@ function parsePositiveInteger(value: string): bigint | null {
 // Page component
 // ---------------------------------------------------------------------------
 
+const VALID_VARIANTS = new Set<string>(["CoinForCoin", "CoinForItem", "ItemForCoin", "ItemForItem", "Transport"]);
+
 export function CreateContractPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { characterId } = useIdentity();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
@@ -477,8 +480,11 @@ export function CreateContractPage() {
     [suiClient, getOwnerCapDetails],
   );
 
-  // Contract type selection
-  const [variant, setVariant] = useState<TrustlessContractVariant>("CoinForCoin");
+  // Contract type selection — honour ?type= query param if valid
+  const typeParam = searchParams.get("type");
+  const initialVariant: TrustlessContractVariant =
+    typeParam && VALID_VARIANTS.has(typeParam) ? (typeParam as TrustlessContractVariant) : "CoinForCoin";
+  const [variant, setVariant] = useState<TrustlessContractVariant>(initialVariant);
 
   // CoinForCoin fields
   const [escrow, setEscrow] = useState("");

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import styled from "styled-components";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useQuery } from "@tanstack/react-query";
@@ -5,11 +6,11 @@ import { Link } from "react-router-dom";
 import { useIdentity } from "../hooks/useIdentity";
 import { useTribe } from "../hooks/useTribe";
 import { getStats, getEvents } from "../lib/api";
-import { timeAgo, formatAmount } from "../lib/format";
-import { useCoinDecimals } from "../hooks/useCoinDecimals";
+import { timeAgo } from "../lib/format";
 import { CopyableId } from "../components/shared/CopyableId";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { useNotifications } from "../hooks/useNotifications";
+import { useQuickActions } from "../hooks/useQuickActions";
 import type { ArchivedEvent } from "../lib/types";
 
 const Page = styled.div``;
@@ -65,6 +66,7 @@ const SectionLabel = styled.h2`
 
 const QuickActions = styled.div`
   display: flex;
+  flex-wrap: wrap;
   gap: ${({ theme }) => theme.spacing.sm};
   margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
@@ -72,6 +74,7 @@ const QuickActions = styled.div`
 const ActionLink = styled(Link)`
   display: inline-flex;
   align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   background: ${({ theme }) => theme.colors.surface.raised};
   border: 1px solid ${({ theme }) => theme.colors.surface.border};
@@ -85,6 +88,61 @@ const ActionLink = styled(Link)`
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary.main};
   }
+`;
+
+const ClickableCard = styled(Link)`
+  background: ${({ theme }) => theme.colors.surface.raised};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.md};
+  text-decoration: none;
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary.main};
+  }
+`;
+
+const CustomizeToggle = styled.button`
+  background: none;
+  border: none;
+  color: ${({ theme }) => theme.colors.text.muted};
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: ${({ theme }) => theme.spacing.sm};
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.text.primary};
+  }
+`;
+
+const CustomizePanel = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.md};
+`;
+
+const CustomizeCheckbox = styled.label`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.xs};
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  cursor: pointer;
+`;
+
+const ActionDescription = styled.span`
+  font-size: 11px;
+  color: ${({ theme }) => theme.colors.text.muted};
+  font-weight: 400;
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  align-items: baseline;
+  margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
 const ActivityList = styled.div`
@@ -140,7 +198,8 @@ export function Dashboard() {
   const { unreadCount } = useNotifications();
   const tribeId = tribeCaps[0]?.tribeId;
   const { tribe } = useTribe(tribeId);
-  const { decimals: treasuryDecimals, symbol: treasurySymbol } = useCoinDecimals(tribe?.coinType ?? "");
+  const { enabled: quickActions, toggle: toggleAction, reset: resetActions, allVariants, variantLabels, variantDescriptions } = useQuickActions();
+  const [customizing, setCustomizing] = useState(false);
 
   const { data: stats } = useQuery({
     queryKey: ["stats"],
@@ -185,41 +244,55 @@ export function Dashboard() {
       )}
 
       <OverviewGrid>
-        <OverviewCard>
-          <CardLabel>Wallet</CardLabel>
-          <CardValue style={{ fontSize: 14 }}><CopyableId id={account.address} startLen={8} endLen={6} /></CardValue>
-        </OverviewCard>
-        <OverviewCard>
-          <CardLabel>Character</CardLabel>
-          <CardValue style={{ fontSize: 14 }}>
-            {characterId ? <CopyableId id={characterId} /> : "—"}
-          </CardValue>
-        </OverviewCard>
-        <OverviewCard>
-          <CardLabel>Tribe</CardLabel>
-          <CardValue style={{ fontSize: 14 }}>
-            {tribe ? `${tribe.name} (#${tribe.inGameTribeId})` : "—"}
-          </CardValue>
-        </OverviewCard>
-        <OverviewCard>
-          <CardLabel>Treasury</CardLabel>
-          <CardValue>{tribe ? `${formatAmount(tribe.treasuryBalance, treasuryDecimals)} ${treasurySymbol}` : "—"}</CardValue>
-        </OverviewCard>
-        <OverviewCard>
+        {tribeId ? (
+          <ClickableCard to={`/tribe/${tribeId}`}>
+            <CardLabel>Tribe</CardLabel>
+            <CardValue style={{ fontSize: 14 }}>
+              {tribe ? `${tribe.name} (#${tribe.inGameTribeId})` : "—"}
+            </CardValue>
+          </ClickableCard>
+        ) : (
+          <OverviewCard>
+            <CardLabel>Tribe</CardLabel>
+            <CardValue style={{ fontSize: 14 }}>—</CardValue>
+          </OverviewCard>
+        )}
+        <ClickableCard to="/events">
           <CardLabel>Total Events</CardLabel>
           <CardValue>{stats?.total_events?.toLocaleString() ?? "—"}</CardValue>
-        </OverviewCard>
-        <OverviewCard>
-          <CardLabel>Tribe Caps</CardLabel>
-          <CardValue>{tribeCaps.length}</CardValue>
-        </OverviewCard>
+        </ClickableCard>
       </OverviewGrid>
 
-      <SectionLabel>Quick Actions</SectionLabel>
+      <SectionHeader>
+        <SectionLabel style={{ marginBottom: 0 }}>Quick Contract</SectionLabel>
+        <CustomizeToggle onClick={() => setCustomizing((p) => !p)}>
+          {customizing ? "done" : "customize"}
+        </CustomizeToggle>
+      </SectionHeader>
+      {customizing && (
+        <CustomizePanel>
+          {allVariants.map((v) => (
+            <CustomizeCheckbox key={v}>
+              <input
+                type="checkbox"
+                checked={quickActions.includes(v)}
+                onChange={() => toggleAction(v)}
+              />
+              {variantLabels[v]}
+            </CustomizeCheckbox>
+          ))}
+          <CustomizeToggle onClick={resetActions}>reset</CustomizeToggle>
+        </CustomizePanel>
+      )}
       <QuickActions>
-        {tribeId && <ActionLink to={`/tribe/${tribeId}`}>→ Tribe</ActionLink>}
-        <ActionLink to="/contracts">→ Contracts</ActionLink>
-        <ActionLink to="/events">→ Events</ActionLink>
+        {allVariants
+          .filter((v) => quickActions.includes(v))
+          .map((v) => (
+            <ActionLink key={v} to={`/contracts/create?type=${v}`}>
+              + {variantLabels[v]}
+              <ActionDescription>{variantDescriptions[v]}</ActionDescription>
+            </ActionLink>
+          ))}
       </QuickActions>
 
       <SectionLabel>Recent Activity</SectionLabel>
