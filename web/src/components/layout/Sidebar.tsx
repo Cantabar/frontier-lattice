@@ -92,7 +92,7 @@ const StyledLink = styled(NavLink)<{ $mode: SidebarMode }>`
 
   &.active {
     color: ${({ theme }) => theme.colors.primary.main};
-    border-left-color: ${({ theme }) => theme.colors.primary.main};
+    border-left-color: ${({ theme }) => theme.colors.rust.main};
     background: ${({ theme }) => theme.colors.surface.overlay};
   }
 `;
@@ -135,12 +135,14 @@ const Label = styled.span<{ $visible: boolean }>`
 const SectionLabel = styled.div<{ $visible: boolean }>`
   font-size: 11px;
   font-weight: 600;
+  font-family: ${({ theme }) => theme.fonts.heading};
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.12em;
   color: ${({ theme }) => theme.colors.text.muted};
   padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg}
     ${({ theme }) => theme.spacing.xs};
   display: ${({ $visible }) => ($visible ? "block" : "none")};
+  border-top: 1px solid ${({ theme }) => theme.colors.rust.muted}33;
 `;
 
 const NotifBadge = styled.span`

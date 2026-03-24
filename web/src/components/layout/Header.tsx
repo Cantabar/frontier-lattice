@@ -13,7 +13,13 @@ const HeaderBar = styled.header`
   justify-content: space-between;
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
   background: ${({ theme }) => theme.colors.surface.raised};
-  border-bottom: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(
+    90deg,
+    ${({ theme }) => theme.colors.rust.main} 0%,
+    ${({ theme }) => theme.colors.rust.muted} 40%,
+    transparent 100%
+  ) 1;
   height: 56px;
   flex-shrink: 0;
 `;
@@ -23,6 +29,7 @@ const Brand = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
   cursor: pointer;
+  animation: powerFlicker 6s ease-in-out infinite;
 `;
 
 const Controls = styled.div`
