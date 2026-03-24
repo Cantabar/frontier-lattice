@@ -127,8 +127,9 @@ The puzzle service exposes two endpoints that corm-brain calls:
   - `log` — a corm message to append to the log panel. Payload: `{text}`
   - `boost` — amplify a recent player interaction. Payload: `{cells: [{row, col}], effect: "glow"|"pulse"|"echo"}`
   - `difficulty` — adjust parameters for the next puzzle. Payload: `{tier_delta, decoy_delta, grid_size_delta}`
+  - `state_sync` — push current CormState values. Payload: `{phase, stability, corruption}`. Stored on session for puzzle generation calibration.
 
-Corm-brain connects on its own schedule (e.g., every 1–2s, or event-driven internally). The puzzle service does not need corm-brain's address and has no `CORM_BRAIN_URL` config.
+Corm-brain connects on its own schedule
 
 ### Internal Flow
 
@@ -211,8 +212,8 @@ puzzle-service:
 
 A build-time script (can remain in TypeScript or be rewritten in Go) extracts words from `static-data/data/phobos/` and `training-data/keep/`, deduplicates, and writes `puzzle-service/internal/words/words.json`. The puzzle service loads this file at startup.
 
-## Open Questions
+## Resolved Decisions
 
-- **Session persistence**: In-memory is fine for hackathon. For production, should sessions persist to Postgres (shared with indexer) or Redis?
-- **Embedding approach**: iframe vs reverse-proxying the Go service through Vite's dev proxy (e.g., `/puzzle/*` → `http://localhost:3300`). Reverse proxy avoids cross-origin issues but couples routing.
-- **On-chain state for difficulty calibration**: If the puzzle service needs CormState values (phase, stability, corruption) to influence puzzle generation, corm-brain can push them via `POST /corm/actions` with a new `state_sync` action type, or the React parent can pass them as query params on iframe load.
+- **Session persistence**: Sessions are ephemeral and in-memory only. A browser reload creates a fresh session. Corm-brain tracks long-lived player state (solve history, difficulty progression, SIGNAL balance) keyed by `player_address` across sessions. The puzzle service is stateless across restarts.
+- **Embedding approach**: All services share a root domain (`ef-corm.com`) with subdomains (e.g., `puzzle.ef-corm.com`, `app.ef-corm.com`). Same root domain avoids cross-origin issues with cookies and `postMessage`. No iframe sandboxing needed.
+- **On-chain state for difficulty calibration**: Corm-brain pushes CormState values (phase, stability, corruption) via `POST /corm/actions` with a `state_sync` action type. The puzzle service stores these on the session and uses them to influence puzzle generation.
