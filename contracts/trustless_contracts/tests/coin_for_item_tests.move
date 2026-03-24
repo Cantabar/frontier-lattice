@@ -159,6 +159,103 @@ fun test_fill_coin_for_item_to_player_inventory() {
 }
 
 // =========================================================================
+// Non-owner poster: items delivered to poster's player inventory
+// =========================================================================
+
+/// Player B (filler_id/user_b) creates a CoinForItem on Player A's SSU.
+/// Filler delivers items → items land in Player B's player inventory,
+/// not Player A's owner inventory.
+#[test]
+fun test_nonowner_poster_coin_for_item() {
+    let mut ts = ts::begin(@0x0);
+    // poster_id = user_a (SSU owner), filler_id = user_b
+    let (poster_id, filler_id) = test_helpers::setup_ssu_characters(&mut ts);
+    let (storage_id, nwn_id) = test_helpers::create_test_ssu(&mut ts, poster_id);
+    test_helpers::online_test_ssu(&mut ts, user_a(), poster_id, storage_id, nwn_id);
+
+    // Authorize CormAuth on SSU (SSU owner does this)
+    ts::next_tx(&mut ts, user_a());
+    {
+        let mut storage_unit = ts::take_shared_by_id<StorageUnit>(&ts, storage_id);
+        let mut character = ts::take_shared_by_id<Character>(&ts, poster_id);
+        let (owner_cap, receipt) = character.borrow_owner_cap<StorageUnit>(
+            ts::most_recent_receiving_ticket<OwnerCap<StorageUnit>>(&poster_id),
+            ts.ctx(),
+        );
+        storage_unit.authorize_extension<CormAuth>(&owner_cap);
+        character.return_owner_cap(owner_cap, receipt);
+        ts::return_shared(storage_unit);
+        ts::return_shared(character);
+    };
+
+    // Mint items to SSU owner's inventory so the filler has something to deliver
+    test_helpers::authorize_and_mint(&mut ts, user_a(), poster_id, storage_id);
+
+    // NON-OWNER (user_b / filler_id) creates CoinForItem with use_owner_inventory = false
+    ts::next_tx(&mut ts, user_b());
+    {
+        let nonowner = ts::take_shared_by_id<Character>(&ts, filler_id);
+        let escrow = coin::mint_for_testing<ESCROW>(test_helpers::escrow_amount(), ts::ctx(&mut ts));
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+
+        coin_for_item::create<ESCROW>(
+            &nonowner, escrow, test_helpers::item_type_id(), test_helpers::item_quantity(),
+            object::id_from_address(object::id_to_address(&storage_id)),
+            false, false, test_helpers::far_future_ms(),
+            vector[], vector[], &clock, ts::ctx(&mut ts),
+        );
+
+        clock.destroy_for_testing();
+        ts::return_shared(nonowner);
+    };
+
+    // SSU owner (poster_id/user_a) fills by withdrawing from their own inventory
+    ts::next_tx(&mut ts, user_a());
+    {
+        let mut contract = ts::take_shared<CoinForItemContract<ESCROW>>(&ts);
+        let mut storage_unit = ts::take_shared_by_id<StorageUnit>(&ts, storage_id);
+        let nonowner = ts::take_shared_by_id<Character>(&ts, filler_id);
+        let mut filler_char = ts::take_shared_by_id<Character>(&ts, poster_id);
+
+        let (owner_cap, receipt) = filler_char.borrow_owner_cap<StorageUnit>(
+            ts::most_recent_receiving_ticket<OwnerCap<StorageUnit>>(&poster_id),
+            ts.ctx(),
+        );
+        let item = storage_unit.withdraw_by_owner(
+            &filler_char, &owner_cap, test_helpers::item_type_id(), test_helpers::item_quantity(), ts.ctx(),
+        );
+        filler_char.return_owner_cap(owner_cap, receipt);
+
+        let clock = clock::create_for_testing(ts::ctx(&mut ts));
+        coin_for_item::fill(
+            &mut contract, &mut storage_unit, &nonowner, &filler_char,
+            item, &clock, ts::ctx(&mut ts),
+        );
+
+        assert!(coin_for_item::status(&contract) == contract_utils::status_completed());
+
+        clock.destroy_for_testing();
+        ts::return_shared(contract);
+        ts::return_shared(storage_unit);
+        ts::return_shared(nonowner);
+        ts::return_shared(filler_char);
+    };
+
+    // Verify items landed in NON-OWNER's (filler_id) player inventory — NOT the SSU owner inventory
+    ts::next_tx(&mut ts, user_b());
+    {
+        let storage_unit = ts::take_shared_by_id<StorageUnit>(&ts, storage_id);
+        let nonowner_char = ts::take_shared_by_id<Character>(&ts, filler_id);
+        let nonowner_cap_id = nonowner_char.owner_cap_id();
+        assert!(storage_unit.item_quantity(nonowner_cap_id, test_helpers::item_type_id()) == test_helpers::item_quantity());
+        ts::return_shared(nonowner_char);
+        ts::return_shared(storage_unit);
+    };
+
+    ts::end(ts);
+}
+
+// =========================================================================
 // Fill deposits to SSU owner inventory
 // =========================================================================
 
