@@ -12,10 +12,11 @@ import { ItemBadge } from "../shared/ItemBadge";
 const Card = styled.div`
   background: ${({ theme }) => theme.colors.surface.raised};
   border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.md};
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   padding: ${({ theme }) => theme.spacing.md};
   cursor: pointer;
   transition: border-color 0.15s;
+  box-shadow: inset 0 1px 0 ${({ theme }) => theme.colors.rust.muted}26;
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.surface.borderHover};
@@ -34,7 +35,9 @@ const TypeTag = styled.span`
   padding: 2px 6px;
   font-size: 11px;
   font-weight: 600;
-  border-radius: ${({ theme }) => theme.radii.sm};
+  font-family: ${({ theme }) => theme.fonts.heading};
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   background: ${({ theme }) => theme.colors.surface.overlay};
   color: ${({ theme }) => theme.colors.module.trustlessContracts};
 `;

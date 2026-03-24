@@ -19,6 +19,9 @@ const Page = styled.div``;
 const Title = styled.h1`
   font-size: 24px;
   font-weight: 700;
+  font-family: ${({ theme }) => theme.fonts.heading};
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: ${({ theme }) => theme.colors.text.primary};
   margin-bottom: ${({ theme }) => theme.spacing.lg};
 `;
@@ -40,15 +43,17 @@ const OverviewGrid = styled.div`
 const OverviewCard = styled.div`
   background: ${({ theme }) => theme.colors.surface.raised};
   border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.md};
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   padding: ${({ theme }) => theme.spacing.md};
+  box-shadow: inset 0 1px 0 ${({ theme }) => theme.colors.rust.muted}26;
 `;
 
 const CardLabel = styled.div`
   font-size: 12px;
+  font-family: ${({ theme }) => theme.fonts.heading};
   color: ${({ theme }) => theme.colors.text.muted};
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
@@ -94,10 +99,11 @@ const ActionLink = styled(Link)`
 const ClickableCard = styled(Link)`
   background: ${({ theme }) => theme.colors.surface.raised};
   border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.md};
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
   padding: ${({ theme }) => theme.spacing.md};
   text-decoration: none;
   transition: border-color 0.15s;
+  box-shadow: inset 0 1px 0 ${({ theme }) => theme.colors.rust.muted}26;
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.primary.main};
@@ -159,7 +165,7 @@ const ActivityRow = styled.div`
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   background: ${({ theme }) => theme.colors.surface.raised};
   border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
+  border-left: 2px solid ${({ theme }) => theme.colors.rust.muted}44;
   font-size: 13px;
 `;
 
