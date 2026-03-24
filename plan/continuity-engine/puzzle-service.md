@@ -37,20 +37,25 @@ puzzle-service/           # New Go service
 │   │   ├── archive.go    # Archive word list (loaded at startup)
 │   │   └── words.json    # Extracted word list (build artifact from static-data)
 │   ├── handlers/
+│   │   ├── phase0.go     # GET /phase0 (awakening UI), POST /phase0/interact (click tracking)
 │   │   ├── game.go       # GET /puzzle, POST /puzzle/decrypt, POST /puzzle/submit
-│   │   ├── stream.go     # GET /puzzle/stream (SSE — corm log + boost events)
+│   │   ├── contracts.go  # Contracts panel rendering (driven by corm-brain actions)
+│   │   ├── stream.go     # GET /stream (SSE — corm log, boost, contract events)
 │   │   ├── status.go     # GET /status (session state for meter sync)
 │   │   └── health.go     # GET /health
 │   ├── corm/
 │   │   ├── deaddrop.go   # Event ring buffer, action channel, GET /corm/events + POST /corm/actions handlers
 │   │   └── types.go      # CormEvent, CormAction, BoostDirective types
 │   └── templates/
-│       ├── layout.html   # Base layout (HTMX + SSE ext, meters sidebar, log panel)
-│       ├── grid.html     # Cipher grid partial
-│       ├── cell.html     # Single cell partial (swap target for decrypt + boost)
-│       ├── result.html   # Word submission result partial
-│       ├── meters.html   # Stability/corruption meter partial
-│       └── log-entry.html # Corm log message partial (SSE swap target)
+│       ├── layout.html       # Base layout (HTMX + SSE ext, meters sidebar, log panel, contracts panel)
+│       ├── phase0.html       # Phase 0 dead terminal UI (clickable shell elements)
+│       ├── grid.html         # Cipher grid partial
+│       ├── cell.html         # Single cell partial (swap target for decrypt + boost)
+│       ├── result.html       # Word submission result partial
+│       ├── meters.html       # Stability/corruption meter partial
+│       ├── log-entry.html    # Corm log message partial (SSE swap target)
+│       ├── contract-card.html # Single contract entry partial (SSE swap target)
+│       └── contracts.html    # Contracts list panel partial
 ├── static/
 │   └── style.css         # Grid styling, animations
 └── tests/
@@ -58,6 +63,48 @@ puzzle-service/           # New Go service
     ├── generator_test.go
     └── handler_test.go
 ```
+
+## Phase 0 — Awakening
+
+The puzzle service also hosts the Phase 0 intro sequence. The player sees a non-functional terminal shell with clickable buttons, panels, and toggles — all producing error-style log entries.
+
+### Interaction Model
+
+- All clicks are tracked server-side in the session (same dead drop event stream to corm-brain).
+- The UI is server-rendered HTMX: clicking elements triggers `hx-post` to `/phase0/interact` with an element ID. The server returns a log entry partial appended to the log panel.
+- Corm-brain observes the click stream and pushes `log` actions with escalating awareness messages (`> ...input... detected...`, `> ...not part of baseline...`).
+
+### Frustration Trigger
+
+The server tracks click timestamps per element. When 3+ clicks on the same element occur within 2 seconds, the server:
+
+1. Emits a `phase_transition` event to the dead drop
+2. Returns an HTMX response that swaps the entire page to the Phase 1 puzzle UI (via `hx-target="body"` or a full-page redirect to `GET /puzzle`)
+
+The transition can include a glitch animation (CSS class on the body before swap).
+
+### Session Continuity
+
+The same session UUID carries from Phase 0 into Phase 1. Corm-brain sees the full arc: idle clicks → frustration → puzzle engagement.
+
+## Phase 2+ — Contracts View
+
+After the puzzle phase, the corm begins generating contracts (Phase 2). The puzzle service includes a lightweight contracts panel so the AI can surface its directives directly.
+
+### How It Works
+
+- Corm-brain pushes a new action type `contract_created` via `POST /corm/actions`. Payload: `{contract_id, contract_type, description, reward, deadline, detail_url}`
+- The `detail_url` points to the existing contract detail page in the main app (e.g., `app.ef-corm.com/contracts/:id`)
+- The puzzle service renders a contracts list partial and delivers it via SSE (new event type `corm-contract`). HTMX appends it to a `#contracts` panel in the layout.
+- Each contract entry shows: type icon, corm's flavor text description, reward amount, and a link to the full detail view.
+- When a contract is completed or expires, corm-brain pushes a `contract_updated` action to update or remove it from the panel.
+
+### Contract Announcements
+
+When the corm creates a contract, it can also push a `log` action announcing it with flavor text:
+`> directive issued. acquire [item]. deposit at [location]. compensation offered.`
+
+This appears in the log panel alongside the contract appearing in the contracts list.
 
 ## Puzzle Flow (HTMX Interactions)
 
@@ -128,6 +175,8 @@ The puzzle service exposes two endpoints that corm-brain calls:
   - `boost` — amplify a recent player interaction. Payload: `{cells: [{row, col}], effect: "glow"|"pulse"|"echo"}`
   - `difficulty` — adjust parameters for the next puzzle. Payload: `{tier_delta, decoy_delta, grid_size_delta}`
   - `state_sync` — push current CormState values. Payload: `{phase, stability, corruption}`. Stored on session for puzzle generation calibration.
+  - `contract_created` — announce a new corm-generated contract. Payload: `{contract_id, contract_type, description, reward, deadline, detail_url}`
+  - `contract_updated` — update or remove a contract. Payload: `{contract_id, status}` where status is `completed`, `expired`, or `cancelled`.
 
 Corm-brain connects on its own schedule
 
@@ -170,12 +219,13 @@ This keeps the current puzzle stable while letting the AI influence the trajecto
 
 ### SSE Delivery
 
-The puzzle service maintains an SSE connection per player session (`GET /puzzle/stream`, HTMX `hx-ext="sse"`).
+The puzzle service maintains an SSE connection per player session (`GET /stream`, HTMX `hx-ext="sse"`).
 
 - The SSE goroutine reads from the session's action channel (fed by `POST /corm/actions`).
 - When an action arrives:
   - **Log** → SSE event `corm-log` with rendered `log-entry.html` partial. HTMX appends it to `#corm-log` via `sse-swap="corm-log"`.
   - **Boost** → SSE event `corm-boost` with re-rendered cell partials including an amplification CSS class. HTMX swaps the targeted cells.
+  - **Contract** → SSE event `corm-contract` with rendered `contract-card.html` partial. HTMX appends/updates `#contracts`.
   - **Difficulty** → stored in session as `pendingDifficultyMod`, no immediate UI effect.
 - The SSE goroutine is lightweight — one per active session, torn down on disconnect.
 
@@ -199,7 +249,7 @@ puzzle-service:
 
 **SIGNAL rewards**: Handled entirely by corm-brain. It observes `word_submit` success events in the dead drop stream (which include `player_address`) and executes SIGNAL minting and CormState updates on-chain from on-premise where it has SUI RPC access. The puzzle service has no SUI dependency.
 
-**Corm integration**: The corm log panel and boost effects live inside the puzzle service's own UI (delivered via SSE as described above), not in the React parent.
+**Corm integration**: The corm log panel, boost effects, and contracts panel live inside the puzzle service's own UI (delivered via SSE as described above), not in the React parent.
 
 ## Cipher Tiers (Unchanged from Main Plan)
 
