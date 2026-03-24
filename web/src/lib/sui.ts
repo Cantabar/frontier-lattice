@@ -551,9 +551,7 @@ export function buildCreateItemForCoin(params: {
   sourceSsuId: string;
   typeId: number;
   quantity: number;
-  ownerCapId: string;
-  ownerCapVersion: string;
-  ownerCapDigest: string;
+  access: ItemAccessMode;
   wantedAmount: number;
   allowPartial: boolean;
   deadlineMs: number;
@@ -561,50 +559,18 @@ export function buildCreateItemForCoin(params: {
   allowedTribes: number[];
 }): Transaction {
   const tx = new Transaction();
-  const pkg = worldPkg();
-  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
 
-  // 1. Borrow OwnerCap<StorageUnit> from Character
-  const [ownerCap, receipt] = tx.moveCall({
-    target: `${pkg}::character::borrow_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.characterId),
-      tx.object(
-        Inputs.ReceivingRef({
-          objectId: params.ownerCapId,
-          version: params.ownerCapVersion,
-          digest: params.ownerCapDigest,
-        }),
-      ),
-    ],
-  });
+  // 1. Borrow OwnerCap → withdraw item → return OwnerCap
+  const item = appendBorrowWithdrawReturn(
+    tx,
+    params.access,
+    params.characterId,
+    params.sourceSsuId,
+    params.typeId,
+    params.quantity,
+  );
 
-  // 2. Withdraw item from SSU (returns transit Item with specified quantity)
-  const [item] = tx.moveCall({
-    target: `${pkg}::storage_unit::withdraw_by_owner`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.sourceSsuId),
-      tx.object(params.characterId),
-      ownerCap,
-      tx.pure.u64(params.typeId),
-      tx.pure.u32(params.quantity),
-    ],
-  });
-
-  // 3. Return OwnerCap to Character
-  tx.moveCall({
-    target: `${pkg}::character::return_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.characterId),
-      ownerCap,
-      receipt,
-    ],
-  });
-
-  // 4. Create the contract (consumes the transit Item)
+  // 2. Create the contract (consumes the transit Item)
   tx.moveCall({
     target: tcTarget("item_for_coin", "create"),
     typeArguments: tcModuleTypes("item_for_coin"),
@@ -632,9 +598,7 @@ export function buildCreateItemForCoin(params: {
 export function buildCreateItemForCoinBatch(params: {
   characterId: string;
   sourceSsuId: string;
-  ownerCapId: string;
-  ownerCapVersion: string;
-  ownerCapDigest: string;
+  access: ItemAccessMode;
   items: {
     typeId: number;
     quantity: number;
@@ -647,19 +611,22 @@ export function buildCreateItemForCoinBatch(params: {
 }): Transaction {
   const tx = new Transaction();
   const pkg = worldPkg();
-  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
+  const typeArg =
+    params.access.mode === "ssuOwner"
+      ? `${pkg}::storage_unit::StorageUnit`
+      : `${pkg}::character::Character`;
 
-  // 1. Borrow OwnerCap<StorageUnit> from Character (once)
+  // 1. Borrow OwnerCap<T> from Character (once)
   const [ownerCap, receipt] = tx.moveCall({
     target: `${pkg}::character::borrow_owner_cap`,
-    typeArguments: [suTypeArg],
+    typeArguments: [typeArg],
     arguments: [
       tx.object(params.characterId),
       tx.object(
         Inputs.ReceivingRef({
-          objectId: params.ownerCapId,
-          version: params.ownerCapVersion,
-          digest: params.ownerCapDigest,
+          objectId: params.access.ownerCapId,
+          version: params.access.ownerCapVersion,
+          digest: params.access.ownerCapDigest,
         }),
       ),
     ],
@@ -669,7 +636,7 @@ export function buildCreateItemForCoinBatch(params: {
   for (const entry of params.items) {
     const [item] = tx.moveCall({
       target: `${pkg}::storage_unit::withdraw_by_owner`,
-      typeArguments: [suTypeArg],
+      typeArguments: [typeArg],
       arguments: [
         tx.object(params.sourceSsuId),
         tx.object(params.characterId),
@@ -696,10 +663,10 @@ export function buildCreateItemForCoinBatch(params: {
     });
   }
 
-  // 3. Return OwnerCap to Character (once)
+  // 3. Return OwnerCap<T> to Character (once)
   tx.moveCall({
     target: `${pkg}::character::return_owner_cap`,
-    typeArguments: [suTypeArg],
+    typeArguments: [typeArg],
     arguments: [
       tx.object(params.characterId),
       ownerCap,
@@ -715,9 +682,7 @@ export function buildCreateItemForItem(params: {
   sourceSsuId: string;
   typeId: number;
   quantity: number;
-  ownerCapId: string;
-  ownerCapVersion: string;
-  ownerCapDigest: string;
+  access: ItemAccessMode;
   wantedTypeId: number;
   wantedQuantity: number;
   destinationSsuId: string;
@@ -728,50 +693,18 @@ export function buildCreateItemForItem(params: {
   allowedTribes: number[];
 }): Transaction {
   const tx = new Transaction();
-  const pkg = worldPkg();
-  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
 
-  // 1. Borrow OwnerCap<StorageUnit> from Character
-  const [ownerCap, receipt] = tx.moveCall({
-    target: `${pkg}::character::borrow_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.characterId),
-      tx.object(
-        Inputs.ReceivingRef({
-          objectId: params.ownerCapId,
-          version: params.ownerCapVersion,
-          digest: params.ownerCapDigest,
-        }),
-      ),
-    ],
-  });
+  // 1. Borrow OwnerCap → withdraw item → return OwnerCap
+  const item = appendBorrowWithdrawReturn(
+    tx,
+    params.access,
+    params.characterId,
+    params.sourceSsuId,
+    params.typeId,
+    params.quantity,
+  );
 
-  // 2. Withdraw item from SSU (returns transit Item with specified quantity)
-  const [item] = tx.moveCall({
-    target: `${pkg}::storage_unit::withdraw_by_owner`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.sourceSsuId),
-      tx.object(params.characterId),
-      ownerCap,
-      tx.pure.u64(params.typeId),
-      tx.pure.u32(params.quantity),
-    ],
-  });
-
-  // 3. Return OwnerCap to Character
-  tx.moveCall({
-    target: `${pkg}::character::return_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.characterId),
-      ownerCap,
-      receipt,
-    ],
-  });
-
-  // 4. Create the contract (consumes the transit Item)
+  // 2. Create the contract (consumes the transit Item)
   tx.moveCall({
     target: tcTarget("item_for_item", "create"),
     typeArguments: tcModuleTypes("item_for_item"),
@@ -798,9 +731,7 @@ export function buildCreateTransport(params: {
   sourceSsuId: string;
   typeId: number;
   quantity: number;
-  ownerCapId: string;
-  ownerCapVersion: string;
-  ownerCapDigest: string;
+  access: ItemAccessMode;
   escrowAmount: number;
   destinationSsuId: string;
   requiredStake: number;
@@ -810,53 +741,21 @@ export function buildCreateTransport(params: {
   allowedTribes: number[];
 }): Transaction {
   const tx = new Transaction();
-  const pkg = worldPkg();
-  const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
 
-  // 1. Borrow OwnerCap<StorageUnit> from Character
-  const [ownerCap, receipt] = tx.moveCall({
-    target: `${pkg}::character::borrow_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.characterId),
-      tx.object(
-        Inputs.ReceivingRef({
-          objectId: params.ownerCapId,
-          version: params.ownerCapVersion,
-          digest: params.ownerCapDigest,
-        }),
-      ),
-    ],
-  });
+  // 1. Borrow OwnerCap → withdraw item → return OwnerCap
+  const item = appendBorrowWithdrawReturn(
+    tx,
+    params.access,
+    params.characterId,
+    params.sourceSsuId,
+    params.typeId,
+    params.quantity,
+  );
 
-  // 2. Withdraw item from SSU
-  const [item] = tx.moveCall({
-    target: `${pkg}::storage_unit::withdraw_by_owner`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.sourceSsuId),
-      tx.object(params.characterId),
-      ownerCap,
-      tx.pure.u64(params.typeId),
-      tx.pure.u32(params.quantity),
-    ],
-  });
-
-  // 3. Return OwnerCap to Character
-  tx.moveCall({
-    target: `${pkg}::character::return_owner_cap`,
-    typeArguments: [suTypeArg],
-    arguments: [
-      tx.object(params.characterId),
-      ownerCap,
-      receipt,
-    ],
-  });
-
-  // 4. Split escrow coins
+  // 2. Split escrow coins
   const [escrow] = tx.splitCoins(tx.gas, [params.escrowAmount]);
 
-  // 5. Create the transport contract (consumes transit Item, locks in open inventory)
+  // 3. Create the transport contract (consumes transit Item, locks in open inventory)
   tx.moveCall({
     target: tcTarget("transport", "create"),
     typeArguments: tcTypes(),

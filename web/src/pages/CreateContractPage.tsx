@@ -14,6 +14,7 @@ import {
   buildCreateItemForItem,
   buildCreateTransport,
   buildAuthorizeExtension,
+  type ItemAccessMode,
 } from "../lib/sui";
 import { contractTypeLabel, formatAmount, formatRate } from "../lib/format";
 import { ItemPickerField } from "../components/shared/ItemPickerField";
@@ -437,7 +438,12 @@ const VALID_VARIANTS = new Set<string>(["CoinForCoin", "CoinForItem", "ItemForCo
 export function CreateContractPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { characterId } = useIdentity();
+  const {
+    characterId,
+    characterOwnerCapId,
+    characterOwnerCapVersion,
+    characterOwnerCapDigest,
+  } = useIdentity();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
   const { structures, refetch: refetchStructures } = useMyStructures();
@@ -497,6 +503,7 @@ export function CreateContractPage() {
 
   // ItemForCoin fields
   const [sourceSsuId, setSourceSsuId] = useState("");
+  const [sourceSsuOwned, setSourceSsuOwned] = useState(true);
   const [itemId, setItemId] = useState("");
   const [offeredQuantity, setOfferedQuantity] = useState("");
   const [availableQuantity, setAvailableQuantity] = useState(0);
@@ -504,6 +511,7 @@ export function CreateContractPage() {
 
   // Transport fields
   const [transportSourceSsuId, setTransportSourceSsuId] = useState("");
+  const [transportSourceSsuOwned, setTransportSourceSsuOwned] = useState(true);
   const [transportItemTypeId, setTransportItemTypeId] = useState("");
   const [transportItemQuantity, setTransportItemQuantity] = useState("");
   const [transportAvailableQuantity, setTransportAvailableQuantity] = useState(0);
@@ -536,6 +544,40 @@ export function CreateContractPage() {
   const { getItem } = useItems();
 
   const isBusy = creationPhase !== null || bulkBusy;
+
+  /** Build the correct ItemAccessMode for a source SSU. */
+  const buildAccessMode = useCallback(
+    async (ssuId: string, owned: boolean): Promise<ItemAccessMode> => {
+      if (owned) {
+        const cap = await getFreshOwnerCap(ssuId);
+        return { mode: "ssuOwner", ownerCapId: cap.ownerCapId, ownerCapVersion: cap.ownerCapVersion, ownerCapDigest: cap.ownerCapDigest };
+      }
+      if (!characterOwnerCapId) throw new Error("Character OwnerCap not available");
+      try {
+        const obj = await suiClient.getObject({ id: characterOwnerCapId });
+        return {
+          mode: "character",
+          ownerCapId: characterOwnerCapId,
+          ownerCapVersion: obj.data?.version ?? characterOwnerCapVersion ?? "",
+          ownerCapDigest: obj.data?.digest ?? characterOwnerCapDigest ?? "",
+        };
+      } catch {
+        return {
+          mode: "character",
+          ownerCapId: characterOwnerCapId,
+          ownerCapVersion: characterOwnerCapVersion ?? "",
+          ownerCapDigest: characterOwnerCapDigest ?? "",
+        };
+      }
+    },
+    [getFreshOwnerCap, suiClient, characterOwnerCapId, characterOwnerCapVersion, characterOwnerCapDigest],
+  );
+
+  /** Resolve the ownerCapId to use for reading a source SSU's inventory. */
+  const getInventoryCapId = useCallback(
+    (ssuId: string, owned: boolean) => owned ? getOwnerCapId(ssuId) : (characterOwnerCapId ?? ""),
+    [getOwnerCapId, characterOwnerCapId],
+  );
 
   // ---------------------------------------------------------------------------
   // Divisibility validation — prevents rounding dust on partial fills.
@@ -784,15 +826,13 @@ export function CreateContractPage() {
           });
           break;
         case "ItemForCoin": {
-          const cap = await getFreshOwnerCap(sourceSsuId);
+          const access = await buildAccessMode(sourceSsuId, sourceSsuOwned);
           tx = buildCreateItemForCoin({
             characterId,
             sourceSsuId,
             typeId: Number(itemId),
             quantity: Number(offeredQuantity),
-            ownerCapId: cap.ownerCapId,
-            ownerCapVersion: cap.ownerCapVersion,
-            ownerCapDigest: cap.ownerCapDigest,
+            access,
             wantedAmount: toBaseUnits(itemWantedAmount, cfDecimals),
             allowPartial,
             deadlineMs,
@@ -802,15 +842,13 @@ export function CreateContractPage() {
           break;
         }
         case "ItemForItem": {
-          const cap = await getFreshOwnerCap(sourceSsuId);
+          const access = await buildAccessMode(sourceSsuId, sourceSsuOwned);
           tx = buildCreateItemForItem({
             characterId,
             sourceSsuId,
             typeId: Number(itemId),
             quantity: Number(offeredQuantity),
-            ownerCapId: cap.ownerCapId,
-            ownerCapVersion: cap.ownerCapVersion,
-            ownerCapDigest: cap.ownerCapDigest,
+            access,
             wantedTypeId: Number(i4iWantedTypeId),
             wantedQuantity: Number(i4iWantedQuantity),
             destinationSsuId: i4iDestinationSsuId,
@@ -823,15 +861,13 @@ export function CreateContractPage() {
           break;
         }
         case "Transport": {
-          const cap = await getFreshOwnerCap(transportSourceSsuId);
+          const access = await buildAccessMode(transportSourceSsuId, transportSourceSsuOwned);
           tx = buildCreateTransport({
             characterId,
             sourceSsuId: transportSourceSsuId,
             typeId: Number(transportItemTypeId),
             quantity: Number(transportItemQuantity),
-            ownerCapId: cap.ownerCapId,
-            ownerCapVersion: cap.ownerCapVersion,
-            ownerCapDigest: cap.ownerCapDigest,
+            access,
             escrowAmount: toBaseUnits(escrow, ceDecimals),
             destinationSsuId,
             requiredStake: toBaseUnits(requiredStake, ceDecimals),
@@ -906,13 +942,11 @@ export function CreateContractPage() {
       );
 
       try {
-        const cap = await getFreshOwnerCap(sourceSsuId);
+        const access = await buildAccessMode(sourceSsuId, sourceSsuOwned);
         const tx = buildCreateItemForCoinBatch({
           characterId,
           sourceSsuId,
-          ownerCapId: cap.ownerCapId,
-          ownerCapVersion: cap.ownerCapVersion,
-          ownerCapDigest: cap.ownerCapDigest,
+          access,
           items: chunk.map((p) => ({ typeId: p.typeId, quantity: p.quantity, wantedAmount: p.wantedAmount })),
           allowPartial,
           deadlineMs,
@@ -1122,7 +1156,7 @@ export function CreateContractPage() {
                 </div>
               </Row>
               <Label>Destination SSU</Label>
-              <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} />
+              <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} allowManualEntry />
             </>
           )}
 
@@ -1152,7 +1186,7 @@ export function CreateContractPage() {
               </Row>
 
               <Label>Source SSU</Label>
-              <SsuPickerField value={sourceSsuId} onChange={(id) => setSourceSsuId(id)} />
+              <SsuPickerField value={sourceSsuId} onChange={(id, owned) => { setSourceSsuId(id); setSourceSsuOwned(owned); }} allowManualEntry />
               {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
 
               {!bulkMode ? (
@@ -1163,7 +1197,7 @@ export function CreateContractPage() {
                       <Label>Item</Label>
                       <SsuItemPickerField
                         ssuId={sourceSsuId}
-                        ownerCapId={getOwnerCapId(sourceSsuId)}
+                        ownerCapId={getInventoryCapId(sourceSsuId, sourceSsuOwned)}
                         value={itemId}
                         ownerOnly
                         onChange={(entry) => {
@@ -1208,7 +1242,7 @@ export function CreateContractPage() {
                     partial fill, access) apply to all contracts.
                   </Hint>
                   <SecondaryButton
-                    disabled={!sourceSsuId || !getOwnerCapId(sourceSsuId) || isBusy}
+                    disabled={!sourceSsuId || !getInventoryCapId(sourceSsuId, sourceSsuOwned) || isBusy}
                     onClick={() => setBulkPickerOpen(true)}
                     style={{ marginBottom: 12 }}
                   >
@@ -1218,7 +1252,7 @@ export function CreateContractPage() {
                   {bulkPickerOpen && (
                     <SsuMultiItemPickerModal
                       ssuId={sourceSsuId}
-                      ownerCapId={getOwnerCapId(sourceSsuId)}
+                      ownerCapId={getInventoryCapId(sourceSsuId, sourceSsuOwned)}
                       alreadySelected={new Set(bulkRows.map((r) => r.typeId))}
                       onConfirm={(entries) => {
                         setBulkRows((prev) => {
@@ -1261,14 +1295,14 @@ export function CreateContractPage() {
           {variant === "ItemForItem" && (
             <>
               <Label>Source SSU</Label>
-              <SsuPickerField value={sourceSsuId} onChange={(id) => setSourceSsuId(id)} />
+              <SsuPickerField value={sourceSsuId} onChange={(id, owned) => { setSourceSsuId(id); setSourceSsuOwned(owned); }} allowManualEntry />
               {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
               <Row>
                 <div>
                   <Label>Offered Item</Label>
                   <SsuItemPickerField
                     ssuId={sourceSsuId}
-                    ownerCapId={getOwnerCapId(sourceSsuId)}
+                    ownerCapId={getInventoryCapId(sourceSsuId, sourceSsuOwned)}
                     value={itemId}
                     ownerOnly
                     onChange={(entry) => {
@@ -1308,7 +1342,7 @@ export function CreateContractPage() {
                 </div>
               </Row>
               <Label>Destination SSU</Label>
-              <SsuPickerField value={i4iDestinationSsuId} onChange={(id) => setI4iDestinationSsuId(id)} />
+              <SsuPickerField value={i4iDestinationSsuId} onChange={(id) => setI4iDestinationSsuId(id)} allowManualEntry />
               {submitted && !i4iDestinationSsuId && <FieldError>Required</FieldError>}
             </>
           )}
@@ -1316,14 +1350,14 @@ export function CreateContractPage() {
           {variant === "Transport" && (
             <>
               <Label>Source SSU (pickup)</Label>
-              <SsuPickerField value={transportSourceSsuId} onChange={(id) => setTransportSourceSsuId(id)} />
+              <SsuPickerField value={transportSourceSsuId} onChange={(id, owned) => { setTransportSourceSsuId(id); setTransportSourceSsuOwned(owned); }} allowManualEntry />
               {submitted && !transportSourceSsuId && <FieldError>Required</FieldError>}
               <Row>
                 <div>
                   <Label>Item</Label>
                   <SsuItemPickerField
                     ssuId={transportSourceSsuId}
-                    ownerCapId={getOwnerCapId(transportSourceSsuId)}
+                    ownerCapId={getInventoryCapId(transportSourceSsuId, transportSourceSsuOwned)}
                     value={transportItemTypeId}
                     ownerOnly
                     onChange={(entry) => {
@@ -1349,7 +1383,7 @@ export function CreateContractPage() {
                 </div>
               </Row>
               <Label>Destination SSU (delivery)</Label>
-              <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} />
+              <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} allowManualEntry />
               {submitted && !destinationSsuId && <FieldError>Required</FieldError>}
               <Label>Required Stake ({ceSymbol})</Label>
               <Input type="number" placeholder="0.0" value={requiredStake} onChange={(e) => setRequiredStake(e.target.value)} />

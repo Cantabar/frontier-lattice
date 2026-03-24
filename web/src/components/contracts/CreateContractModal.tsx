@@ -6,6 +6,7 @@ import { TransactionStepper } from "../shared/TransactionStepper";
 import { useTransactionPhase } from "../../hooks/useTransactionPhase";
 import { useIdentity } from "../../hooks/useIdentity";
 import { useMyStructures } from "../../hooks/useStructures";
+import type { ItemAccessMode } from "../../lib/sui";
 import type { TrustlessContractVariant } from "../../lib/types";
 import {
   buildCreateCoinForCoin,
@@ -172,7 +173,12 @@ interface Props {
 }
 
 export function CreateContractModal({ onClose, onCreated }: Props) {
-  const { characterId } = useIdentity();
+  const {
+    characterId,
+    characterOwnerCapId,
+    characterOwnerCapVersion,
+    characterOwnerCapDigest,
+  } = useIdentity();
   const { mutateAsync: signAndExecute, isPending } = useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
   const { structures, refetch: refetchStructures } = useMyStructures();
@@ -233,6 +239,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
 
   // ItemForCoin fields
   const [sourceSsuId, setSourceSsuId] = useState("");
+  const [sourceSsuOwned, setSourceSsuOwned] = useState(true);
   const [itemId, setItemId] = useState("");
   const [offeredQuantity, setOfferedQuantity] = useState("");
   const [availableQuantity, setAvailableQuantity] = useState(0);
@@ -240,6 +247,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
 
   // Transport fields
   const [transportSourceSsuId, setTransportSourceSsuId] = useState("");
+  const [transportSourceSsuOwned, setTransportSourceSsuOwned] = useState(true);
   const [transportItemTypeId, setTransportItemTypeId] = useState("");
   const [transportItemQuantity, setTransportItemQuantity] = useState("");
   const [transportAvailableQuantity, setTransportAvailableQuantity] = useState(0);
@@ -327,6 +335,41 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
     }
   }
 
+  /** Build the correct ItemAccessMode for a source SSU. */
+  const buildAccessMode = useCallback(
+    async (ssuId: string, owned: boolean): Promise<ItemAccessMode> => {
+      if (owned) {
+        const cap = await getFreshOwnerCap(ssuId);
+        return { mode: "ssuOwner", ownerCapId: cap.ownerCapId, ownerCapVersion: cap.ownerCapVersion, ownerCapDigest: cap.ownerCapDigest };
+      }
+      // Non-owned SSU: use Character OwnerCap (fresh-fetch to avoid stale version)
+      if (!characterOwnerCapId) throw new Error("Character OwnerCap not available");
+      try {
+        const obj = await suiClient.getObject({ id: characterOwnerCapId });
+        return {
+          mode: "character",
+          ownerCapId: characterOwnerCapId,
+          ownerCapVersion: obj.data?.version ?? characterOwnerCapVersion ?? "",
+          ownerCapDigest: obj.data?.digest ?? characterOwnerCapDigest ?? "",
+        };
+      } catch {
+        return {
+          mode: "character",
+          ownerCapId: characterOwnerCapId,
+          ownerCapVersion: characterOwnerCapVersion ?? "",
+          ownerCapDigest: characterOwnerCapDigest ?? "",
+        };
+      }
+    },
+    [getFreshOwnerCap, suiClient, characterOwnerCapId, characterOwnerCapVersion, characterOwnerCapDigest],
+  );
+
+  /** Resolve the ownerCapId to use for reading a source SSU's inventory. */
+  const getInventoryCapId = useCallback(
+    (ssuId: string, owned: boolean) => owned ? getOwnerCapId(ssuId) : (characterOwnerCapId ?? ""),
+    [getOwnerCapId, characterOwnerCapId],
+  );
+
   // Reset item selections when the associated SSU changes
   useEffect(() => { setItemId(""); setOfferedQuantity(""); setAvailableQuantity(0); }, [sourceSsuId]);
   useEffect(() => { setTransportItemTypeId(""); setTransportItemQuantity(""); setTransportAvailableQuantity(0); }, [transportSourceSsuId]);
@@ -382,15 +425,13 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
           });
           break;
         case "ItemForCoin": {
-          const cap = await getFreshOwnerCap(sourceSsuId);
+          const access = await buildAccessMode(sourceSsuId, sourceSsuOwned);
           tx = buildCreateItemForCoin({
             characterId,
             sourceSsuId,
             typeId: Number(itemId),
             quantity: Number(offeredQuantity),
-            ownerCapId: cap.ownerCapId,
-            ownerCapVersion: cap.ownerCapVersion,
-            ownerCapDigest: cap.ownerCapDigest,
+            access,
             wantedAmount: toBaseUnits(itemWantedAmount, cfDecimals),
             allowPartial,
             deadlineMs,
@@ -400,15 +441,13 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
           break;
         }
         case "ItemForItem": {
-          const cap = await getFreshOwnerCap(sourceSsuId);
+          const access = await buildAccessMode(sourceSsuId, sourceSsuOwned);
           tx = buildCreateItemForItem({
             characterId,
             sourceSsuId,
             typeId: Number(itemId),
             quantity: Number(offeredQuantity),
-            ownerCapId: cap.ownerCapId,
-            ownerCapVersion: cap.ownerCapVersion,
-            ownerCapDigest: cap.ownerCapDigest,
+            access,
             wantedTypeId: Number(i4iWantedTypeId),
             wantedQuantity: Number(i4iWantedQuantity),
             destinationSsuId: i4iDestinationSsuId,
@@ -421,15 +460,13 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
           break;
         }
         case "Transport": {
-          const cap = await getFreshOwnerCap(transportSourceSsuId);
+          const access = await buildAccessMode(transportSourceSsuId, transportSourceSsuOwned);
           tx = buildCreateTransport({
             characterId,
             sourceSsuId: transportSourceSsuId,
             typeId: Number(transportItemTypeId),
             quantity: Number(transportItemQuantity),
-            ownerCapId: cap.ownerCapId,
-            ownerCapVersion: cap.ownerCapVersion,
-            ownerCapDigest: cap.ownerCapDigest,
+            access,
             escrowAmount: toBaseUnits(escrow, ceDecimals),
             destinationSsuId,
             requiredStake: toBaseUnits(requiredStake, ceDecimals),
@@ -621,21 +658,21 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
             </div>
           </Row>
           <Label>Destination SSU</Label>
-          <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} />
+          <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} allowManualEntry />
         </>
       )}
 
       {variant === "ItemForCoin" && (
         <>
           <Label>Source SSU</Label>
-          <SsuPickerField value={sourceSsuId} onChange={(id) => setSourceSsuId(id)} />
+          <SsuPickerField value={sourceSsuId} onChange={(id, owned) => { setSourceSsuId(id); setSourceSsuOwned(owned); }} allowManualEntry />
           {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
           <Row>
             <div>
               <Label>Item</Label>
               <SsuItemPickerField
                 ssuId={sourceSsuId}
-                ownerCapId={getOwnerCapId(sourceSsuId)}
+                ownerCapId={getInventoryCapId(sourceSsuId, sourceSsuOwned)}
                 value={itemId}
                 ownerOnly
                 onChange={(entry) => {
@@ -671,14 +708,14 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
       {variant === "ItemForItem" && (
         <>
           <Label>Source SSU</Label>
-          <SsuPickerField value={sourceSsuId} onChange={(id) => setSourceSsuId(id)} />
+          <SsuPickerField value={sourceSsuId} onChange={(id, owned) => { setSourceSsuId(id); setSourceSsuOwned(owned); }} allowManualEntry />
           {submitted && !sourceSsuId && <FieldError>Required</FieldError>}
           <Row>
             <div>
               <Label>Offered Item</Label>
               <SsuItemPickerField
                 ssuId={sourceSsuId}
-                ownerCapId={getOwnerCapId(sourceSsuId)}
+                ownerCapId={getInventoryCapId(sourceSsuId, sourceSsuOwned)}
                 value={itemId}
                 ownerOnly
                 onChange={(entry) => {
@@ -718,7 +755,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
             </div>
           </Row>
           <Label>Destination SSU</Label>
-          <SsuPickerField value={i4iDestinationSsuId} onChange={(id) => setI4iDestinationSsuId(id)} />
+          <SsuPickerField value={i4iDestinationSsuId} onChange={(id) => setI4iDestinationSsuId(id)} allowManualEntry />
           {submitted && !i4iDestinationSsuId && <FieldError>Required</FieldError>}
         </>
       )}
@@ -726,14 +763,14 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
       {variant === "Transport" && (
         <>
           <Label>Source SSU (pickup)</Label>
-          <SsuPickerField value={transportSourceSsuId} onChange={(id) => setTransportSourceSsuId(id)} />
+          <SsuPickerField value={transportSourceSsuId} onChange={(id, owned) => { setTransportSourceSsuId(id); setTransportSourceSsuOwned(owned); }} allowManualEntry />
           {submitted && !transportSourceSsuId && <FieldError>Required</FieldError>}
           <Row>
             <div>
               <Label>Item</Label>
               <SsuItemPickerField
                 ssuId={transportSourceSsuId}
-                ownerCapId={getOwnerCapId(transportSourceSsuId)}
+                ownerCapId={getInventoryCapId(transportSourceSsuId, transportSourceSsuOwned)}
                 value={transportItemTypeId}
                 ownerOnly
                 onChange={(entry) => {
@@ -759,7 +796,7 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
             </div>
           </Row>
           <Label>Destination SSU (delivery)</Label>
-          <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} />
+          <SsuPickerField value={destinationSsuId} onChange={(id) => setDestinationSsuId(id)} allowManualEntry />
           {submitted && !destinationSsuId && <FieldError>Required</FieldError>}
           <Label>Required Stake ({ceSymbol})</Label>
           <Input type="number" placeholder="0.0" value={requiredStake} onChange={(e) => setRequiredStake(e.target.value)} />
