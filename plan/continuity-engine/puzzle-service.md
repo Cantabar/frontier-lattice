@@ -121,11 +121,16 @@ This appears in the log panel alongside the contract appearing in the contracts 
 
 Sessions are keyed by a server-generated UUID, set as an HTTP cookie on first `GET /puzzle`. Every subsequent HTMX request includes the cookie automatically.
 
-On session creation, the client must provide:
-- `player_address` — the player's wallet address (passed as a query param or POST body on initial load, e.g. `GET /puzzle?player=0x...`)
-- `context` — where the player is interacting from. One of:
-  - `browser` — standalone web access via `/continuity` route
-  - `ssu:<entity_id>` — in-game interaction through a Smart Storage Unit, with the SSU's entity ID
+### URL Routing
+
+The entry point determines the session context:
+
+- **Browser**: `puzzle.ef-corm.com/?player=0x...` — context is `browser`
+- **SSU (in-game)**: `puzzle.ef-corm.com/ssu/:entity_id?player=0x...` — context is `ssu:<entity_id>`, extracted from the path
+
+When configuring an SSU extension on-chain, the dapp URL is set to `https://puzzle.ef-corm.com/ssu/<entity_id>`. The `player_address` is appended as a query param by the game client at load time.
+
+All subsequent routes are context-aware — Phase 0, puzzle, and contracts URLs are prefixed with the SSU path when applicable (e.g., `/ssu/:entity_id/phase0/interact`, `/ssu/:entity_id/puzzle/decrypt`). The Go router extracts `:entity_id` via path parameter and attaches it to the session.
 
 These are stored on the session and included in every event emitted to the dead drop, so corm-brain knows *who* is acting and *where* they're acting from. This enables the AI to tailor responses (e.g., in-game SSU interactions might get more lore-appropriate corm messages, while browser sessions get a more analytical tone).
 
