@@ -1,0 +1,50 @@
+{{define "layout.html"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuity Engine</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="puzzle-body" hx-ext="sse" sse-connect="/stream">
+    <div class="app-layout">
+        <!-- Left sidebar: Meters -->
+        <aside class="meters-sidebar">
+            {{template "meters.html" .}}
+        </aside>
+
+        <!-- Main content: Cipher Grid -->
+        <main class="puzzle-main">
+            <div class="grid-container">
+                {{template "grid.html" .}}
+            </div>
+
+            <!-- Word submission form -->
+            <form class="submit-form" hx-post="/puzzle/submit" hx-target="#result-area" hx-swap="innerHTML">
+                <input type="text" name="word" placeholder="Enter word..." autocomplete="off" class="word-input" />
+                <button type="submit" class="submit-btn">Submit</button>
+            </form>
+            <div id="result-area"></div>
+        </main>
+
+        <!-- Right sidebar: Corm Log + Contracts -->
+        <aside class="right-sidebar">
+            <div class="corm-log-panel">
+                <h3 class="panel-title">&gt; corm_log</h3>
+                <div id="corm-log" class="log-scroll"
+                     sse-swap="corm-log" hx-swap="beforeend"
+                     sse-swap="corm-log-start" hx-swap="beforeend">
+                </div>
+            </div>
+            <div class="contracts-panel">
+                <h3 class="panel-title">&gt; contracts</h3>
+                <div id="contracts"
+                     sse-swap="corm-contract" hx-swap="beforeend">
+                </div>
+            </div>
+        </aside>
+    </div>
+</body>
+</html>{{end}}

@@ -75,6 +75,16 @@ procs:
       npm --prefix web run dev
     stop: "SIGTERM"
 
+  # ── Puzzle Service (Go + HTMX on :3300) ──────────────────────────────────
+  puzzle-service:
+    shell: |
+      cd puzzle-service
+      echo "Building puzzle-service..."
+      go build -o ./puzzle-service . && echo "Running puzzle-service" && ./puzzle-service
+    env:
+      PUZZLE_PORT: "3300"
+    stop: "SIGTERM"
+
   # ── Giveitem Helper (Vite dev UI) ───────────────────────────────────────
   giveitem-helper:
     shell: |

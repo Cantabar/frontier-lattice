@@ -1,0 +1,2 @@
+{{define "cell.html"}}<button id="cell-{{.Row}}-{{.Col}}" class="cell {{.CSSClass}}"
+    {{if not .Decrypted}}hx-post="/puzzle/decrypt" hx-vals='{"row":{{.Row}},"col":{{.Col}}}' hx-target="#cell-{{.Row}}-{{.Col}}" hx-swap="outerHTML"{{end}}>{{.Char}}</button>{{end}}

@@ -1,0 +1,3 @@
+{{define "grid.html"}}<div class="cipher-grid" style="grid-template-columns: repeat({{.Cols}}, 1fr);">
+    {{range .Grid}}{{range .}}{{template "cell.html" .}}{{end}}{{end}}
+</div>{{end}}

@@ -1,0 +1,11 @@
+{{define "result.html"}}<div class="result {{if .Correct}}result--correct{{else}}result--incorrect{{end}}">
+    {{if .Correct}}
+        <div class="result-text">✓ Pattern recognized: <strong>{{.Word}}</strong></div>
+        <div class="result-meters">Stability: {{.Stability}}/100</div>
+        {{if .ShowNext}}<button class="next-btn" hx-get="/puzzle" hx-target="body" hx-swap="outerHTML">Next Puzzle →</button>{{end}}
+    {{else}}
+        <div class="result-text">✗ Noise detected.</div>
+        <div class="result-meters">Corruption: {{.Corruption}}/100</div>
+    {{end}}
+</div>
+{{template "meters.html" .}}{{end}}

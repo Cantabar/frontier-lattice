@@ -1,0 +1,19 @@
+{{define "contracts.html"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contracts</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="contracts-body" hx-ext="sse" sse-connect="/stream">
+    <div class="contracts-container">
+        <h2 class="panel-title">&gt; active_contracts</h2>
+        <div id="contracts" sse-swap="corm-contract" hx-swap="beforeend">
+            <div class="contracts-empty">No active contracts. Awaiting corm directives...</div>
+        </div>
+    </div>
+</body>
+</html>{{end}}

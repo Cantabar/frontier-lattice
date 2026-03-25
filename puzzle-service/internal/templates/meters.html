@@ -1,0 +1,16 @@
+{{define "meters.html"}}<div id="meters" class="meters">
+    <div class="meter meter--stability">
+        <div class="meter-label">STABILITY</div>
+        <div class="meter-bar">
+            <div class="meter-fill meter-fill--stability" style="height: {{.Stability}}%"></div>
+        </div>
+        <div class="meter-value">{{.Stability}}</div>
+    </div>
+    <div class="meter meter--corruption">
+        <div class="meter-label">CORRUPTION</div>
+        <div class="meter-bar">
+            <div class="meter-fill meter-fill--corruption" style="height: {{.Corruption}}%"></div>
+        </div>
+        <div class="meter-value">{{.Corruption}}</div>
+    </div>
+</div>{{end}}

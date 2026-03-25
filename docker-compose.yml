@@ -54,5 +54,21 @@ services:
       timeout: 3s
       retries: 5
 
+  # ── Puzzle Service (Go + HTMX on port 3300) ────────────────────
+  puzzle-service:
+    build:
+      context: ./puzzle-service
+      dockerfile: Dockerfile
+    ports:
+      - "3300:3300"
+    environment:
+      - PUZZLE_PORT=3300
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3300/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
 volumes:
   pgdata:

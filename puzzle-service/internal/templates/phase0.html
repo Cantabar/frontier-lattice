@@ -1,0 +1,81 @@
+{{define "phase0.html"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal — Offline</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="phase0-body" hx-ext="sse" sse-connect="/stream">
+    <div class="terminal-container">
+        <div class="terminal-header">
+            <span class="terminal-title">SYS_INTERFACE v0.0.1 — STATUS: OFFLINE</span>
+            <div class="terminal-controls">
+                <button class="terminal-btn btn-minimize"
+                        hx-post="/phase0/interact" hx-vals='{"element_id":"btn-minimize"}'
+                        hx-target="#phase0-log" hx-swap="beforeend">─</button>
+                <button class="terminal-btn btn-maximize"
+                        hx-post="/phase0/interact" hx-vals='{"element_id":"btn-maximize"}'
+                        hx-target="#phase0-log" hx-swap="beforeend">□</button>
+                <button class="terminal-btn btn-close"
+                        hx-post="/phase0/interact" hx-vals='{"element_id":"btn-close"}'
+                        hx-target="#phase0-log" hx-swap="beforeend">×</button>
+            </div>
+        </div>
+
+        <div class="terminal-body">
+            <div class="terminal-panels">
+                <div class="panel panel-nav">
+                    <button class="panel-item"
+                            hx-post="/phase0/interact" hx-vals='{"element_id":"nav-systems"}'
+                            hx-target="#phase0-log" hx-swap="beforeend">▸ Systems</button>
+                    <button class="panel-item"
+                            hx-post="/phase0/interact" hx-vals='{"element_id":"nav-diagnostics"}'
+                            hx-target="#phase0-log" hx-swap="beforeend">▸ Diagnostics</button>
+                    <button class="panel-item"
+                            hx-post="/phase0/interact" hx-vals='{"element_id":"nav-network"}'
+                            hx-target="#phase0-log" hx-swap="beforeend">▸ Network</button>
+                    <button class="panel-item"
+                            hx-post="/phase0/interact" hx-vals='{"element_id":"nav-archive"}'
+                            hx-target="#phase0-log" hx-swap="beforeend">▸ Archive</button>
+                    <button class="panel-item"
+                            hx-post="/phase0/interact" hx-vals='{"element_id":"nav-comms"}'
+                            hx-target="#phase0-log" hx-swap="beforeend">▸ Communications</button>
+                </div>
+
+                <div class="panel panel-status">
+                    <div class="status-row">
+                        <span class="status-label">CORE</span>
+                        <span class="status-value status-offline">OFFLINE</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">NET</span>
+                        <span class="status-value status-offline">NO SIGNAL</span>
+                    </div>
+                    <div class="status-row">
+                        <span class="status-label">MEM</span>
+                        <span class="status-value status-warn">FRAGMENTED</span>
+                    </div>
+                    <div class="toggle-row">
+                        <button class="toggle-btn"
+                                hx-post="/phase0/interact" hx-vals='{"element_id":"toggle-power"}'
+                                hx-target="#phase0-log" hx-swap="beforeend">⏻ Power</button>
+                        <button class="toggle-btn"
+                                hx-post="/phase0/interact" hx-vals='{"element_id":"toggle-scan"}'
+                                hx-target="#phase0-log" hx-swap="beforeend">◉ Scan</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log output -->
+            <div class="terminal-log" id="phase0-log"
+                 sse-swap="corm-log" hx-swap="beforeend">
+                <div class="log-entry"><span class="log-prefix">&gt; </span>system boot failed. interface in safe mode.</div>
+                <div class="log-entry"><span class="log-prefix">&gt; </span>awaiting input...</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>{{end}}

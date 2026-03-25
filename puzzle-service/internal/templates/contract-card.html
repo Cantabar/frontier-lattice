@@ -1,0 +1,6 @@
+{{define "contract-card.html"}}<div class="contract-card" id="contract-{{.ContractID}}">
+    <div class="contract-type">{{.ContractType}}</div>
+    <div class="contract-desc">{{.Description}}</div>
+    <div class="contract-reward">{{.Reward}}</div>
+    {{if .DetailURL}}<a href="{{.DetailURL}}" class="contract-link" target="_blank">Details →</a>{{end}}
+</div>{{end}}
