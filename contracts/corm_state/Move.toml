@@ -1,0 +1,9 @@
+[package]
+name = "corm_state"
+edition = "2024.beta"
+
+[environments]
+localnet = "5b035e1b"
+
+[dependencies]
+corm_auth = { local = "../corm_auth" }
