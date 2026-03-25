@@ -28,7 +28,7 @@ Relevant benchmarks (single DGX Spark):
 - Only 12B params fire per token (10:1 sparse MoE ratio) — compute comparable to a 12B dense model
 - Mamba-2 layers use fixed-size recurrent state (no KV cache growth) — only the few attention layers contribute to KV cache, making it ~3x smaller than a comparable transformer at the same context length
 - Q4_K_M GGUF: ~87 GB model weight, fits in 128 GB with ~40 GB headroom for KV cache and OS
-- 18 tok/s generation → a 60-token corm response takes ~3.3 seconds, within async polling cadence
+- 18 tok/s generation → a 60-token corm response streams over ~3.3 seconds (tokens delivered to browser in real time via WebSocket → SSE relay)
 - Built-in reasoning ON/OFF modes and tool calling — natural fit for corm-brain action routing
 - RL-trained across 21 agentic environments (tool use, multi-step planning, structured output)
 - Multi-Token Prediction (MTP) enables native speculative decoding for additional speedup when backend support matures
@@ -66,9 +66,10 @@ DGX Spark (on-premise)
 ├── Nemotron 3 Nano (TRT-LLM NVFP4, ~15 GB, port 8001)
 │   └── Fast model for Phase 0/1 log comments, boost decisions
 ├── corm-brain service (Go, single binary)
-│   └── Polls cloud puzzle-service for player events
+│   └── Persistent outbound WebSocket to cloud puzzle-service (/corm/ws)
+│   └── Receives player events instantly over WebSocket
+│   └── Streams LLM token deltas back over WebSocket for live "typing" UX
 │   └── Routes LLM requests to Super or Nano based on task type
-│   └── Pushes actions back to cloud puzzle-service
 │   └── Reads/writes corm state to local Postgres (pgx + pgvector)
 │   └── Executes SUI transactions (CORM minting, CormState updates)
 │   └── In-process ONNX embeddings for episodic memory (nomic-embed-text, CPU)
@@ -80,7 +81,7 @@ DGX Spark (on-premise)
 ```
 AWS
 ├── puzzle-service (Go + HTMX, Docker on ECS/EC2)
-│   └── Dead-drop endpoints: GET /corm/events, POST /corm/actions
+│   └── WebSocket relay: /corm/ws (+ HTTP fallback: GET /corm/events, POST /corm/actions)
 ├── web app (React, S3 + CloudFront)
 └── indexer + Postgres (existing)
 ```
@@ -88,9 +89,9 @@ AWS
 ### Network Topology
 
 All communication is initiated **outbound from the DGX Spark**:
-- `corm-brain → puzzle-service` — HTTPS polling `GET /corm/events?after=N`, HTTPS push `POST /corm/actions` (over 10 GbE or WiFi 7)
+- `corm-brain → puzzle-service` — persistent outbound WebSocket to `wss://puzzle.ef-corm.com/corm/ws` (over 10 GbE or WiFi 7). Bidirectional: receives player events, streams token deltas and actions back. Falls back to HTTPS polling `GET /corm/events` + push `POST /corm/actions` if WebSocket is unavailable.
 - `corm-brain → SUI RPC` — local SUI node or remote RPC endpoint for on-chain transactions
-- `corm-brain → localhost:8000/8001` — local TRT-LLM inference (loopback, zero network latency)
+- `corm-brain → localhost:8000/8001` — local TRT-LLM inference with `"stream": true` (loopback, zero network latency)
 
 No inbound ports need to be exposed on the DGX Spark.
 
@@ -245,15 +246,15 @@ Memories are **not raw events**. They are consolidated summaries produced by a b
 
 ### Layer 4: Working Memory (ephemeral)
 
-- Last 10-20 raw events from the dead-drop poll
+- Last 10-20 raw events from the WebSocket stream
 - Last 5 corm responses (for conversational continuity)
 - Current session context (player address, interaction source)
 
-This is assembled fresh each polling cycle and not persisted.
+This is assembled fresh each event processing cycle and not persisted.
 
 ## Memory Consolidation
 
-A background goroutine (`memory/consolidator.go`) runs on a slower cadence than the polling loop (e.g. every 60 seconds or after every N events per corm).
+A background goroutine (`memory/consolidator.go`) runs on a slower cadence than the event processing loop (e.g. every 60 seconds or after every N events per corm).
 
 ### What it does
 
@@ -322,9 +323,10 @@ corm-brain/
 ├── internal/
 │   ├── config/
 │   │   └── config.go       # Env var parsing, defaults
-│   ├── poller/
-│   │   ├── events.go       # Polls puzzle-service GET /corm/events?after=N
-│   │   └── actions.go      # Posts actions to puzzle-service POST /corm/actions
+│   ├── transport/
+│   │   ├── ws.go           # Outbound WebSocket client to puzzle-service /corm/ws, reconnect logic
+│   │   ├── fallback.go     # HTTP fallback: polls GET /corm/events, posts POST /corm/actions
+│   │   └── actions.go      # Sends actions (log_stream_start/delta/end, boost, etc.) over active transport
 │   ├── llm/
 │   │   ├── client.go       # OpenAI-compatible HTTP client, routes to Super or Nano
 │   │   ├── prompt.go       # Assembles 4-layer prompt (identity + traits + memories + working)
@@ -369,16 +371,19 @@ Key dependencies:
 - `pgx/v5` + `pgvector-go` — Postgres with vector search
 - `onnxruntime-go` — in-process ONNX embeddings
 - `pattonkan/sui-go` — SUI JSON-RPC client, PTB builder (`suiptb`), Ed25519 signer, BCS decoding
-- standard library `net/http` — OpenAI API client, puzzle-service polling
+- `coder/websocket` (nhooyr/websocket fork) — outbound WebSocket to puzzle-service
+- standard library `net/http` — OpenAI API client (streaming), HTTP fallback transport
 
-Key difference from `plan.md`: the original design had clients pushing events to the corm-brain via `POST /events`. In the DGX Spark deployment, the corm-brain **pulls** events from the puzzle-service dead-drop (as specified in `puzzle-service.md`). There is no inbound API — only outbound polling and pushing.
+Key difference from `plan.md`: the original design had clients pushing events to the corm-brain via `POST /events`. In the DGX Spark deployment, the corm-brain opens a **persistent outbound WebSocket** to the puzzle-service (as specified in `puzzle-service.md`). Player events arrive instantly over the WebSocket; LLM token deltas are streamed back over the same connection for live browser delivery. There is no inbound API — only outbound WebSocket (with HTTP fallback).
 
 ### LLM Client
 
-`llm/client.go` makes HTTP requests to the local inference servers using the OpenAI chat completions API:
+`llm/client.go` makes streaming HTTP requests to the local inference servers using the OpenAI chat completions API with `"stream": true`:
 
 ```go
-func (c *Client) Complete(ctx context.Context, task Task, prompt []Message) (*Response, error) {
+// Complete starts a streaming inference request and returns a channel of token deltas.
+// The caller reads deltas and forwards them to the puzzle-service WebSocket.
+func (c *Client) Complete(ctx context.Context, task Task, prompt []Message) (<-chan string, <-chan error) {
     var baseURL, model string
     if task.RequiresDeepReasoning() {
         baseURL = c.superURL  // TRT-LLM on port 8000 → Nemotron 3 Super
@@ -396,30 +401,42 @@ func (c *Client) Complete(ctx context.Context, task Task, prompt []Message) (*Re
         Messages:    prompt,
         MaxTokens:   maxTokens,
         Temperature: 0.7 + float64(task.Corruption)*0.005,
+        Stream:      true,
     }
-    // ... HTTP POST to baseURL + "/v1/chat/completions"
+    // HTTP POST to baseURL + "/v1/chat/completions"
+    // Read SSE response body with bufio.Scanner, parse "data: {...}" lines,
+    // extract delta.content from each chunk, send to tokens channel.
+    // Signal completion with "data: [DONE]".
 }
 ```
 
-Both TRT-LLM instances expose OpenAI-compatible APIs. The client routes to different ports based on task type.
+Both TRT-LLM instances expose OpenAI-compatible streaming APIs. The client routes to different ports based on task type. Token deltas are forwarded to `transport/actions.go` which sends `log_stream_delta` messages over the WebSocket to the puzzle-service in real time.
 
 ### Goroutine Model
 
-The corm-brain runs two concurrent goroutines from `main.go`:
+The corm-brain runs three concurrent goroutines from `main.go`:
 
-**Fast loop** goroutine (every `POLL_INTERVAL_MS`, default 2000ms):
-1. Fetch new events from `GET {PUZZLE_SERVICE_URL}/corm/events?after={lastSeq}`
+**WebSocket listener** goroutine (persistent, event-driven):
+- Maintains persistent outbound WebSocket to `wss://{PUZZLE_SERVICE_URL}/corm/ws` (via `transport/ws.go`)
+- On receiving a player event message, writes it to an internal Go channel (`eventChan`)
+- Handles reconnection with exponential backoff (1s → 2s → 4s → ... → 30s cap)
+- On disconnect, automatically switches to HTTP fallback polling until reconnected
+
+**Event processor** goroutine (reads from `eventChan`, processes immediately):
+1. Read next event from `eventChan` (blocks until available — no fixed polling interval)
 2. Resolve `network_node_id` → `corm_id` via `corm_network_nodes` table (create new corm on first contact)
-3. Group events by `corm_id`
+3. Batch events by `corm_id` (with a brief coalescing window, e.g. 50ms, to group rapid clicks)
 4. For each corm with new events (can fan out with bounded concurrency via semaphore):
    a. Read `corm_traits` for this corm
    b. Retrieve top-k episodic memories via `retriever.go` (pgvector similarity search)
    c. Assemble 4-layer prompt via `llm/prompt.go`
    d. Route to Super or Nano based on phase and task complexity
-   e. Run LLM inference via `llm/client.go`
-   f. Post-process response (corruption garbling via `llm/postprocess.go`)
-   g. Push actions to `POST {PUZZLE_SERVICE_URL}/corm/actions`
-   h. Append raw events to `corm_events` table
+   e. Send `log_stream_start` action over WebSocket
+   f. Start streaming LLM inference via `llm/client.go` (`"stream": true`)
+   g. For each token delta: post-process (corruption garbling via `llm/postprocess.go`), then send `log_stream_delta` over WebSocket
+   h. Send `log_stream_end` over WebSocket
+   i. Append raw events to `corm_events` table
+   j. Send any non-streaming actions (boost, difficulty, contract, state_sync) as complete messages
 5. Periodically sync CormState on-chain values and push `state_sync` actions
 
 **Slow loop** goroutine (every `CONSOLIDATION_INTERVAL_MS`, default 60000ms):
@@ -481,7 +498,7 @@ corm-brain (Go)
   └── Wait for finalization, check effects
 ```
 
-All writes are fire-and-forget from the corm-brain's perspective — failures are logged and retried on the next cycle. The corm-brain does not block on transaction finalization during the fast polling loop; instead, pending transactions are tracked and their effects are checked asynchronously.
+All writes are fire-and-forget from the corm-brain's perspective — failures are logged and retried on the next cycle. The corm-brain does not block on transaction finalization during event processing; instead, pending transactions are tracked and their effects are checked asynchronously.
 
 ## Database Schema
 
@@ -641,7 +658,9 @@ services:
       - LLM_FAST_URL=http://trtllm-nano:8001
       - EMBED_MODEL_PATH=/models/nomic-embed
       - PUZZLE_SERVICE_URL=${PUZZLE_SERVICE_URL}
-      - POLL_INTERVAL_MS=2000
+      - WS_RECONNECT_MAX_MS=30000
+      - FALLBACK_POLL_INTERVAL_MS=2000
+      - EVENT_COALESCE_MS=50
       - CONSOLIDATION_INTERVAL_MS=60000
       - MEMORY_CAP_PER_CORM=500
       - DATABASE_URL=postgresql://corm:corm@postgres:5432/frontier_corm
@@ -678,8 +697,10 @@ Stack: two TRT-LLM containers (Super + Nano), one Go binary (with in-process ONN
 - `LLM_SUPER_URL` — TRT-LLM server for deep reasoning (default: `http://localhost:8000`)
 - `LLM_FAST_URL` — TRT-LLM server for fast responses (default: `http://localhost:8001`)
 - `EMBED_MODEL_PATH` — path to nomic-embed-text ONNX model directory (default: `./models/nomic-embed`)
-- `PUZZLE_SERVICE_URL` — cloud puzzle-service base URL (e.g. `https://puzzle.ef-corm.com`)
-- `POLL_INTERVAL_MS` — dead-drop polling interval (default: 2000)
+- `PUZZLE_SERVICE_URL` — cloud puzzle-service base URL (e.g. `https://puzzle.ef-corm.com`). WebSocket connects to `wss://` equivalent at `/corm/ws`.
+- `WS_RECONNECT_MAX_MS` — max WebSocket reconnect backoff interval (default: 30000)
+- `FALLBACK_POLL_INTERVAL_MS` — HTTP fallback polling interval when WebSocket is down (default: 2000)
+- `EVENT_COALESCE_MS` — brief coalescing window for batching rapid events per corm (default: 50)
 - `CONSOLIDATION_INTERVAL_MS` — memory consolidation interval (default: 60000)
 - `MEMORY_CAP_PER_CORM` — max episodic memories per corm before pruning (default: 500)
 - `DATABASE_URL` — local Postgres connection string (must be pgvector-enabled)

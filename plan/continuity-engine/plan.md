@@ -103,23 +103,25 @@ Phase progression is one-way (no regression).
 
 **Note: The `corm-brain.md` plan is the canonical source of truth for the AI implementation.**
 
-The corm's voice is driven by a hosted LLM service. The client **never** communicates directly with the corm brain. Instead, the `puzzle-service` acts as a dead drop.
+The corm's voice is driven by a hosted LLM service. The client **never** communicates directly with the corm brain. Instead, the `puzzle-service` acts as a live relay via a persistent WebSocket connection initiated by corm-brain.
 
 ### Architecture
 
 ```
-Client (HTMX) → [POST /interact] → Puzzle Service (Dead Drop) ← [poll events] ← Corm Brain
-                                          ↓                                        ↑
-Client (SSE)  ← [stream html]  ← Puzzle Service (Session)   ← [push actions] ← Corm Brain
+Client (HTMX) → [POST /interact] → Puzzle Service ←──── WebSocket ────→ Corm Brain
+                                          ↓                                  ↑
+Client (SSE)  ← [stream html]  ← Puzzle Service (Session)  ← [ws msg] ← Corm Brain
 ```
 
-### Event Flow (Dead Drop)
+Corm-brain opens a persistent outbound WebSocket to the puzzle-service (`/corm/ws`). Player events are pushed to corm-brain instantly over this connection; corm-brain streams LLM token deltas back over the same connection. The puzzle-service relays token deltas to the browser via SSE, producing a live "typing" effect in the corm log.
+
+### Event Flow (WebSocket Live Relay)
 
 1. **Client emits events** — Player actions (clicks, solves) are sent to the `puzzle-service`.
-2. **Puzzle Service queues** — Stores events in a ring buffer per session.
-3. **Corm Brain polls** — Periodically fetches new events from `puzzle-service`.
-4. **Inference & Action** — `corm-brain` processes context and decides on actions (log message, boost, on-chain state update).
-5. **Push & Stream** — `corm-brain` pushes actions back to `puzzle-service`, which streams them to the client via SSE.
+2. **Puzzle Service relays instantly** — Writes the event as a JSON message to the corm-brain WebSocket.
+3. **Inference & Streaming** — `corm-brain` processes context, starts LLM inference with `"stream": true`, and streams token deltas back over the WebSocket as they are generated.
+4. **Live delivery** — Puzzle-service receives each token delta and relays it to the browser via SSE. The player sees the corm's response appear token-by-token (~72 tok/s for Nano, ~18 tok/s for Super).
+5. **Non-streaming actions** (boost, difficulty, contract, state_sync) are sent as complete WebSocket messages and delivered to the browser SSE as before.
 
 See `corm-brain.md` for model details (DGX Spark, Nemotron 3, etc.).
 
@@ -334,7 +336,7 @@ This phase is not achievable with current game mechanics. It represents the aspi
 
 ### Corm Brain (LLM)
 - See `corm-brain.md`. Handles all AI logic, on-chain state updates, and CORM minting.
-- Connects to `puzzle-service` via internal HTTP (dead drop).
+- Connects to `puzzle-service` via persistent outbound WebSocket (`/corm/ws`).
 
 ### Puzzle Service
 - See `puzzle-service.md`. Handles all game UI (Phase 0/1/2), user sessions, and mechanics.

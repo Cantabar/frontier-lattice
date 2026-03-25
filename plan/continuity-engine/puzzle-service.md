@@ -44,8 +44,9 @@ puzzle-service/           # New Go service
 │   │   ├── status.go     # GET /status (session state for meter sync)
 │   │   └── health.go     # GET /health
 │   ├── corm/
-│   │   ├── deaddrop.go   # Event ring buffer, action channel, GET /corm/events + POST /corm/actions handlers
-│   │   └── types.go      # CormEvent, CormAction, BoostDirective types
+│   │   ├── relay.go      # WebSocket endpoint (/corm/ws), event fan-out, action dispatch
+│   │   ├── deaddrop.go   # HTTP fallback: GET /corm/events + POST /corm/actions (used when WS is down)
+│   │   └── types.go      # CormEvent, CormAction, BoostDirective, LogStreamDelta types
 │   └── templates/
 │       ├── layout.html       # Base layout (HTMX + SSE ext, meters sidebar, log panel, contracts panel)
 │       ├── phase0.html       # Phase 0 dead terminal UI (clickable shell elements)
@@ -70,7 +71,7 @@ The puzzle service also hosts the Phase 0 intro sequence. The player sees a non-
 
 ### Interaction Model
 
-- All clicks are tracked server-side in the session (same dead drop event stream to corm-brain).
+- All clicks are tracked server-side in the session (relayed to corm-brain via WebSocket).
 - The UI is server-rendered HTMX: clicking elements triggers `hx-post` to `/phase0/interact` with an element ID. The server returns a log entry partial appended to the log panel.
 - Corm-brain observes the click stream and pushes `log` actions with escalating awareness messages (`> ...input... detected...`, `> ...not part of baseline...`).
 
@@ -78,7 +79,7 @@ The puzzle service also hosts the Phase 0 intro sequence. The player sees a non-
 
 The server tracks click timestamps per element. When 3+ clicks on the same element occur within 2 seconds, the server:
 
-1. Emits a `phase_transition` event to the dead drop
+1. Emits a `phase_transition` event to the WebSocket relay (or ring buffer if WS is disconnected)
 2. Returns an HTMX response that swaps the entire page to the Phase 1 puzzle UI (via `hx-target="body"` or a full-page redirect to `GET /puzzle`)
 
 The transition can include a glitch animation (CSS class on the body before swap).
@@ -132,7 +133,7 @@ When configuring an SSU extension on-chain, the dapp URL is set to `https://puzz
 
 All subsequent routes are context-aware — Phase 0, puzzle, and contracts URLs are prefixed with the SSU path when applicable (e.g., `/ssu/:entity_id/phase0/interact`, `/ssu/:entity_id/puzzle/decrypt`). The Go router extracts `:entity_id` via path parameter and attaches it to the session.
 
-These are stored on the session and included in every event emitted to the dead drop, so corm-brain knows *who* is acting and *where* they're acting from. This enables the AI to tailor responses (e.g., in-game SSU interactions might get more lore-appropriate corm messages, while browser sessions get a more analytical tone).
+These are stored on the session and included in every event relayed to corm-brain via WebSocket, so it knows *who* is acting and *where* they're acting from. This enables the AI to tailor responses (e.g., in-game SSU interactions might get more lore-appropriate corm messages, while browser sessions get a more analytical tone).
 
 ### Session Fields
 
@@ -149,10 +150,11 @@ Each player session holds:
 Sessions are stored in-memory (Go map + mutex) with optional Redis/Postgres persistence for durability across restarts. For hackathon scope, in-memory is sufficient.
 
 Additional session fields for corm integration:
-- `eventBuffer` — bounded ring buffer of player events with monotonic sequence numbers (dead drop outbox for corm-brain)
-- `actionChan chan CormAction` — channel fed by `POST /corm/actions`, consumed by the SSE goroutine
+- `eventBuffer` — bounded ring buffer of player events with monotonic sequence numbers (WebSocket outbox, also used for HTTP fallback)
+- `actionChan chan CormAction` — channel fed by WebSocket relay dispatcher (or `POST /corm/actions` fallback), consumed by the SSE goroutine
 - `pendingDifficultyMod` — AI-requested difficulty adjustment, applied on next puzzle generation
 - `recentDecrypts []CellCoord` — rolling window of recently decrypted cells (boost targeting)
+- `activeLogStream *LogStreamState` — tracks in-progress streaming log entry (entry_id, accumulated text) for the SSE goroutine
 
 ## Anti-Cheat Properties
 
@@ -168,36 +170,51 @@ The corm brain observes player actions asynchronously and occasionally interject
 
 ### Network Topology
 
-The corm-brain runs **on-premise** and is not reachable from external services. All communication is initiated by corm-brain outbound to the puzzle service. The puzzle service acts as a passive dead drop — it accumulates player events for pickup and accepts pushed actions.
+The corm-brain runs **on-premise** and is not reachable from external services. All communication is initiated by corm-brain outbound to the puzzle service via a persistent WebSocket connection.
 
-### Dead Drop Endpoints (on puzzle service)
+### WebSocket Live Relay (`/corm/ws`)
 
-The puzzle service exposes two endpoints that corm-brain calls:
+Corm-brain opens a single outbound WebSocket to `wss://puzzle.ef-corm.com/corm/ws`. This connection carries all traffic in both directions:
 
-- `GET /corm/events?after=N` — corm-brain pulls all new player events across all sessions since global sequence N. Returns a JSON array of `{seq, session_id, player_address, context, event_type, payload, timestamp}`. Events are retained in a bounded ring buffer. Corm-brain groups by session internally.
-- `POST /corm/actions` — corm-brain pushes actions into a session. Body: `{session_id, action_type, payload}`. Action types:
-  - `log` — a corm message to append to the log panel. Payload: `{text}`
-  - `boost` — amplify a recent player interaction. Payload: `{cells: [{row, col}], effect: "glow"|"pulse"|"echo"}`
-  - `difficulty` — adjust parameters for the next puzzle. Payload: `{tier_delta, decoy_delta, grid_size_delta}`
-  - `state_sync` — push current CormState values. Payload: `{phase, stability, corruption}`. Stored on session for puzzle generation calibration.
-  - `contract_created` — announce a new corm-generated contract. Payload: `{contract_id, contract_type, description, reward, deadline, detail_url}`
-  - `contract_updated` — update or remove a contract. Payload: `{contract_id, status}` where status is `completed`, `expired`, or `cancelled`.
+**Puzzle-service → corm-brain (player events):**
+When a player acts, the puzzle handler processes the action, responds to the client immediately, and writes the event as a JSON WebSocket message to all connected corm-brain clients. Message format: `{"type": "event", "seq": N, "session_id": "...", "player_address": "0x...", "context": "ssu:...", "event_type": "decrypt", "payload": {...}, "timestamp": "..."}`.
 
-Corm-brain connects on its own schedule
+**Corm-brain → puzzle-service (actions):**
+Corm-brain sends action messages back over the same WebSocket. Action types:
+  - `log_stream_start` — begin a new streaming log entry. Payload: `{session_id, entry_id}`. Puzzle-service creates an empty log entry element on the browser SSE.
+  - `log_stream_delta` — append token(s) to an in-progress log entry. Payload: `{session_id, entry_id, text}`. Relayed to browser SSE immediately.
+  - `log_stream_end` — finalize a streaming log entry. Payload: `{session_id, entry_id}`. Removes typing indicator, marks entry complete.
+  - `log` — a complete (non-streaming) corm message. Payload: `{session_id, text}`. Used for short, pre-composed messages (e.g., Phase 0 awakening fragments) that don't benefit from streaming.
+  - `boost` — amplify a recent player interaction. Payload: `{session_id, cells: [{row, col}], effect: "glow"|"pulse"|"echo"}`
+  - `difficulty` — adjust parameters for the next puzzle. Payload: `{session_id, tier_delta, decoy_delta, grid_size_delta}`
+  - `state_sync` — push current CormState values. Payload: `{session_id, phase, stability, corruption}`.
+  - `contract_created` — announce a new contract. Payload: `{session_id, contract_id, contract_type, description, reward, deadline, detail_url}`
+  - `contract_updated` — update/remove a contract. Payload: `{session_id, contract_id, status}`.
+
+**Reconnection:** Corm-brain reconnects with exponential backoff (1s → 2s → 4s → ... → 30s cap). During disconnection, events are buffered in the ring buffer (same as the HTTP fallback path).
+
+### HTTP Fallback Endpoints
+
+The dead-drop HTTP endpoints remain as a fallback when the WebSocket is unavailable:
+- `GET /corm/events?after=N` — pull buffered events since sequence N
+- `POST /corm/actions` — push complete actions (no streaming support)
+
+Corm-brain uses these automatically if the WebSocket connection fails and reconnection hasn't succeeded yet.
 
 ### Internal Flow
 
-1. **Player acts** — puzzle handler processes the action (decrypt/submit), responds to the client immediately, and appends a structured event to the session's event ring buffer.
-2. **Corm-brain picks up events** — on its next poll of `GET /corm/events`, it receives all new player events. It builds context and runs LLM inference on its own timeline.
-3. **Corm-brain pushes actions** — posts to `POST /corm/actions` with log comments, boosts, or difficulty adjustments.
-4. **Actions land in a Go channel** — the puzzle service writes incoming actions to a per-session channel.
-5. **SSE delivers to client** — the session's SSE goroutine watches the channel and pushes rendered HTML partials to the browser.
+1. **Player acts** — puzzle handler processes the action (decrypt/submit), responds to the client immediately, and writes the event to the WebSocket relay (or ring buffer if WS is disconnected).
+2. **Corm-brain receives instantly** — the event arrives over the WebSocket with no polling delay.
+3. **Corm-brain streams response** — starts LLM inference with `"stream": true` and sends `log_stream_start`, then `log_stream_delta` messages as tokens are generated, then `log_stream_end`.
+4. **Puzzle-service relays to browser** — each delta is rendered as an SSE event and delivered to the player's browser immediately. The player sees the corm's response appear token-by-token.
+5. **Non-streaming actions** (boost, difficulty, contract) are sent as complete WebSocket messages and delivered to the browser SSE as before.
 
 ### AI Interjections
 
-Two types of real-time interjections:
+Three types of real-time interjections:
 
-- **Log comment** — a corm message (e.g., `> ...pattern emerging...`, `> that symbol is familiar`). Rendered as `log-entry.html` and appended to `#corm-log` via SSE event `corm-log`.
+- **Streaming log** — the corm's response appears token-by-token in the log panel. `log_stream_start` creates an empty `<span id="entry-{id}">` with a typing cursor CSS class. Each `log_stream_delta` appends text content to the span. `log_stream_end` removes the cursor class. Delivered via SSE events `corm-log-start`, `corm-log-delta`, `corm-log-end`. This produces the "alive" typing effect for all LLM-generated responses.
+- **Instant log** — a pre-composed corm message (e.g., Phase 0 awakening fragments like `> ...`, `> ░░░░░░░░`). Rendered as `log-entry.html` and appended to `#corm-log` via SSE event `corm-log`. Used for short, deterministic messages that don't need streaming.
 - **Boost** — a directive to amplify a recent player interaction. The AI identifies cells the player recently decrypted and the puzzle service re-renders them with enhanced visual treatment (glow, highlight, brief animation). Delivered via SSE event `corm-boost`.
 
 ### Boost Mechanic Detail
@@ -226,9 +243,12 @@ This keeps the current puzzle stable while letting the AI influence the trajecto
 
 The puzzle service maintains an SSE connection per player session (`GET /stream`, HTMX `hx-ext="sse"`).
 
-- The SSE goroutine reads from the session's action channel (fed by `POST /corm/actions`).
+- The SSE goroutine reads from the session's action channel (fed by the WebSocket relay dispatcher, or by `POST /corm/actions` fallback).
 - When an action arrives:
-  - **Log** → SSE event `corm-log` with rendered `log-entry.html` partial. HTMX appends it to `#corm-log` via `sse-swap="corm-log"`.
+  - **Log stream start** → SSE event `corm-log-start` with an empty `<span id="entry-{id}" class="corm-typing">` partial. HTMX appends it to `#corm-log`.
+  - **Log stream delta** → SSE event `corm-log-delta` with a text fragment. HTMX appends content inside `#entry-{id}`. Arrives at token generation rate (~72 tok/s Nano, ~18 tok/s Super).
+  - **Log stream end** → SSE event `corm-log-end` targeting `#entry-{id}`. Removes the `corm-typing` class (hides typing cursor). Wraps the entry in the final `> ` prefix formatting.
+  - **Log (instant)** → SSE event `corm-log` with rendered `log-entry.html` partial. HTMX appends it to `#corm-log` via `sse-swap="corm-log"`.
   - **Boost** → SSE event `corm-boost` with re-rendered cell partials including an amplification CSS class. HTMX swaps the targeted cells.
   - **Contract** → SSE event `corm-contract` with rendered `contract-card.html` partial. HTMX appends/updates `#contracts`.
   - **Difficulty** → stored in session as `pendingDifficultyMod`, no immediate UI effect.
@@ -252,7 +272,7 @@ puzzle-service:
 
 **Web app embedding**: The React app at `/continuity` embeds the puzzle UI via iframe pointing to `http://localhost:3300/puzzle`.
 
-**CORM rewards**: Handled entirely by corm-brain. It observes `word_submit` success events in the dead-drop stream (which include `player_address`) and executes CORM minting and CormState updates on-chain from on-premise where it has SUI RPC access. The puzzle service has no SUI dependency.
+**CORM rewards**: Handled entirely by corm-brain. It observes `word_submit` success events in the WebSocket event stream (which include `player_address`) and executes CORM minting and CormState updates on-chain from on-premise where it has SUI RPC access. The puzzle service has no SUI dependency.
 
 **Corm integration**: The corm log panel, boost effects, and contracts panel live inside the puzzle service's own UI (delivered via SSE as described above), not in the React parent.
 
