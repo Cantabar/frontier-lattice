@@ -207,24 +207,26 @@ details[open] > summary::before { content: "▾ "; }
   margin: 0.5rem 0;
 }
 
-.diff-file {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-bottom: 0.5rem;
-  overflow: hidden;
+.diff-file-list {
+  margin-top: 0.5rem;
 }
 
-.diff-file-header {
+.diff-file-row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.4rem 0.75rem;
-  background: var(--surface-hover);
+  padding: 0.35rem 0.5rem;
   font-size: 0.8rem;
+  border-bottom: 1px solid var(--border);
 }
+
+.diff-file-row:last-child { border-bottom: none; }
+
+.diff-file-row:hover { background: var(--surface-hover); }
 
 .diff-filename {
   font-family: var(--font-mono);
+  font-size: 0.8rem;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -250,21 +252,3 @@ details[open] > summary::before { content: "▾ "; }
   color: var(--muted);
   flex-shrink: 0;
 }
-
-.diff-patch {
-  margin: 0;
-  padding: 0.5rem 0.75rem;
-  background: #111114;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1.5;
-  overflow-x: auto;
-  white-space: pre;
-  color: var(--muted);
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-/* Syntax-highlight diff lines via CSS — applied by textContent so we
-   rely on line-start matching in a future enhancement.  For now the
-   monochrome view is fine. */

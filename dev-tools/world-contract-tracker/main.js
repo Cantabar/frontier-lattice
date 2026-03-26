@@ -100,12 +100,13 @@ async function refresh() {
     }
 
     // 7. Render everything
-    ENVIRONMENTS.forEach((env, i) => {
+    for (let i = 0; i < ENVIRONMENTS.length; i++) {
+      const env = ENVIRONMENTS[i];
       const pub = published[env.key];
       const chain = chainData[i];
       const diffData = envDiffData[env.key];
-      $envGrid.appendChild(renderEnvCard(env, pub, chain, tomlCommits, diffData));
-    });
+      $envGrid.appendChild(await renderEnvCard(env, pub, chain, tomlCommits, diffData));
+    }
 
     renderReleases(releases);
     $lastUpdated.textContent = `Updated ${new Date().toLocaleTimeString()}`;
@@ -199,7 +200,7 @@ const FIELD_TIPS = {
 };
 
 // ── Render: environment card ────────────────────────────────────────
-function renderEnvCard(env, pub, chain, tomlCommits, diffData) {
+async function renderEnvCard(env, pub, chain, tomlCommits, diffData) {
   const card = el("div", "env-card");
 
   // Status
@@ -245,7 +246,7 @@ function renderEnvCard(env, pub, chain, tomlCommits, diffData) {
   // Per-environment version upgrade diffs
   if (diffData.versionDiffs.length > 0) {
     for (const vd of diffData.versionDiffs) {
-      card.appendChild(renderDeployDiff(vd.from, vd.to, vd.diff,
+      card.appendChild(await renderDeployDiff(vd.from, vd.to, vd.diff,
         `v${vd.fromVersion} → v${vd.toVersion}`));
     }
   }
@@ -334,7 +335,7 @@ function commitDetails(summary, commits) {
 }
 
 // ── Render: deploy diff ─────────────────────────────────────────────
-function renderDeployDiff(from, to, diff, versionLabel) {
+async function renderDeployDiff(from, to, diff, versionLabel) {
   const sourceFiles = diff.files.filter((f) =>
     f.filename.startsWith("contracts/world/sources/"),
   );
@@ -358,33 +359,46 @@ function renderDeployDiff(from, to, diff, versionLabel) {
   ghLink.className = "diff-gh-link";
   details.appendChild(ghLink);
 
-  // Render each file's patch
+  // File list — each row links to the per-file diff on GitHub
   const filesToShow = sourceFiles.length > 0 ? sourceFiles : diff.files;
+  const list = el("div", "diff-file-list");
+
   for (const file of filesToShow) {
-    const fileBlock = el("div", "diff-file");
+    const row = el("div", "diff-file-row");
 
-    const fileHeader = el("div", "diff-file-header");
     const statusBadge = elText("span", file.status, `diff-status diff-status-${file.status}`);
-    const fileName = elText("span", file.filename, "diff-filename");
-    const stats = elText("span", `+${file.additions} -${file.deletions}`, "diff-stats");
-    fileHeader.appendChild(statusBadge);
-    fileHeader.appendChild(fileName);
-    fileHeader.appendChild(stats);
-    fileBlock.appendChild(fileHeader);
+    row.appendChild(statusBadge);
 
-    if (file.patch) {
-      const pre = document.createElement("pre");
-      pre.className = "diff-patch";
-      const code = document.createElement("code");
-      code.textContent = file.patch;
-      pre.appendChild(code);
-      fileBlock.appendChild(pre);
-    }
+    // Link the filename directly to the per-file diff on GitHub
+    const fileLink = document.createElement("a");
+    const anchor = await sha256Hex(file.filename);
+    fileLink.href = `${diff.url}#diff-${anchor}`;
+    fileLink.target = "_blank";
+    fileLink.textContent = file.filename;
+    fileLink.className = "diff-filename";
+    fileLink.title = "View highlighted diff on GitHub";
+    row.appendChild(fileLink);
 
-    details.appendChild(fileBlock);
+    const stats = elText("span",
+      `+${file.additions} −${file.deletions}`,
+      "diff-stats");
+    row.appendChild(stats);
+
+    list.appendChild(row);
   }
 
+  details.appendChild(list);
   return details;
+}
+
+/**
+ * Compute the SHA-256 hex digest that GitHub uses for per-file diff anchors.
+ * GitHub's anchor format: #diff-{sha256hex(filename)}
+ */
+async function sha256Hex(str) {
+  const data = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /** Minimal markdown → HTML (handles **bold**, `code`, - lists, [links](url)) */
