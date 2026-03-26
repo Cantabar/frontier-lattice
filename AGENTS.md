@@ -8,4 +8,4 @@ Resources:
  Eve Frontier World Contracts: https://github.com/evefrontier/world-contracts
  Caution! Other resources may contain references to EVM. Eve Frontier is migrating from EVM to SUI.
 Plans
- Preface all plan names created in this project with [frontier-corm]
+ Preface all plan names created in this project with [frontier-corm][service-name]
