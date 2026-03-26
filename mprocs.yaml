@@ -42,13 +42,13 @@ procs:
         sleep 2
       done
       echo "Waiting for contracts to be published..."
-      until grep -q '^PACKAGE_TRIBE=0x' .env 2>/dev/null \
-        && grep -q '^PACKAGE_CORM_AUTH=0x' .env 2>/dev/null \
-        && grep -q '^PACKAGE_TRUSTLESS_CONTRACTS=0x' .env 2>/dev/null; do
+      until grep -q '^PACKAGE_TRIBE=0x' .env.localnet 2>/dev/null \
+        && grep -q '^PACKAGE_CORM_AUTH=0x' .env.localnet 2>/dev/null \
+        && grep -q '^PACKAGE_TRUSTLESS_CONTRACTS=0x' .env.localnet 2>/dev/null; do
         sleep 2
       done
-      echo "Loading package IDs from .env"
-      set -a && . ./.env && set +a
+      echo "Loading package IDs from .env.localnet"
+      set -a && . ./.env.localnet && set +a
       echo "Dependencies ready — starting indexer"
       npm --prefix indexer run dev
     env:
@@ -61,16 +61,16 @@ procs:
   # ── Web UI (Vite dev on :5173, proxies /api → indexer) ─────────────
   web:
     shell: |
-      echo "Waiting for VITE_* package IDs in .env..."
-      until grep -q '^VITE_TRIBE_PACKAGE_ID=0x' .env 2>/dev/null \
-        && grep -q '^VITE_CORM_AUTH_PACKAGE_ID=0x' .env 2>/dev/null \
-        && grep -q '^VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID=0x' .env 2>/dev/null \
-        && grep -q '^VITE_WORLD_PACKAGE_ID=0x' .env 2>/dev/null \
-        && grep -q '^VITE_ENERGY_CONFIG_ID=0x' .env 2>/dev/null; do
+      echo "Waiting for VITE_* package IDs in .env.localnet..."
+      until grep -q '^VITE_TRIBE_PACKAGE_ID=0x' .env.localnet 2>/dev/null \
+        && grep -q '^VITE_CORM_AUTH_PACKAGE_ID=0x' .env.localnet 2>/dev/null \
+        && grep -q '^VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID=0x' .env.localnet 2>/dev/null \
+        && grep -q '^VITE_WORLD_PACKAGE_ID=0x' .env.localnet 2>/dev/null \
+        && grep -q '^VITE_ENERGY_CONFIG_ID=0x' .env.localnet 2>/dev/null; do
         sleep 2
       done
-      echo "Loading package IDs from .env"
-      set -a && . ./.env && set +a
+      echo "Loading package IDs from .env.localnet"
+      set -a && . ./.env.localnet && set +a
       echo "Starting Vite dev server"
       npm --prefix web run dev
     stop: "SIGTERM"

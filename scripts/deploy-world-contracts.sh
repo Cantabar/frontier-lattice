@@ -16,7 +16,7 @@ if [ ! -d "$WORLD_DIR/scripts" ]; then
 fi
 
 # ── Clear stale world IDs so the web UI doesn't start with old values ──
-CORM_ENV="$PROJECT_ROOT/.env"
+CORM_ENV="$PROJECT_ROOT/.env.localnet"
 for stale_var in VITE_WORLD_PACKAGE_ID VITE_ENERGY_CONFIG_ID; do
   if grep -q "^${stale_var}=" "$CORM_ENV" 2>/dev/null; then
     sed -i "s|^${stale_var}=.*|${stale_var}=|" "$CORM_ENV"
