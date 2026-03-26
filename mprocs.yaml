@@ -29,7 +29,7 @@ procs:
 
   # ── Contract publish (one-shot, waits for world, then publishes frontier-corm) ──
   contracts-publish:
-    shell: "bash scripts/publish-contracts.sh"
+    shell: "bash scripts/publish-contracts-local.sh"
 
   # ── Indexer (event subscriber + API on :3100) ────────────────────
   indexer:
