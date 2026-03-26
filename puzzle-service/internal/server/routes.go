@@ -17,6 +17,7 @@ type GameHandlers struct {
 	PuzzlePage     http.HandlerFunc
 	PuzzleDecrypt  http.HandlerFunc
 	PuzzleSubmit   http.HandlerFunc
+	PuzzleGrid     http.HandlerFunc
 	Stream         http.HandlerFunc
 	Status         http.HandlerFunc
 	ContractsPage  http.HandlerFunc
@@ -54,6 +55,7 @@ func registerGameRoutes(mux *http.ServeMux, gh GameHandlers, prefix string) {
 
 	// Puzzle (Phase 1)
 	mux.HandleFunc("GET "+prefix+"/puzzle", gh.PuzzlePage)
+	mux.HandleFunc("GET "+prefix+"/puzzle/grid", gh.PuzzleGrid)
 	mux.HandleFunc("POST "+prefix+"/puzzle/decrypt", gh.PuzzleDecrypt)
 	mux.HandleFunc("POST "+prefix+"/puzzle/submit", gh.PuzzleSubmit)
 

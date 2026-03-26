@@ -1,13 +1,26 @@
 package puzzle
 
+// CellType classifies the content of a grid cell.
+type CellType int
+
+const (
+	CellNoise  CellType = iota // random noise character
+	CellTarget                 // part of the hidden target word
+	CellDecoy                  // part of a decoy word
+	CellTrap                   // trap node — corruption spike on reveal
+	CellSymbol                 // explicit symbol fill (non-alphabet noise)
+)
+
 // Cell represents a single cell in the cipher grid.
 type Cell struct {
-	Row       int    `json:"row"`
-	Col       int    `json:"col"`
-	Plaintext rune   `json:"-"` // never sent to client
-	Encrypted rune   `json:"encrypted"`
-	Decrypted bool   `json:"decrypted"`
-	IsWord    bool   `json:"-"` // true if this cell is part of the target word
+	Row       int      `json:"row"`
+	Col       int      `json:"col"`
+	Plaintext rune     `json:"-"` // never sent to client
+	Encrypted rune     `json:"encrypted"`
+	Decrypted bool     `json:"decrypted"`
+	IsWord    bool     `json:"-"` // true if this cell is part of the target word
+	Type      CellType `json:"-"` // classification of this cell's content
+	Distance  int      `json:"-"` // Manhattan distance to nearest target word cell
 }
 
 // CellCoord is a lightweight row/col pair.
@@ -42,3 +55,6 @@ func (g *Grid) InBounds(row, col int) bool {
 
 // NoiseChars are non-alphabet ASCII characters used to fill the grid.
 var NoiseChars = []rune{'#', '@', '%', '&', '*', '│', '─', '░', '▓', '█', '◆', '◇', '○', '●', '□', '■', '△', '▽', '◈', '╳'}
+
+// TrapSymbols are special characters used for trap nodes.
+var TrapSymbols = []rune{'¤', '§', '¶', '†', '‡'}

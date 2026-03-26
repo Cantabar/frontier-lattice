@@ -40,6 +40,8 @@ const (
 	ActionStateSync       = "state_sync"
 	ActionContractCreated = "contract_created"
 	ActionContractUpdated = "contract_updated"
+	ActionHintToggle      = "hint_toggle"
+	ActionHintCell        = "hint_cell"
 )
 
 // --- Action Payloads ---
@@ -105,6 +107,18 @@ type ContractCreatedPayload struct {
 type ContractUpdatedPayload struct {
 	ContractID string `json:"contract_id"`
 	Status     string `json:"status"` // "completed", "expired", "cancelled"
+}
+
+// HintTogglePayload is for ActionHintToggle (global hint toggle).
+type HintTogglePayload struct {
+	HintType string `json:"hint_type"` // "heatmap", "vectors", "decode", "signal"
+	Enabled  bool   `json:"enabled"`
+}
+
+// HintCellPayload is for ActionHintCell (per-cell targeted hints).
+type HintCellPayload struct {
+	Cells    []CellRef `json:"cells"`
+	HintType string    `json:"hint_type"` // "heatmap", "vectors", "signal"
 }
 
 // --- Ring Buffer for event buffering ---

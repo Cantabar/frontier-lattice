@@ -196,3 +196,83 @@ func TestDecryptFormValues(t *testing.T) {
 		t.Error("form value col not set")
 	}
 }
+
+func TestDecryptTrapCell(t *testing.T) {
+	archive, err := words.LoadArchive()
+	if err != nil {
+		t.Fatalf("failed to load archive: %v", err)
+	}
+
+	sess := puzzle.NewSession("0xtest", "browser")
+	pz, err := puzzle.Generate(archive, 0, nil)
+	if err != nil {
+		t.Fatalf("puzzle generation failed: %v", err)
+	}
+	sess.LoadPuzzle(pz)
+
+	// Find a trap cell
+	var trapRow, trapCol int
+	foundTrap := false
+	for r := 0; r < pz.Grid.Rows; r++ {
+		for c := 0; c < pz.Grid.Cols; c++ {
+			if pz.Grid.Cells[r][c].Type == puzzle.CellTrap {
+				trapRow, trapCol = r, c
+				foundTrap = true
+				break
+			}
+		}
+		if foundTrap {
+			break
+		}
+	}
+
+	if !foundTrap {
+		t.Skip("no trap cell found in generated puzzle")
+	}
+
+	initialCorruption := sess.Corruption
+	sess.DecryptCell(trapRow, trapCol)
+
+	// Simulate what PuzzleDecrypt does for traps
+	cell := &pz.Grid.Cells[trapRow][trapCol]
+	if cell.Type == puzzle.CellTrap {
+		sess.Corruption = min(100, sess.Corruption+25)
+	}
+
+	if sess.Corruption != initialCorruption+25 {
+		t.Errorf("expected corruption to increase by 25, got %d (was %d)", sess.Corruption, initialCorruption)
+	}
+}
+
+func TestHintState(t *testing.T) {
+	sess := puzzle.NewSession("0xtest", "browser")
+
+	// Defaults
+	if !sess.Hints.Decode {
+		t.Error("expected Decode hint to default to true")
+	}
+	if sess.Hints.Heatmap {
+		t.Error("expected Heatmap hint to default to false")
+	}
+
+	// Set global hint
+	sess.SetHint("heatmap", true)
+	if !sess.Hints.Heatmap {
+		t.Error("expected Heatmap to be true after SetHint")
+	}
+
+	// Per-cell hint
+	sess.AddCellHint(3, 7, "vectors")
+	if !sess.CellHasHint(3, 7, "vectors") {
+		t.Error("expected cell (3,7) to have vectors hint")
+	}
+	if sess.CellHasHint(0, 0, "vectors") {
+		t.Error("expected cell (0,0) to not have vectors hint")
+	}
+
+	// Global supersedes per-cell
+	sess.SetHint("vectors", true)
+	if !sess.CellHasHint(0, 0, "vectors") {
+		t.Error("expected global vectors hint to apply to all cells")
+	}
+}

@@ -454,6 +454,99 @@ body {
     100% { filter: none; transform: none; }
 }
 
+/* === Heatmap (proximity hints) === */
+.cell--heat-critical {
+    background: rgba(0, 255, 65, 0.45);
+    box-shadow: inset 0 0 8px rgba(0, 255, 65, 0.3);
+}
+.cell--heat-warm {
+    background: rgba(0, 255, 65, 0.25);
+}
+.cell--heat-cool {
+    background: rgba(0, 255, 65, 0.08);
+}
+.cell--heat-cold {
+    background: rgba(255, 51, 51, 0.22);
+}
+.cell--heat-trap {
+    animation: heat-trap-flash 0.4s step-end infinite;
+}
+@keyframes heat-trap-flash {
+    0%, 100% { background: rgba(255, 0, 0, 0.4); }
+    50% { background: rgba(100, 0, 0, 0.2); }
+}
+
+/* === Trap Cells === */
+.cell--trap.cell--revealed {
+    color: var(--accent-red);
+    border-color: var(--accent-red);
+}
+
+/* === Directional Vectors (CSS pseudo-element indicators) === */
+.cell--dir-N::after,
+.cell--dir-S::after,
+.cell--dir-E::after,
+.cell--dir-W::after,
+.cell--dir-NE::after,
+.cell--dir-NW::after,
+.cell--dir-SE::after,
+.cell--dir-SW::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    border-radius: 50%;
+    opacity: 0.35;
+    animation: dir-pulse 2s ease-in-out infinite;
+}
+
+.cell { position: relative; }
+
+.cell--dir-N::after  { background: radial-gradient(circle at 50% 20%, rgba(255,180,0,0.6) 0%, transparent 60%); }
+.cell--dir-S::after  { background: radial-gradient(circle at 50% 80%, rgba(255,180,0,0.6) 0%, transparent 60%); }
+.cell--dir-E::after  { background: radial-gradient(circle at 80% 50%, rgba(255,180,0,0.6) 0%, transparent 60%); }
+.cell--dir-W::after  { background: radial-gradient(circle at 20% 50%, rgba(255,180,0,0.6) 0%, transparent 60%); }
+.cell--dir-NE::after { background: radial-gradient(circle at 75% 25%, rgba(255,180,0,0.6) 0%, transparent 60%); }
+.cell--dir-NW::after { background: radial-gradient(circle at 25% 25%, rgba(255,180,0,0.6) 0%, transparent 60%); }
+.cell--dir-SE::after { background: radial-gradient(circle at 75% 75%, rgba(255,180,0,0.6) 0%, transparent 60%); }
+.cell--dir-SW::after { background: radial-gradient(circle at 25% 75%, rgba(255,180,0,0.6) 0%, transparent 60%); }
+
+@keyframes dir-pulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.5; }
+}
+
+/* === Signal Intensity Meter === */
+.signal-meter {
+    margin-top: 16px;
+    text-align: center;
+}
+.signal-meter--hidden { display: none; }
+.signal-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+}
+.signal-bar {
+    height: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    overflow: hidden;
+}
+.signal-fill {
+    height: 100%;
+    transition: width 0.3s ease, background 0.3s ease;
+}
+.signal-fill--critical { background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); }
+.signal-fill--strong   { background: var(--accent-green); }
+.signal-fill--weak     { background: #88ff00; }
+.signal-fill--none     { background: var(--accent-red); }
+.signal-fill--spike    { background: var(--accent-red); box-shadow: 0 0 10px var(--accent-red); }
+
 /* === Responsive === */
 @media (max-width: 768px) {
     .app-layout {

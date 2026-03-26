@@ -10,10 +10,11 @@ import (
 
 // DifficultyConfig controls puzzle generation parameters.
 type DifficultyConfig struct {
-	GridRows  int
-	GridCols  int
+	GridRows   int
+	GridCols   int
 	DecoyCount int
-	Tier      CipherTier
+	TrapCount  int
+	Tier       CipherTier
 }
 
 // DefaultDifficulty returns the base difficulty for a given solve count,
@@ -24,6 +25,7 @@ func DefaultDifficulty(solveCount int, mod *DifficultyMod) DifficultyConfig {
 		GridRows:   8,
 		GridCols:   12,
 		DecoyCount: 0,
+		TrapCount:  4,
 		Tier:       tier,
 	}
 
@@ -31,18 +33,21 @@ func DefaultDifficulty(solveCount int, mod *DifficultyMod) DifficultyConfig {
 	switch tier {
 	case TierVariable:
 		cfg.DecoyCount = 1 + (solveCount - 3)
+		cfg.TrapCount = 7
 	case TierPosition:
 		cfg.DecoyCount = 3 + (solveCount - 6)
 		cfg.GridRows = 10
 		cfg.GridCols = 14
+		cfg.TrapCount = 10
 	}
 
 	// Apply pending AI adjustment
 	if mod != nil {
 		cfg.Tier = CipherTier(clamp(int(cfg.Tier)+mod.TierDelta, 1, 3))
 		cfg.DecoyCount = max(0, cfg.DecoyCount+mod.DecoyDelta)
-		cfg.GridRows = clamp(cfg.GridRows+mod.GridSizeDelta, 6, 16)
-		cfg.GridCols = clamp(cfg.GridCols+mod.GridSizeDelta, 8, 20)
+		cfg.GridRows = clamp(cfg.GridRows+mod.GridSizeDelta, 6, 20)
+		cfg.GridCols = clamp(cfg.GridCols+mod.GridSizeDelta, 8, 24)
+		cfg.TrapCount = max(0, cfg.TrapCount+mod.TrapDelta)
 	}
 
 	return cfg
@@ -53,41 +58,69 @@ type DifficultyMod struct {
 	TierDelta     int `json:"tier_delta"`
 	DecoyDelta    int `json:"decoy_delta"`
 	GridSizeDelta int `json:"grid_size_delta"`
+	TrapDelta     int `json:"trap_delta"`
+}
+
+// WordPlacement records where a word was placed in the grid.
+type WordPlacement struct {
+	StartRow   int
+	StartCol   int
+	Horizontal bool
+	Length     int
 }
 
 // GeneratedPuzzle is the output of puzzle generation.
 type GeneratedPuzzle struct {
-	PuzzleID    string
-	Grid        *Grid
-	Cipher      CipherParams
-	TargetWord  string
-	Difficulty  DifficultyConfig
+	PuzzleID        string
+	Grid            *Grid
+	Cipher          CipherParams
+	TargetWord      string
+	TargetPlacement WordPlacement
+	Difficulty      DifficultyConfig
 }
 
 // Generate creates a new puzzle. The target word is chosen from the archive.
 func Generate(archive *words.Archive, solveCount int, mod *DifficultyMod) (*GeneratedPuzzle, error) {
 	cfg := DefaultDifficulty(solveCount, mod)
-	word := archive.Random()
-	if word == "" {
-		return nil, fmt.Errorf("empty word archive")
+
+	// Try up to 10 words — some may not fit the grid dimensions
+	var word string
+	var grid *Grid
+	var placement WordPlacement
+	var err error
+	for attempt := 0; attempt < 10; attempt++ {
+		word = strings.ToUpper(archive.Random())
+		if word == "" {
+			return nil, fmt.Errorf("empty word archive")
+		}
+		// Skip words that can't fit either direction
+		if len([]rune(word)) > cfg.GridCols && len([]rune(word)) > cfg.GridRows {
+			continue
+		}
+		grid = NewGrid(cfg.GridRows, cfg.GridCols)
+		placement, err = placeWordTracked(grid, word, CellTarget)
+		if err == nil {
+			break
+		}
 	}
-	word = strings.ToUpper(word)
-
-	grid := NewGrid(cfg.GridRows, cfg.GridCols)
-
-	// Place target word
-	if err := placeWord(grid, word, true); err != nil {
-		return nil, fmt.Errorf("placing target word %q: %w", word, err)
+	if err != nil {
+		return nil, fmt.Errorf("placing target word after retries: %w", err)
 	}
 
 	// Place decoy words
 	for i := 0; i < cfg.DecoyCount; i++ {
-		decoy := generateDecoy(randRange(4, 7))
-		_ = placeWord(grid, decoy, false) // best-effort; skip if no room
+		decoy := generateDecoy(randRange(3, 8))
+		_, _ = placeWordTracked(grid, decoy, CellDecoy) // best-effort; skip if no room
 	}
 
 	// Fill remaining cells with noise characters
 	fillNoise(grid)
+
+	// Place trap nodes (after fill so they replace noise cells)
+	placeTrapNodes(grid, cfg.TrapCount)
+
+	// Compute Manhattan distances from every cell to the nearest target word cell
+	computeDistances(grid, placement)
 
 	// Apply cipher to all cells
 	cipher := NewCipherParams(cfg.Tier, cfg.GridRows)
@@ -96,19 +129,20 @@ func Generate(archive *words.Archive, solveCount int, mod *DifficultyMod) (*Gene
 	id := generatePuzzleID()
 
 	return &GeneratedPuzzle{
-		PuzzleID:   id,
-		Grid:       grid,
-		Cipher:     cipher,
-		TargetWord: word,
-		Difficulty: cfg,
+		PuzzleID:        id,
+		Grid:            grid,
+		Cipher:          cipher,
+		TargetWord:      word,
+		TargetPlacement: placement,
+		Difficulty:      cfg,
 	}, nil
 }
 
-// placeWord places a word in the grid either left-to-right or top-to-bottom.
-func placeWord(grid *Grid, word string, isTarget bool) error {
+// placeWordTracked places a word in the grid and returns its placement coordinates.
+func placeWordTracked(grid *Grid, word string, cellType CellType) (WordPlacement, error) {
 	runes := []rune(word)
 	if len(runes) == 0 {
-		return fmt.Errorf("empty word")
+		return WordPlacement{}, fmt.Errorf("empty word")
 	}
 
 	// Try random placements (horizontal then vertical)
@@ -160,14 +194,21 @@ func placeWord(grid *Grid, word string, isTarget bool) error {
 			}
 			cell := &grid.Cells[row][col]
 			cell.Plaintext = r
-			if isTarget {
+			cell.Type = cellType
+			if cellType == CellTarget {
 				cell.IsWord = true
 			}
 		}
-		return nil
+
+		return WordPlacement{
+			StartRow:   startRow,
+			StartCol:   startCol,
+			Horizontal: horizontal,
+			Length:     len(runes),
+		}, nil
 	}
 
-	return fmt.Errorf("could not place word %q after 200 attempts", word)
+	return WordPlacement{}, fmt.Errorf("could not place word %q after 200 attempts", word)
 }
 
 // generateDecoy creates a pronounceable but nonsensical word.
@@ -189,11 +230,69 @@ func generateDecoy(length int) string {
 func fillNoise(grid *Grid) {
 	for r := range grid.Cells {
 		for c := range grid.Cells[r] {
-			if grid.Cells[r][c].Plaintext == 0 {
-				grid.Cells[r][c].Plaintext = NoiseChars[randRange(0, len(NoiseChars)-1)]
+			cell := &grid.Cells[r][c]
+			if cell.Plaintext == 0 {
+				if randRange(0, 99) < 65 {
+					cell.Plaintext = NoiseChars[randRange(0, len(NoiseChars)-1)]
+					cell.Type = CellSymbol
+				} else {
+					cell.Plaintext = rune('A' + randRange(0, 25))
+					cell.Type = CellNoise
+				}
 			}
 		}
 	}
+}
+
+// placeTrapNodes places trap cells in random noise positions.
+func placeTrapNodes(grid *Grid, count int) {
+	for i := 0; i < count; i++ {
+		for attempts := 0; attempts < 50; attempts++ {
+			r := randRange(0, grid.Rows-1)
+			c := randRange(0, grid.Cols-1)
+			cell := &grid.Cells[r][c]
+			if cell.Type == CellNoise || cell.Type == CellSymbol {
+				cell.Plaintext = TrapSymbols[randRange(0, len(TrapSymbols)-1)]
+				cell.Type = CellTrap
+				break
+			}
+		}
+	}
+}
+
+// computeDistances sets the Manhattan distance on every cell to the nearest
+// target word cell identified by the given placement.
+func computeDistances(grid *Grid, placement WordPlacement) {
+	// Collect target cell coordinates
+	type coord struct{ r, c int }
+	targets := make([]coord, placement.Length)
+	for i := 0; i < placement.Length; i++ {
+		if placement.Horizontal {
+			targets[i] = coord{placement.StartRow, placement.StartCol + i}
+		} else {
+			targets[i] = coord{placement.StartRow + i, placement.StartCol}
+		}
+	}
+
+	for r := range grid.Cells {
+		for c := range grid.Cells[r] {
+			minDist := grid.Rows + grid.Cols // upper bound
+			for _, t := range targets {
+				d := abs(r-t.r) + abs(c-t.c)
+				if d < minDist {
+					minDist = d
+				}
+			}
+			grid.Cells[r][c].Distance = minDist
+		}
+	}
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // applyCipher encrypts every cell's plaintext character.

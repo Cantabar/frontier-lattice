@@ -13,6 +13,10 @@
         <!-- Left sidebar: Meters -->
         <aside class="meters-sidebar">
             {{template "meters.html" .}}
+            <div id="signal-meter" class="stat-block signal-meter{{if not .SignalHint}} signal-meter--hidden{{end}}">
+                <div class="signal-label">OFFLINE</div>
+                <div class="signal-bar"><div class="signal-fill" style="width:0%"></div></div>
+            </div>
         </aside>
 
         <!-- Main content: Cipher Grid -->
@@ -30,7 +34,9 @@
         </main>
 
         <!-- Right sidebar: Corm Log + Contracts -->
-        <aside class="right-sidebar">
+        <aside class="right-sidebar"
+               sse-swap="corm-hint" hx-swap="beforeend"
+               sse-swap="corm-hint-cell" hx-swap="beforeend">
             <div class="corm-log-panel">
                 <h3 class="panel-title">&gt; corm_log</h3>
                 <div id="corm-log" class="log-scroll"

@@ -24,6 +24,14 @@ const (
 	PhaseContracts Phase = 2
 )
 
+// HintState tracks which AI-controlled hint systems are globally enabled.
+type HintState struct {
+	Heatmap bool // proximity-based cell coloring
+	Vectors bool // directional indicators toward target
+	Decode  bool // true = revealed cells show plaintext (default true)
+	Signal  bool // per-decrypt signal intensity feedback
+}
+
 // Session holds all state for one player's interaction.
 type Session struct {
 	mu sync.Mutex
@@ -39,6 +47,7 @@ type Session struct {
 	Grid              *Grid
 	CipherParams      CipherParams
 	TargetWord        string
+	TargetPlacement   WordPlacement
 	DecryptedCells    map[string]bool
 	Difficulty        DifficultyConfig
 	SolveCount        int
@@ -47,6 +56,10 @@ type Session struct {
 	// Meters (cached from corm-brain state_sync)
 	Stability  int
 	Corruption int
+
+	// AI-controlled hint state
+	Hints       HintState
+	HintedCells map[string][]string // cell key -> active hint types (per-cell hints)
 
 	// Phase 0 click tracking
 	ClickLog        []ClickEvent
@@ -81,6 +94,8 @@ func NewSession(playerAddress, context string) *Session {
 		Phase:           PhaseAwakening,
 		CreatedAt:       time.Now(),
 		DecryptedCells:  make(map[string]bool),
+		Hints:           HintState{Decode: true},
+		HintedCells:     make(map[string][]string),
 		ElementClickMap: make(map[string][]time.Time),
 		EventBuffer:     corm.NewRingBuffer(256),
 		ActionChan:      make(chan corm.CormAction, 64),
@@ -155,10 +170,63 @@ func (s *Session) LoadPuzzle(p *GeneratedPuzzle) {
 	s.Grid = p.Grid
 	s.CipherParams = p.Cipher
 	s.TargetWord = p.TargetWord
+	s.TargetPlacement = p.TargetPlacement
 	s.Difficulty = p.Difficulty
 	s.DecryptedCells = make(map[string]bool)
+	s.HintedCells = make(map[string][]string)
 	s.RecentDecrypts = nil
 	s.PendingDifficulty = nil
+}
+
+// SetHint updates a global hint toggle.
+func (s *Session) SetHint(hintType string, enabled bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	switch hintType {
+	case "heatmap":
+		s.Hints.Heatmap = enabled
+	case "vectors":
+		s.Hints.Vectors = enabled
+	case "decode":
+		s.Hints.Decode = enabled
+	case "signal":
+		s.Hints.Signal = enabled
+	}
+}
+
+// AddCellHint adds a per-cell hint.
+func (s *Session) AddCellHint(row, col int, hintType string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	key := CellKey(row, col)
+	s.HintedCells[key] = append(s.HintedCells[key], hintType)
+}
+
+// CellHasHint returns true if a cell has the given hint type (per-cell or global).
+func (s *Session) CellHasHint(row, col int, hintType string) bool {
+	// Check global toggle first
+	switch hintType {
+	case "heatmap":
+		if s.Hints.Heatmap {
+			return true
+		}
+	case "vectors":
+		if s.Hints.Vectors {
+			return true
+		}
+	case "signal":
+		if s.Hints.Signal {
+			return true
+		}
+	}
+	// Check per-cell hints
+	key := CellKey(row, col)
+	for _, h := range s.HintedCells[key] {
+		if h == hintType {
+			return true
+		}
+	}
+	return false
 }
 
 func generateSessionID() string {

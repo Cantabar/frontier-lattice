@@ -48,6 +48,7 @@ func main() {
 		PuzzlePage:     h.PuzzlePage,
 		PuzzleDecrypt:  h.PuzzleDecrypt,
 		PuzzleSubmit:   h.PuzzleSubmit,
+		PuzzleGrid:     h.PuzzleGrid,
 		Stream:         h.Stream,
 		Status:         h.Status,
 		ContractsPage:  h.ContractsPage,

@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"strings"
 
 	"github.com/frontier-corm/puzzle-service/internal/corm"
+	"github.com/frontier-corm/puzzle-service/internal/puzzle"
 )
 
 // Stream serves GET /stream — SSE endpoint per player session.
@@ -35,13 +37,13 @@ func (h *Handlers) Stream(w http.ResponseWriter, r *http.Request) {
 		case <-ctx.Done():
 			return
 		case action := <-sess.ActionChan:
-			writeSSEAction(w, flusher, action)
+			writeSSEAction(w, flusher, action, sess, h)
 		}
 	}
 }
 
 // writeSSEAction converts a CormAction into an SSE event and writes it.
-func writeSSEAction(w http.ResponseWriter, flusher http.Flusher, action corm.CormAction) {
+func writeSSEAction(w http.ResponseWriter, flusher http.Flusher, action corm.CormAction, sess *puzzle.Session, h *Handlers) {
 	switch action.ActionType {
 	case corm.ActionLog:
 		var p corm.LogPayload
@@ -79,6 +81,27 @@ func writeSSEAction(w http.ResponseWriter, flusher http.Flusher, action corm.Cor
 				cell.Row, cell.Col, html.EscapeString(p.Effect),
 				cell.Row, cell.Col, cell.Row, cell.Col)
 			writeSSE(w, "corm-boost", data)
+		}
+
+	case corm.ActionHintToggle:
+		var p corm.HintTogglePayload
+		json.Unmarshal(action.Payload, &p)
+		// Update session hint state
+		sess.SetHint(p.HintType, p.Enabled)
+		// Trigger full grid re-render via HTMX
+		data := `<div id="grid-refresh" hx-get="/puzzle/grid" hx-trigger="load" hx-target=".grid-container" hx-swap="innerHTML"></div>`
+		writeSSE(w, "corm-hint", data)
+
+	case corm.ActionHintCell:
+		var p corm.HintCellPayload
+		json.Unmarshal(action.Payload, &p)
+		// Add per-cell hints and re-render each targeted cell
+		for _, cellRef := range p.Cells {
+			sess.AddCellHint(cellRef.Row, cellRef.Col, p.HintType)
+			cellData := buildCellData(sess, cellRef.Row, cellRef.Col)
+			var buf strings.Builder
+			h.templates.ExecuteTemplate(&buf, "cell.html", cellData)
+			writeSSE(w, "corm-hint-cell", buf.String())
 		}
 
 	case corm.ActionContractCreated:
