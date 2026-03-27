@@ -18,8 +18,9 @@ func (h *Handlers) Phase0Page(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.renderTemplate(w, "layout.html", PuzzleData{
-		Phase:     int(sess.Phase),
-		SessionID: sess.ID,
+		Phase:        int(sess.Phase),
+		SessionID:    sess.ID,
+		MetersHidden: sess.Stability == 0 && sess.Corruption == 0,
 	})
 }
 

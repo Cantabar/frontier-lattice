@@ -44,6 +44,7 @@ type PuzzleData struct {
 	Tier         int
 	SignalHint   bool // whether signal meter should be visible
 	ShowEntrance bool // true when loaded via phase transition auto-load
+	MetersHidden bool // true when stability and corruption are both 0
 }
 
 // PuzzlePage serves GET /puzzle — generates and renders a new puzzle.
@@ -219,6 +220,9 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 	sess.EventBuffer.Push(evt)
 	go h.relay.BroadcastEvent(evt)
 
+	// Meters are now non-zero — ensure the OOB meters partial reveals them.
+	resultData["MetersHidden"] = sess.Stability == 0 && sess.Corruption == 0
+
 	h.renderTemplate(w, "result.html", resultData)
 }
 
@@ -233,16 +237,17 @@ func buildPuzzleData(sess *puzzle.Session) PuzzleData {
 	}
 
 	return PuzzleData{
-		Phase:      int(sess.Phase),
-		SessionID:  sess.ID,
-		Grid:       grid,
-		Rows:       sess.Grid.Rows,
-		Cols:       sess.Grid.Cols,
-		Stability:  sess.Stability,
-		Corruption: sess.Corruption,
-		SolveCount: sess.SolveCount,
-		Tier:       int(sess.Difficulty.Tier),
-		SignalHint: sess.Hints.Signal,
+		Phase:        int(sess.Phase),
+		SessionID:    sess.ID,
+		Grid:         grid,
+		Rows:         sess.Grid.Rows,
+		Cols:         sess.Grid.Cols,
+		Stability:    sess.Stability,
+		Corruption:   sess.Corruption,
+		SolveCount:   sess.SolveCount,
+		Tier:         int(sess.Difficulty.Tier),
+		SignalHint:   sess.Hints.Signal,
+		MetersHidden: sess.Stability == 0 && sess.Corruption == 0,
 	}
 }
 

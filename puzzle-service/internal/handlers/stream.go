@@ -130,8 +130,21 @@ func writeSSEAction(w http.ResponseWriter, flusher http.Flusher, action corm.Cor
 		}
 
 	case corm.ActionStateSync:
-		// State sync doesn't emit SSE; it updates session state.
-		// Handled elsewhere.
+		var p corm.StateSyncPayload
+		json.Unmarshal(action.Payload, &p)
+		sess.Phase = puzzle.Phase(p.Phase)
+		sess.Stability = p.Stability
+		sess.Corruption = p.Corruption
+		// Reveal meters via OOB swap when values become non-zero
+		if p.Stability > 0 || p.Corruption > 0 {
+			var buf strings.Builder
+			h.templates.ExecuteTemplate(&buf, "meters.html", map[string]any{
+				"Stability":    p.Stability,
+				"Corruption":   p.Corruption,
+				"MetersHidden": false,
+			})
+			writeSSE(w, "corm-meters", buf.String())
+		}
 	}
 
 	flusher.Flush()

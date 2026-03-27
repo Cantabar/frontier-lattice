@@ -10,45 +10,57 @@
 </head>
 <body hx-ext="sse" sse-connect="/stream">
     <div class="app-layout">
-        <!-- Left sidebar: Meters -->
-        <aside class="meters-sidebar">
-            {{template "meters.html" .}}
-            <div id="signal-meter" class="stat-block signal-meter{{if not .SignalHint}} signal-meter--hidden{{end}}">
-                <div class="signal-label">OFFLINE</div>
-                <div class="signal-bar"><div class="signal-fill" style="width:0%"></div></div>
-            </div>
-        </aside>
+        <!-- Top area: meters + main content + optional contracts -->
+        <div class="app-layout-top"
+             sse-swap="corm-hint" hx-swap="beforeend"
+             sse-swap="corm-hint-cell" hx-swap="beforeend">
+            <!-- Left sidebar: Meters (hidden until first state update) -->
+            <aside class="meters-sidebar">
+                {{template "meters.html" .}}
+                <div id="signal-meter" class="stat-block signal-meter{{if not .SignalHint}} signal-meter--hidden{{end}}">
+                    <div class="signal-label">OFFLINE</div>
+                    <div class="signal-bar"><div class="signal-fill" style="width:0%"></div></div>
+                </div>
+            </aside>
 
-        <!-- Main content: swappable between phases -->
-        <main id="main-display" class="puzzle-main">
-            {{if eq .Phase 0}}
-                {{template "phase0-content.html" .}}
-            {{else}}
-                {{template "puzzle-content.html" .}}
+            <!-- Main content: swappable between phases -->
+            <main id="main-display" class="puzzle-main">
+                {{if eq .Phase 0}}
+                    {{template "phase0-content.html" .}}
+                {{else}}
+                    {{template "puzzle-content.html" .}}
+                {{end}}
+            </main>
+
+            {{if ge .Phase 2}}
+            <!-- Right sidebar: Contracts (Phase 2+ only) -->
+            <aside class="right-sidebar">
+                <div class="contracts-panel">
+                    <h3 class="panel-title">&gt; active_directives</h3>
+                    <div id="contracts"
+                         sse-swap="corm-contract" hx-swap="beforeend">
+                    </div>
+                </div>
+            </aside>
             {{end}}
-        </main>
+        </div>
 
-        <!-- Right sidebar: Terminal Log + Contracts -->
-        <aside class="right-sidebar"
-               sse-swap="corm-hint" hx-swap="beforeend"
-               sse-swap="corm-hint-cell" hx-swap="beforeend">
-            <div class="terminal-log-panel">
-                <div id="corm-log" class="terminal-output"
-                     sse-swap="corm-log" hx-swap="beforeend"
-                     sse-swap="corm-log-start" hx-swap="beforeend">
-                    {{if eq .Phase 0}}
-                    <div class="boot-line boot-line--warn">[SYS] boot failed. interface in safe mode.</div>
-                    <div class="boot-line">[SYS] awaiting input...</div>
-                    {{end}}
-                </div>
+        <!-- Bottom bar: Terminal log (always present, full width) -->
+        <footer class="terminal-bar">
+            <div id="corm-log" class="terminal-output"
+                 sse-swap="corm-log" hx-swap="beforeend"
+                 sse-swap="corm-log-start" hx-swap="beforeend">
+                {{if eq .Phase 0}}
+                <div class="boot-line boot-line--warn">[SYS] boot failed. interface in safe mode.</div>
+                <div class="boot-line">[SYS] awaiting input...</div>
+                {{end}}
             </div>
-            <div class="contracts-panel">
-                <h3 class="panel-title">&gt; active_directives</h3>
-                <div id="contracts"
-                     sse-swap="corm-contract" hx-swap="beforeend">
-                </div>
-            </div>
-        </aside>
+            {{if lt .Phase 2}}
+            <!-- Hidden stub so SSE contract events don't break before Phase 2 -->
+            <div id="contracts" style="display:none"
+                 sse-swap="corm-contract" hx-swap="beforeend"></div>
+            {{end}}
+        </footer>
     </div>
     <script>
     // Auto-scroll corm-log to bottom when new entries arrive,
@@ -64,13 +76,16 @@
     })();
 
     // Listen for on-chain state updates from the parent React app.
-    // This is a secondary sync path — corm-brain WebSocket state_sync
-    // remains the primary source. Values here reconcile the meters if
-    // the parent has fresher on-chain data.
+    // Reveals meters on first non-zero value.
     window.addEventListener("message", function(e) {
         if (!e.data || e.data.type !== "corm-state-sync") return;
         var stability = Number(e.data.stability);
         var corruption = Number(e.data.corruption);
+        // Reveal meters if either value is non-zero
+        if (stability > 0 || corruption > 0) {
+            var meters = document.getElementById('meters');
+            if (meters) meters.classList.remove('meters--hidden');
+        }
         var sFill = document.querySelector(".meter-fill--stability");
         var sVal  = document.querySelector(".meter--stability .meter-value");
         if (sFill) sFill.style.height = Math.min(100, Math.max(0, stability)) + "%";

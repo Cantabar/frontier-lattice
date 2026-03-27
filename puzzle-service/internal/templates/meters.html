@@ -1,4 +1,4 @@
-{{define "meters.html"}}<div id="meters" class="meters">
+{{define "meters.html"}}<div id="meters" class="meters{{if .MetersHidden}} meters--hidden{{end}}" hx-swap-oob="outerHTML:#meters">
     <div class="meter meter--stability">
         <div class="meter-label">STABILITY</div>
         <div class="meter-bar">

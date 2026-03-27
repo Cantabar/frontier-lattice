@@ -145,19 +145,25 @@ body {
     line-height: 1.6;
 }
 
-/* === Puzzle Layout === */
+/* === App Layout (top/bottom split) === */
 
 .app-layout {
-    display: grid;
-    grid-template-columns: 80px 1fr 280px;
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
-    gap: 0;
+}
+
+.app-layout-top {
+    display: flex;
+    flex: 1;
+    min-height: 0; /* allow shrinking for flexbox overflow */
 }
 
 .meters-sidebar {
     background: var(--bg-panel);
     border-right: 1px solid var(--border);
     padding: 16px 8px;
+    flex: 0 0 80px;
 }
 
 .puzzle-main {
@@ -167,6 +173,8 @@ body {
     padding: 8px;
     gap: 0;
     overflow: hidden;
+    flex: 1;
+    min-width: 0;
 }
 
 .right-sidebar {
@@ -174,6 +182,22 @@ body {
     border-left: 1px solid var(--border);
     display: flex;
     flex-direction: column;
+    flex: 0 0 280px;
+}
+
+/* === Terminal Bottom Bar === */
+
+.terminal-bar {
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    max-height: 30vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.terminal-bar .terminal-output {
+    flex: 1;
+    overflow-y: auto;
 }
 
 /* === Meters === */
@@ -183,6 +207,8 @@ body {
     gap: 16px;
     align-items: center;
 }
+
+.meters--hidden { display: none; }
 
 .meter { text-align: center; width: 100%; }
 
@@ -350,21 +376,6 @@ body {
 
 .next-btn:hover { background: rgba(0, 255, 136, 0.1); }
 
-/* === Terminal Log Panel (right sidebar) === */
-.terminal-log-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg);
-    overflow: hidden;
-}
-
-.terminal-log-panel .terminal-output {
-    flex: 1;
-    overflow-y: auto;
-    max-height: 50vh;
-}
 
 .panel-title {
     font-size: 0.7rem;
@@ -375,8 +386,8 @@ body {
 }
 
 /* Boot-line fade-in for dynamically appended entries */
-.terminal-log-panel .boot-line,
-.terminal-log-panel .boot-line-stream {
+.terminal-bar .boot-line,
+.terminal-bar .boot-line-stream {
     animation: boot-line-fade-in 0.3s ease;
 }
 
@@ -867,19 +878,23 @@ body {
 
 /* === Responsive === */
 @media (max-width: 768px) {
-    .app-layout {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
+    .app-layout-top {
+        flex-direction: column;
     }
     .meters-sidebar {
+        flex: 0 0 auto;
         border-right: none;
         border-bottom: 1px solid var(--border);
     }
     .meters { flex-direction: row; }
     .meter-bar { height: 60px; width: 20px; }
     .right-sidebar {
+        flex: 0 0 auto;
         border-left: none;
         border-top: 1px solid var(--border);
+        max-height: 30vh;
+    }
+    .terminal-bar {
         max-height: 40vh;
     }
     .terminal-container--inline {
