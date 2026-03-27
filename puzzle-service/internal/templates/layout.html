@@ -51,5 +51,24 @@
             </div>
         </aside>
     </div>
+    <script>
+    // Listen for on-chain state updates from the parent React app.
+    // This is a secondary sync path — corm-brain WebSocket state_sync
+    // remains the primary source. Values here reconcile the meters if
+    // the parent has fresher on-chain data.
+    window.addEventListener("message", function(e) {
+        if (!e.data || e.data.type !== "corm-state-sync") return;
+        var stability = Number(e.data.stability);
+        var corruption = Number(e.data.corruption);
+        var sFill = document.querySelector(".meter-fill--stability");
+        var sVal  = document.querySelector(".meter--stability .meter-value");
+        if (sFill) sFill.style.height = Math.min(100, Math.max(0, stability)) + "%";
+        if (sVal)  sVal.textContent = String(stability);
+        var cFill = document.querySelector(".meter-fill--corruption");
+        var cVal  = document.querySelector(".meter--corruption .meter-value");
+        if (cFill) cFill.style.height = Math.min(100, Math.max(0, corruption)) + "%";
+        if (cVal)  cVal.textContent = String(corruption);
+    });
+    </script>
 </body>
 </html>{{end}}
