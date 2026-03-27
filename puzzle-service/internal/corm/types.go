@@ -10,12 +10,13 @@ import (
 
 // CormEvent is a player action relayed to corm-brain.
 type CormEvent struct {
-	Type          string          `json:"type"`            // always "event"
-	Seq           uint64          `json:"seq"`             // monotonic sequence number
+	Type          string          `json:"type"`                      // always "event"
+	Seq           uint64          `json:"seq"`                       // monotonic sequence number
 	SessionID     string          `json:"session_id"`
 	PlayerAddress string          `json:"player_address"`
-	Context       string          `json:"context"`         // "browser" or "ssu:<entity_id>"
-	EventType     string          `json:"event_type"`      // "decrypt", "submit", "click", "phase_transition"
+	NetworkNodeID string          `json:"network_node_id,omitempty"` // set when player links a network node
+	Context       string          `json:"context"`                   // "browser" or "ssu:<entity_id>"
+	EventType     string          `json:"event_type"`                // "decrypt", "submit", "click", "phase_transition"
 	Payload       json.RawMessage `json:"payload"`
 	Timestamp     time.Time       `json:"timestamp"`
 }

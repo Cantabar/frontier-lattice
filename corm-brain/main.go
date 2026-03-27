@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/frontier-corm/corm-brain/internal/chain"
 	"github.com/frontier-corm/corm-brain/internal/config"
 	"github.com/frontier-corm/corm-brain/internal/db"
@@ -154,31 +156,42 @@ func processEvent(
 ) {
 	env := evt.Environment
 
-	chainClient, ok := chainClients[env]
-	if !ok {
+	if _, ok := chainClients[env]; !ok {
 		log.Printf("no chain client for environment %q, dropping event", env)
 		return
 	}
 
-	// Resolve network_node_id → corm_id (scoped by environment)
-	cormID, err := database.ResolveCormID(ctx, env, evt.NetworkNodeID)
+	// Resolve session → corm_id (every session maps to exactly one corm)
+	cormID, err := database.ResolveSessionCorm(ctx, env, evt.SessionID)
 	if err != nil {
-		log.Printf("[%s] resolve corm: %v", env, err)
+		log.Printf("[%s] resolve session corm: %v", env, err)
 		return
 	}
 
 	if cormID == "" {
-		// First contact with this network node — provision a new corm
-		cormID, err = chainClient.CreateCormState(ctx, evt.NetworkNodeID)
-		if err != nil {
-			log.Printf("[%s] create corm state: %v", env, err)
-			cormID = "local_" + env + "_" + evt.NetworkNodeID
+		// First event for this session — assign a new corm
+		cormID = uuid.New().String()
+		if err := database.LinkSessionCorm(ctx, env, evt.SessionID, cormID); err != nil {
+			log.Printf("[%s] link session corm: %v", env, err)
 		}
+		log.Printf("[%s] new corm %s for session %s", env, cormID, evt.SessionID)
+	}
 
-		if err := database.LinkNetworkNode(ctx, env, evt.NetworkNodeID, cormID); err != nil {
-			log.Printf("[%s] link network node: %v", env, err)
+	// If a network node is present and not yet linked, bind it to this corm
+	if evt.NetworkNodeID != "" {
+		existing, err := database.ResolveCormID(ctx, env, evt.NetworkNodeID)
+		if err != nil {
+			log.Printf("[%s] resolve network node: %v", env, err)
+		} else if existing == "" {
+			chainClient := chainClients[env]
+			if _, err := chainClient.CreateCormState(ctx, evt.NetworkNodeID); err != nil {
+				log.Printf("[%s] create corm state: %v", env, err)
+			}
+			if err := database.LinkNetworkNode(ctx, env, evt.NetworkNodeID, cormID); err != nil {
+				log.Printf("[%s] link network node: %v", env, err)
+			}
+			log.Printf("[%s] linked node %s to corm %s", env, evt.NetworkNodeID, cormID)
 		}
-		log.Printf("[%s] new corm %s for node %s", env, cormID, evt.NetworkNodeID)
 	}
 
 	if err := handler.ProcessEvent(ctx, env, cormID, evt); err != nil {

@@ -88,7 +88,7 @@ func (h *Handler) ProcessEvent(ctx context.Context, environment, cormID string, 
 	}
 
 	// Generate a unique entry ID for this streaming response
-	entryID := fmt.Sprintf("corm_%s_%d", cormID[:8], evt.Seq)
+	entryID := fmt.Sprintf("corm_%s_%d", safePrefix(cormID, 8), evt.Seq)
 
 	// Send stream start
 	sender.SendPayload(ctx, types.ActionLogStreamStart, evt.SessionID, types.LogStreamStartPayload{
@@ -133,6 +133,14 @@ func (h *Handler) ProcessEvent(ctx context.Context, environment, cormID string, 
 	h.runPhaseEffects(ctx, environment, cormID, sender, traits, evt)
 
 	return nil
+}
+
+// safePrefix returns the first n characters of s, or s itself if shorter.
+func safePrefix(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
 }
 
 // runPhaseEffects executes phase-specific side effects (boost, difficulty, etc.).

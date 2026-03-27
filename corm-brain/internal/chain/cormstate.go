@@ -19,13 +19,20 @@ type CormStateOnChain struct {
 // Returns the new object ID (corm_id) and MintCap.
 // TODO: Implement via PTB calling corm_state::create(network_node_id).
 func (c *Client) CreateCormState(ctx context.Context, networkNodeID string) (string, error) {
+	if networkNodeID == "" {
+		return "", fmt.Errorf("network_node_id is required")
+	}
 	if !c.HasSigner() {
 		return "", fmt.Errorf("no signer configured")
 	}
 
 	// Stub: generate a placeholder corm_id
 	// Real implementation: build PTB, sign, submit, extract created object ID
-	cormID := fmt.Sprintf("corm_%s", networkNodeID[:8])
+	prefix := networkNodeID
+	if len(prefix) > 8 {
+		prefix = prefix[:8]
+	}
+	cormID := fmt.Sprintf("corm_%s", prefix)
 	log.Printf("chain: stub CreateCormState for node %s → %s", networkNodeID, cormID)
 	return cormID, nil
 }

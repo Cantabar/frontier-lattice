@@ -11,6 +11,30 @@ import (
 	"github.com/frontier-corm/corm-brain/internal/types"
 )
 
+// --- Session → Corm mapping ---
+
+// ResolveSessionCorm returns the corm_id for a session, or empty string if not found.
+func (d *DB) ResolveSessionCorm(ctx context.Context, environment, sessionID string) (string, error) {
+	var cormID string
+	err := d.Pool.QueryRow(ctx,
+		"SELECT corm_id FROM corm_sessions WHERE environment = $1 AND session_id = $2",
+		environment, sessionID,
+	).Scan(&cormID)
+	if err == pgx.ErrNoRows {
+		return "", nil
+	}
+	return cormID, err
+}
+
+// LinkSessionCorm associates a session with a corm.
+func (d *DB) LinkSessionCorm(ctx context.Context, environment, sessionID, cormID string) error {
+	_, err := d.Pool.Exec(ctx,
+		"INSERT INTO corm_sessions (environment, session_id, corm_id) VALUES ($1, $2, $3) ON CONFLICT (environment, session_id) DO NOTHING",
+		environment, sessionID, cormID,
+	)
+	return err
+}
+
 // --- Network Node → Corm mapping ---
 
 // ResolveCormID returns the corm_id for a network node, or empty string if not found.
