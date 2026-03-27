@@ -201,14 +201,28 @@ procs:
       until curl -sf http://localhost:8001/health >/dev/null 2>&1; do
         sleep 3
       done
+      echo "Waiting for corm_state contract in .env.localnet..."
+      until grep -q '^CORM_STATE_PACKAGE_ID=0x' .env.localnet 2>/dev/null; do
+        sleep 2
+      done
+      echo "Loading contract IDs from .env.localnet"
+      set -a && . ./.env.localnet && set +a
+      # Derive SUI private key from active SUI keypair if not set
+      if [ -z "$SUI_PRIVATE_KEY" ]; then
+        SUI_PRIVATE_KEY=$(sui keytool export --key-identity "$(sui client active-address)" --json 2>/dev/null | jq -r '.exportedPrivateKey')
+        export SUI_PRIVATE_KEY
+        echo "Derived SUI_PRIVATE_KEY from active SUI address"
+      fi
       echo "Dependencies ready — building corm-brain"
       cd corm-brain
       go build -o ./corm-brain . && echo "Running corm-brain" && ./corm-brain
     env:
       LLM_SUPER_URL: "http://localhost:8000"
       LLM_FAST_URL: "http://localhost:8001"
-      EMBED_MODEL_PATH: "./models/nomic-embed"
+      EMBED_MODEL_PATH: "../models/nomic-embed"
       DATABASE_URL: "postgresql://corm:corm@localhost:5432/frontier_corm"
+      PUZZLE_SERVICE_URL: "http://localhost:3300"
+      SUI_RPC_URL: "http://127.0.0.1:9000"
       CONSOLIDATION_INTERVAL_MS: "60000"
       MEMORY_CAP_PER_CORM: "500"
       EVENT_COALESCE_MS: "50"

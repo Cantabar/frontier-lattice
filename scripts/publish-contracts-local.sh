@@ -10,9 +10,9 @@ ENV_FILE="$PROJECT_ROOT/.env.localnet"
 PUB_FILE="$PROJECT_ROOT/Pub.localnet.toml"
 GAS_BUDGET=2000000000  # 2 SUI — publishing with deps needs more than 0.5
 
-PACKAGES=("tribe" "corm_auth" "trustless_contracts")
-ENV_VARS=("PACKAGE_TRIBE" "PACKAGE_CORM_AUTH" "PACKAGE_TRUSTLESS_CONTRACTS")
-VITE_VARS=("VITE_TRIBE_PACKAGE_ID" "VITE_CORM_AUTH_PACKAGE_ID" "VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID")
+PACKAGES=("tribe" "corm_auth" "trustless_contracts" "corm_state")
+ENV_VARS=("PACKAGE_TRIBE" "PACKAGE_CORM_AUTH" "PACKAGE_TRUSTLESS_CONTRACTS" "PACKAGE_CORM_STATE")
+VITE_VARS=("VITE_TRIBE_PACKAGE_ID" "VITE_CORM_AUTH_PACKAGE_ID" "VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID" "")
 
 write_env_var() {
   local var="$1" val="$2" file="$3"
@@ -28,7 +28,8 @@ write_env_var() {
 # ── Clear stale package IDs from previous runs ────────────────────
 if [ -f "$ENV_FILE" ]; then
   echo "Clearing stale contract IDs from $ENV_FILE..."
-  for var in "${ENV_VARS[@]}" "${VITE_VARS[@]}" VITE_TRIBE_REGISTRY_ID; do
+  for var in "${ENV_VARS[@]}" "${VITE_VARS[@]}" VITE_TRIBE_REGISTRY_ID CORM_STATE_PACKAGE_ID; do
+    [ -z "$var" ] && continue
     sed -i "s|^${var}=.*|${var}=|" "$ENV_FILE"
   done
 fi
@@ -153,7 +154,13 @@ for i in "${!PACKAGES[@]}"; do
   vite_var="${VITE_VARS[$i]}"
   echo "  $var=$PACKAGE_ID"
   write_env_var "$var" "$PACKAGE_ID" "$ENV_FILE"
-  write_env_var "$vite_var" "$PACKAGE_ID" "$ENV_FILE"
+  [ -n "$vite_var" ] && write_env_var "$vite_var" "$PACKAGE_ID" "$ENV_FILE"
+
+  # Write CORM_STATE_PACKAGE_ID alias (used by corm-brain config)
+  if [ "$pkg" = "corm_state" ]; then
+    write_env_var "CORM_STATE_PACKAGE_ID" "$PACKAGE_ID" "$ENV_FILE"
+    echo "  CORM_STATE_PACKAGE_ID=$PACKAGE_ID"
+  fi
 
   # ── Extract shared object IDs created during init ────────────────
   if [ "$pkg" = "tribe" ]; then
