@@ -120,14 +120,21 @@ procs:
       until docker exec frontier-corm-postgres-1 pg_isready -U corm -d frontier_corm -q 2>/dev/null; do
         sleep 1
       done
-      echo "Waiting for TRT-LLM tunnel (Super on :8000)..."
-      until curl -sf http://localhost:8000/health >/dev/null 2>&1; do
-        sleep 3
-      done
       echo "Waiting for TRT-LLM tunnel (Nano on :8001)..."
       until curl -sf http://localhost:8001/health >/dev/null 2>&1; do
         sleep 3
       done
+      echo "Checking TRT-LLM tunnel (Super on :8000)..."
+      SUPER_TRIES=0
+      while [ $SUPER_TRIES -lt 10 ] && ! curl -sf http://localhost:8000/health >/dev/null 2>&1; do
+        SUPER_TRIES=$((SUPER_TRIES + 1))
+        sleep 3
+      done
+      if curl -sf http://localhost:8000/health >/dev/null 2>&1; then
+        echo "Super is healthy."
+      else
+        echo "WARN: Super not available — corm-brain will use Nano only."
+      fi
       echo "Waiting for corm_state contract in .env.localnet..."
       until grep -q '^CORM_STATE_PACKAGE_ID=0x' .env.localnet 2>/dev/null; do
         sleep 2
