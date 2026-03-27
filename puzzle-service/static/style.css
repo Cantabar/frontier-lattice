@@ -29,6 +29,7 @@ body {
 .starmap {
     width: 100%;
     height: 100%;
+    max-height: 100%;
     background: var(--bg);
     overflow: hidden;
     position: relative;
@@ -181,13 +182,15 @@ body {
 .app-layout {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .app-layout-top {
     display: flex;
     flex: 1;
     min-height: 0; /* allow shrinking for flexbox overflow */
+    overflow: hidden;
 }
 
 .meters-sidebar {
@@ -221,7 +224,9 @@ body {
 .terminal-bar {
     border-top: 1px solid var(--border);
     background: var(--bg);
+    min-height: 120px;
     max-height: 30vh;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
 }
