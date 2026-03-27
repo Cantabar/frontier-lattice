@@ -1,0 +1,10 @@
+[package]
+name = "witnessed_contracts"
+edition = "2024.beta"
+
+[environments]
+localnet = "5c915d2a"
+
+[dependencies]
+world = { local = "../../../world-contracts/contracts/world" }
+corm_auth = { local = "../corm_auth" }

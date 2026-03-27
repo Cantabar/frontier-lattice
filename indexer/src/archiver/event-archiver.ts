@@ -218,6 +218,32 @@ function extractDenormalisedFields(
         characterId: str(data.poster_id),
       };
 
+    // -- Witnessed Contracts — Build Request --
+    case "BuildRequestCreatedEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+    case "BuildRequestFulfilledEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: null,
+      };
+    case "BuildRequestCancelledEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+    case "BuildRequestExpiredEvent":
+      return {
+        primaryId: str(data.contract_id),
+        tribeId: "",
+        characterId: str(data.poster_id),
+      };
+
     default:
       return { primaryId: "", tribeId: "", characterId: null };
   }

@@ -99,6 +99,17 @@ export class CheckpointSubscriber {
       eventModuleMap[name] = { packageId: trustlessContracts, module: "multi_input" };
     }
 
+    // Witnessed Contracts — Build Request
+    const witnessedContracts = this.config.packageIds.witnessedContracts;
+    if (witnessedContracts) {
+      for (const name of [
+        "BuildRequestCreatedEvent", "BuildRequestFulfilledEvent",
+        "BuildRequestCancelledEvent", "BuildRequestExpiredEvent",
+      ]) {
+        eventModuleMap[name] = { packageId: witnessedContracts, module: "build_request" };
+      }
+    }
+
     for (const [name, { packageId, module }] of Object.entries(eventModuleMap)) {
       if (packageId) {
         filters.push(`${packageId}::${module}::${name}`);

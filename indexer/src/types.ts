@@ -24,6 +24,8 @@ export const MODULES = {
   itemForItem: "trustless_contracts::item_for_item",
   transport: "trustless_contracts::transport",
   multiInput: "trustless_contracts::multi_input",
+  /** Witnessed contracts */
+  buildRequest: "witnessed_contracts::build_request",
 } as const;
 
 // ============================================================
@@ -245,6 +247,41 @@ export interface MultiInputContractExpiredEvent {
 }
 
 // ============================================================
+// Witnessed Contracts — Build Request Events
+// ============================================================
+
+export interface BuildRequestCreatedEvent {
+  contract_id: string;
+  poster_id: string;
+  requested_type_id: string;
+  require_corm_auth: boolean;
+  bounty_amount: string;
+  deadline_ms: string;
+  allowed_characters: string[];
+  allowed_tribes: number[];
+}
+
+export interface BuildRequestFulfilledEvent {
+  contract_id: string;
+  builder_address: string;
+  structure_id: string;
+  structure_type_id: string;
+  bounty_paid: string;
+}
+
+export interface BuildRequestCancelledEvent {
+  contract_id: string;
+  poster_id: string;
+  bounty_returned: string;
+}
+
+export interface BuildRequestExpiredEvent {
+  contract_id: string;
+  poster_id: string;
+  bounty_returned: string;
+}
+
+// ============================================================
 // All known event type names (short names matching Move structs)
 // ============================================================
 
@@ -276,6 +313,11 @@ export const EVENT_TYPES = [
   "MultiInputContractCompletedEvent",
   "MultiInputContractCancelledEvent",
   "MultiInputContractExpiredEvent",
+  // Witnessed Contracts — Build Request
+  "BuildRequestCreatedEvent",
+  "BuildRequestFulfilledEvent",
+  "BuildRequestCancelledEvent",
+  "BuildRequestExpiredEvent",
 ] as const;
 
 export type EventTypeName = (typeof EVENT_TYPES)[number];
@@ -342,6 +384,7 @@ export interface IndexerConfig {
   packageIds: {
     tribe: string;
     trustlessContracts: string;
+    witnessedContracts?: string;
   };
   /** Postgres connection string */
   databaseUrl: string;
