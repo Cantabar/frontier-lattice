@@ -4,12 +4,20 @@
  * Embeds the Go/HTMX puzzle service as a full-height iframe, passing the
  * connected wallet's address as the `player` query param so the puzzle
  * service can identify the player.
+ *
+ * Renders a `CormStateBar` above the iframe showing canonical on-chain
+ * corm state (phase, stability, corruption). A postMessage bridge
+ * (`useCormStateBridge`) forwards state changes into the iframe so the
+ * puzzle-service can optionally reconcile.
  */
 
+import { useRef } from "react";
 import styled from "styled-components";
 import { useIdentity } from "../hooks/useIdentity";
 import { config } from "../config";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
+import { CormStateBar } from "./CormStateBar";
+import { useCormStateBridge } from "./useCormStateBridge";
 
 const Wrapper = styled.div`
   display: flex;
@@ -37,6 +45,10 @@ const NoWallet = styled.div`
 
 export function ContinuityEngine() {
   const { address, isLoading } = useIdentity();
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Bridge on-chain state into the puzzle-service iframe
+  useCormStateBridge(iframeRef);
 
   if (isLoading) {
     return (
@@ -58,7 +70,8 @@ export function ContinuityEngine() {
 
   return (
     <Wrapper>
-      <Frame src={puzzleUrl} title="Continuity Engine" allow="clipboard-write" />
+      <CormStateBar />
+      <Frame ref={iframeRef} src={puzzleUrl} title="Continuity Engine" allow="clipboard-write" />
     </Wrapper>
   );
 }
@@ -69,6 +82,10 @@ export function ContinuityEngine() {
  */
 export function ContinuityEngineDapp({ entityId }: { entityId?: string }) {
   const { address, isLoading } = useIdentity();
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Bridge on-chain state into the puzzle-service iframe
+  useCormStateBridge(iframeRef);
 
   if (isLoading) {
     return (
@@ -91,7 +108,8 @@ export function ContinuityEngineDapp({ entityId }: { entityId?: string }) {
 
   return (
     <Wrapper>
-      <Frame src={puzzleUrl} title="Continuity Engine" allow="clipboard-write" />
+      <CormStateBar />
+      <Frame ref={iframeRef} src={puzzleUrl} title="Continuity Engine" allow="clipboard-write" />
     </Wrapper>
   );
 }
