@@ -1,0 +1,10 @@
+{{define "puzzle-content.html"}}<div class="grid-container">
+    {{template "grid.html" .}}
+</div>
+
+<!-- Word submission form -->
+<form class="submit-form" hx-post="/puzzle/submit" hx-target="#result-area" hx-swap="innerHTML">
+    <input type="text" name="word" placeholder="Enter word..." autocomplete="off" class="word-input" />
+    <button type="submit" class="submit-btn">Submit</button>
+</form>
+<div id="result-area"></div>{{end}}

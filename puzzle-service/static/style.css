@@ -25,13 +25,6 @@ body {
 }
 
 /* === Phase 0 — Dead Terminal === */
-.phase0-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: var(--bg);
-}
 
 .terminal-container {
     width: 90vw;
@@ -76,6 +69,13 @@ body {
 .terminal-btn:active { transform: scale(0.9); background: var(--border); }
 
 .terminal-body { padding: 16px; }
+
+/* Terminal container within unified layout main area */
+.terminal-container--inline {
+    max-width: 720px;
+    width: 100%;
+    margin: 40px auto 0;
+}
 
 .terminal-panels { display: flex; gap: 16px; margin-bottom: 16px; }
 
@@ -140,7 +140,6 @@ body {
 }
 
 /* === Puzzle Layout === */
-.puzzle-body { min-height: 100vh; }
 
 .app-layout {
     display: grid;
@@ -440,18 +439,30 @@ body {
     color: var(--text-dim);
 }
 
-/* === Glitch Transition (Phase 0 → 1) === */
-.glitch-transition {
-    animation: glitch 0.5s ease;
+/* === Phase Transition (in-place swap with glitch) === */
+.phase-transition {
+    animation: phase-glitch 0.8s ease;
 }
 
-@keyframes glitch {
-    0% { filter: none; }
-    20% { filter: hue-rotate(90deg) brightness(2); transform: translateX(-2px); }
-    40% { filter: hue-rotate(180deg) brightness(0.5); transform: translateX(2px) skewX(2deg); }
-    60% { filter: invert(1); transform: translateX(-1px); }
-    80% { filter: hue-rotate(270deg) brightness(1.5); transform: skewX(-1deg); }
-    100% { filter: none; transform: none; }
+@keyframes phase-glitch {
+    0%   { opacity: 1; filter: none; }
+    10%  { opacity: 0; filter: hue-rotate(90deg) brightness(2); }
+    20%  { opacity: 0.3; filter: hue-rotate(180deg); transform: translateX(-3px); }
+    30%  { opacity: 0; }
+    50%  { opacity: 0.5; filter: hue-rotate(270deg) brightness(0.5); transform: translateX(3px) skewX(1deg); }
+    60%  { opacity: 0; }
+    70%  { opacity: 0.7; filter: brightness(1.5); }
+    80%  { opacity: 0.3; filter: invert(0.3); }
+    100% { opacity: 1; filter: none; transform: none; }
+}
+
+/* Transition log entries (corm awakening messages) */
+.transition-entry {
+    color: var(--accent-cyan);
+}
+
+.transition-entry .log-prefix {
+    color: var(--accent-green);
 }
 
 /* === Heatmap (proximity hints) === */

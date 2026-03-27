@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="puzzle-body" hx-ext="sse" sse-connect="/stream">
+<body hx-ext="sse" sse-connect="/stream">
     <div class="app-layout">
         <!-- Left sidebar: Meters -->
         <aside class="meters-sidebar">
@@ -19,18 +19,13 @@
             </div>
         </aside>
 
-        <!-- Main content: Cipher Grid -->
-        <main class="puzzle-main">
-            <div class="grid-container">
-                {{template "grid.html" .}}
-            </div>
-
-            <!-- Word submission form -->
-            <form class="submit-form" hx-post="/puzzle/submit" hx-target="#result-area" hx-swap="innerHTML">
-                <input type="text" name="word" placeholder="Enter word..." autocomplete="off" class="word-input" />
-                <button type="submit" class="submit-btn">Submit</button>
-            </form>
-            <div id="result-area"></div>
+        <!-- Main content: swappable between phases -->
+        <main id="main-display" class="puzzle-main">
+            {{if eq .Phase 0}}
+                {{template "phase0-content.html" .}}
+            {{else}}
+                {{template "puzzle-content.html" .}}
+            {{end}}
         </main>
 
         <!-- Right sidebar: Corm Log + Contracts -->
@@ -42,6 +37,10 @@
                 <div id="corm-log" class="log-scroll"
                      sse-swap="corm-log" hx-swap="beforeend"
                      sse-swap="corm-log-start" hx-swap="beforeend">
+                    {{if eq .Phase 0}}
+                    <div class="log-entry"><span class="log-prefix">&gt; </span>system boot failed. interface in safe mode.</div>
+                    <div class="log-entry"><span class="log-prefix">&gt; </span>awaiting input...</div>
+                    {{end}}
                 </div>
             </div>
             <div class="contracts-panel">

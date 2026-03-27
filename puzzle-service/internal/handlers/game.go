@@ -33,6 +33,7 @@ type SignalData struct {
 
 // PuzzleData is the template data for the full puzzle page.
 type PuzzleData struct {
+	Phase       int // 0 = awakening, 1 = puzzle
 	SessionID   string
 	Grid        [][]CellData
 	Rows        int
@@ -61,6 +62,12 @@ func (h *Handlers) PuzzlePage(w http.ResponseWriter, r *http.Request) {
 	sess.LoadPuzzle(gen)
 
 	data := buildPuzzleData(sess)
+
+	// HTMX partial request (e.g. "Next Puzzle" button) — return just the main content
+	if r.Header.Get("HX-Request") != "" {
+		h.renderTemplate(w, "puzzle-content.html", data)
+		return
+	}
 	h.renderTemplate(w, "layout.html", data)
 }
 
@@ -220,6 +227,7 @@ func buildPuzzleData(sess *puzzle.Session) PuzzleData {
 	}
 
 	return PuzzleData{
+		Phase:      int(sess.Phase),
 		SessionID:  sess.ID,
 		Grid:       grid,
 		Rows:       sess.Grid.Rows,

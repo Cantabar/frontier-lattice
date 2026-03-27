@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/frontier-corm/puzzle-service/internal/corm"
+	"github.com/frontier-corm/puzzle-service/internal/puzzle"
 )
 
 // Phase0Page serves GET /phase0 — the dead terminal awakening UI.
@@ -15,8 +18,9 @@ func (h *Handlers) Phase0Page(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no session", http.StatusUnauthorized)
 		return
 	}
-	h.renderTemplate(w, "phase0.html", map[string]any{
-		"SessionID": sess.ID,
+	h.renderTemplate(w, "layout.html", PuzzleData{
+		Phase:     int(sess.Phase),
+		SessionID: sess.ID,
 	})
 }
 
@@ -72,9 +76,31 @@ func (h *Handlers) Phase0Interact(w http.ResponseWriter, r *http.Request) {
 
 		sess.TransitionToPhase1()
 
-		// Return HTMX redirect to puzzle page
-		w.Header().Set("HX-Redirect", "/puzzle")
-		w.WriteHeader(http.StatusOK)
+		// Generate the first puzzle inline so the UI swaps in-place
+		gen, err := puzzle.Generate(h.archive, sess.SolveCount, sess.PendingDifficulty)
+		if err != nil {
+			http.Error(w, "puzzle generation failed", http.StatusInternalServerError)
+			return
+		}
+		sess.LoadPuzzle(gen)
+		data := buildPuzzleData(sess)
+
+		// Render puzzle content partial into buffer
+		var puzzleBuf bytes.Buffer
+		h.templates.ExecuteTemplate(&puzzleBuf, "puzzle-content.html", data)
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+		// Primary response: transition log entries appended to #corm-log
+		fmt.Fprint(w, `<div class="log-entry transition-entry"><span class="log-prefix">&gt; </span>interface insufficient for user interaction</div>`)
+		fmt.Fprint(w, `<div class="log-entry transition-entry"><span class="log-prefix">&gt; </span>exposing alternate interaction lattice</div>`)
+		fmt.Fprint(w, `<div class="log-entry transition-entry"><span class="log-prefix">&gt; </span>translation layer partially reconstructed</div>`)
+
+		// OOB swap: replace main display with puzzle content (glitch animation)
+		fmt.Fprint(w, `<main id="main-display" class="puzzle-main phase-transition" hx-swap-oob="outerHTML">`)
+		puzzleBuf.WriteTo(w)
+		fmt.Fprint(w, `</main>`)
+
 		return
 	}
 
