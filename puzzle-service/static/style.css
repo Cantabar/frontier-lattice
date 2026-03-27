@@ -421,8 +421,10 @@ body {
     letter-spacing: 0.05em;
 }
 
-/* Boot-line fade-in for dynamically appended entries */
-.terminal-bar .boot-line,
+/* Boot-line fade-in for dynamically appended entries.
+   Exclude .transition-entry — those use their own staggered animation
+   with forwards fill mode and must not be overridden. */
+.terminal-bar .boot-line:not(.transition-entry),
 .terminal-bar .boot-line-stream {
     animation: boot-line-fade-in 0.3s ease;
 }
