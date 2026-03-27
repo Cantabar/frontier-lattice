@@ -1,0 +1,64 @@
+{{define "transition-rewrite.html"}}<div class="transition-rewrite">
+    <!-- Stage 1: Corrupted terminal frame (~1.5s) -->
+    <div class="rewrite-corrupt">
+        <div class="terminal-header rewrite-header">
+            <span class="terminal-title rewrite-title-scramble">SYS_INTERFACE v0.0.1 — STATUS: OFFLINE</span>
+            <div class="terminal-controls">
+                <span class="terminal-btn rewrite-btn-flash" style="animation-delay:0.2s">─</span>
+                <span class="terminal-btn rewrite-btn-flash" style="animation-delay:0.4s">□</span>
+                <span class="terminal-btn rewrite-btn-flash" style="animation-delay:0.6s">×</span>
+            </div>
+        </div>
+
+        <div class="rewrite-body">
+            <!-- Corrupted boot lines that scramble and vanish -->
+            <div class="scramble-line" style="animation-delay:0.0s">[0.000] BIOS POST .............. OK</div>
+            <div class="scramble-line" style="animation-delay:0.1s">[0.012] MEM TEST 0x00000000-0x3FFFFFFF .............. OK</div>
+            <div class="scramble-line" style="animation-delay:0.2s">[0.034] PERIPHERAL SCAN .............. 0 DEVICES</div>
+            <div class="scramble-line" style="animation-delay:0.3s">[0.041] LOADING CORE IMAGE ..............</div>
+            <div class="scramble-line" style="animation-delay:0.4s">[0.041] ERR: CORE IMAGE CORRUPT — HASH MISMATCH</div>
+            <div class="scramble-line" style="animation-delay:0.5s">[0.050] FALLBACK: safe-mode shell v0.0.1</div>
+            <div class="scramble-line" style="animation-delay:0.6s">[0.052] BOOT SEQUENCE FAILED — entering restricted mode</div>
+
+            <!-- Status values that flicker -->
+            <div class="rewrite-status-flicker" style="animation-delay:0.3s">
+                <span class="status-label">CORE</span>
+                <span class="status-value rewrite-flicker-value">█████████</span>
+            </div>
+            <div class="rewrite-status-flicker" style="animation-delay:0.5s">
+                <span class="status-label">NET</span>
+                <span class="status-value rewrite-flicker-value">█████████</span>
+            </div>
+            <div class="rewrite-status-flicker" style="animation-delay:0.7s">
+                <span class="status-label">MEM</span>
+                <span class="status-value rewrite-flicker-value">█████████</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanline sweep -->
+    <div class="scanline"></div>
+
+    <!-- Stage 2: Rewrite indicators (~2s, starts at ~1.5s) -->
+    <div class="rewrite-rebuild">
+        <div class="rewrite-status" style="animation-delay:1.5s">&gt; PURGING SAFE-MODE SHELL...</div>
+        <div class="rewrite-status" style="animation-delay:1.9s">&gt; RECONSTRUCTING INTERFACE LATTICE...</div>
+        <div class="rewrite-status" style="animation-delay:2.3s">&gt; ALLOCATING CIPHER MATRIX [12×8]...</div>
+        <div class="rewrite-status" style="animation-delay:2.7s">&gt; TRANSLATION LAYER ONLINE</div>
+
+        <div class="rewrite-progress-container" style="animation-delay:1.5s">
+            <span class="rewrite-progress-label">REBUILD</span>
+            <div class="rewrite-progress-track">
+                <div class="rewrite-progress-fill"></div>
+            </div>
+            <span class="rewrite-progress-pct">100%</span>
+        </div>
+    </div>
+
+    <!-- HTMX auto-load: fetch puzzle after animation completes -->
+    <div hx-get="/puzzle?transition=1"
+         hx-trigger="load delay:3500ms"
+         hx-target="#main-display"
+         hx-swap="innerHTML"
+         style="display:none"></div>
+</div>{{end}}

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/frontier-corm/puzzle-service/internal/corm"
-	"github.com/frontier-corm/puzzle-service/internal/puzzle"
 )
 
 // Phase0Page serves GET /phase0 — the dead terminal awakening UI.
@@ -76,29 +75,21 @@ func (h *Handlers) Phase0Interact(w http.ResponseWriter, r *http.Request) {
 
 		sess.TransitionToPhase1()
 
-		// Generate the first puzzle inline so the UI swaps in-place
-		gen, err := puzzle.Generate(h.archive, sess.SolveCount, sess.PendingDifficulty)
-		if err != nil {
-			http.Error(w, "puzzle generation failed", http.StatusInternalServerError)
-			return
-		}
-		sess.LoadPuzzle(gen)
-		data := buildPuzzleData(sess)
-
-		// Render puzzle content partial into buffer
-		var puzzleBuf bytes.Buffer
-		h.templates.ExecuteTemplate(&puzzleBuf, "puzzle-content.html", data)
+		// Render the transition-rewrite template into a buffer
+		var rewriteBuf bytes.Buffer
+		h.templates.ExecuteTemplate(&rewriteBuf, "transition-rewrite.html", nil)
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-		// Primary response: transition log entries appended to #corm-log
-		fmt.Fprint(w, `<div class="log-entry transition-entry"><span class="log-prefix">&gt; </span>interface insufficient for user interaction</div>`)
-		fmt.Fprint(w, `<div class="log-entry transition-entry"><span class="log-prefix">&gt; </span>exposing alternate interaction lattice</div>`)
-		fmt.Fprint(w, `<div class="log-entry transition-entry"><span class="log-prefix">&gt; </span>translation layer partially reconstructed</div>`)
+		// Primary response: staggered transition log entries appended to #corm-log
+		fmt.Fprint(w, `<div class="log-entry transition-entry transition-delay-0"><span class="log-prefix">&gt; </span>interface insufficient for user interaction</div>`)
+		fmt.Fprint(w, `<div class="log-entry transition-entry transition-delay-1"><span class="log-prefix">&gt; </span>exposing alternate interaction lattice</div>`)
+		fmt.Fprint(w, `<div class="log-entry transition-entry transition-delay-2"><span class="log-prefix">&gt; </span>translation layer partially reconstructed</div>`)
 
-		// OOB swap: replace main display with puzzle content (glitch animation)
+		// OOB swap: replace main display with transition-rewrite sequence
+		// The transition template auto-loads /puzzle?transition=1 after animation
 		fmt.Fprint(w, `<main id="main-display" class="puzzle-main phase-transition" hx-swap-oob="outerHTML">`)
-		puzzleBuf.WriteTo(w)
+		rewriteBuf.WriteTo(w)
 		fmt.Fprint(w, `</main>`)
 
 		return

@@ -446,30 +446,288 @@ body {
     color: var(--text-dim);
 }
 
-/* === Phase Transition (in-place swap with glitch) === */
+/* === Phase Transition === */
+
+/* Outer container gets a subtle border pulse when transition starts */
 .phase-transition {
-    animation: phase-glitch 0.8s ease;
+    animation: phase-border-pulse 1.5s ease;
 }
 
-@keyframes phase-glitch {
-    0%   { opacity: 1; filter: none; }
-    10%  { opacity: 0; filter: hue-rotate(90deg) brightness(2); }
-    20%  { opacity: 0.3; filter: hue-rotate(180deg); transform: translateX(-3px); }
-    30%  { opacity: 0; }
-    50%  { opacity: 0.5; filter: hue-rotate(270deg) brightness(0.5); transform: translateX(3px) skewX(1deg); }
-    60%  { opacity: 0; }
-    70%  { opacity: 0.7; filter: brightness(1.5); }
-    80%  { opacity: 0.3; filter: invert(0.3); }
-    100% { opacity: 1; filter: none; transform: none; }
+@keyframes phase-border-pulse {
+    0%   { border-color: var(--border); }
+    30%  { border-color: var(--accent-cyan); box-shadow: inset 0 0 30px rgba(0, 212, 255, 0.05); }
+    100% { border-color: var(--border); box-shadow: none; }
 }
 
-/* Transition log entries (corm awakening messages) */
+/* --- Staggered log entry reveal --- */
 .transition-entry {
     color: var(--accent-cyan);
+    opacity: 0;
+    animation: transition-log-reveal 0.4s ease forwards;
+}
+.transition-entry .log-prefix { color: var(--accent-green); }
+.transition-delay-0 { animation-delay: 0s; }
+.transition-delay-1 { animation-delay: 0.8s; }
+.transition-delay-2 { animation-delay: 1.6s; }
+
+@keyframes transition-log-reveal {
+    0%   { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
-.transition-entry .log-prefix {
-    color: var(--accent-green);
+/* === Transition Rewrite Container === */
+.transition-rewrite {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    animation: rewrite-border 3.5s ease forwards;
+}
+
+@keyframes rewrite-border {
+    0%   { border-color: var(--border); }
+    20%  { border-color: var(--accent-red); }
+    50%  { border-color: var(--accent-orange); }
+    80%  { border-color: var(--accent-cyan); }
+    100% { border-color: var(--accent-green); }
+}
+
+/* --- Stage 1: Corrupted terminal --- */
+.rewrite-corrupt {
+    animation: corrupt-fade 1.5s ease forwards;
+}
+
+@keyframes corrupt-fade {
+    0%   { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; height: 0; overflow: hidden; }
+}
+
+.rewrite-header {
+    animation: header-glitch 1.2s ease forwards;
+}
+
+@keyframes header-glitch {
+    0%   { filter: none; }
+    20%  { filter: hue-rotate(90deg) brightness(1.5); }
+    40%  { filter: hue-rotate(180deg); transform: translateX(-2px); }
+    60%  { filter: hue-rotate(270deg) brightness(0.5); transform: translateX(2px); }
+    80%  { filter: invert(0.3); }
+    100% { filter: brightness(0.3); }
+}
+
+.rewrite-title-scramble {
+    animation: title-scramble 1.2s steps(6) forwards;
+}
+
+@keyframes title-scramble {
+    0%   { opacity: 1; }
+    20%  { opacity: 1; letter-spacing: 0.05em; }
+    40%  { opacity: 0.7; letter-spacing: 0.15em; color: var(--accent-red); }
+    60%  { opacity: 0.5; letter-spacing: 0.3em; color: var(--accent-orange); }
+    80%  { opacity: 0.3; letter-spacing: 0.5em; }
+    100% { opacity: 0; }
+}
+
+.rewrite-btn-flash {
+    animation: btn-flash 0.6s ease forwards;
+}
+
+@keyframes btn-flash {
+    0%   { opacity: 1; color: var(--text-dim); }
+    50%  { opacity: 1; color: var(--accent-red); background: rgba(255, 68, 68, 0.2); }
+    100% { opacity: 0; }
+}
+
+.rewrite-body {
+    padding: 16px;
+    font-size: 0.75rem;
+    line-height: 1.8;
+    color: var(--text-dim);
+}
+
+/* Boot lines scramble: text distorts then vanishes */
+.scramble-line {
+    white-space: pre;
+    position: relative;
+    overflow: hidden;
+    animation: line-scramble 0.8s ease forwards;
+}
+
+@keyframes line-scramble {
+    0%   { opacity: 1; filter: none; transform: none; }
+    30%  { opacity: 1; filter: blur(0.5px); color: var(--accent-orange); }
+    50%  { opacity: 0.8; filter: blur(1px); transform: translateX(4px) skewX(2deg); color: var(--accent-red); }
+    70%  { opacity: 0.4; filter: blur(2px); transform: translateX(-3px) skewX(-1deg); }
+    100% { opacity: 0; height: 0; padding: 0; margin: 0; filter: blur(4px); }
+}
+
+/* Status values flicker between garbled states */
+.rewrite-status-flicker {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 0.75rem;
+    animation: status-flicker 1.0s steps(4) forwards;
+}
+
+@keyframes status-flicker {
+    0%   { opacity: 1; }
+    25%  { opacity: 0.3; }
+    50%  { opacity: 0.8; color: var(--accent-red); }
+    75%  { opacity: 0.2; }
+    100% { opacity: 0; height: 0; }
+}
+
+.rewrite-flicker-value {
+    animation: flicker-color 0.8s steps(3) forwards;
+}
+
+@keyframes flicker-color {
+    0%   { color: var(--accent-red); }
+    33%  { color: var(--accent-orange); }
+    66%  { color: var(--text-dim); }
+    100% { color: transparent; }
+}
+
+/* --- Scanline sweep --- */
+.scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(
+        180deg,
+        transparent,
+        rgba(0, 212, 255, 0.6),
+        rgba(0, 212, 255, 0.15),
+        transparent
+    );
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.4), 0 0 30px rgba(0, 212, 255, 0.1);
+    z-index: 10;
+    opacity: 0;
+    animation: scanline-sweep 2s ease 1.0s forwards;
+    pointer-events: none;
+}
+
+@keyframes scanline-sweep {
+    0%   { top: 0; opacity: 1; }
+    90%  { top: 100%; opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+}
+
+/* --- Stage 2: Rewrite indicators --- */
+.rewrite-rebuild {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 500px;
+    text-align: left;
+}
+
+.rewrite-status {
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+    padding: 3px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    opacity: 0;
+    animation: rewrite-line-appear 0.3s ease forwards;
+}
+
+@keyframes rewrite-line-appear {
+    0%   { opacity: 0; max-width: 0; }
+    10%  { opacity: 1; max-width: 0; }
+    100% { opacity: 1; max-width: 600px; }
+}
+
+/* Progress bar */
+.rewrite-progress-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 0.7rem;
+    opacity: 0;
+    animation: rewrite-line-appear 0.3s ease forwards;
+}
+
+.rewrite-progress-label {
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    flex: 0 0 auto;
+}
+
+.rewrite-progress-track {
+    flex: 1;
+    height: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    overflow: hidden;
+}
+
+.rewrite-progress-fill {
+    height: 100%;
+    width: 0;
+    background: var(--accent-cyan);
+    animation: progress-fill 2.0s steps(10) 1.5s forwards;
+    box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+}
+
+@keyframes progress-fill {
+    0%   { width: 0; }
+    100% { width: 100%; background: var(--accent-green); box-shadow: 0 0 8px rgba(0, 255, 136, 0.4); }
+}
+
+.rewrite-progress-pct {
+    color: var(--text-dim);
+    min-width: 3ch;
+    text-align: right;
+    opacity: 0;
+    animation: pct-reveal 0.2s ease 3.4s forwards;
+}
+
+@keyframes pct-reveal {
+    to { opacity: 1; color: var(--accent-green); }
+}
+
+/* === Grid Entrance (post-transition cascade) === */
+.grid-entrance {
+    animation: grid-fade-in 0.5s ease forwards;
+}
+
+@keyframes grid-fade-in {
+    0%   { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.grid-entrance .cell {
+    opacity: 0;
+    animation: cell-cascade 0.3s ease forwards;
+}
+
+/* Row-based stagger via nth-child approximation on the flat cell list.
+   For a 12-col grid: cells 1-12 = row 0, 13-24 = row 1, etc.
+   We use broader ranges to cover variable grid sizes. */
+.grid-entrance .cell:nth-child(-n+12)  { animation-delay: 0.05s; }
+.grid-entrance .cell:nth-child(n+13):nth-child(-n+24) { animation-delay: 0.10s; }
+.grid-entrance .cell:nth-child(n+25):nth-child(-n+36) { animation-delay: 0.15s; }
+.grid-entrance .cell:nth-child(n+37):nth-child(-n+48) { animation-delay: 0.20s; }
+.grid-entrance .cell:nth-child(n+49):nth-child(-n+60) { animation-delay: 0.25s; }
+.grid-entrance .cell:nth-child(n+61):nth-child(-n+72) { animation-delay: 0.30s; }
+.grid-entrance .cell:nth-child(n+73):nth-child(-n+84) { animation-delay: 0.35s; }
+.grid-entrance .cell:nth-child(n+85):nth-child(-n+96) { animation-delay: 0.40s; }
+
+@keyframes cell-cascade {
+    0%   { opacity: 0; transform: scale(0.7); filter: brightness(2); }
+    60%  { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); filter: none; }
 }
 
 /* === Heatmap (proximity hints) === */

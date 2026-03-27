@@ -33,16 +33,17 @@ type SignalData struct {
 
 // PuzzleData is the template data for the full puzzle page.
 type PuzzleData struct {
-	Phase       int // 0 = awakening, 1 = puzzle
-	SessionID   string
-	Grid        [][]CellData
-	Rows        int
-	Cols        int
-	Stability   int
-	Corruption  int
-	SolveCount  int
-	Tier        int
-	SignalHint  bool // whether signal meter should be visible
+	Phase        int // 0 = awakening, 1 = puzzle
+	SessionID    string
+	Grid         [][]CellData
+	Rows         int
+	Cols         int
+	Stability    int
+	Corruption   int
+	SolveCount   int
+	Tier         int
+	SignalHint   bool // whether signal meter should be visible
+	ShowEntrance bool // true when loaded via phase transition auto-load
 }
 
 // PuzzlePage serves GET /puzzle — generates and renders a new puzzle.
@@ -63,7 +64,12 @@ func (h *Handlers) PuzzlePage(w http.ResponseWriter, r *http.Request) {
 
 	data := buildPuzzleData(sess)
 
-	// HTMX partial request (e.g. "Next Puzzle" button) — return just the main content
+	// Entrance animation when arriving from the phase transition sequence
+	if r.URL.Query().Get("transition") == "1" {
+		data.ShowEntrance = true
+	}
+
+	// HTMX partial request (e.g. "Next Puzzle" button or transition auto-load) — return just the main content
 	if r.Header.Get("HX-Request") != "" {
 		h.renderTemplate(w, "puzzle-content.html", data)
 		return
