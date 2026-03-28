@@ -3,12 +3,23 @@ package reasoning
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 
+	"github.com/frontier-corm/corm-brain/internal/llm"
 	"github.com/frontier-corm/corm-brain/internal/transport"
 	"github.com/frontier-corm/corm-brain/internal/types"
 )
+
+// guidanceResult holds the context needed to generate a directional narration
+// immediately after a guide_cell action is sent.
+type guidanceResult struct {
+	SessionID string
+	HintType  string
+	Direction string // qualitative direction description for the LLM
+}
 
 // handlePhase1Effects handles side effects for Phase 1 (cipher puzzles).
 func handlePhase1Effects(ctx context.Context, h *Handler, environment, cormID string, sender *transport.ActionSender, traits *types.CormTraits, evt types.CormEvent) {
@@ -48,8 +59,11 @@ func handlePhase1Effects(ctx context.Context, h *Handler, environment, cormID st
 		// Optionally evaluate boost targeting
 		evaluateBoost(ctx, h, environment, cormID, sender, traits, evt)
 
-		// Evaluate whether to set up a guided hint cell
-		evaluateGuidedCell(ctx, sender, traits, evt)
+		// Evaluate whether to set up a guided hint cell.
+		// If guidance is sent, immediately stream a directional narration.
+		if gr := evaluateGuidedCell(ctx, sender, traits, evt); gr != nil {
+			streamGuidanceMessage(ctx, h, environment, cormID, sender, traits, evt, gr)
+		}
 	}
 }
 
@@ -112,10 +126,9 @@ func evaluateBoost(ctx context.Context, h *Handler, environment, cormID string, 
 }
 
 // evaluateGuidedCell decides whether to send a guide_cell action.
-// When no guidance is active, probabilistically picks a random cell near
-// the target word and asks the puzzle service to set it as the guided target.
-// The corm will then narrate directions to this cell via its log stream.
-func evaluateGuidedCell(ctx context.Context, sender *transport.ActionSender, traits *types.CormTraits, evt types.CormEvent) {
+// Returns a guidanceResult if guidance was sent (so the caller can stream
+// an immediate directional narration), or nil if no guidance was triggered.
+func evaluateGuidedCell(ctx context.Context, sender *transport.ActionSender, traits *types.CormTraits, evt types.CormEvent) *guidanceResult {
 	var p map[string]interface{}
 	if len(evt.Payload) > 0 {
 		json.Unmarshal(evt.Payload, &p)
@@ -123,17 +136,17 @@ func evaluateGuidedCell(ctx context.Context, sender *transport.ActionSender, tra
 
 	// Don't set a new guidance target if one is already active
 	if types.BoolField(p, "guided_cell_active") {
-		return
+		return nil
 	}
 
 	// Don't guide after traps (let the trap reaction play out)
 	if types.BoolField(p, "is_trap") {
-		return
+		return nil
 	}
 
 	// Don't guide if the player just reached a guided cell (let the reward land)
 	if types.BoolField(p, "guided_cell_reached") {
-		return
+		return nil
 	}
 
 	// Probabilistic: ~25% chance per decrypt to start guidance.
@@ -143,18 +156,15 @@ func evaluateGuidedCell(ctx context.Context, sender *transport.ActionSender, tra
 		chance = 5
 	}
 	if rand.Intn(100) >= chance {
-		return
+		return nil
 	}
 
 	// Pick a random cell near the player's last click.
-	// We offset from the current cell by a random amount to create a
-	// nearby-but-not-obvious target. The puzzle service validates bounds.
 	currentRow := types.IntField(p, "row")
 	currentCol := types.IntField(p, "col")
 	distance := types.IntField(p, "distance")
 
 	// Offset toward the target word: bias direction based on distance.
-	// Larger distance = larger offset range. Clamp to reasonable grid bounds.
 	offsetRange := 2
 	if distance > 8 {
 		offsetRange = 4
@@ -189,5 +199,121 @@ func evaluateGuidedCell(ctx context.Context, sender *transport.ActionSender, tra
 		HintType: hintType,
 	})
 
-	log.Printf("phase1: sent guide_cell (%s) for session %s", hintType, evt.SessionID)
+	// Compute qualitative direction from player's current cell to the guided cell.
+	direction := qualitativeDirection(currentRow, currentCol, targetRow, targetCol)
+
+	log.Printf("phase1: sent guide_cell (%s) for session %s — %s", hintType, evt.SessionID, direction)
+
+	return &guidanceResult{
+		SessionID: evt.SessionID,
+		HintType:  hintType,
+		Direction: direction,
+	}
+}
+
+// qualitativeDirection returns a vague directional description from (fromR,fromC)
+// to (toR,toC) without exposing any numbers.
+func qualitativeDirection(fromR, fromC, toR, toC int) string {
+	dr := toR - fromR
+	dc := toC - fromC
+
+	// Vertical component
+	var vert string
+	switch {
+	case dr <= -3:
+		vert = "well above"
+	case dr <= -1:
+		vert = "slightly above"
+	case dr >= 3:
+		vert = "well below"
+	case dr >= 1:
+		vert = "slightly below"
+	}
+
+	// Horizontal component
+	var horiz string
+	switch {
+	case dc <= -3:
+		horiz = "far to the left of"
+	case dc <= -1:
+		horiz = "slightly left of"
+	case dc >= 3:
+		horiz = "far to the right of"
+	case dc >= 1:
+		horiz = "slightly right of"
+	}
+
+	if vert == "" && horiz == "" {
+		return "very near your last position"
+	}
+	if vert != "" && horiz != "" {
+		return vert + " and " + horiz + " where you just were"
+	}
+	if vert != "" {
+		return vert + " where you just were"
+	}
+	return horiz + " where you just were"
+}
+
+// streamGuidanceMessage triggers a dedicated LLM call to produce the
+// directional narration for a newly-set guided cell. The message is
+// streamed to the player immediately so they know where to look.
+func streamGuidanceMessage(ctx context.Context, h *Handler, environment, cormID string, sender *transport.ActionSender, traits *types.CormTraits, evt types.CormEvent, gr *guidanceResult) {
+	// Build a focused prompt: system identity + guidance-specific instruction.
+	prompt := llm.BuildGuidancePrompt(traits, gr.Direction, gr.HintType)
+
+	task := types.Task{
+		CormID:      cormID,
+		Phase:       traits.Phase,
+		EventType:   types.EventDecrypt,
+		Corruption:  traits.Corruption,
+		Environment: environment,
+	}
+
+	entryID := fmt.Sprintf("guide_%s_%d", safePrefix(cormID, 8), evt.Seq)
+
+	tokenCh, errCh := h.llm.Complete(ctx, task, prompt)
+
+	var rawTokens []string
+	for token := range tokenCh {
+		processed := llm.PostProcessToken(token, traits.Corruption)
+		if processed != "" {
+			rawTokens = append(rawTokens, processed)
+		}
+	}
+
+	if err := <-errCh; err != nil {
+		log.Printf("guidance llm error for corm %s: %v", cormID, err)
+		return
+	}
+
+	fullResponse := llm.SanitizeResponse(strings.Join(rawTokens, ""))
+	if !llm.IsValidResponse(fullResponse) {
+		log.Printf("suppressed invalid guidance response for %s: %q", cormID, fullResponse)
+		return
+	}
+
+	// Stream the guidance narration to the player.
+	sender.SendPayload(ctx, types.ActionLogStreamStart, gr.SessionID, types.LogStreamStartPayload{
+		EntryID: entryID,
+	})
+	sender.SendPayload(ctx, types.ActionLogStreamDelta, gr.SessionID, types.LogStreamDeltaPayload{
+		EntryID: entryID,
+		Text:    fullResponse,
+	})
+	sender.SendPayload(ctx, types.ActionLogStreamEnd, gr.SessionID, types.LogStreamEndPayload{
+		EntryID: entryID,
+	})
+
+	// Log for conversational continuity
+	responsePayload, _ := json.Marshal(map[string]string{"text": fullResponse, "entry_id": entryID})
+	h.db.InsertResponse(ctx, environment, &types.CormResponse{
+		CormID:     cormID,
+		SessionID:  gr.SessionID,
+		ActionType: types.ActionLog,
+		Payload:    responsePayload,
+	})
+
+	h.recordResponse(environment, gr.SessionID)
+	log.Printf("phase1: streamed guidance message for session %s", gr.SessionID)
 }
