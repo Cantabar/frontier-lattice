@@ -169,6 +169,105 @@
         if (input) input.classList.remove('terminal-input-line--hidden');
     });
 
+    // === Collapsible analysis sidebar ===
+    (function() {
+        var SIDEBAR_KEY = 'analysis-sidebar-collapsed';
+        var PANEL_KEY = 'analysis-panels-collapsed';
+
+        function applyCollapseState() {
+            var sidebar = document.getElementById('cipher-analysis');
+            if (!sidebar) return;
+
+            // Sidebar-level
+            if (sessionStorage.getItem(SIDEBAR_KEY) === '1') {
+                sidebar.classList.add('right-sidebar--collapsed');
+            } else {
+                sidebar.classList.remove('right-sidebar--collapsed');
+            }
+
+            // Per-panel
+            var collapsed;
+            try { collapsed = JSON.parse(sessionStorage.getItem(PANEL_KEY) || '{}'); } catch(e) { collapsed = {}; }
+            sidebar.querySelectorAll('.analysis-panel[data-panel]').forEach(function(panel) {
+                var key = panel.getAttribute('data-panel');
+                if (collapsed[key]) {
+                    panel.classList.add('analysis-panel--collapsed');
+                } else {
+                    panel.classList.remove('analysis-panel--collapsed');
+                }
+            });
+        }
+
+        function bindSidebarToggle() {
+            var sidebar = document.getElementById('cipher-analysis');
+            if (!sidebar) return;
+            var btn = sidebar.querySelector('.sidebar-toggle');
+            if (!btn || btn._bound) return;
+            btn._bound = true;
+            btn.addEventListener('click', function() {
+                var isCollapsed = sidebar.classList.toggle('right-sidebar--collapsed');
+                sessionStorage.setItem(SIDEBAR_KEY, isCollapsed ? '1' : '0');
+            });
+        }
+
+        function bindPanelToggles() {
+            var sidebar = document.getElementById('cipher-analysis');
+            if (!sidebar) return;
+            sidebar.querySelectorAll('.analysis-panel[data-panel] .panel-title').forEach(function(title) {
+                if (title._bound) return;
+                title._bound = true;
+                title.addEventListener('click', function() {
+                    var panel = title.closest('.analysis-panel');
+                    var isCollapsed = panel.classList.toggle('analysis-panel--collapsed');
+                    var key = panel.getAttribute('data-panel');
+                    var state;
+                    try { state = JSON.parse(sessionStorage.getItem(PANEL_KEY) || '{}'); } catch(e) { state = {}; }
+                    state[key] = isCollapsed;
+                    sessionStorage.setItem(PANEL_KEY, JSON.stringify(state));
+                });
+            });
+        }
+
+        // Initial bind
+        applyCollapseState();
+        bindSidebarToggle();
+        bindPanelToggles();
+
+        // Re-apply after OOB swaps replace #cipher-analysis
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            if (e.detail && e.detail.target && e.detail.target.id === 'cipher-analysis') {
+                applyCollapseState();
+                bindSidebarToggle();
+                bindPanelToggles();
+            }
+            // Also handle swaps that contain OOB content targeting the sidebar
+            var sidebar = document.getElementById('cipher-analysis');
+            if (sidebar && !sidebar.querySelector('.sidebar-toggle._bound')) {
+                applyCollapseState();
+                bindSidebarToggle();
+                bindPanelToggles();
+            }
+        });
+
+        // Fallback: MutationObserver to catch OOB replacements
+        var container = document.querySelector('.app-layout-top');
+        if (container) {
+            new MutationObserver(function(mutations) {
+                for (var i = 0; i < mutations.length; i++) {
+                    for (var j = 0; j < mutations[i].addedNodes.length; j++) {
+                        var node = mutations[i].addedNodes[j];
+                        if (node.id === 'cipher-analysis' || (node.querySelector && node.querySelector('#cipher-analysis'))) {
+                            applyCollapseState();
+                            bindSidebarToggle();
+                            bindPanelToggles();
+                            return;
+                        }
+                    }
+                }
+            }).observe(container, { childList: true, subtree: true });
+        }
+    })();
+
     // Listen for on-chain state updates from the parent React app.
     // Reveals meters on first non-zero value.
     window.addEventListener("message", function(e) {

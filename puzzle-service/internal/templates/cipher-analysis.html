@@ -1,47 +1,53 @@
 {{define "cipher-analysis.html"}}<aside id="cipher-analysis" class="right-sidebar"{{if .SwapOOB}} hx-swap-oob="outerHTML:#cipher-analysis"{{end}}>
-    <section class="analysis-panel">
-        <h3 class="panel-title">&gt; substitution_log</h3>
-        <div class="subst-table">
-            {{if .Substitutions}}
-                {{range .Substitutions}}
-                <div class="subst-row">
-                    <span class="subst-char">{{.Encrypted}}</span>
-                    <span class="subst-arrow">→</span>
-                    <span class="subst-char{{if .IsAlpha}} subst-char--alpha{{end}}">{{.Plaintext}}</span>
+    <button class="sidebar-toggle" aria-label="Toggle analysis sidebar">
+        <span class="sidebar-toggle-arrow">◀</span>
+        <span class="sidebar-toggle-label">A<br>N<br>A<br>L<br>Y<br>S<br>I<br>S</span>
+    </button>
+    <div class="sidebar-content">
+        <section class="analysis-panel" data-panel="substitution">
+            <h3 class="panel-title">&gt; substitution_log</h3>
+            <div class="panel-body subst-table">
+                {{if .Substitutions}}
+                    {{range .Substitutions}}
+                    <div class="subst-row">
+                        <span class="subst-char">{{.Encrypted}}</span>
+                        <span class="subst-arrow">→</span>
+                        <span class="subst-char{{if .IsAlpha}} subst-char--alpha{{end}}">{{.Plaintext}}</span>
+                    </div>
+                    {{end}}
+                {{else}}
+                    <div class="analysis-empty">awaiting decrypts</div>
+                {{end}}
+            </div>
+        </section>
+        <section class="analysis-panel" data-panel="stats">
+            <h3 class="panel-title">&gt; decryption_stats</h3>
+            <div class="panel-body stats-block">
+                <div class="stats-row">
+                    <span class="stats-label">SOLVED</span>
+                    <span class="stats-value">{{.SolveCount}}</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">DECRYPTED</span>
+                    <span class="stats-value">{{.DecryptedCount}}/{{.TotalCells}}</span>
+                </div>
+            </div>
+        </section>
+        {{if .ShowFreq}}
+        <section class="analysis-panel" data-panel="freq">
+            <h3 class="panel-title">&gt; freq_analysis</h3>
+            <div class="panel-body freq-list">
+                {{range .FreqEntries}}
+                <div class="freq-row">
+                    <span class="freq-label{{if .IsAlpha}} freq-label--alpha{{end}}">{{.Char}}</span>
+                    <div class="freq-track">
+                        <div class="freq-fill" style="width: {{.BarWidth}}%"></div>
+                    </div>
+                    <span class="freq-count">{{.Count}}</span>
                 </div>
                 {{end}}
-            {{else}}
-                <div class="analysis-empty">awaiting decrypts</div>
-            {{end}}
-        </div>
-    </section>
-    <section class="analysis-panel">
-        <h3 class="panel-title">&gt; decryption_stats</h3>
-        <div class="stats-block">
-            <div class="stats-row">
-                <span class="stats-label">SOLVED</span>
-                <span class="stats-value">{{.SolveCount}}</span>
             </div>
-            <div class="stats-row">
-                <span class="stats-label">DECRYPTED</span>
-                <span class="stats-value">{{.DecryptedCount}}/{{.TotalCells}}</span>
-            </div>
-        </div>
-    </section>
-    {{if .ShowFreq}}
-    <section class="analysis-panel">
-        <h3 class="panel-title">&gt; freq_analysis</h3>
-        <div class="freq-list">
-            {{range .FreqEntries}}
-            <div class="freq-row">
-                <span class="freq-label{{if .IsAlpha}} freq-label--alpha{{end}}">{{.Char}}</span>
-                <div class="freq-track">
-                    <div class="freq-fill" style="width: {{.BarWidth}}%"></div>
-                </div>
-                <span class="freq-count">{{.Count}}</span>
-            </div>
-            {{end}}
-        </div>
-    </section>
-    {{end}}
+        </section>
+        {{end}}
+    </div>
 </aside>{{end}}
