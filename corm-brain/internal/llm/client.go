@@ -100,6 +100,10 @@ func (c *Client) Complete(ctx context.Context, task types.Task, prompt []types.M
 			MaxTokens:   maxTokens,
 			Temperature: 0.7 + task.Corruption*0.005,
 			Stream:      true,
+			// Disable thinking — corm responses are short in-character log
+			// fragments. With reasoning_parser enabled server-side, the model
+			// consumes all tokens on <think> and produces no content tokens.
+			ChatTemplateKwargs: &chatTemplateKwargs{EnableThinking: false},
 		}
 
 		body, err := json.Marshal(req)

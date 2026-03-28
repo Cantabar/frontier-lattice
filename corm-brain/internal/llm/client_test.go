@@ -300,12 +300,10 @@ func TestComplete_EmptyStream(t *testing.T) {
 
 func TestComplete_ModelRouting(t *testing.T) {
 	// Phase 0 task should hit the fast URL (Nano).
-	var receivedModel string
+	var receivedReq chatCompletionRequest
 	fastSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var req chatCompletionRequest
 		b, _ := io.ReadAll(r.Body)
-		json.Unmarshal(b, &req)
-		receivedModel = req.Model
+		json.Unmarshal(b, &receivedReq)
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprint(w, "data: [DONE]\n\n")
 	}))
@@ -322,7 +320,10 @@ func TestComplete_ModelRouting(t *testing.T) {
 	}
 	<-errc
 
-	if receivedModel != "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4" {
-		t.Errorf("got model %q, want Nano", receivedModel)
+	if receivedReq.Model != "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-NVFP4" {
+		t.Errorf("got model %q, want Nano", receivedReq.Model)
+	}
+	if receivedReq.ChatTemplateKwargs == nil || receivedReq.ChatTemplateKwargs.EnableThinking != false {
+		t.Error("streaming requests should disable thinking")
 	}
 }
