@@ -196,6 +196,27 @@ func TestDecoysAtTier1WithMod(t *testing.T) {
 	}
 }
 
+func TestAllCellsEncryptDifferently(t *testing.T) {
+	archive := loadTestArchive(t)
+
+	for i := 0; i < 5; i++ {
+		pz, err := puzzle.Generate(archive, 0, nil)
+		if err != nil {
+			t.Fatalf("Generate failed: %v", err)
+		}
+
+		for r := 0; r < pz.Grid.Rows; r++ {
+			for c := 0; c < pz.Grid.Cols; c++ {
+				cell := &pz.Grid.Cells[r][c]
+				if cell.Encrypted == cell.Plaintext {
+					t.Errorf("cell (%d,%d) encrypted==plaintext %q (type=%d, iteration=%d)",
+						r, c, cell.Plaintext, cell.Type, i)
+				}
+			}
+		}
+	}
+}
+
 func TestLargeGridGeneration(t *testing.T) {
 	archive := loadTestArchive(t)
 

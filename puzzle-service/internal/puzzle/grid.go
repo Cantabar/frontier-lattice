@@ -53,8 +53,10 @@ func (g *Grid) InBounds(row, col int) bool {
 	return row >= 0 && row < g.Rows && col >= 0 && col < g.Cols
 }
 
-// NoiseChars are non-alphabet ASCII characters used to fill the grid.
-var NoiseChars = []rune{'#', '@', '%', '&', '*', '│', '─', '░', '▓', '█', '◆', '◇', '○', '●', '□', '■', '△', '▽', '◈', '╳'}
+// NoiseChars are non-alphabet printable ASCII characters used to fill the grid.
+// All must be in the cipher range 0x21–0x7E so encryption produces a visible change.
+var NoiseChars = []rune{'#', '@', '%', '&', '*', '~', '^', '|', '<', '>', '{', '}', '[', ']', '/', '!', '?', ':', ';', '='}
 
-// TrapSymbols are special characters used for trap nodes.
-var TrapSymbols = []rune{'¤', '§', '¶', '†', '‡'}
+// TrapSymbols are printable ASCII characters used for trap nodes.
+// All must be in the cipher range 0x21–0x7E.
+var TrapSymbols = []rune{'$', '+', '`', '\\', '_'}

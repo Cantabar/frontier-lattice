@@ -62,6 +62,47 @@ func TestEncryptChangesRune(t *testing.T) {
 	}
 }
 
+func TestNoiseCharsRoundTrip(t *testing.T) {
+	params := puzzle.NewCipherParams(puzzle.TierCaesar, 8)
+	for _, r := range puzzle.NoiseChars {
+		encrypted := params.Encrypt(r, 0, 0)
+		decrypted := params.Decrypt(encrypted, 0, 0)
+		if decrypted != r {
+			t.Errorf("NoiseChar round-trip failed for %q: encrypted=%q decrypted=%q", r, encrypted, decrypted)
+		}
+		if encrypted == r {
+			t.Errorf("NoiseChar %q was not changed by encryption (shift=%d)", r, params.Shift)
+		}
+	}
+}
+
+func TestTrapSymbolsRoundTrip(t *testing.T) {
+	params := puzzle.NewCipherParams(puzzle.TierCaesar, 8)
+	for _, r := range puzzle.TrapSymbols {
+		encrypted := params.Encrypt(r, 0, 0)
+		decrypted := params.Decrypt(encrypted, 0, 0)
+		if decrypted != r {
+			t.Errorf("TrapSymbol round-trip failed for %q: encrypted=%q decrypted=%q", r, encrypted, decrypted)
+		}
+		if encrypted == r {
+			t.Errorf("TrapSymbol %q was not changed by encryption (shift=%d)", r, params.Shift)
+		}
+	}
+}
+
+func TestAllCharPoolsInCipherRange(t *testing.T) {
+	for _, r := range puzzle.NoiseChars {
+		if r < 0x21 || r > 0x7E {
+			t.Errorf("NoiseChar %q (U+%04X) is outside cipher range 0x21-0x7E", r, r)
+		}
+	}
+	for _, r := range puzzle.TrapSymbols {
+		if r < 0x21 || r > 0x7E {
+			t.Errorf("TrapSymbol %q (U+%04X) is outside cipher range 0x21-0x7E", r, r)
+		}
+	}
+}
+
 func TestTierForSolveCount(t *testing.T) {
 	tests := []struct {
 		solveCount int
