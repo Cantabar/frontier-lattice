@@ -446,8 +446,8 @@ body {
     line-height: 1.8;
     color: var(--text-dim);
     padding: 0 12px;
-    padding-left: calc(12px + 2ch);
-    text-indent: -2ch;
+    padding-left: calc(12px + 6ch);
+    text-indent: -6ch;
 }
 
 .corm-typing::after {
@@ -898,8 +898,13 @@ body {
     color: var(--accent-cyan);
 }
 
+.terminal-output .boot-line--corm {
+    padding-left: 6ch;
+    text-indent: -6ch;
+}
+
 .boot-line--corm::before {
-    content: '> ';
+    content: '[???] ';
 }
 
 /* === Terminal Input Line === */
