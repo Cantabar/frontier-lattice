@@ -65,11 +65,17 @@ func (e CormEvent) Phase1Significance() int {
 
 	switch e.EventType {
 	case EventDecrypt:
+		if BoolField(p, "guided_cell_reached") {
+			return 85 // player found the AI's guided cell
+		}
 		if BoolField(p, "is_trap") {
 			return 80
 		}
 		if BoolField(p, "is_word") {
 			return 70
+		}
+		if BoolField(p, "guided_cell_active") {
+			return 30 // guidance active but not reached — mild interest
 		}
 		return 5 // routine decrypt — suppress
 
@@ -142,6 +148,7 @@ const (
 	ActionContractUpdated = "contract_updated"
 	ActionHintToggle      = "hint_toggle"
 	ActionHintCell        = "hint_cell"
+	ActionGuideCell       = "guide_cell"
 )
 
 // --- Action Payloads ---
@@ -207,6 +214,13 @@ type HintTogglePayload struct {
 type HintCellPayload struct {
 	Cells    []CellRef `json:"cells"`
 	HintType string    `json:"hint_type"` // "heatmap", "vectors", "signal"
+}
+
+// GuideCellPayload designates a cell for the AI to guide the player toward.
+// The hint is revealed only when the player clicks the target cell.
+type GuideCellPayload struct {
+	Cell     CellRef `json:"cell"`
+	HintType string  `json:"hint_type"` // "heatmap" or "vectors"
 }
 
 // --- Per-Corm State ---

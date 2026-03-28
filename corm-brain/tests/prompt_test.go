@@ -224,13 +224,33 @@ func TestPhase1PromptContainsTriggers(t *testing.T) {
 	msgs := llm.BuildPrompt(traits, nil, nil, nil, evt)
 
 	system := msgs[0].Content
-	for _, want := range []string{"TRAP HIT", "TARGET CHARACTER", "STRUGGLING"} {
+	for _, want := range []string{"TRAP HIT", "TARGET CHARACTER", "STRUGGLING", "GUIDED CELL REACHED", "GUIDANCE MODE"} {
 		if !strings.Contains(system, want) {
 			t.Errorf("Phase 1 prompt should contain %q", want)
 		}
 	}
 	if strings.Contains(system, "On decrypt:") {
 		t.Error("Phase 1 prompt should not contain generic 'On decrypt:' instruction")
+	}
+	// Coordinate prohibition
+	if !strings.Contains(system, "MUST NOT reveal the exact row") {
+		t.Error("Phase 1 prompt should prohibit coordinate disclosure")
+	}
+}
+
+func TestPhase1SignificanceGuidedCellReached(t *testing.T) {
+	payload, _ := json.Marshal(map[string]any{"guided_cell_reached": true, "is_trap": false, "is_word": false})
+	evt := types.CormEvent{EventType: types.EventDecrypt, Payload: payload}
+	if sig := evt.Phase1Significance(); sig != 85 {
+		t.Errorf("guided_cell_reached significance = %d, want 85", sig)
+	}
+}
+
+func TestPhase1SignificanceGuidedCellActive(t *testing.T) {
+	payload, _ := json.Marshal(map[string]any{"guided_cell_active": true, "is_trap": false, "is_word": false})
+	evt := types.CormEvent{EventType: types.EventDecrypt, Payload: payload}
+	if sig := evt.Phase1Significance(); sig != 30 {
+		t.Errorf("guided_cell_active significance = %d, want 30", sig)
 	}
 }
 
