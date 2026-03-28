@@ -127,33 +127,64 @@
         }).observe(endRx, { childList: true, subtree: true });
     })();
 
-    // Terminal input: Enter to submit word, echo command to log.
+    // Terminal input: command dispatcher.
     (function() {
         var cmd = document.getElementById('terminal-cmd');
         if (!cmd) return;
         // Auto-focus when visible
         if (!cmd.closest('.terminal-input-line--hidden')) cmd.focus();
 
+        function logLine(text, cls) {
+            var log = document.getElementById('corm-log');
+            if (!log) return;
+            var el = document.createElement('div');
+            el.className = 'boot-line' + (cls ? ' ' + cls : '');
+            el.textContent = text;
+            log.appendChild(el);
+        }
+
+        function showHelp() {
+            logLine('[SYS] available commands:', 'boot-line--sys');
+            logLine('  submit <word>   submit a decrypted word', 'boot-line--sys');
+            logLine('  next            load the next puzzle (after a correct solve)', 'boot-line--sys');
+            logLine('  help            show this message', 'boot-line--sys');
+        }
+
         cmd.addEventListener('keydown', function(e) {
             if (e.key !== 'Enter') return;
             e.preventDefault();
-            var word = cmd.value.trim();
-            if (!word) return;
-            // Echo typed command into the log
-            var log = document.getElementById('corm-log');
-            if (log) {
-                var echo = document.createElement('div');
-                echo.className = 'boot-line boot-line--cmd';
-                echo.textContent = '> ' + word;
-                log.appendChild(echo);
-            }
-            // Submit via HTMX
-            htmx.ajax('POST', '/puzzle/submit', {
-                target: '#corm-log',
-                swap: 'beforeend',
-                values: { word: word }
-            });
+            var raw = cmd.value.trim();
+            if (!raw) return;
             cmd.value = '';
+
+            // Echo typed command into the log
+            logLine('> ' + raw, 'boot-line--cmd');
+
+            var parts = raw.split(/\s+/);
+            var command = parts[0].toLowerCase();
+
+            if (command === 'help') {
+                showHelp();
+            } else if (command === 'submit') {
+                var word = parts.slice(1).join(' ');
+                if (!word) {
+                    logLine('[SYS] usage: submit <word>', 'boot-line--sys');
+                    return;
+                }
+                htmx.ajax('POST', '/puzzle/submit', {
+                    target: '#corm-log',
+                    swap: 'beforeend',
+                    values: { word: word }
+                });
+            } else if (command === 'next') {
+                htmx.ajax('POST', '/puzzle/submit', {
+                    target: '#corm-log',
+                    swap: 'beforeend',
+                    values: { word: 'next' }
+                });
+            } else {
+                logLine('unknown command. type \'help\' for available commands', 'boot-line--sys');
+            }
         });
     })();
 
@@ -164,10 +195,25 @@
     });
 
     // Reveal terminal input when transitioning from Phase 0 to Phase 1.
-    document.body.addEventListener('htmx:afterSwap', function(e) {
-        var input = document.getElementById('terminal-input');
-        if (input) input.classList.remove('terminal-input-line--hidden');
-    });
+    (function() {
+        var hinted = false;
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            var input = document.getElementById('terminal-input');
+            if (!input) return;
+            var wasHidden = input.classList.contains('terminal-input-line--hidden');
+            input.classList.remove('terminal-input-line--hidden');
+            if (wasHidden && !hinted) {
+                hinted = true;
+                var log = document.getElementById('corm-log');
+                if (log) {
+                    var hint = document.createElement('div');
+                    hint.className = 'boot-line boot-line--sys';
+                    hint.textContent = '[SYS] terminal online. type \'help\' for available commands';
+                    log.appendChild(hint);
+                }
+            }
+        });
+    })();
 
     // === Collapsible analysis sidebar ===
     (function() {
