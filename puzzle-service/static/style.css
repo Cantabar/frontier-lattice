@@ -231,6 +231,7 @@ body {
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
 }
 
 .terminal-bar .terminal-output {
@@ -440,10 +441,13 @@ body {
 .boot-line-stream {
     display: block;
     white-space: pre-wrap;
+    overflow-wrap: break-word;
     font-size: 0.75rem;
     line-height: 1.8;
     color: var(--text-dim);
     padding: 0 12px;
+    padding-left: calc(12px + 2ch);
+    text-indent: -2ch;
 }
 
 .corm-typing::after {
@@ -870,11 +874,15 @@ body {
     font-size: 0.75rem;
     line-height: 1.8;
     color: var(--text-dim);
+    min-width: 0;
 }
 
 
 .terminal-output .boot-line {
-    white-space: pre;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    padding-left: 2ch;
+    text-indent: -2ch;
 }
 
 .terminal-output .boot-line--fail {
