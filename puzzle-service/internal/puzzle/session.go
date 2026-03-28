@@ -72,8 +72,9 @@ type Session struct {
 	LastDecrypt *CellCoord // last cell the player decrypted (direction context for AI)
 
 	// Phase 0 click tracking
-	ClickLog        []ClickEvent
-	ElementClickMap map[string][]time.Time // element_id -> timestamps
+	ClickLog            []ClickEvent
+	ElementClickMap     map[string][]time.Time // element_id -> timestamps
+	TransitionThreshold int                    // total clicks to trigger Phase 0 -> 1 (random [3,5])
 
 	// Corm integration
 	EventBuffer        *corm.RingBuffer
@@ -107,8 +108,9 @@ func NewSession(playerAddress, context string) *Session {
 	Hints:            HintState{Decode: true, Heatmap: false},
 	VectorsThreshold: randVectorsThreshold(),
 		HintedCells:     make(map[string][]string),
-		ElementClickMap: make(map[string][]time.Time),
-		EventBuffer:     corm.NewRingBuffer(256),
+		ElementClickMap:     make(map[string][]time.Time),
+		TransitionThreshold: randRange(3, 5),
+		EventBuffer:         corm.NewRingBuffer(256),
 		ActionChan:      make(chan corm.CormAction, 64),
 	}
 }
@@ -148,7 +150,8 @@ func (s *Session) CheckWord(word string) bool {
 	return strings.EqualFold(word, s.TargetWord)
 }
 
-// RecordClick adds a Phase 0 click event and returns true if frustration triggered.
+// RecordClick adds a Phase 0 click event and returns true if the transition
+// threshold has been reached (total clicks across any elements).
 func (s *Session) RecordClick(elementID string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -157,15 +160,7 @@ func (s *Session) RecordClick(elementID string) bool {
 	s.ClickLog = append(s.ClickLog, ClickEvent{ElementID: elementID, Timestamp: now})
 	s.ElementClickMap[elementID] = append(s.ElementClickMap[elementID], now)
 
-	// Frustration detection: 3+ clicks on same element within 2 seconds
-	timestamps := s.ElementClickMap[elementID]
-	if len(timestamps) >= 3 {
-		recent := timestamps[len(timestamps)-3:]
-		if recent[2].Sub(recent[0]) <= 2*time.Second {
-			return true
-		}
-	}
-	return false
+	return len(s.ClickLog) >= s.TransitionThreshold
 }
 
 // TransitionToPhase1 moves the session from Phase 0 to Phase 1.

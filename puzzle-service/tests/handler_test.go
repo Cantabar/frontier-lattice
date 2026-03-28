@@ -70,20 +70,30 @@ func (h *healthOnly) Health(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`{"status":"ok","service":"puzzle-service"}`))
 }
 
-func TestSessionFrustrationDetection(t *testing.T) {
-	sess := puzzle.NewSession("0xtest", "browser")
+func TestPhase0TransitionThresholdRange(t *testing.T) {
+	for i := 0; i < 30; i++ {
+		sess := puzzle.NewSession("0xtest", "browser")
+		if sess.TransitionThreshold < 3 || sess.TransitionThreshold > 5 {
+			t.Fatalf("TransitionThreshold %d outside [3,5]", sess.TransitionThreshold)
+		}
+	}
+}
 
-	// Click same element 3 times quickly
-	for i := 0; i < 2; i++ {
-		frustrated := sess.RecordClick("btn-close")
-		if frustrated {
-			t.Error("should not trigger frustration before 3 clicks")
+func TestPhase0TransitionTrigger(t *testing.T) {
+	sess := puzzle.NewSession("0xtest", "browser")
+	threshold := sess.TransitionThreshold
+
+	// Clicks on various different elements should accumulate toward threshold
+	elements := []string{"btn-scan", "nav-systems", "btn-close", "ctrl-ping", "nav-diagnostics"}
+	for i := 0; i < threshold-1; i++ {
+		if sess.RecordClick(elements[i%len(elements)]) {
+			t.Fatalf("transition triggered too early at click %d (threshold %d)", i+1, threshold)
 		}
 	}
 
-	frustrated := sess.RecordClick("btn-close")
-	if !frustrated {
-		t.Error("expected frustration trigger on 3rd rapid click")
+	// The threshold-th click should trigger
+	if !sess.RecordClick("btn-scan") {
+		t.Fatalf("expected transition at click %d", threshold)
 	}
 }
 

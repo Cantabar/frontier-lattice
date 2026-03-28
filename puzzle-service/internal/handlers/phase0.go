@@ -48,13 +48,13 @@ func (h *Handlers) Phase0Interact(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	frustrated := sess.RecordClick(elementID)
+	transition := sess.RecordClick(elementID)
 
 	// Emit click event to corm-brain
 	payload, _ := json.Marshal(map[string]any{
 		"element_id":  elementID,
 		"click_count": len(sess.ClickLog),
-		"frustrated":  frustrated,
+		"transition":  transition,
 	})
 
 	evt := corm.CormEvent{
@@ -69,7 +69,7 @@ func (h *Handlers) Phase0Interact(w http.ResponseWriter, r *http.Request) {
 	sess.EventBuffer.Push(evt)
 	go h.relay.BroadcastEvent(evt)
 
-	if frustrated {
+	if transition {
 		// Emit phase transition event
 		transPayload, _ := json.Marshal(map[string]string{"from": "0", "to": "1"})
 		transEvt := corm.CormEvent{
