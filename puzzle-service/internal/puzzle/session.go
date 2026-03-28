@@ -211,9 +211,21 @@ func (s *Session) SetHint(hintType string, enabled bool) {
 }
 
 // SetGuidedCell sets the AI-guided target cell.
+// Rejects out-of-bounds coordinates or already-decrypted cells.
 func (s *Session) SetGuidedCell(row, col int, hintType string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	// Reject if no grid loaded or coordinates are out of bounds.
+	if s.Grid == nil || !s.Grid.InBounds(row, col) {
+		return
+	}
+
+	// Reject if cell is already decrypted (player can't click it).
+	if s.DecryptedCells[CellKey(row, col)] {
+		return
+	}
+
 	s.GuidedCell = &CellCoord{Row: row, Col: col}
 	s.GuidedHint = hintType
 }

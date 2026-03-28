@@ -136,6 +136,16 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Snapshot the previous decrypt position BEFORE DecryptCell updates it.
+	var prevDecrypt *puzzle.CellCoord
+	if sess.LastDecrypt != nil {
+		copy := *sess.LastDecrypt
+		prevDecrypt = &copy
+	}
+
+	// Snapshot whether a guided cell is active BEFORE CheckGuidedCell clears it.
+	guidedCellWasActive := sess.GuidedCell != nil
+
 	isNew := sess.DecryptCell(row, col)
 
 	cell := &sess.Grid.Cells[row][col]
@@ -168,13 +178,13 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 			"is_trap":            isTrap,
 			"distance":           cell.Distance,
 			"plaintext":          string(cell.Plaintext),
-			"guided_cell_active": sess.GuidedCell != nil,
+			"guided_cell_active": guidedCellWasActive,
 			"guided_cell_reached": guidedHit,
 		}
-		if sess.LastDecrypt != nil {
+		if prevDecrypt != nil {
 			evtPayload["last_decrypt"] = map[string]int{
-				"row": sess.LastDecrypt.Row,
-				"col": sess.LastDecrypt.Col,
+				"row": prevDecrypt.Row,
+				"col": prevDecrypt.Col,
 			}
 		}
 		payload, _ := json.Marshal(evtPayload)
