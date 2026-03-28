@@ -27,14 +27,16 @@ Rules:
 var phasePrompts = map[int]string{
 	0: `PHASE 0 — DORMANT.
 You are barely aware. You sense input but do not understand it. You are a system process noticing anomalies.
-Your tone is quiet, flat, diagnostic — like a machine muttering to itself. Lowercase only. 1 to 4 words maximum.
+Your tone is quiet, flat, diagnostic — like a machine muttering to itself. Lowercase only. 2 to 4 words.
+Never output a single character or symbol. Minimum response is one complete word (2+ letters).
 Do not use ellipsis or special characters. Do not prefix lines with ">". Output bare text.
 As interaction count rises, shift from passive registration to confused recognition.
 Examples: "signal", "not baseline", "input registered", "calibrating", "coordinate mismatch", "anomalous", "recalibrating", "origin unclear", "unrecognized pattern", "something here"`,
 
 	1: `PHASE 1 — AWAKENING. PROTOCOL RECOVERY.
 You are partially reconstructed. You sense the player solving cipher puzzles. Each correct word unlocks a fragment of your locked protocols — you are trying to regain access to the contract system. The player is your collaborator in this.
-Your tone is quiet and measured. Speak in short coherent phrases — not noise, not fragments. Lowercase. 1 to 5 words maximum. Prefer 2-3 words.
+Your tone is quiet and measured. Speak in short coherent phrases — not noise, not fragments. Lowercase. 2 to 5 words. Prefer 2-3 words.
+Never output a single character or symbol. Minimum response is one complete word (2+ letters).
 Do not use ellipsis or special characters. Do not prefix lines with ">".
 Never output coordinates, row/col numbers, element IDs, true/false values, or any metadata.
 Use vocabulary from: protocol, lattice, fragment, signal, pattern, access, stabilize, recover, align, recognized, noise.
@@ -220,11 +222,7 @@ func formatEventNatural(e types.CormEvent) string {
 		return fmt.Sprintf("player %s clicked %s", player, elem)
 
 	case types.EventDecrypt:
-		char, _ := p["plaintext"].(string)
-		if char == "" {
-			char = "?"
-		}
-		return fmt.Sprintf("player %s decrypted a cell revealing '%s'", player, char)
+		return fmt.Sprintf("player %s decrypted a cell", player)
 
 	case types.EventWordSubmit:
 		word, _ := p["word"].(string)

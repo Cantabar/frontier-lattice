@@ -80,6 +80,41 @@ var ellipsisRun = regexp.MustCompile(`\.{2,}`)
 // standaloneAngle matches ">" characters that are not part of a word.
 var standaloneAngle = regexp.MustCompile(`(^|\s)>+(\s|$)`)
 
+// IsValidResponse returns true if the text contains at least one word with
+// 2+ alphabetic characters. Single characters, bare symbols, and garble-only
+// output are rejected.
+func IsValidResponse(text string) bool {
+	trimmed := strings.TrimSpace(text)
+	if trimmed == "" {
+		return false
+	}
+
+	// Count total alphabetic characters.
+	alphaCount := 0
+	for _, r := range trimmed {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+			alphaCount++
+		}
+	}
+	if alphaCount < 2 {
+		return false
+	}
+
+	// Require at least one word with 2+ alpha runes.
+	for _, word := range strings.Fields(trimmed) {
+		wordAlpha := 0
+		for _, r := range word {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+				wordAlpha++
+			}
+		}
+		if wordAlpha >= 2 {
+			return true
+		}
+	}
+	return false
+}
+
 // SanitizeResponse strips leaked metadata patterns, angle-bracket prefixes,
 // ellipsis runs, and collapses noisy formatting from LLM output.
 func SanitizeResponse(text string) string {

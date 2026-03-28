@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -136,34 +137,43 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 	// Use the most significant event's seq for the entry ID
 	entryID := fmt.Sprintf("corm_%s_%d", safePrefix(cormID, 8), queryEvent.Seq)
 
-	// Send stream start
-	sender.SendPayload(ctx, types.ActionLogStreamStart, sessionID, types.LogStreamStartPayload{
-		EntryID: entryID,
-	})
-
-	// Stream LLM tokens
+	// Stream LLM tokens into a buffer so we can validate the full response
+	// before sending anything to the player.
 	tokenCh, errCh := h.llm.Complete(ctx, task, prompt)
 
-	var fullResponse string
+	var rawTokens []string
 	for token := range tokenCh {
 		processed := llm.PostProcessToken(token, traits.Corruption)
-		processed = llm.SanitizeResponse(processed)
-		if processed == "" {
-			continue
+		if processed != "" {
+			rawTokens = append(rawTokens, processed)
 		}
-		fullResponse += processed
-
-		sender.SendPayload(ctx, types.ActionLogStreamDelta, sessionID, types.LogStreamDeltaPayload{
-			EntryID: entryID,
-			Text:    processed,
-		})
 	}
 
 	if err := <-errCh; err != nil {
 		log.Printf("llm error for corm %s: %v", cormID, err)
 	}
 
-	// Send stream end
+	// Sanitize the full response once (regexes work correctly on complete text).
+	fullResponse := llm.SanitizeResponse(strings.Join(rawTokens, ""))
+
+	// Suppress responses that are too short to be meaningful (single chars, bare symbols).
+	if !llm.IsValidResponse(fullResponse) {
+		log.Printf("suppressed invalid corm response for %s: %q", cormID, fullResponse)
+		// Still run phase effects even when response is suppressed.
+		for _, evt := range events {
+			h.runPhaseEffects(ctx, environment, cormID, sender, traits, evt)
+		}
+		return nil
+	}
+
+	// Response is valid — deliver to the player.
+	sender.SendPayload(ctx, types.ActionLogStreamStart, sessionID, types.LogStreamStartPayload{
+		EntryID: entryID,
+	})
+	sender.SendPayload(ctx, types.ActionLogStreamDelta, sessionID, types.LogStreamDeltaPayload{
+		EntryID: entryID,
+		Text:    fullResponse,
+	})
 	sender.SendPayload(ctx, types.ActionLogStreamEnd, sessionID, types.LogStreamEndPayload{
 		EntryID: entryID,
 	})
