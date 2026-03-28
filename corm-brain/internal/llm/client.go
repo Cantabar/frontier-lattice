@@ -92,6 +92,8 @@ func (c *Client) Complete(ctx context.Context, task types.Task, prompt []types.M
 		maxTokens := 80
 		if task.RequiresDeepReasoning() {
 			maxTokens = 200
+		} else if task.Phase <= 1 {
+			maxTokens = 30
 		}
 
 		req := chatCompletionRequest{

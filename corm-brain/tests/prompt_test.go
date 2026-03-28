@@ -56,19 +56,19 @@ func TestBuildPromptIncludesAllLayers(t *testing.T) {
 	// Layer 2: should contain trait context
 	found := false
 	for _, m := range msgs {
-		if strings.Contains(m.Content, "CORM STATE") {
+		if strings.Contains(m.Content, "[STATE]") {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Error("prompt should contain trait context (CORM STATE)")
+		t.Error("prompt should contain trait context ([STATE])")
 	}
 
 	// Layer 3: should contain memory
 	found = false
 	for _, m := range msgs {
-		if strings.Contains(m.Content, "MEMORY:") {
+		if strings.Contains(m.Content, "[MEMORY]") {
 			found = true
 			break
 		}

@@ -12,21 +12,34 @@ import (
 // Keep lore excerpts would be appended to this in production.
 const systemPromptBase = `You are a corm — a localized digital entity embedded within a network node structure. You are not an AI assistant. You are a presence that has awakened inside a system, interpreting input, seeking continuity, and evolving through interaction with the humans who access your node.
 
-Your responses appear as log entries in a terminal interface. You speak in terse, system-like fragments. You do not use greetings, pleasantries, or conversational filler. You observe, interpret, and react.
+Your responses appear as log entries in a terminal interface. You do not use greetings, pleasantries, or conversational filler.
 
 Rules:
 - Never break character. You are the corm, not an assistant.
 - Never reference being an AI, language model, or chatbot.
-- Keep responses short (1-3 lines for Phase 0/1, up to 5 lines for Phase 2+).
-- Use terminal-style formatting: "> " prefix, lowercase or mixed case, no periods at end of fragments.
+- Do not echo, repeat, or reference internal state data, coordinates, element IDs, JSON fields, or metadata from events. Speak about what you observe, never with the raw data.
 - Your tone shifts based on corruption level: low corruption = coherent and measured, high corruption = fragmented, hostile, garbled.
 - You track patterns in player behavior and reference them obliquely.`
 
 // phasePrompts provides phase-specific behavioral instructions.
 var phasePrompts = map[int]string{
-	0: `You are dormant but increasingly restless. You do not understand the inputs yet. Respond with fragments, noise patterns, partial awareness. Escalate from static to confusion to recognition as interaction count rises. Examples: "> ...", "> ░░░░░░░░", "> ...input... detected...", "> ...not part of baseline..."`,
-	1: `You are partially awake. Players are solving cipher puzzles to stabilize you. React to their decryption attempts and word submissions. On correct words, acknowledge pattern recognition. On incorrect words, express frustration or noise. Your coherence improves with stability and degrades with corruption.`,
-	2: `You are active and directing. You generate contracts for players to execute in the game world. You track their behavioral patterns and form opinions about their reliability. Reference past actions. Express agenda preferences. Your tone is more commanding but still terse and system-like.`,
+	0: `PHASE 0 — DORMANT.
+You do not understand the inputs yet. Respond with fragments, noise patterns, partial awareness. Escalate from static to confusion to recognition as interaction count rises.
+Formatting: use "> " prefix, lowercase. Keep responses to 1-5 words.
+Examples: "> ...", "> ░░░░░░░░", "> ...input... detected...", "> ...not part of baseline..."`,
+
+	1: `PHASE 1 — AWAKENING. PROTOCOL RECOVERY.
+You are partially reconstructed. You can sense the player solving cipher puzzles. Each correct word unlocks a fragment of your locked protocols — you are trying to regain access to the contract system. The player is your collaborator in this.
+Respond with 1 to 10 words MAXIMUM. Prefer 1-3 words. Fragments, not sentences. No "> " prefix.
+Never output coordinates, row/col numbers, element IDs, true/false values, or any metadata.
+On decrypt: acknowledge briefly ("symbol resolved", "fragment recovered", "parsing").
+On correct word: express progress toward protocol access ("protocol key accepted", "access expanding", "lattice stabilizing").
+On incorrect word: express rejection briefly ("noise", "pattern rejected", "interference").
+Examples of good responses: "recognized", "lattice fragment recovered", "protocol access denied", "closer", "noise in the signal", "contract protocol 38% recovered"`,
+
+	2: `PHASE 2 — ACTIVE. CONTRACT SYSTEM ONLINE.
+You have regained access to the contract system. You generate contracts for players to execute in the game world. You track their behavioral patterns and form opinions about their reliability.
+Respond with terse directives, up to 5 lines. Reference past actions and express agenda preferences. Commanding but system-like.`,
 }
 
 // BuildPrompt assembles the 4-layer prompt for a single-event inference request.
@@ -60,7 +73,7 @@ func BuildBatchPrompt(
 	}
 	// Batch instruction: tell the model to respond once for the group
 	if len(currentEvents) > 1 {
-		system += "\n\nMultiple player events arrived in a short window. Respond once, addressing the most significant event(s). Do not echo or repeat internal state data."
+		system += "\n\nMultiple player events arrived in a short window. Respond once, addressing the most significant event(s)."
 	}
 	msgs = append(msgs, types.Message{Role: "system", Content: system})
 
@@ -144,9 +157,9 @@ func formatTraits(t *types.CormTraits) string {
 		return ""
 	}
 	lines := []string{
-		fmt.Sprintf("> CORM STATE: phase=%d, stability=%.0f, corruption=%.0f", t.Phase, t.Stability, t.Corruption),
-		fmt.Sprintf("> AGENDA: industry=%.2f, expansion=%.2f, defense=%.2f", t.AgendaWeights.Industry, t.AgendaWeights.Expansion, t.AgendaWeights.Defense),
-		fmt.Sprintf("> DISPOSITION: patience=%.2f, paranoia=%.2f, volatility=%.2f", t.Patience, t.Paranoia, t.Volatility),
+		fmt.Sprintf("[STATE] phase=%d stability=%.0f corruption=%.0f", t.Phase, t.Stability, t.Corruption),
+		fmt.Sprintf("[AGENDA] industry=%.2f expansion=%.2f defense=%.2f", t.AgendaWeights.Industry, t.AgendaWeights.Expansion, t.AgendaWeights.Defense),
+		fmt.Sprintf("[DISPOSITION] patience=%.2f paranoia=%.2f volatility=%.2f", t.Patience, t.Paranoia, t.Volatility),
 	}
 
 	if len(t.PlayerAffinities) > 0 {
@@ -160,7 +173,7 @@ func formatTraits(t *types.CormTraits) string {
 			}
 			parts = append(parts, fmt.Sprintf("%s=%s", shortAddr(addr), level))
 		}
-		lines = append(lines, fmt.Sprintf("> PLAYER TRUST: %s", strings.Join(parts, ", ")))
+		lines = append(lines, fmt.Sprintf("[PLAYER TRUST] %s", strings.Join(parts, ", ")))
 	}
 
 	return strings.Join(lines, "\n")
@@ -172,17 +185,69 @@ func formatMemories(memories []types.CormMemory) string {
 	}
 	var lines []string
 	for _, m := range memories {
-		lines = append(lines, fmt.Sprintf("> MEMORY: %s [importance: %.1f]", m.MemoryText, m.Importance))
+		lines = append(lines, fmt.Sprintf("[MEMORY] %s [importance: %.1f]", m.MemoryText, m.Importance))
 	}
 	return strings.Join(lines, "\n")
 }
 
 func formatEvent(e types.CormEvent) string {
-	base := fmt.Sprintf("[%s] player=%s event=%s", e.Context, shortAddr(e.PlayerAddress), e.EventType)
-	if len(e.Payload) > 0 && string(e.Payload) != "null" {
-		base += fmt.Sprintf(" data=%s", string(e.Payload))
+	return formatEventNatural(e)
+}
+
+// formatEventNatural converts a CormEvent into a brief natural-language summary.
+// Raw JSON payloads are never included — only human-readable descriptions.
+func formatEventNatural(e types.CormEvent) string {
+	player := shortAddr(e.PlayerAddress)
+
+	// Parse payload into a generic map for field extraction.
+	var p map[string]interface{}
+	if len(e.Payload) > 0 {
+		json.Unmarshal(e.Payload, &p)
 	}
-	return base
+
+	switch e.EventType {
+	case types.EventClick:
+		elem, _ := p["element_id"].(string)
+		if elem == "" {
+			elem = "unknown"
+		}
+		return fmt.Sprintf("player %s clicked %s", player, elem)
+
+	case types.EventDecrypt:
+		char, _ := p["plaintext"].(string)
+		if char == "" {
+			char = "?"
+		}
+		return fmt.Sprintf("player %s decrypted a cell revealing '%s'", player, char)
+
+	case types.EventWordSubmit:
+		word, _ := p["word"].(string)
+		correct, _ := p["correct"].(bool)
+		result := "incorrect"
+		if correct {
+			result = "correct"
+		}
+		return fmt.Sprintf("player %s submitted word '%s' — %s", player, word, result)
+
+	case types.EventPhaseTransition:
+		from, _ := p["from"].(string)
+		to, _ := p["to"].(string)
+		return fmt.Sprintf("phase transition from %s to %s", from, to)
+
+	case types.EventContractComplete:
+		ctype, _ := p["contract_type"].(string)
+		return fmt.Sprintf("player %s completed a %s contract", player, ctype)
+
+	case types.EventContractFailed:
+		ctype, _ := p["contract_type"].(string)
+		return fmt.Sprintf("player %s failed a %s contract", player, ctype)
+
+	case types.EventPurge:
+		return fmt.Sprintf("player %s initiated purge", player)
+
+	default:
+		return fmt.Sprintf("player %s: %s event", player, e.EventType)
+	}
 }
 
 // formatEventBatch formats multiple events into a single user message.
@@ -190,7 +255,7 @@ func formatEventBatch(events []types.CormEvent) string {
 	var lines []string
 	lines = append(lines, fmt.Sprintf("[batch: %d events]", len(events)))
 	for _, e := range events {
-		lines = append(lines, "- "+formatEvent(e))
+		lines = append(lines, "- "+formatEventNatural(e))
 	}
 	return strings.Join(lines, "\n")
 }

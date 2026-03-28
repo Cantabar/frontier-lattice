@@ -115,6 +115,10 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 	var fullResponse string
 	for token := range tokenCh {
 		processed := llm.PostProcessToken(token, traits.Corruption)
+		processed = llm.SanitizeResponse(processed)
+		if processed == "" {
+			continue
+		}
 		fullResponse += processed
 
 		sender.SendPayload(ctx, types.ActionLogStreamDelta, sessionID, types.LogStreamDeltaPayload{

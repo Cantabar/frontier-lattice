@@ -2,6 +2,7 @@ package llm
 
 import (
 	"math/rand"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -44,4 +45,46 @@ func TruncateResponse(text string, maxChars int) string {
 	}
 	runes := []rune(text)
 	return string(runes[:maxChars]) + "..."
+}
+
+// metadataPatterns matches leaked event metadata the LLM may parrot back.
+var metadataPatterns = regexp.MustCompile(
+	`(?i)>?\s*` + // optional > prefix
+		`(?:` +
+		`element_id\s*[:=]\s*\S+` +
+		`|click_count\s*[:=]\s*\S+` +
+		`|baseline_?deviation\s*[:=]\s*\S+` +
+		`|frustrated\s*[:=]\s*\S+` +
+		`|is_trap\s*[:=]\s*\S+` +
+		`|is_word\s*[:=]\s*\S+` +
+		`|plaintext\s*[:=]\s*\S+` +
+		`|distance\s*[:=]\s*\S+` +
+		`|row\s*[:=]\s*\d+` +
+		`|col\s*[:=]\s*\d+` +
+		`|seq\s*[:=]\s*\d+` +
+		`|session_id\s*[:=]\s*\S+` +
+		`|player_address\s*[:=]\s*\S+` +
+		`|network_node_id\s*[:=]\s*\S+` +
+		`)`,
+)
+
+// repeatedAngleRun collapses >...>...> chains into a single line.
+var repeatedAngleRun = regexp.MustCompile(`(>\s*\.{2,}\s*){2,}`)
+
+// SanitizeResponse strips leaked metadata patterns and collapses noisy
+// formatting from LLM output. It is applied per-token accumulation,
+// so it operates on the full response built so far.
+func SanitizeResponse(text string) string {
+	// Strip metadata key=value / key:value patterns
+	text = metadataPatterns.ReplaceAllString(text, "")
+
+	// Collapse runs of >...>...> into a single >...
+	text = repeatedAngleRun.ReplaceAllString(text, ">... ")
+
+	// Collapse multiple spaces left by stripping
+	for strings.Contains(text, "  ") {
+		text = strings.ReplaceAll(text, "  ", " ")
+	}
+
+	return strings.TrimSpace(text)
 }
