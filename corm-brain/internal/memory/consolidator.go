@@ -120,11 +120,19 @@ func (c *Consolidator) ConsolidateCorm(ctx context.Context, environment, cormID 
 func (c *Consolidator) summarizeEvents(ctx context.Context, cormID string, events []types.CormEvent) ([]types.CormMemory, error) {
 	prompt := llm.BuildConsolidationPrompt(cormID, events)
 
-	// Use Nano (fast, no deep reasoning needed)
+	// Use Nano (fast, no deep reasoning needed) with thinking disabled —
+	// consolidation is structured JSON extraction, not creative generation.
 	task := types.Task{CormID: cormID, Phase: 0}
-	response, err := c.llm.CompleteSync(ctx, task, prompt, 150)
+	response, err := c.llm.CompleteSync(ctx, task, prompt, 500, llm.WithDisableReasoning())
 	if err != nil {
 		return nil, err
+	}
+
+	// Guard against empty response (model may have consumed all tokens on
+	// reasoning despite our disable flag, or returned nothing useful).
+	if strings.TrimSpace(response) == "" {
+		log.Printf("consolidate: LLM returned empty response for corm %s", cormID)
+		return nil, nil
 	}
 
 	// Parse JSON response

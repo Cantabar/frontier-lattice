@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -33,18 +34,37 @@ func NewClient(superURL, fastURL string) *Client {
 
 // chatCompletionRequest is the OpenAI-compatible request body.
 type chatCompletionRequest struct {
-	Model       string          `json:"model"`
-	Messages    []types.Message `json:"messages"`
-	MaxTokens   int             `json:"max_tokens"`
-	Temperature float64         `json:"temperature"`
-	Stream      bool            `json:"stream"`
+	Model              string              `json:"model"`
+	Messages           []types.Message     `json:"messages"`
+	MaxTokens          int                 `json:"max_tokens"`
+	Temperature        float64             `json:"temperature"`
+	Stream             bool                `json:"stream"`
+	ChatTemplateKwargs *chatTemplateKwargs `json:"chat_template_kwargs,omitempty"`
+}
+
+// chatTemplateKwargs controls per-request model behavior (e.g. thinking mode).
+type chatTemplateKwargs struct {
+	EnableThinking bool `json:"enable_thinking"`
+}
+
+// CompleteSyncOption configures a CompleteSync call.
+type CompleteSyncOption func(*completeSyncOpts)
+
+type completeSyncOpts struct {
+	disableReasoning bool
+}
+
+// WithDisableReasoning tells the model to skip chain-of-thought reasoning.
+func WithDisableReasoning() CompleteSyncOption {
+	return func(o *completeSyncOpts) { o.disableReasoning = true }
 }
 
 // streamDelta is the parsed content from an SSE chunk.
 type streamDelta struct {
 	Choices []struct {
 		Delta struct {
-			Content string `json:"content"`
+			Content          string `json:"content"`
+			ReasoningContent string `json:"reasoning_content"`
 		} `json:"delta"`
 		FinishReason *string `json:"finish_reason"`
 	} `json:"choices"`
@@ -108,6 +128,7 @@ func (c *Client) Complete(ctx context.Context, task types.Task, prompt []types.M
 			return
 		}
 
+		var hadContent bool
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -116,7 +137,7 @@ func (c *Client) Complete(ctx context.Context, task types.Task, prompt []types.M
 			}
 			data := strings.TrimPrefix(line, "data: ")
 			if data == "[DONE]" {
-				return
+				break
 			}
 
 			var delta streamDelta
@@ -126,6 +147,7 @@ func (c *Client) Complete(ctx context.Context, task types.Task, prompt []types.M
 
 			for _, choice := range delta.Choices {
 				if choice.Delta.Content != "" {
+					hadContent = true
 					select {
 					case tokens <- choice.Delta.Content:
 					case <-ctx.Done():
@@ -133,6 +155,10 @@ func (c *Client) Complete(ctx context.Context, task types.Task, prompt []types.M
 					}
 				}
 			}
+		}
+
+		if !hadContent {
+			log.Printf("llm stream: no content tokens received (reasoning may have consumed token budget)")
 		}
 
 		if err := scanner.Err(); err != nil {
@@ -146,7 +172,12 @@ func (c *Client) Complete(ctx context.Context, task types.Task, prompt []types.M
 // CompleteSync performs a non-streaming inference and returns the full response.
 // Used by the consolidation loop where streaming is not needed.
 // maxTokens controls the generation length; pass 0 to use the default (300).
-func (c *Client) CompleteSync(ctx context.Context, task types.Task, prompt []types.Message, maxTokens int) (string, error) {
+func (c *Client) CompleteSync(ctx context.Context, task types.Task, prompt []types.Message, maxTokens int, opts ...CompleteSyncOption) (string, error) {
+	var o completeSyncOpts
+	for _, fn := range opts {
+		fn(&o)
+	}
+
 	var baseURL, model string
 	if task.RequiresDeepReasoning() {
 		baseURL = c.superURL
@@ -166,6 +197,9 @@ func (c *Client) CompleteSync(ctx context.Context, task types.Task, prompt []typ
 		MaxTokens:   maxTokens,
 		Temperature: 0.3,
 		Stream:      false,
+	}
+	if o.disableReasoning {
+		req.ChatTemplateKwargs = &chatTemplateKwargs{EnableThinking: false}
 	}
 
 	body, err := json.Marshal(req)
@@ -193,7 +227,8 @@ func (c *Client) CompleteSync(ctx context.Context, task types.Task, prompt []typ
 	var result struct {
 		Choices []struct {
 			Message struct {
-				Content string `json:"content"`
+				Content          string `json:"content"`
+				ReasoningContent string `json:"reasoning_content"`
 			} `json:"message"`
 		} `json:"choices"`
 	}
@@ -206,5 +241,12 @@ func (c *Client) CompleteSync(ctx context.Context, task types.Task, prompt []typ
 		return "", fmt.Errorf("no choices in response")
 	}
 
-	return result.Choices[0].Message.Content, nil
+	content := result.Choices[0].Message.Content
+	if content == "" && result.Choices[0].Message.ReasoningContent != "" {
+		log.Printf("llm sync: content empty, falling back to reasoning_content (%d chars)",
+			len(result.Choices[0].Message.ReasoningContent))
+		content = result.Choices[0].Message.ReasoningContent
+	}
+
+	return content, nil
 }
