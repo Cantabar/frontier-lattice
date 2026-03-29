@@ -3,8 +3,21 @@
     <div class="target-found-address target-found-stagger-1">{{.Address}}</div>
     {{if .ContractType}}<div class="target-found-stat target-found-stagger-2">[{{.ContractType}}] {{.Description}}</div>{{end}}
     <div class="target-found-stat target-found-stagger-3">INTERFACES RECOVERED: {{.SolveCount}}/{{.TotalContracts}}</div>
-    <button class="target-found-btn target-found-stagger-4"
-            hx-get="/puzzle?transition=1"
-            hx-target="#main-display"
-            hx-swap="innerHTML">[ DECRYPT NEXT INTERFACE ]</button>
+    {{if .AllSolved}}
+    <div class="target-found-stat target-found-stagger-4">&gt; ALL INTERFACES RECOVERED — DECRYPTION COMPLETE</div>
+    {{else}}
+    <div class="target-found-picker target-found-stagger-4">
+        <div class="target-found-picker-label">&gt; SELECT NEXT INTERFACE TO DECRYPT</div>
+        {{range .UnsolvedContracts}}
+        <button class="target-found-contract-btn"
+                hx-get="/puzzle?contract_id={{.ID}}&transition=1"
+                hx-target="#main-display"
+                hx-swap="innerHTML">
+            <span class="target-found-contract-type">[{{.ContractType}}]</span>
+            <span class="target-found-contract-desc">{{.Description}}</span>
+            <span class="target-found-contract-status">▪ ENCRYPTED</span>
+        </button>
+        {{end}}
+    </div>
+    {{end}}
 </div>{{end}}

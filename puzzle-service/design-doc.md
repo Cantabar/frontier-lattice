@@ -47,9 +47,13 @@ The puzzle target is the contract's shortened address (12 characters: `0x` + 10 
 
 Cells belonging to the same address share a `StringID` (e.g. `"target_main"`, `"decoy_0"`). **Clicking any cell of an address reveals the entire address** — all cells with the same StringID are decrypted simultaneously. The clicked cell is returned as the primary HTMX swap target and the remaining cells are returned as OOB `outerHTML` swaps so the fixed-size grid is updated in place instead of gaining extra DOM nodes.
 
-**Auto-complete on target discovery:** When the target address is revealed (via clicking any of its cells), the puzzle auto-completes: the contract is marked as solved, the solve count increments, a `submit` event (with `auto_discovered: true` and `contract_id`) is emitted to corm-brain, and a **"CONTRACT INTERFACE RECOVERED" overlay** replaces the grid. The overlay displays the confirmed address, contract type and description, and a `[ DECRYPT NEXT INTERFACE ]` button to proceed. The contract list sidebar updates via OOB swap to reflect the newly solved contract. The overlay elements use staggered fade-in animations. Target address cells briefly receive a `cell--target-locked` glow animation before the overlay appears.
+**Auto-complete on target discovery:** When the target address is revealed (via clicking any of its cells), the puzzle auto-completes: the contract is marked as solved, the solve count increments, a `submit` event (with `auto_discovered: true` and `contract_id`) is emitted to corm-brain, and a **"CONTRACT INTERFACE RECOVERED" overlay** replaces the grid. The overlay displays the confirmed address, contract type and description, and the solve progress counter. The contract list sidebar updates via OOB swap to reflect the newly solved contract. The overlay elements use staggered fade-in animations. Target address cells briefly receive a `cell--target-locked` glow animation before the overlay appears.
 
-Players can also type the full address into the terminal input (`submit 0x...`) to win without clicking the address cells directly — this remains as a secondary win path.
+**Contract selection after solve:** The target-found overlay includes a contract picker listing all unsolved contracts. Each entry is a button showing contract type, description, and an "ENCRYPTED" status indicator. Clicking one triggers `GET /puzzle?contract_id=<id>&transition=1`, loading a new puzzle for the selected contract. If all contracts have been solved, the picker is replaced with an "ALL INTERFACES RECOVERED" completion message. The same overlay (with contract picker) also appears on correct word submissions via the terminal.
+
+Players can also type the full address into the terminal input (`submit 0x...`) to win without clicking the address cells directly — this remains as a secondary win path. After a correct terminal submission, the target-found overlay with contract picker appears via OOB swap. The `next` terminal command auto-selects the first unsolved contract for convenience.
+
+**Defensive fallback:** If `GET /puzzle` is loaded without a `contract_id` and the active contract is already solved, the server auto-selects the next unsolved contract to prevent generating aimless puzzles.
 
 ### Cell Types
 
@@ -254,7 +258,7 @@ puzzle-service/
 - Phase 1 contract-driven cipher grid puzzles: player selects a contract from the left sidebar to start a puzzle for that contract's address
 - Dynamically-sized grid (viewport-fitted, min 32px/cell), configurable difficulty, and three cipher tiers (Caesar, variable shift, position-based)
 - Contract address discovery mechanic with group-reveal (clicking any cell reveals the entire address)
-- Auto-complete on target address discovery with "CONTRACT INTERFACE RECOVERED" overlay showing contract type and description, with staggered entrance animation
+- Auto-complete on target address discovery with "CONTRACT INTERFACE RECOVERED" overlay showing contract type, description, and a contract picker for selecting the next unsolved interface
 - Seven cell types: noise, symbol, target, decoy, trap, sensor (sonar/thermal/vector), garbled
 - Trap explosion system with Euclidean radius 3 blast zone and permanent garbling
 - Trap sonar attraction: trap nodes revealed by a sonar pulse move one cell toward the pulse source, with subtle red flicker animation on arrival

@@ -278,6 +278,17 @@ func (s *Session) NextUnsolvedContract() *Contract {
 	return nil
 }
 
+// UnsolvedContracts returns all contracts that have not been solved.
+func (s *Session) UnsolvedContracts() []Contract {
+	var out []Contract
+	for _, c := range s.Contracts {
+		if !c.Solved {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
 // SetHint updates a global hint toggle.
 func (s *Session) SetHint(hintType string, enabled bool) {
 	s.mu.Lock()

@@ -38,11 +38,13 @@ type CellData struct {
 
 // TargetFoundData is the template data for the target-found overlay.
 type TargetFoundData struct {
-	Address        string
-	ContractType   string
-	Description    string
-	SolveCount     int
-	TotalContracts int
+	Address            string
+	ContractType       string
+	Description        string
+	SolveCount         int
+	TotalContracts     int
+	UnsolvedContracts  []puzzle.Contract
+	AllSolved          bool
 }
 
 // ContractListData is the template data for the contract list sidebar.
@@ -159,6 +161,10 @@ func (h *Handlers) PuzzlePage(w http.ResponseWriter, r *http.Request) {
 		// Reuse active contract (e.g. "next puzzle" after game-over retry)
 		if c := sess.GetContract(sess.ActiveContractID); c != nil && !c.Solved {
 			targetAddr = c.ShortAddress
+		} else if next := sess.NextUnsolvedContract(); next != nil {
+			// Active contract is solved — auto-pick the next unsolved one
+			sess.ActiveContractID = next.ID
+			targetAddr = next.ShortAddress
 		}
 	}
 
@@ -370,12 +376,15 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 				`</div>`, sess.TargetWord)
 
 			// Render the target-found overlay (replaces grid via OOB)
+			unsolved := sess.UnsolvedContracts()
 			h.templates.ExecuteTemplate(w, "target-found.html", TargetFoundData{
-				Address:        sess.TargetWord,
-				ContractType:   contractType,
-				Description:    contractDesc,
-				SolveCount:     sess.SolveCount,
-				TotalContracts: len(sess.Contracts),
+				Address:           sess.TargetWord,
+				ContractType:      contractType,
+				Description:       contractDesc,
+				SolveCount:        sess.SolveCount,
+				TotalContracts:    len(sess.Contracts),
+				UnsolvedContracts: unsolved,
+				AllSolved:         len(unsolved) == 0,
 			})
 
 			// OOB update the contract list sidebar
@@ -573,7 +582,11 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 	// Handle "next" command after a correct solve
 	if strings.EqualFold(word, "next") && sess.LastSolveCorrect {
 		sess.LastSolveCorrect = false
-		w.Header().Set("HX-Redirect", "/puzzle?transition=1")
+		redirect := "/puzzle?transition=1"
+		if next := sess.NextUnsolvedContract(); next != nil {
+			redirect = "/puzzle?contract_id=" + next.ID + "&transition=1"
+		}
+		w.Header().Set("HX-Redirect", redirect)
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -589,17 +602,29 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 		sess.SolveCount++
 		sess.LastSolveCorrect = true
 		resultData["SolveCount"] = sess.SolveCount
-		resultData["ShowNext"] = true
 
 		// Mark the active contract as solved
-		var contractType string
+		var contractType, contractDesc string
 		if sess.ActiveContractID != "" {
 			sess.MarkContractSolved(sess.ActiveContractID)
 			if c := sess.GetContract(sess.ActiveContractID); c != nil {
 				contractType = c.ContractType
+				contractDesc = c.Description
 			}
 		}
 		resultData["ContractType"] = contractType
+
+		// Build unsolved list for contract picker overlay
+		unsolved := sess.UnsolvedContracts()
+		resultData["TargetFound"] = TargetFoundData{
+			Address:           sess.TargetWord,
+			ContractType:      contractType,
+			Description:       contractDesc,
+			SolveCount:        sess.SolveCount,
+			TotalContracts:    len(sess.Contracts),
+			UnsolvedContracts: unsolved,
+			AllSolved:         len(unsolved) == 0,
+		}
 	} else {
 		sess.IncorrectAttempts++
 	}
@@ -634,10 +659,13 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 		analysis.SwapOOB = true
 		h.templates.ExecuteTemplate(w, "cipher-analysis.html", analysis)
 	}
-	// OOB update the contract list if a contract was just solved
+	// OOB update the contract list and render target-found overlay if a contract was just solved
 	if correct {
 		clData := buildContractListData(sess, true)
 		h.templates.ExecuteTemplate(w, "contract-list.html", clData)
+		if tf, ok := resultData["TargetFound"]; ok {
+			h.templates.ExecuteTemplate(w, "target-found.html", tf)
+		}
 	}
 }
 // buildContractListData produces the template data for the contract list sidebar.
