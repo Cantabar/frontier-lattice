@@ -100,17 +100,17 @@ procs:
   # ── DGX Spark — Nemotron 3 Super (TRT-LLM, port 8000) ─────────────────
   dgx-super:
     shell: "bash scripts/dgx-super.sh"
-    stop: "SIGINT"
+    stop: "SIGTERM"
 
   # ── DGX Spark — Nemotron 3 Nano (TRT-LLM, port 8001) ──────────────────
   dgx-nano:
     shell: "bash scripts/dgx-nano.sh"
-    stop: "SIGINT"
+    stop: "SIGTERM"
 
   # ── DGX Spark — SSH Tunnel (forwards model ports to localhost) ─────────
   dgx-tunnel:
     shell: "bash scripts/dgx-tunnel.sh"
-    stop: "SIGINT"
+    stop: "SIGTERM"
 
   # ── Corm Brain (local Go binary, connects to tunnelled DGX models) ─────
   corm-brain:
