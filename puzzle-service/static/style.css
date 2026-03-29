@@ -1283,6 +1283,40 @@ body {
     background: rgba(0, 255, 65, 0.15);
 }
 
+/* --- Next Interface button (primary CTA on success screen) --- */
+.target-found-next {
+    margin-top: 20px;
+}
+
+.target-found-next-btn {
+    padding: 12px 28px;
+    border: 1px solid var(--accent-cyan);
+    background: transparent;
+    color: var(--accent-cyan);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    animation: next-btn-idle-pulse 3s ease-in-out infinite;
+}
+
+@keyframes next-btn-idle-pulse {
+    0%, 100% { border-color: var(--accent-cyan); box-shadow: 0 0 6px rgba(0, 212, 255, 0.1); }
+    50% { border-color: rgba(0, 212, 255, 0.5); box-shadow: 0 0 12px rgba(0, 212, 255, 0.2); }
+}
+
+.target-found-next-btn:hover {
+    background: rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.25);
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+    animation: none;
+}
+
+.target-found-next-btn:active {
+    background: rgba(0, 212, 255, 0.15);
+}
+
 /* --- Contract picker on target-found overlay --- */
 .target-found-picker {
     margin-top: 20px;
