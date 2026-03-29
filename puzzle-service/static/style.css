@@ -801,23 +801,19 @@ body {
 /* === Trap Cells === */
 .cell--trap.cell--revealed {
     color: var(--accent-red);
-    box-shadow: inset 0 0 0 1px var(--accent-red);
 }
 
 /* === Sensor Nodes (revealed state) === */
 .cell--sensor-sonar.cell--revealed {
     color: var(--sensor-cyan);
-    box-shadow: inset 0 0 0 1px var(--sensor-cyan);
     background: rgba(0, 255, 255, 0.08);
 }
 .cell--sensor-thermal.cell--revealed {
     color: var(--accent-blue);
-    box-shadow: inset 0 0 0 1px var(--accent-blue);
     background: rgba(0, 170, 255, 0.08);
 }
 .cell--sensor-vector.cell--revealed {
     color: var(--accent-gold);
-    box-shadow: inset 0 0 0 1px var(--accent-gold);
     background: rgba(255, 180, 0, 0.08);
 }
 
