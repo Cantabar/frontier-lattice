@@ -54,7 +54,7 @@ Players can also type the full address into the terminal input (`submit 0x...`) 
 - **Noise** — random hex characters (`0-9a-f`) filling 40% of empty cells. Blends with address content.
 - **Symbol** — non-alphabet printable ASCII (`#@%&*~^|<>{}[]` etc.) filling 60% of empty cells.
 - **Target** — cells of the hidden SUI address. White text on reveal, green border.
-- **Decoy** — cells of decoy addresses. Same reveal behavior as target but no win.
+- **Decoy** — cells of decoy addresses. Same group-reveal behavior as target but no win. Visually distinct after reveal: dim orange text at reduced opacity, no border, subtle orange-tinted background with a brief fade-in animation — contrasting with the target's bright white text and green border.
 - **Trap** — anomaly nodes. On reveal, explode with Euclidean radius 3, permanently garbling all cells in the blast zone (setting them to `CellGarbled`). Garbled cells display unique foreign-script glyphs with a purple flicker and cannot be interacted with. If any target address cell is caught in the explosion, the game is over.
 - **Sensor** — hint nodes (~0.8% of noise/symbol cells). Three subtypes:
   - **Sonar** `[S]` (cyan) — on reveal, triggers a triple pulse: 3 pulses at 1-second intervals, Euclidean radius 5, revealing the color signature of all cells in range.

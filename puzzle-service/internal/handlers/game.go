@@ -31,6 +31,7 @@ type CellData struct {
 	SensorType     string // "sonar", "thermal", "vector"
 	IsGarbled      bool
 	IsAddress      bool   // part of target or decoy address
+	IsDecoy        bool   // part of a decoy address (not the target)
 	PulseColor     string // color class for pulse JS system
 	SwapOOB        bool   // true when this cell should be swapped out-of-band
 }
@@ -596,6 +597,7 @@ func buildCellData(sess *puzzle.Session, r, c int) CellData {
 		SensorType:     cell.HintType,
 		IsGarbled:      garbled,
 		IsAddress:      isAddress,
+		IsDecoy:        isAddress && strings.HasPrefix(cell.StringID, "decoy_"),
 		PulseColor:     puzzle.PulseColorForCell(cell),
 	}
 }
