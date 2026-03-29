@@ -223,7 +223,7 @@ puzzle-service/
 - Phase 0 awakening with random frustration trigger threshold (3–5 clicks) and animated transition sequence
 - Phase 1 cipher grid puzzles with 20×20 grid, configurable difficulty, and three cipher tiers (Caesar, variable shift, position-based)
 - SUI address discovery mechanic with group-reveal (clicking any cell reveals the entire address)
-- Auto-complete on target address discovery with "PATTERN ANCHOR ISOLATED" overlay and staggered entrance animation
+- Auto-complete on target address discovery with "PATTERN ANCHOR ISOLATED" overlay (semi-transparent, positioned over the grid so the solved puzzle remains visible) and staggered entrance animation
 - Seven cell types: noise, symbol, target, decoy, trap, sensor (sonar/thermal/vector), garbled
 - Trap explosion system with Euclidean radius 3 blast zone and permanent garbling
 - Localized sonar pulse system on every decrypt (radius 2) with color-coded type signatures
