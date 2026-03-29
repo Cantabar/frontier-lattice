@@ -106,10 +106,14 @@ type GeneratedPuzzle struct {
 
 // Generate creates a new puzzle. The target is a shortened SUI address.
 // vpRows/vpCols are viewport-derived grid dimensions (pass 0 to use defaults).
-func Generate(solveCount int, mod *DifficultyMod, vpRows, vpCols int) (*GeneratedPuzzle, error) {
+// If targetAddr is non-empty, it is used as the puzzle target; otherwise a random address is generated.
+func Generate(solveCount int, mod *DifficultyMod, vpRows, vpCols int, targetAddr string) (*GeneratedPuzzle, error) {
 	cfg := DefaultDifficulty(solveCount, mod, vpRows, vpCols)
 
-	addr := GenerateAddress()
+	addr := targetAddr
+	if addr == "" {
+		addr = GenerateAddress()
+	}
 	grid := NewGrid(cfg.GridRows, cfg.GridCols)
 
 	placement, err := placeAddressTracked(grid, addr, CellTarget, "target_main")

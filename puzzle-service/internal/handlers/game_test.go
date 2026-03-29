@@ -96,7 +96,7 @@ func findTrapCell(t *testing.T, grid *puzzle.Grid) (int, int, int) {
 
 func TestPuzzleDecryptAddressRevealUsesOOBSwapsForNonClickedCells(t *testing.T) {
 	sess := puzzle.NewSession("0xtest", "browser")
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("puzzle generation failed: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestPuzzleDecryptAddressRevealUsesOOBSwapsForNonClickedCells(t *testing.T) 
 
 func TestPuzzleDecryptTrapExplosionUsesOOBSwapsForNonClickedCells(t *testing.T) {
 	sess := puzzle.NewSession("0xtest", "browser")
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("puzzle generation failed: %v", err)
 	}

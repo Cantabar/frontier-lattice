@@ -38,10 +38,20 @@ type CellData struct {
 
 // TargetFoundData is the template data for the target-found overlay.
 type TargetFoundData struct {
-	Address       string
-	StabilityGain int
-	Stability     int
-	SolveCount    int
+	Address        string
+	ContractType   string
+	Description    string
+	SolveCount     int
+	TotalContracts int
+}
+
+// ContractListData is the template data for the contract list sidebar.
+type ContractListData struct {
+	Contracts        []puzzle.Contract
+	ActiveContractID string
+	SolvedCount      int
+	TotalCount       int
+	SwapOOB          bool
 }
 
 // PulseEntry is one cell in a pulse response.
@@ -107,6 +117,7 @@ type PuzzleData struct {
 	MetersHidden bool // true when stability and corruption are both 0
 	NeedsMeasure bool // true on initial puzzle load before client has sent viewport dims
 	Analysis     CipherAnalysisData
+	ContractList ContractListData
 }
 
 // PuzzlePage serves GET /puzzle — generates and renders a new puzzle.
@@ -129,6 +140,28 @@ func (h *Handlers) PuzzlePage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Look up contract if specified
+	contractID := r.URL.Query().Get("contract_id")
+	var targetAddr string
+	if contractID != "" {
+		c := sess.GetContract(contractID)
+		if c == nil {
+			http.Error(w, "unknown contract", http.StatusBadRequest)
+			return
+		}
+		if c.Solved {
+			http.Error(w, "contract already solved", http.StatusBadRequest)
+			return
+		}
+		sess.ActiveContractID = contractID
+		targetAddr = c.ShortAddress
+	} else if sess.ActiveContractID != "" {
+		// Reuse active contract (e.g. "next puzzle" after game-over retry)
+		if c := sess.GetContract(sess.ActiveContractID); c != nil && !c.Solved {
+			targetAddr = c.ShortAddress
+		}
+	}
+
 	// On the very first puzzle load the client hasn't measured the container
 	// yet. Render an empty placeholder so JS can measure and re-request.
 	if sess.ViewportRows == 0 && sess.Phase == puzzle.PhasePuzzle {
@@ -140,6 +173,7 @@ func (h *Handlers) PuzzlePage(w http.ResponseWriter, r *http.Request) {
 			SignalHint:   sess.Hints.Signal,
 			MetersHidden: sess.Stability == 0 && sess.Corruption == 0,
 			NeedsMeasure: true,
+			ContractList: buildContractListData(sess, false),
 		}
 		if r.Header.Get("HX-Request") != "" {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -151,7 +185,7 @@ func (h *Handlers) PuzzlePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate puzzle
-	gen, err := puzzle.Generate(sess.SolveCount, sess.PendingDifficulty, sess.ViewportRows, sess.ViewportCols)
+	gen, err := puzzle.Generate(sess.SolveCount, sess.PendingDifficulty, sess.ViewportRows, sess.ViewportCols, targetAddr)
 	if err != nil {
 		http.Error(w, "puzzle generation failed", http.StatusInternalServerError)
 		return
@@ -311,33 +345,44 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 
 		// Auto-complete if target address
 		if isTargetAddress {
-			// Apply solve logic (same as PuzzleSubmit correct path)
-			gain := max(5, 20-sess.SolveCount*2)
-			sess.Stability = min(100, sess.Stability+gain)
 			sess.SolveCount++
 			sess.LastSolveCorrect = true
 
+			// Mark the active contract as solved
+			var contractType, contractDesc string
+			if sess.ActiveContractID != "" {
+				sess.MarkContractSolved(sess.ActiveContractID)
+				if c := sess.GetContract(sess.ActiveContractID); c != nil {
+					contractType = c.ContractType
+					contractDesc = c.Description
+				}
+			}
+
 			// Log line in terminal
 			fmt.Fprintf(w, `<div id="auto-win" hx-swap-oob="beforeend:#corm-log">`+
-				`<div class="boot-line boot-line--correct">✓ PATTERN ANCHOR ISOLATED: %s</div>`+
+				`<div class="boot-line boot-line--correct">✓ CONTRACT INTERFACE RECOVERED: %s</div>`+
 				`</div>`, sess.TargetWord)
 
 			// Render the target-found overlay (replaces grid via OOB)
 			h.templates.ExecuteTemplate(w, "target-found.html", TargetFoundData{
-				Address:       sess.TargetWord,
-				StabilityGain: gain,
-				Stability:     sess.Stability,
-				SolveCount:    sess.SolveCount,
+				Address:        sess.TargetWord,
+				ContractType:   contractType,
+				Description:    contractDesc,
+				SolveCount:     sess.SolveCount,
+				TotalContracts: len(sess.Contracts),
 			})
+
+			// OOB update the contract list sidebar
+			clData := buildContractListData(sess, true)
+			h.templates.ExecuteTemplate(w, "contract-list.html", clData)
 
 			// Emit submit event to corm-brain
 			submitPayload, _ := json.Marshal(map[string]any{
-				"word":              sess.TargetWord,
-				"correct":           true,
-				"auto_discovered":   true,
-				"stability":         sess.Stability,
-				"corruption":        sess.Corruption,
-				"solve_count":       sess.SolveCount,
+				"word":               sess.TargetWord,
+				"correct":            true,
+				"auto_discovered":    true,
+				"contract_id":        sess.ActiveContractID,
+				"solve_count":        sess.SolveCount,
 				"incorrect_attempts": sess.IncorrectAttempts,
 			})
 			submitEvt := corm.CormEvent{
@@ -490,35 +535,35 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 
 	correct := sess.CheckWord(word)
 
-	// Update meters
 	resultData := map[string]any{
-		"Correct":    correct,
-		"Word":       word,
-		"Stability":  sess.Stability,
-		"Corruption": sess.Corruption,
+		"Correct": correct,
+		"Word":    word,
 	}
 
 	if correct {
-		// Stability gain scales inversely with solve count
-		gain := max(5, 20-sess.SolveCount*2)
-		sess.Stability = min(100, sess.Stability+gain)
 		sess.SolveCount++
 		sess.LastSolveCorrect = true
-		resultData["Stability"] = sess.Stability
 		resultData["SolveCount"] = sess.SolveCount
 		resultData["ShowNext"] = true
+
+		// Mark the active contract as solved
+		var contractType string
+		if sess.ActiveContractID != "" {
+			sess.MarkContractSolved(sess.ActiveContractID)
+			if c := sess.GetContract(sess.ActiveContractID); c != nil {
+				contractType = c.ContractType
+			}
+		}
+		resultData["ContractType"] = contractType
 	} else {
 		sess.IncorrectAttempts++
-		sess.Corruption = min(100, sess.Corruption+10)
-		resultData["Corruption"] = sess.Corruption
 	}
 
 	// Emit submit event to corm-brain
 	payload, _ := json.Marshal(map[string]any{
 		"word":               word,
 		"correct":            correct,
-		"stability":          sess.Stability,
-		"corruption":         sess.Corruption,
+		"contract_id":        sess.ActiveContractID,
 		"solve_count":        sess.SolveCount,
 		"incorrect_attempts": sess.IncorrectAttempts,
 	})
@@ -535,7 +580,6 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 	go h.relay.BroadcastEvent(evt)
 
 	// Retarget response into the terminal log
-	resultData["MetersHidden"] = sess.Stability == 0 && sess.Corruption == 0
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("HX-Retarget", "#corm-log")
 	w.Header().Set("HX-Reswap", "beforeend")
@@ -545,7 +589,29 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 		analysis.SwapOOB = true
 		h.templates.ExecuteTemplate(w, "cipher-analysis.html", analysis)
 	}
+	// OOB update the contract list if a contract was just solved
+	if correct {
+		clData := buildContractListData(sess, true)
+		h.templates.ExecuteTemplate(w, "contract-list.html", clData)
+	}
 }
+// buildContractListData produces the template data for the contract list sidebar.
+func buildContractListData(sess *puzzle.Session, swapOOB bool) ContractListData {
+	solved := 0
+	for _, c := range sess.Contracts {
+		if c.Solved {
+			solved++
+		}
+	}
+	return ContractListData{
+		Contracts:        sess.Contracts,
+		ActiveContractID: sess.ActiveContractID,
+		SolvedCount:      solved,
+		TotalCount:       len(sess.Contracts),
+		SwapOOB:          swapOOB,
+	}
+}
+
 // buildPuzzleData converts session state into template-friendly data.
 func buildPuzzleData(sess *puzzle.Session) PuzzleData {
 	grid := make([][]CellData, sess.Grid.Rows)
@@ -569,6 +635,7 @@ func buildPuzzleData(sess *puzzle.Session) PuzzleData {
 		SignalHint:   sess.Hints.Signal,
 		MetersHidden: sess.Stability == 0 && sess.Corruption == 0,
 		Analysis:     buildCipherAnalysis(sess),
+		ContractList: buildContractListData(sess, false),
 	}
 }
 

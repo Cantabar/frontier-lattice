@@ -31,6 +31,7 @@ func (h *Handlers) Phase0Page(w http.ResponseWriter, r *http.Request) {
 		Phase:        int(sess.Phase),
 		SessionID:    sess.ID,
 		MetersHidden: sess.Stability == 0 && sess.Corruption == 0,
+		ContractList: buildContractListData(sess, false),
 	})
 }
 

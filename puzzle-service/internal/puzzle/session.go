@@ -24,6 +24,31 @@ const (
 	PhaseContracts Phase = 2
 )
 
+// Contract represents a trustless contract the player has access to.
+type Contract struct {
+	ID           string `json:"id"`
+	Address      string `json:"address"`        // full on-chain address
+	ShortAddress string `json:"short_address"` // shortened form used as puzzle target (e.g. 0x + 10 hex chars)
+	ContractType string `json:"contract_type"` // e.g. CoinForCoin, ItemForCoin, etc.
+	Description  string `json:"description"`
+	Solved       bool   `json:"solved"`
+}
+
+// ShortenAddress returns a 12-char shortened SUI address: "0x" + first 10 hex chars after "0x".
+func ShortenAddress(addr string) string {
+	if len(addr) > 2 && addr[:2] == "0x" {
+		hex := addr[2:]
+		if len(hex) > 10 {
+			hex = hex[:10]
+		}
+		return "0x" + hex
+	}
+	if len(addr) > 12 {
+		return addr[:12]
+	}
+	return addr
+}
+
 // HintState tracks which AI-controlled hint systems are globally enabled.
 type HintState struct {
 	Heatmap bool // proximity-based cell coloring
@@ -62,7 +87,11 @@ type Session struct {
 	// Solve state
 	LastSolveCorrect bool
 
-	// Meters (cached from corm-brain state_sync)
+	// Contracts
+	Contracts        []Contract
+	ActiveContractID string // which contract is currently being puzzled
+
+	// Meters (cached from corm-brain state_sync — retained for corm-brain compatibility)
 	Stability  int
 	Corruption int
 
@@ -102,6 +131,17 @@ type LogStreamState struct {
 	Text    strings.Builder
 }
 
+// seedTestContracts returns hardcoded test contracts for development.
+func seedTestContracts() []Contract {
+	return []Contract{
+		{ID: "c1", Address: "0x7a3f8b2c1d9e4f5061", ShortAddress: "0x7a3f8b2c1d", ContractType: "CoinForCoin", Description: "Exchange fuel tokens for mineral credits"},
+		{ID: "c2", Address: "0x2e9d4c8a7b1f360582", ShortAddress: "0x2e9d4c8a7b", ContractType: "ItemForCoin", Description: "Sell salvaged components for station currency"},
+		{ID: "c3", Address: "0x5b1e9f3a2d7c840693", ShortAddress: "0x5b1e9f3a2d", ContractType: "CoinForItem", Description: "Purchase fabrication blueprints"},
+		{ID: "c4", Address: "0x8c4d2f6e1a9b3507a4", ShortAddress: "0x8c4d2f6e1a", ContractType: "Transport", Description: "Staked courier delivery to sector 7G"},
+		{ID: "c5", Address: "0x1f7b3e9c5d2a8604b5", ShortAddress: "0x1f7b3e9c5d", ContractType: "ItemForItem", Description: "Barter refined ore for shield modules"},
+	}
+}
+
 // NewSession creates a fresh session with the given identity.
 func NewSession(playerAddress, context string) *Session {
 	return &Session{
@@ -110,10 +150,11 @@ func NewSession(playerAddress, context string) *Session {
 		Context:         context,
 		Phase:           PhaseAwakening,
 		CreatedAt:       time.Now(),
+		Contracts:       seedTestContracts(),
 		DecryptedCells:  make(map[string]bool),
 		GarbledCells:    make(map[string]bool),
-	Hints:            HintState{Decode: true, Heatmap: false},
-	VectorsThreshold: randVectorsThreshold(),
+		Hints:           HintState{Decode: true, Heatmap: false},
+		VectorsThreshold: randVectorsThreshold(),
 		HintedCells:     make(map[string][]string),
 		ElementClickMap:     make(map[string][]time.Time),
 		TransitionThreshold: randRange(3, 5),
@@ -201,6 +242,38 @@ func (s *Session) LoadPuzzle(p *GeneratedPuzzle) {
 	s.GuidedCell = nil
 	s.GuidedHint = ""
 	s.LastDecrypt = nil
+}
+
+// GetContract returns the contract with the given ID, or nil.
+func (s *Session) GetContract(id string) *Contract {
+	for i := range s.Contracts {
+		if s.Contracts[i].ID == id {
+			return &s.Contracts[i]
+		}
+	}
+	return nil
+}
+
+// MarkContractSolved marks a contract as solved by ID.
+func (s *Session) MarkContractSolved(id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range s.Contracts {
+		if s.Contracts[i].ID == id {
+			s.Contracts[i].Solved = true
+			return
+		}
+	}
+}
+
+// NextUnsolvedContract returns the first unsolved contract, or nil if all solved.
+func (s *Session) NextUnsolvedContract() *Contract {
+	for i := range s.Contracts {
+		if !s.Contracts[i].Solved {
+			return &s.Contracts[i]
+		}
+	}
+	return nil
 }
 
 // SetHint updates a global hint toggle.

@@ -8,7 +8,7 @@ import (
 )
 
 func TestGeneratePuzzle(t *testing.T) {
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestTargetAddressFormat(t *testing.T) {
 
 func TestTargetAddressInGrid(t *testing.T) {
 	for i := 0; i < 10; i++ {
-		pz, err := puzzle.Generate(0, nil, 0, 0)
+		pz, err := puzzle.Generate(0, nil, 0, 0, "")
 		if err != nil {
 			t.Fatalf("Generate failed: %v", err)
 		}
@@ -70,7 +70,7 @@ func TestTargetAddressInGrid(t *testing.T) {
 }
 
 func TestTargetCellsHaveStringID(t *testing.T) {
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestTargetCellsHaveStringID(t *testing.T) {
 }
 
 func TestDecoyAddressesPlaced(t *testing.T) {
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -114,7 +114,7 @@ func TestDecoyAddressesPlaced(t *testing.T) {
 }
 
 func TestNoCellEmpty(t *testing.T) {
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -133,7 +133,7 @@ func TestNoCellEmpty(t *testing.T) {
 }
 
 func TestTrapNodesPlaced(t *testing.T) {
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -161,7 +161,7 @@ func TestSensorNodesPlaced(t *testing.T) {
 	validTypes := map[string]bool{"sonar": true, "thermal": true, "vector": true}
 
 	for i := 0; i < 10; i++ {
-		pz, err := puzzle.Generate(0, nil, 0, 0)
+		pz, err := puzzle.Generate(0, nil, 0, 0, "")
 		if err != nil {
 			t.Fatalf("Generate failed: %v", err)
 		}
@@ -231,7 +231,7 @@ func TestPulseColorForCell(t *testing.T) {
 
 func TestDifficultyModAffectsGrid(t *testing.T) {
 	mod := &puzzle.DifficultyMod{GridSizeDelta: 2}
-	pz, err := puzzle.Generate(0, mod, 0, 0)
+	pz, err := puzzle.Generate(0, mod, 0, 0, "")
 	if err != nil {
 		t.Fatalf("Generate with mod failed: %v", err)
 	}
@@ -242,7 +242,7 @@ func TestDifficultyModAffectsGrid(t *testing.T) {
 }
 
 func TestCellDistancesComputed(t *testing.T) {
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}

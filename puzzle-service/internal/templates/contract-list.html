@@ -1,0 +1,14 @@
+{{define "contract-list.html"}}<div id="contract-list" class="contract-list"{{if .SwapOOB}} hx-swap-oob="outerHTML:#contract-list"{{end}}>
+    <div class="contract-list-header">&gt; DETECTED INTERFACES</div>
+    {{range .Contracts}}
+    <button class="contract-item{{if eq $.ActiveContractID .ID}} contract-item--active{{end}}{{if .Solved}} contract-item--solved{{end}}"
+            {{if not .Solved}}hx-get="/puzzle?contract_id={{.ID}}" hx-target="#main-display" hx-swap="innerHTML"{{end}}>
+        <div class="contract-item-type">[{{.ContractType}}]</div>
+        <div class="contract-item-addr">{{if .Solved}}{{.ShortAddress}}{{else}}????????????{{end}}</div>
+        <div class="contract-item-status">{{if .Solved}}✓ RECOVERED{{else}}▪ ENCRYPTED{{end}}</div>
+    </button>
+    {{end}}
+    <div class="contract-list-progress">
+        {{.SolvedCount}}/{{.TotalCount}} INTERFACES RECOVERED
+    </div>
+</div>{{end}}

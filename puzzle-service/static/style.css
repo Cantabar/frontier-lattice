@@ -203,6 +203,15 @@ body {
     flex: 0 0 80px;
 }
 
+.contracts-sidebar {
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    padding: 8px;
+    flex: 0 0 200px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
 .puzzle-main {
     display: flex;
     flex-direction: column;
@@ -286,6 +295,117 @@ body {
     font-size: 0.7rem;
     color: var(--text);
     margin-top: 4px;
+}
+
+/* === Contract List (Left Sidebar) === */
+
+.contract-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contract-list-header {
+    font-size: 0.6rem;
+    color: var(--accent-cyan);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+.contract-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text);
+    font-family: var(--font-mono);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+}
+
+.contract-item:hover {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.contract-item--active {
+    border-color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.08);
+    box-shadow: inset 0 0 8px rgba(0, 212, 255, 0.1);
+}
+
+.contract-item--solved {
+    cursor: default;
+    opacity: 0.7;
+    border-color: var(--accent-green);
+    background: rgba(0, 255, 136, 0.04);
+}
+
+.contract-item--solved:hover {
+    border-color: var(--accent-green);
+    background: rgba(0, 255, 136, 0.04);
+}
+
+.contract-item-type {
+    font-size: 0.55rem;
+    color: var(--accent-cyan);
+    letter-spacing: 0.08em;
+}
+
+.contract-item--solved .contract-item-type {
+    color: var(--accent-green);
+}
+
+.contract-item-addr {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+}
+
+.contract-item--solved .contract-item-addr {
+    color: var(--text);
+}
+
+.contract-item-status {
+    font-size: 0.5rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+}
+
+.contract-item--solved .contract-item-status {
+    color: var(--accent-green);
+}
+
+.contract-list-progress {
+    font-size: 0.5rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-top: 8px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+/* === Node Key (Right Sidebar) === */
+
+.node-key-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.node-key-row {
+    font-size: 0.7rem;
+    line-height: 1.6;
+}
+
+.node-key-label {
+    color: var(--text-dim);
 }
 
 /* === Cipher Grid === */

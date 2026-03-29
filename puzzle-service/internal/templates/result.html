@@ -1,6 +1,5 @@
-{{define "result.html"}}{{if .Correct}}<div class="boot-line boot-line--correct">✓ pattern recognized: {{.Word}}</div>
-<div class="boot-line boot-line--sys">[SYS] stability: {{.Stability}}/100</div>
+{{define "result.html"}}{{if .Correct}}<div class="boot-line boot-line--correct">✓ contract interface recovered: {{.Word}}</div>
+{{if .ContractType}}<div class="boot-line boot-line--sys">[SYS] interface type: {{.ContractType}}</div>{{end}}
 {{if .ShowNext}}<div class="boot-line boot-line--sys">[SYS] type 'next' to continue</div>{{end}}
-{{else}}<div class="boot-line boot-line--incorrect">✗ noise detected</div>
-<div class="boot-line boot-line--sys">[SYS] corruption: {{.Corruption}}/100</div>
-{{end}}{{template "meters.html" .}}{{end}}
+{{else}}<div class="boot-line boot-line--incorrect">✗ address mismatch — no interface found</div>
+{{end}}{{end}}

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The puzzle service is the player-facing game server for Frontier Corm's Continuity Engine. It serves an HTMX-driven UI where players interact with a corm through three phases: awakening (Phase 0), SUI address discovery puzzles (Phase 1), and trustless contracts (Phase 2). It acts as a bidirectional relay between players' browsers and the corm-brain AI backend.
+The puzzle service is the player-facing game server for Frontier Corm's Continuity Engine. It serves an HTMX-driven UI where players interact with a corm through three phases: awakening (Phase 0), contract discovery puzzles (Phase 1), and trustless contract execution (Phase 2). It acts as a bidirectional relay between players' browsers and the corm-brain AI backend.
 
 ## Architecture
 
@@ -26,26 +26,28 @@ Browser (HTMX)                   puzzle-service                    corm-brain
 
 ### Key Components
 
-- **Session Store** (`internal/puzzle`) — in-memory concurrent map of player sessions. Each session tracks phase, puzzle state (grid, cipher params, target address, decrypted/garbled cells), AI hint state, click logs, stability/corruption meters, and a corm event ring buffer.
+- **Session Store** (`internal/puzzle`) — in-memory concurrent map of player sessions. Each session tracks phase, puzzle state (grid, cipher params, target address, decrypted/garbled cells), AI hint state, click logs, contract list, and a corm event ring buffer.
 - **Corm Relay** (`internal/corm`) — WebSocket hub that accepts connections from corm-brain. Broadcasts player events to all connected brains and dispatches corm actions (log streams, difficulty adjustments, hint toggles, state syncs) back to the target session's action channel.
 - **Handlers** (`internal/handlers`) — HTTP handlers for each game interaction, returning HTMX partial HTML fragments. The decrypt handler implements three distinct code paths: address group reveal, trap explosion, and normal cell decrypt — each with pulse data for client-side animation.
-- **Puzzle Generator** (`internal/puzzle`) — creates dynamically-sized cipher grids (rows and columns computed from the client's viewport) with configurable difficulty. Places a target SUI address, decoy addresses, trap nodes, and sensor nodes, then applies a tiered cipher.
+- **Puzzle Generator** (`internal/puzzle`) — creates dynamically-sized cipher grids (rows and columns computed from the client's viewport) with configurable difficulty. Places a target contract address (or random address), decoy addresses, trap nodes, and sensor nodes, then applies a tiered cipher.
 
 ### Game Phases
 
 - **Phase 0 (Awakening)** — player clicks UI elements on a dead terminal; after a random threshold (3–5 clicks) the corm "awakens" and transitions to Phase 1 via an animated rewrite sequence.
-- **Phase 1 (Puzzle)** — player decrypts cells in a cipher grid to discover a hidden SUI address among decoys. Sensor nodes provide proximity information. Trap nodes explode and permanently garble nearby cells. AI controls hint systems (heatmap, vectors, decode, signal) and adjusts difficulty dynamically.
-- **Phase 2 (Contracts)** — player interacts with on-chain trustless contracts through the corm.
+- **Phase 1 (Contract Discovery)** — player helps the AI discover the contract system by decrypting cipher grids. Each puzzle targets a specific contract address from the player's contract list. A contract list sidebar shows all available contracts; clicking one starts a puzzle for that contract's address. Sensor nodes provide proximity information. Trap nodes explode and permanently garble nearby cells. AI controls hint systems (heatmap, vectors, decode, signal) and adjusts difficulty dynamically.
+- **Phase 2 (Contract Execution)** — player interacts with on-chain trustless contracts through the corm.
 
 ## Phase 1 Mechanics
 
-### SUI Address Discovery
+### Contract Discovery
 
-The puzzle target is a shortened SUI address (12 characters: `0x` + 10 hex chars) hidden in the cipher grid. The grid also contains 4+ decoy addresses of the same format. All addresses are placed horizontally.
+The player has access to a set of trustless contracts. The left sidebar shows all contracts in a scrollable list. Each contract displays its type (CoinForCoin, ItemForCoin, etc.) and a status indicator (encrypted/recovered). Clicking an unsolved contract starts a puzzle for that contract.
+
+The puzzle target is the contract's shortened address (12 characters: `0x` + 10 hex chars) hidden in the cipher grid. The grid also contains 4+ decoy addresses of the same format. All addresses are placed horizontally.
 
 Cells belonging to the same address share a `StringID` (e.g. `"target_main"`, `"decoy_0"`). **Clicking any cell of an address reveals the entire address** — all cells with the same StringID are decrypted simultaneously. The clicked cell is returned as the primary HTMX swap target and the remaining cells are returned as OOB `outerHTML` swaps so the fixed-size grid is updated in place instead of gaining extra DOM nodes.
 
-**Auto-complete on target discovery:** When the target address is revealed (via clicking any of its cells), the puzzle auto-completes: stability is gained, the solve count increments, a `submit` event (with `auto_discovered: true`) is emitted to corm-brain, and a **"PATTERN ANCHOR ISOLATED" overlay** replaces the grid. The overlay displays the confirmed address, stability gain, and solve count, with a `[ RESOLVE NEXT ANCHOR ]` button the player must click to proceed to the next puzzle. The overlay elements use staggered fade-in animations. Target address cells briefly receive a `cell--target-locked` glow animation before the overlay appears.
+**Auto-complete on target discovery:** When the target address is revealed (via clicking any of its cells), the puzzle auto-completes: the contract is marked as solved, the solve count increments, a `submit` event (with `auto_discovered: true` and `contract_id`) is emitted to corm-brain, and a **"CONTRACT INTERFACE RECOVERED" overlay** replaces the grid. The overlay displays the confirmed address, contract type and description, and a `[ DECRYPT NEXT INTERFACE ]` button to proceed. The contract list sidebar updates via OOB swap to reflect the newly solved contract. The overlay elements use staggered fade-in animations. Target address cells briefly receive a `cell--target-locked` glow animation before the overlay appears.
 
 Players can also type the full address into the terminal input (`submit 0x...`) to win without clicking the address cells directly — this remains as a secondary win path.
 
@@ -79,7 +81,7 @@ Sonar sensor nodes override the default radius 2 pulse with a **triple pulse** a
 
 ### Color-Coded Legend
 
-A legend panel in the left sidebar displays the node key:
+A node key panel in the right sidebar (cipher analysis panel) displays the cell type legend:
 - `[S]` Sonar (cyan)
 - `[T]` Thermal (blue)
 - `[V]` Vector (gold)
@@ -130,7 +132,7 @@ Vectors auto-enable after a random threshold of 4–8 non-target cell clicks per
 - **Transport:** HTTP (handlers) + SSE (log streaming) + WebSocket (corm relay)
 - **Assets:** Embedded via `go:embed` (templates in `internal/templates/`, static files in `static/`)
 - **Client-side JS:** Minimal — pulse animation system, terminal command dispatcher, collapsible sidebar, streaming log relay, grid-entrance cleanup. No framework.
-- **Layout:** Fixed viewport (`100vh`) split vertically — puzzle area on top, terminal bar (120px–30vh) on bottom. The grid is dynamically sized to fit the available space without scrolling (`overflow: hidden`).
+- **Layout:** Fixed viewport (`100vh`) split vertically — puzzle area on top, terminal bar (120px–30vh) on bottom. Left sidebar: contract list (200px). Right sidebar: node key + cipher analysis (280px). The grid is dynamically sized to fit the available space without scrolling (`overflow: hidden`).
 
 ## Configuration
 
@@ -163,7 +165,8 @@ All game routes are also available under `/ssu/{entity_id}/` for in-game SSU ifr
 
 All state is in-memory (no persistent storage). Key structures:
 
-- **Session** — player address, context (browser/SSU), phase, puzzle state, hint state, click log, event buffer, action channel, stability/corruption meters, garbled cell set, target destroyed flag
+- **Session** — player address, context (browser/SSU), phase, puzzle state, hint state, click log, event buffer, action channel, contract list, active contract ID, garbled cell set, target destroyed flag
+- **Contract** — ID, full address, shortened address, contract type, description, solved flag
 - **Grid** — 2D cell array. Each cell has: row/col, plaintext (server-only), encrypted character, decrypted flag, cell type, Manhattan distance to target, StringID (address group), HintType (sensor subtype), IsGarbled flag
 - **Cell types** — `CellNoise`, `CellTarget`, `CellDecoy`, `CellTrap`, `CellSymbol`, `CellSensor`, `CellGarbled`
 - **CormEvent** — player event envelope (session ID, player address, context, event type, payload, timestamp)
@@ -204,8 +207,9 @@ puzzle-service/
 │       ├── grid.html            # Cipher grid partial + pulse-data container
 │       ├── cell.html            # Single cell partial (sensor/garbled/address classes)
 │       ├── result.html          # Word submission result partial
-│       ├── meters.html          # Stability/corruption meter partial
-│       ├── cipher-analysis.html # Substitution table + frequency analysis sidebar
+│       ├── meters.html          # Stability/corruption meter partial (legacy)
+│       ├── contract-list.html   # Contract list sidebar partial
+│       ├── cipher-analysis.html # Node key + substitution table + frequency analysis sidebar
 │       ├── log-entry.html       # Corm log message partial
 │       ├── contract-card.html   # Contract entry partial
 │       ├── contracts.html       # Contracts list panel
@@ -227,11 +231,12 @@ puzzle-service/
 
 ## Features
 
-- Three-phase game progression: awakening (Phase 0), SUI address discovery puzzles (Phase 1), trustless contracts (Phase 2)
+- Three-phase game progression: awakening (Phase 0), contract discovery puzzles (Phase 1), trustless contract execution (Phase 2)
 - Phase 0 awakening with random frustration trigger threshold (3–5 clicks) and animated transition sequence
-- Phase 1 cipher grid puzzles with dynamically-sized grid (viewport-fitted, min 32px/cell), configurable difficulty, and three cipher tiers (Caesar, variable shift, position-based)
-- SUI address discovery mechanic with group-reveal (clicking any cell reveals the entire address)
-- Auto-complete on target address discovery with "PATTERN ANCHOR ISOLATED" overlay (semi-transparent, positioned over the grid so the solved puzzle remains visible) and staggered entrance animation
+- Phase 1 contract-driven cipher grid puzzles: player selects a contract from the left sidebar to start a puzzle for that contract's address
+- Dynamically-sized grid (viewport-fitted, min 32px/cell), configurable difficulty, and three cipher tiers (Caesar, variable shift, position-based)
+- Contract address discovery mechanic with group-reveal (clicking any cell reveals the entire address)
+- Auto-complete on target address discovery with "CONTRACT INTERFACE RECOVERED" overlay showing contract type and description, with staggered entrance animation
 - Seven cell types: noise, symbol, target, decoy, trap, sensor (sonar/thermal/vector), garbled
 - Trap explosion system with Euclidean radius 3 blast zone and permanent garbling
 - Localized sonar pulse system on every decrypt (radius 2) with color-coded type signatures
@@ -244,8 +249,8 @@ puzzle-service/
 - HTMX server-rendered UI with SSE log streaming
 - WebSocket relay for bidirectional corm-brain communication with HTTP fallback
 - In-game SSU iframe embedding support (`/ssu/{entity_id}/` routes)
-- Cipher analysis sidebar with substitution table and frequency analysis
-- Stability and corruption meter UI
+- Cipher analysis sidebar with substitution table, frequency analysis, and node key legend
+- Contract list sidebar with solved/unsolved status and progress tracking
 
 ## Known Constraints
 
@@ -255,7 +260,7 @@ puzzle-service/
 
 - Session persistence (Redis or Postgres) for multi-instance deployment
 - SSU context integration (in-game Smart Storage Unit iframe embedding)
-- Actual SUI contract addresses as puzzle targets (pull from on-chain data)
+- Dynamic contract list sync from corm-brain (currently uses hardcoded test contracts)
 - Sensor node density tuning based on playtesting
 - Additional sensor types or hybrid sensor behaviors
 - Trap chain reactions (trap explosion garbling another trap, causing secondary explosion)

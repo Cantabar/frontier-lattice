@@ -157,7 +157,7 @@ func TestPuzzleSubmitFlow(t *testing.T) {
 	sess := puzzle.NewSession("0xtest", "browser")
 
 	// Generate a puzzle
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("puzzle generation failed: %v", err)
 	}
@@ -193,7 +193,7 @@ func TestDecryptFormValues(t *testing.T) {
 
 func TestDecryptTrapCellExplosion(t *testing.T) {
 	sess := puzzle.NewSession("0xtest", "browser")
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("puzzle generation failed: %v", err)
 	}
@@ -316,7 +316,7 @@ func TestVectorsThreshold(t *testing.T) {
 	}
 
 	// LoadPuzzle should reset
-	pz, err := puzzle.Generate(0, nil, 0, 0)
+	pz, err := puzzle.Generate(0, nil, 0, 0, "")
 	if err != nil {
 		t.Fatalf("puzzle generation failed: %v", err)
 	}

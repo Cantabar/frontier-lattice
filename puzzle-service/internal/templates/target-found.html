@@ -1,10 +1,10 @@
 {{define "target-found.html"}}<div id="target-found" class="target-found-overlay" hx-swap-oob="outerHTML:#target-found">
-    <div class="target-found-header target-found-stagger-0">&gt; PATTERN ANCHOR ISOLATED</div>
+    <div class="target-found-header target-found-stagger-0">&gt; CONTRACT INTERFACE RECOVERED</div>
     <div class="target-found-address target-found-stagger-1">{{.Address}}</div>
-    <div class="target-found-stat target-found-stagger-2">[SYS] stability +{{.StabilityGain}} → {{.Stability}}/100</div>
-    <div class="target-found-stat target-found-stagger-3">ANCHORS RESOLVED: {{.SolveCount}}</div>
+    {{if .ContractType}}<div class="target-found-stat target-found-stagger-2">[{{.ContractType}}] {{.Description}}</div>{{end}}
+    <div class="target-found-stat target-found-stagger-3">INTERFACES RECOVERED: {{.SolveCount}}/{{.TotalContracts}}</div>
     <button class="target-found-btn target-found-stagger-4"
             hx-get="/puzzle?transition=1"
             hx-target="#main-display"
-            hx-swap="innerHTML">[ RESOLVE NEXT ANCHOR ]</button>
+            hx-swap="innerHTML">[ DECRYPT NEXT INTERFACE ]</button>
 </div>{{end}}
