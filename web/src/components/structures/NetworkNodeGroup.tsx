@@ -221,13 +221,6 @@ const ActionButton = styled.button<{ $variant: "online" | "offline" }>`
   }
 `;
 
-const Chevron = styled.span<{ $open: boolean }>`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.text.muted};
-  transition: transform 0.2s;
-  transform: rotate(${({ $open }) => ($open ? "90deg" : "0deg")});
-  flex-shrink: 0;
-`;
 
 const GroupBody = styled.div<{ $open: boolean }>`
   display: ${({ $open }) => ($open ? "flex" : "none")};
@@ -337,7 +330,6 @@ export function NetworkNodeGroup({
           <UnconnectedName>Unconnected</UnconnectedName>
           <ConnectedMeta>{structureCount} structure{structureCount !== 1 ? "s" : ""}</ConnectedMeta>
           <Spacer />
-          <Chevron $open={open}>▶</Chevron>
         </UnconnectedHeader>
         <GroupBody $open={open}>{children}</GroupBody>
       </GroupContainer>
@@ -470,7 +462,6 @@ export function NetworkNodeGroup({
               {pending ? "…" : "Offline"}
             </ActionButton>
           )}
-          <Chevron $open={open}>▶</Chevron>
         </TagsRight>
       </CardHeader>
       <GroupBody $open={open}>{children}</GroupBody>
