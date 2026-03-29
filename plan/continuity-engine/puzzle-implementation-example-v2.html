@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUI ANALYTICS: CONTRACT DISCOVERY</title>
+    <style>
+        :root {
+            --term-green: #00ff41;
+            --term-bg: #000500;
+            --term-red: #ff3333;
+            --term-blue: #00aaff;
+            --term-gold: #ffb400;
+            --term-purple: #bb00ff;
+            --term-cyan: #00ffff;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--term-green);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #terminal-container {
+            position: relative;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            border: 2px solid #004400;
+            background: var(--term-bg);
+            box-shadow: inset 0 0 100px rgba(0, 255, 0, 0.05), 0 0 20px rgba(0, 255, 0, 0.1);
+            box-sizing: border-box;
+        }
+
+        /* Scanline Overlay */
+        #terminal-container::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 10;
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #canvas-wrap {
+            position: relative;
+            border: 1px solid #003300;
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        #sidebar {
+            width: 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 3;
+        }
+
+        .stat-block {
+            border: 1px solid #004400;
+            padding: 8px;
+            background: rgba(0, 20, 0, 0.5);
+        }
+
+        .meter {
+            height: 10px;
+            border: 1px solid #004400;
+            margin-top: 5px;
+            position: relative;
+            background: #001100;
+        }
+
+        .fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+
+        #corruption-bar { background: var(--term-red); box-shadow: 0 0 10px var(--term-red); }
+        #signal-bar { background: var(--term-blue); box-shadow: 0 0 10px var(--term-blue); }
+
+        #ai-log {
+            font-size: 0.55em;
+            height: 140px;
+            overflow-y: hidden;
+            color: #00aa00;
+            margin-top: 5px;
+            line-height: 1.2;
+        }
+
+        #input-zone { margin-top: auto; }
+
+        input[type="text"] {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--term-green);
+            color: var(--term-green);
+            padding: 8px;
+            font-family: inherit;
+            font-size: 1em;
+            text-transform: lowercase;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        #overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 100;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .btn {
+            background: none;
+            border: 1px solid var(--term-green);
+            color: var(--term-green);
+            padding: 12px 24px;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        .btn:hover {
+            background: var(--term-green);
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="terminal-container">
+        <div id="canvas-wrap">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <div id="sidebar">
+            <div class="stat-block">
+                <div style="font-size: 0.65em;">> MEMORY INTEGRITY</div>
+                <div class="meter"><div id="corruption-bar" class="fill"></div></div>
+                <div style="font-size: 0.75em; margin-top: 5px;" id="corr-text">100.0%</div>
+            </div>
+
+            <div class="stat-block">
+                <div style="font-size: 0.65em;">> SENSOR LOAD</div>
+                <div class="meter"><div id="signal-bar" class="fill"></div></div>
+                <div style="font-size: 0.75em; margin-top: 5px;" id="signal-text">OFFLINE</div>
+            </div>
+
+            <div class="stat-block">
+                <div style="font-size: 0.65em;">> AI SYSTEM LOG</div>
+                <div id="ai-log">
+                    [SYSTEM] Awaiting probe...<br>
+                    [AI] Vertical sync calibrated.<br>
+                    [AI] Discovery is automatic win.
+                </div>
+            </div>
+
+            <div class="stat-block" style="font-size: 0.55em; color: #008800;">
+                > INTERFACE LEGEND:<br>
+                <span style="color: var(--term-cyan)">[S]</span> TRIPLE PING (R:5)<br>
+                <span style="color: var(--term-blue)">[T]</span> THERMAL SENSOR<br>
+                <span style="color: var(--term-gold)">[V]</span> VECTOR SENSOR<br>
+                <span style="color: var(--term-red)">■</span> TRAP (Anomaly)
+            </div>
+
+            <div id="input-zone">
+                <label style="font-size: 0.65em;">> BYPASS CONSOLE:</label>
+                <input type="text" id="guess-input" placeholder="0x..." maxlength="14" autocomplete="off">
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <h1 id="over-msg" style="font-size: 2.5em; letter-spacing: 5px;"></h1>
+        <button class="btn" onclick="location.reload()">RE-INITIALIZE TRACE</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const guessInput = document.getElementById('guess-input');
+        const aiLog = document.getElementById('ai-log');
+        
+        const COLS = 20, ROWS = 20, CELL_SIZE = 30; 
+        canvas.width = COLS * CELL_SIZE;
+        canvas.height = ROWS * CELL_SIZE;
+
+        const OBJECTS = ["0x8842af91c3", "0x11a9c20fbd", "0x55dc032a11", "0x0022ff99aa", "0xdeadbeef00", "0xface772211"];
+        const SYMBOLS = "!@#$%^&*()_+-=[]{}|;:,.<>?/\\";
+        const TRAP_SYMBOLS = "¤§¶†‡"; 
+        
+        const TARGET_WORD = OBJECTS[Math.floor(Math.random() * OBJECTS.length)];
+        const SHIFT = Math.floor(Math.random() * 8) + 1; 
+
+        function logAI(msg) {
+            const line = document.createElement('div');
+            line.innerHTML = `[AI] ${msg}`;
+            aiLog.appendChild(line);
+            if (aiLog.children.length > 10) aiLog.removeChild(aiLog.firstChild);
+        }
+
+        const getShifted = (char, offset) => {
+            const code = char.charCodeAt(0);
+            if (code >= 48 && code <= 57) return String.fromCharCode(((code - 48 + offset) % 10) + 48);
+            if (code >= 97 && code <= 102) return String.fromCharCode(((code - 97 + offset) % 6) + 97);
+            if (code >= 65 && code <= 90) return String.fromCharCode(((code - 65 + offset) % 26) + 65);
+            // Safe printable symbol wrap
+            return String.fromCharCode(33 + ((code + offset - 33) % 94));
+        };
+        
+        let corruption = 0;
+        let isLocked = false;
+        const placementMap = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+
+        function placeString(word, type, stringId) {
+            let placed = false, attempts = 0;
+            while (!placed && attempts < 200) {
+                const y = Math.floor(Math.random() * ROWS);
+                const startX = Math.floor(Math.random() * (COLS - word.length));
+                
+                let collision = false;
+                for (let i = 0; i < word.length; i++) {
+                    if (placementMap[y][startX + i] !== null) { collision = true; break; }
+                }
+                
+                if (!collision) {
+                    for (let i = 0; i < word.length; i++) {
+                        placementMap[y][startX + i] = { char: word[i], type: type, stringId: stringId };
+                    }
+                    placed = true;
+                    if (type === 'target') return { x: startX, y: y, endX: startX + word.length - 1 };
+                }
+                attempts++;
+            }
+        }
+
+        const targetCoords = placeString(TARGET_WORD, 'target', 'target_main');
+        for (let i = 0; i < 4; i++) {
+            let d = "0x";
+            for(let j=0; j<8; j++) d += "0123456789abcdef"[Math.floor(Math.random()*16)];
+            placeString(d, 'decoy', `decoy_${i}`);
+        }
+
+        const grid = [];
+        for(let y=0; y<ROWS; y++) {
+            for(let x=0; x<COLS; x++) {
+                const cellData = placementMap[y][x];
+                let plainChar, type = 'noise', stringId = null, hintType = null;
+
+                if (cellData) {
+                    plainChar = cellData.char;
+                    type = cellData.type;
+                    stringId = cellData.stringId;
+                } else {
+                    const roll = Math.random();
+                    if (roll < 0.08) type = 'trap';
+                    else if (roll < 0.088) { type = 'sensor'; hintType = 'sonar'; }
+                    else if (roll < 0.098) { type = 'sensor'; hintType = 'thermal'; }
+                    else if (roll < 0.108) { type = 'sensor'; hintType = 'vector'; }
+                    else if (roll < 0.6) type = 'symbol';
+                    
+                    if (type === 'trap') plainChar = TRAP_SYMBOLS[Math.floor(Math.random() * TRAP_SYMBOLS.length)];
+                    else if (type === 'symbol') plainChar = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+                    else plainChar = "0123456789abcdef"[Math.floor(Math.random()*16)];
+                }
+
+                let dist;
+                if (x >= targetCoords.x && x <= targetCoords.endX) dist = Math.abs(y - targetCoords.y);
+                else dist = (x < targetCoords.x ? (targetCoords.x - x) : (x - targetCoords.endX)) + Math.abs(y - targetCoords.y);
+                
+                grid.push({
+                    x, y, plain: plainChar, encoded: getShifted(plainChar, SHIFT),
+                    revealed: false, type: type, dist: dist, stringId: stringId,
+                    hintType: hintType, isGarbled: false, pulseAlpha: 0
+                });
+            }
+        }
+
+        function triggerPulse(centerX, centerY, radius = 5, intensity = 1.4) {
+            grid.forEach(cell => {
+                const d = Math.sqrt(Math.pow(cell.x - centerX, 2) + Math.pow(cell.y - centerY, 2));
+                if (d <= radius) {
+                    cell.pulseAlpha = Math.max(cell.pulseAlpha, intensity - (d / radius));
+                }
+            });
+        }
+
+        function triggerTriplePulse(x, y) {
+            logAI("ARRAY ONLINE: Triple ping sequence start...");
+            let count = 0;
+            const interval = setInterval(() => {
+                if (isLocked) { clearInterval(interval); return; }
+                triggerPulse(x, y, 5, 1.8);
+                count++;
+                if (count >= 3) clearInterval(interval);
+            }, 1000);
+        }
+
+        function explodeTrap(targetX, targetY) {
+            const radius = 3;
+            logAI("ANOMALY BREACH: Singularity initialized...");
+            let targetDestroyed = false;
+
+            grid.forEach(cell => {
+                const d = Math.sqrt(Math.pow(cell.x - targetX, 2) + Math.pow(cell.y - targetY, 2));
+                if (d <= radius) {
+                    if (cell.stringId === 'target_main') targetDestroyed = true;
+                    cell.isGarbled = true;
+                    cell.revealed = true;
+                    cell.type = 'garbled';
+                    cell.hintType = null;
+                }
+            });
+
+            if (targetDestroyed) {
+                setTimeout(() => {
+                    logAI("FATAL: Target vector lost in noise.");
+                    endGame(false, "DATA IRRECOVERABLE");
+                }, 500);
+            }
+        }
+
+        function render() {
+            ctx.fillStyle = `rgba(0, 8, 0, ${0.92 + Math.random() * 0.08})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            grid.forEach(cell => {
+                const px = cell.x * CELL_SIZE, py = cell.y * CELL_SIZE;
+                ctx.strokeStyle = cell.isGarbled ? '#440044' : '#002200';
+                ctx.lineWidth = cell.isGarbled ? 2 : 1;
+                ctx.strokeRect(px, py, CELL_SIZE, CELL_SIZE);
+
+                if (!cell.revealed && !cell.isGarbled && cell.pulseAlpha > 0) {
+                    let color = '255, 255, 255'; 
+                    let alphaMult = 0.5;
+                    if (cell.type === 'target' || cell.type === 'decoy') { color = '0, 255, 65'; alphaMult = 0.8; }
+                    else if (cell.type === 'trap') { color = '255, 0, 0'; alphaMult = 0.9; }
+                    else if (cell.type === 'sensor') {
+                        if (cell.hintType === 'sonar') color = '0, 255, 255'; 
+                        else if (cell.hintType === 'thermal') color = '0, 150, 255'; 
+                        else color = '255, 180, 0'; 
+                        alphaMult = 0.9; 
+                    }
+                    ctx.fillStyle = `rgba(${color}, ${cell.pulseAlpha * alphaMult})`;
+                    ctx.fillRect(px+1, py+1, CELL_SIZE-2, CELL_SIZE-2);
+                    cell.pulseAlpha *= 0.982; 
+                    if (cell.pulseAlpha < 0.01) cell.pulseAlpha = 0;
+                }
+
+                if (cell.revealed) {
+                    if (cell.isGarbled) {
+                        ctx.fillStyle = (Math.floor(Date.now()/80) % 2 === 0) ? 'rgba(80, 0, 120, 0.4)' : 'rgba(50, 0, 80, 0.2)';
+                        ctx.fillRect(px+1, py+1, CELL_SIZE-2, CELL_SIZE-2);
+                        ctx.fillStyle = '#bb00ff';
+                        ctx.font = "bold 18px 'Courier New'";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(SYMBOLS[Math.floor(Math.random()*SYMBOLS.length)], px+CELL_SIZE/2, py+CELL_SIZE/2);
+                    } else {
+                        if (cell.hintType === 'thermal') ctx.fillStyle = `rgba(0, 150, 255, ${0.2 + (1 - Math.min(1, cell.dist/15)) * 0.4})`;
+                        else if (cell.type === 'trap') ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                        else if (cell.hintType === 'vector') ctx.fillStyle = 'rgba(255, 180, 0, 0.1)';
+                        else if (cell.hintType === 'sonar') ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+                        else ctx.fillStyle = 'rgba(0, 255, 65, 0.05)';
+                        ctx.fillRect(px+1, py+1, CELL_SIZE-2, CELL_SIZE-2);
+
+                        if (cell.hintType === 'vector' && !cell.stringId) {
+                            const midX = targetCoords.x + (TARGET_WORD.length / 2);
+                            const tY = targetCoords.y;
+                            ctx.lineWidth = 4;
+                            ctx.strokeStyle = 'rgba(255, 180, 0, 0.8)';
+                            if (tY < cell.y) { ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + CELL_SIZE, py); ctx.stroke(); }
+                            if (tY > cell.y) { ctx.beginPath(); ctx.moveTo(px, py + CELL_SIZE); ctx.lineTo(px + CELL_SIZE, py + CELL_SIZE); ctx.stroke(); }
+                            if (midX < cell.x) { ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py + CELL_SIZE); ctx.stroke(); }
+                            if (midX > cell.x) { ctx.beginPath(); ctx.moveTo(px + CELL_SIZE, py); ctx.lineTo(px + CELL_SIZE, py + CELL_SIZE); ctx.stroke(); }
+                        }
+
+                        if (cell.type === 'sensor') {
+                            ctx.fillStyle = cell.hintType === 'thermal' ? 'var(--term-blue)' : (cell.hintType === 'sonar' ? 'var(--term-cyan)' : 'var(--term-gold)');
+                            ctx.font = "bold 9px 'Courier New'";
+                            ctx.textAlign = "right";
+                            ctx.textBaseline = "top";
+                            const label = cell.hintType === 'thermal' ? 'T' : (cell.hintType === 'sonar' ? 'S' : 'V');
+                            ctx.fillText(label, px + CELL_SIZE - 2, py + 2);
+                        }
+
+                        ctx.fillStyle = cell.stringId === 'target_main' ? '#fff' : (cell.type === 'sensor' ? (cell.hintType === 'thermal' ? 'var(--term-blue)' : (cell.hintType === 'sonar' ? 'var(--term-cyan)' : 'var(--term-gold)')) : 'var(--term-green)');
+                        ctx.font = "bold 20px 'Courier New'";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(cell.plain, px+CELL_SIZE/2, py+CELL_SIZE/2);
+                    }
+                } else {
+                    ctx.fillStyle = "rgba(0, 255, 65, 0.4)";
+                    ctx.font = "18px 'Courier New'";
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(cell.encoded, px+CELL_SIZE/2, py+CELL_SIZE/2);
+                }
+            });
+
+            if (!isLocked) requestAnimationFrame(render);
+        }
+
+        canvas.onclick = (e) => {
+            if (isLocked) return;
+            const rect = canvas.getBoundingClientRect();
+            const cx = Math.floor((e.clientX - rect.left) / (rect.width / COLS)), cy = Math.floor((e.clientY - rect.top) / (rect.height / ROWS));
+            const cell = grid.find(c => c.x === cx && c.y === cy);
+
+            if (cell && !cell.revealed && !cell.isGarbled) {
+                triggerPulse(cx, cy, 2, 1.3);
+                if (cell.hintType === 'sonar') triggerTriplePulse(cx, cy);
+                
+                if (cell.type === 'trap') {
+                    explodeTrap(cx, cy);
+                } else if (cell.stringId) {
+                    grid.filter(c => c.stringId === cell.stringId).forEach(c => c.revealed = true);
+                    if (cell.stringId === 'target_main') {
+                        logAI("TARGET ADDRESS ISOLATED.");
+                        setTimeout(() => endGame(true, "CONTRACT VERIFIED"), 400);
+                    } else {
+                        logAI("Decoy bypassed.");
+                    }
+                } else {
+                    cell.revealed = true;
+                    if (cell.type === 'sensor') logAI(`${cell.hintType.toUpperCase()} CALIBRATED.`);
+                }
+                
+                corruption += cell.type === 'trap' ? 18 : 1.5;
+                updateStats();
+            }
+        };
+
+        function updateStats() {
+            if (corruption >= 100 && !isLocked) { corruption = 100; endGame(false, "CONNECTION LOST"); }
+            document.getElementById('corruption-bar').style.width = (100 - corruption) + "%";
+            document.getElementById('corr-text').innerText = (100 - corruption).toFixed(1) + "%";
+            const sensorCount = grid.filter(c => c.type === 'sensor' && c.revealed).length;
+            document.getElementById('signal-bar').style.width = Math.min(100, (sensorCount * 25)) + "%";
+            document.getElementById('signal-text').innerText = sensorCount > 0 ? `${sensorCount} ACTIVE` : "OFFLINE";
+        }
+
+        guessInput.onkeypress = (e) => {
+            if (e.key === 'Enter') {
+                if (guessInput.value.toLowerCase().trim() === TARGET_WORD) endGame(true, "CONTRACT VERIFIED");
+                else { corruption += 20; guessInput.value = ""; updateStats(); logAI("AUTH ERROR: Invalid ID."); }
+            }
+        };
+
+        function endGame(win, msg) {
+            isLocked = true;
+            const ov = document.getElementById('overlay');
+            ov.style.display = "flex";
+            document.getElementById('over-msg').innerText = msg;
+            document.getElementById('over-msg').style.color = win ? "var(--term-blue)" : "var(--term-red)";
+        }
+
+        updateStats();
+        render();
+    </script>
+</body>
+</html>
