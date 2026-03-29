@@ -34,16 +34,18 @@ func main() {
 
 	// Build router
 	gh := server.GameHandlers{
-		Health:         h.Health,
-		Phase0Page:     h.Phase0Page,
-		Phase0Interact: h.Phase0Interact,
-		PuzzlePage:     h.PuzzlePage,
-		PuzzleDecrypt:  h.PuzzleDecrypt,
-		PuzzleSubmit:   h.PuzzleSubmit,
-		PuzzleGrid:     h.PuzzleGrid,
-		Stream:         h.Stream,
-		Status:         h.Status,
-		ContractsPage:  h.ContractsPage,
+		Health:           h.Health,
+		Phase0Page:       h.Phase0Page,
+		Phase0Interact:   h.Phase0Interact,
+		PuzzlePage:       h.PuzzlePage,
+		PuzzleDecrypt:    h.PuzzleDecrypt,
+		PuzzleSubmit:     h.PuzzleSubmit,
+		PuzzleGrid:       h.PuzzleGrid,
+		Phase2Transition: h.Phase2Transition,
+		Phase2Page:       h.Phase2Page,
+		Stream:           h.Stream,
+		Status:           h.Status,
+		ContractsPage:    h.ContractsPage,
 	}
 	mux := server.NewRouter(gh, sessionStore, relay, staticFS)
 

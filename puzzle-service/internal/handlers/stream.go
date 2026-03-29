@@ -115,31 +115,54 @@ func writeSSEAction(w http.ResponseWriter, flusher http.Flusher, action corm.Cor
 	case corm.ActionContractCreated:
 		var p corm.ContractCreatedPayload
 		json.Unmarshal(action.Payload, &p)
-		data := fmt.Sprintf(`<div class="contract-card" id="contract-%s">`+
-			`<div class="contract-type">%s</div>`+
-			`<div class="contract-desc">%s</div>`+
-			`<div class="contract-reward">%s</div>`+
-			`<a href="%s" class="contract-link" target="_blank">Details</a>`+
-			`</div>`,
-			html.EscapeString(p.ContractID),
-			html.EscapeString(p.ContractType),
-			html.EscapeString(p.Description),
-			html.EscapeString(p.Reward),
-			html.EscapeString(p.DetailURL))
-		writeSSE(w, "corm-contract", data)
+		// Store the AI contract on the session
+		sess.AddAIContract(puzzle.AIContract{
+			ID:           p.ContractID,
+			ContractType: p.ContractType,
+			Description:  p.Description,
+			Reward:       p.Reward,
+			Deadline:     p.Deadline,
+			DetailURL:    p.DetailURL,
+			Status:       "active",
+		})
+		// Remove the empty-state placeholder if present
+		writeSSE(w, "corm-contract-clear", `<div id="phase2-empty" hx-swap-oob="delete"></div>`)
+		// Render the Phase 2 card into the contracts panel
+		var buf strings.Builder
+		h.templates.ExecuteTemplate(&buf, "phase2-card.html", puzzle.AIContract{
+			ID:           p.ContractID,
+			ContractType: p.ContractType,
+			Description:  p.Description,
+			Reward:       p.Reward,
+			Deadline:     p.Deadline,
+			DetailURL:    p.DetailURL,
+			Status:       "active",
+		})
+		writeSSE(w, "corm-contract", buf.String())
 
 	case corm.ActionContractUpdated:
 		var p corm.ContractUpdatedPayload
 		json.Unmarshal(action.Payload, &p)
-		if p.Status == "completed" || p.Status == "expired" || p.Status == "cancelled" {
+		// Update status on the session
+		sess.UpdateAIContract(p.ContractID, p.Status)
+		if p.Status == "completed" {
+			// Re-render card with completed state
+			data := fmt.Sprintf(`<div class="phase2-card phase2-card--completed" id="ai-contract-%s" hx-swap-oob="outerHTML:#ai-contract-%s">`+
+				`<div class="phase2-card-header">`+
+				`<span class="phase2-card-status phase2-card-status--completed">✓ COMPLETE</span>`+
+				`</div></div>`,
+				html.EscapeString(p.ContractID), html.EscapeString(p.ContractID))
+			writeSSE(w, "corm-contract", data)
+		} else if p.Status == "expired" || p.Status == "cancelled" {
 			// Remove the contract card
-			data := fmt.Sprintf(`<div id="contract-%s"></div>`, html.EscapeString(p.ContractID))
+			data := fmt.Sprintf(`<div id="ai-contract-%s" hx-swap-oob="delete"></div>`, html.EscapeString(p.ContractID))
 			writeSSE(w, "corm-contract", data)
 		}
 
 	case corm.ActionStateSync:
 		var p corm.StateSyncPayload
 		json.Unmarshal(action.Payload, &p)
+		prevPhase := sess.Phase
 		sess.Phase = puzzle.Phase(p.Phase)
 		sess.Stability = p.Stability
 		sess.Corruption = p.Corruption
@@ -152,6 +175,12 @@ func writeSSEAction(w http.ResponseWriter, flusher http.Flusher, action corm.Cor
 				"MetersHidden": false,
 			})
 			writeSSE(w, "corm-meters", buf.String())
+		}
+		// Trigger Phase 2 transition if corm-brain advanced the phase
+		if prevPhase < puzzle.PhaseContracts && puzzle.Phase(p.Phase) >= puzzle.PhaseContracts {
+			var buf strings.Builder
+			h.templates.ExecuteTemplate(&buf, "transition-phase2.html", nil)
+			writeSSE(w, "corm-phase-transition", buf.String())
 		}
 	}
 

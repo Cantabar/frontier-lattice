@@ -11,16 +11,18 @@ import (
 
 // GameHandlers groups all handler functions needed by the router.
 type GameHandlers struct {
-	Health         http.HandlerFunc
-	Phase0Page     http.HandlerFunc
-	Phase0Interact http.HandlerFunc
-	PuzzlePage     http.HandlerFunc
-	PuzzleDecrypt  http.HandlerFunc
-	PuzzleSubmit   http.HandlerFunc
-	PuzzleGrid     http.HandlerFunc
-	Stream         http.HandlerFunc
-	Status         http.HandlerFunc
-	ContractsPage  http.HandlerFunc
+	Health           http.HandlerFunc
+	Phase0Page       http.HandlerFunc
+	Phase0Interact   http.HandlerFunc
+	PuzzlePage       http.HandlerFunc
+	PuzzleDecrypt    http.HandlerFunc
+	PuzzleSubmit     http.HandlerFunc
+	PuzzleGrid       http.HandlerFunc
+	Phase2Transition http.HandlerFunc
+	Phase2Page       http.HandlerFunc
+	Stream           http.HandlerFunc
+	Status           http.HandlerFunc
+	ContractsPage    http.HandlerFunc
 }
 
 // NewRouter builds the HTTP mux with all routes registered.
@@ -58,6 +60,10 @@ func registerGameRoutes(mux *http.ServeMux, gh GameHandlers, prefix string) {
 	mux.HandleFunc("GET "+prefix+"/puzzle/grid", gh.PuzzleGrid)
 	mux.HandleFunc("POST "+prefix+"/puzzle/decrypt", gh.PuzzleDecrypt)
 	mux.HandleFunc("POST "+prefix+"/puzzle/submit", gh.PuzzleSubmit)
+
+	// Phase 2 (contracts)
+	mux.HandleFunc("GET "+prefix+"/phase2/transition", gh.Phase2Transition)
+	mux.HandleFunc("GET "+prefix+"/phase2", gh.Phase2Page)
 
 	// SSE stream
 	mux.HandleFunc("GET "+prefix+"/stream", gh.Stream)

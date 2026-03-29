@@ -14,7 +14,7 @@
         <div class="app-layout-top"
              sse-swap="corm-hint" hx-swap="beforeend"
              sse-swap="corm-hint-cell" hx-swap="beforeend">
-            <!-- Left sidebar: Contract list (Phase 1+ only) -->
+            <!-- Left sidebar: Contract list (Phase 1 only) -->
             {{if eq .Phase 1}}
                 <aside id="contracts-sidebar" class="contracts-sidebar">
                     {{template "contract-list.html" .ContractList}}
@@ -28,6 +28,8 @@
             <main id="main-display" class="puzzle-main">
                 {{if eq .Phase 0}}
                     {{template "phase0-content.html" .}}
+                {{else if eq .Phase 2}}
+                    {{template "phase2-content.html" .}}
                 {{else}}
                     {{template "puzzle-content.html" .}}
                 {{end}}
@@ -74,8 +76,8 @@
                   sse-swap="corm-log-delta" hx-swap="innerHTML"></span>
             <span id="end-receiver" style="display:none"
                   sse-swap="corm-log-end" hx-swap="innerHTML"></span>
-            <!-- Hidden stub for SSE contract events -->
-            <div id="contracts" style="display:none"
+            <!-- SSE contract events: target Phase 2 panel when present, hidden stub otherwise -->
+            <div id="phase2-sse-contracts" style="display:none"
                  sse-swap="corm-contract" hx-swap="beforeend"></div>
         </footer>
     </div>

@@ -376,25 +376,32 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
+			// Check if all base contracts are solved → Phase 2 transition
+			unsolved := sess.UnsolvedContracts()
+			allSolved := len(unsolved) == 0
+			if allSolved {
+				sess.TransitionToPhase2()
+			}
+
 			// Log line in terminal
 			fmt.Fprintf(w, `<div id="auto-win" hx-swap-oob="beforeend:#corm-log">`+
 				`<div class="boot-line boot-line--correct">✓ CONTRACT INTERFACE RECOVERED: %s</div>`+
 				`</div>`, sess.TargetWord)
 
-		// Render the target-found overlay (replaces grid via OOB)
-		var nextContractID string
-		if next := sess.RandomUnsolvedContract(); next != nil {
-			nextContractID = next.ID
-		}
-		h.templates.ExecuteTemplate(w, "target-found.html", TargetFoundData{
-			Address:        sess.TargetWord,
-			ContractType:   contractType,
-			Description:    contractDesc,
-			SolveCount:     sess.SolveCount,
-			TotalContracts: len(sess.Contracts),
-			NextContractID: nextContractID,
-			AllSolved:      nextContractID == "",
-		})
+			// Render the target-found overlay (replaces grid via OOB)
+			var nextContractID string
+			if len(unsolved) > 0 {
+				nextContractID = unsolved[0].ID
+			}
+			h.templates.ExecuteTemplate(w, "target-found.html", TargetFoundData{
+				Address:        sess.TargetWord,
+				ContractType:   contractType,
+				Description:    contractDesc,
+				SolveCount:     sess.SolveCount,
+				TotalContracts: len(sess.Contracts),
+				NextContractID: nextContractID,
+				AllSolved:      allSolved,
+			})
 
 			// OOB update the contract list sidebar
 			clData := buildContractListData(sess, true)
@@ -420,6 +427,25 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 			}
 			sess.EventBuffer.Push(submitEvt)
 			go h.relay.BroadcastEvent(submitEvt)
+
+			// Emit phase_transition event if all solved
+			if allSolved {
+				transPayload, _ := json.Marshal(map[string]any{
+					"from": 1,
+					"to":   2,
+				})
+				transEvt := corm.CormEvent{
+					Type:          "event",
+					SessionID:     sess.ID,
+					PlayerAddress: sess.PlayerAddress,
+					Context:       sess.Context,
+					EventType:     "phase_transition",
+					Payload:       transPayload,
+					Timestamp:     time.Now(),
+				}
+				sess.EventBuffer.Push(transEvt)
+				go h.relay.BroadcastEvent(transEvt)
+			}
 		}
 		return
 	}
@@ -623,10 +649,15 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 		resultData["ContractType"] = contractType
 
-		// Pre-select a random next contract for the overlay
+		// Build unsolved list for contract picker overlay
+		unsolved := sess.UnsolvedContracts()
+		allSolved := len(unsolved) == 0
+		if allSolved {
+			sess.TransitionToPhase2()
+		}
 		var nextContractID string
-		if next := sess.RandomUnsolvedContract(); next != nil {
-			nextContractID = next.ID
+		if len(unsolved) > 0 {
+			nextContractID = unsolved[0].ID
 		}
 		resultData["TargetFound"] = TargetFoundData{
 			Address:        sess.TargetWord,
@@ -635,7 +666,7 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 			SolveCount:     sess.SolveCount,
 			TotalContracts: len(sess.Contracts),
 			NextContractID: nextContractID,
-			AllSolved:      nextContractID == "",
+			AllSolved:      allSolved,
 		}
 	} else {
 		sess.IncorrectAttempts++

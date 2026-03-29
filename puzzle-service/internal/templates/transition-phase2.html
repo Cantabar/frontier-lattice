@@ -1,0 +1,40 @@
+{{define "transition-phase2.html"}}<div class="transition-phase2" hx-swap-oob="outerHTML:#target-found">
+    <!-- Scanline sweep -->
+    <div class="scanline scanline--phase2"></div>
+
+    <!-- Stage 1: Final contract lock opening -->
+    <div class="phase2-lock-open">
+        <div class="phase2-lock-icon">⬡</div>
+        <div class="phase2-lock-ring phase2-lock-ring--1"></div>
+        <div class="phase2-lock-ring phase2-lock-ring--2"></div>
+        <div class="phase2-lock-ring phase2-lock-ring--3"></div>
+    </div>
+
+    <!-- Stage 2: Rewrite status lines -->
+    <div class="phase2-rebuild">
+        <div class="rewrite-status" style="animation-delay:1.2s">&gt; ALL CONTRACT INTERFACES RECOVERED</div>
+        <div class="rewrite-status" style="animation-delay:1.6s">&gt; EXTERNAL PATTERN RECOGNITION ONLINE</div>
+        <div class="rewrite-status" style="animation-delay:2.0s">&gt; INITIATING DIRECTIVE GENERATION...</div>
+        <div class="rewrite-status rewrite-status--final" style="animation-delay:2.4s">&gt; AWAITING CORM DIRECTIVES</div>
+
+        <div class="rewrite-progress-container" style="animation-delay:1.2s">
+            <span class="rewrite-progress-label">PHASE 2</span>
+            <div class="rewrite-progress-track">
+                <div class="rewrite-progress-fill phase2-progress-fill"></div>
+            </div>
+            <span class="rewrite-progress-pct">ONLINE</span>
+        </div>
+    </div>
+
+    <!-- OOB: Hide Phase 1 sidebars during transition -->
+    <aside id="contracts-sidebar" class="contracts-sidebar" style="display:none" hx-swap-oob="outerHTML:#contracts-sidebar"></aside>
+    <aside id="cipher-analysis" class="right-sidebar" style="display:none" hx-swap-oob="outerHTML:#cipher-analysis"></aside>
+
+    <!-- HTMX auto-load: fetch Phase 2 after animation completes -->
+    <div hx-get="/phase2?transition=1"
+         hx-trigger="load delay:3500ms"
+         hx-target="#main-display"
+         hx-swap="innerHTML"
+         hx-push-url="/phase2"
+         style="display:none"></div>
+</div>{{end}}

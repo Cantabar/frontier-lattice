@@ -4,7 +4,13 @@
     {{if .ContractType}}<div class="target-found-stat target-found-stagger-2">[{{.ContractType}}] {{.Description}}</div>{{end}}
     <div class="target-found-stat target-found-stagger-3">INTERFACES RECOVERED: {{.SolveCount}}/{{.TotalContracts}}</div>
     {{if .AllSolved}}
-    <div class="target-found-stat target-found-stagger-4">&gt; ALL INTERFACES RECOVERED — DECRYPTION COMPLETE</div>
+    <div class="target-found-stat target-found-stagger-4">&gt; ALL INTERFACES RECOVERED — INITIATING PHASE TRANSITION...</div>
+    <!-- HTMX auto-load: trigger Phase 2 transition after stagger animation -->
+    <div hx-get="/phase2/transition"
+         hx-trigger="load delay:3000ms"
+         hx-target="#main-display"
+         hx-swap="innerHTML"
+         style="display:none"></div>
     {{else}}
     <div class="target-found-next target-found-stagger-4">
         <button class="target-found-next-btn"

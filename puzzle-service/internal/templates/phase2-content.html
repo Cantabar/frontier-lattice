@@ -1,0 +1,50 @@
+{{define "phase2-content.html"}}<div class="phase2-dashboard{{if .ShowEntrance}} phase2-entrance{{end}}">
+    <!-- Status header -->
+    <div class="phase2-header">
+        <div class="phase2-status-row">
+            <span class="phase2-label">&gt; PHASE 2 — DIRECTIVE EXECUTION</span>
+            <span class="phase2-patterns">PATTERNS: {{.CompletedPatterns}}</span>
+        </div>
+        <div class="phase2-meters">
+            <span class="phase2-meter phase2-meter--stability">STB: {{.Stability}}</span>
+            <span class="phase2-meter phase2-meter--corruption">COR: {{.Corruption}}</span>
+        </div>
+    </div>
+
+    <!-- Contract cards (SSE appends here) -->
+    <div id="phase2-contracts" class="phase2-contracts">
+        {{range .Contracts}}
+            {{template "phase2-card.html" .}}
+        {{end}}
+    </div>
+
+    {{if not .Contracts}}
+    <div id="phase2-empty" class="phase2-empty">
+        <div class="phase2-empty-icon">◇</div>
+        <div class="phase2-empty-text">&gt; awaiting corm analysis...</div>
+        <div class="phase2-empty-sub">directives pending</div>
+    </div>
+    {{end}}
+
+    <!-- Slot indicators -->
+    <div class="phase2-slots">
+        <div class="phase2-slot{{if ge .ActiveCount 1}} phase2-slot--filled{{end}}"></div>
+        <div class="phase2-slot{{if ge .ActiveCount 2}} phase2-slot--filled{{end}}"></div>
+        <div class="phase2-slot{{if ge .ActiveCount 3}} phase2-slot--filled{{end}}"></div>
+        <div class="phase2-slot{{if ge .ActiveCount 4}} phase2-slot--filled{{end}}"></div>
+        <div class="phase2-slot{{if ge .ActiveCount 5}} phase2-slot--filled{{end}}"></div>
+    </div>
+</div>{{end}}
+
+{{define "phase2-card.html"}}<div class="phase2-card phase2-card--{{.Status}}" id="ai-contract-{{.ID}}">
+    <div class="phase2-card-header">
+        <span class="phase2-card-type">[{{.ContractType}}]</span>
+        <span class="phase2-card-status phase2-card-status--{{.Status}}">{{if eq .Status "active"}}▪ ACTIVE{{else if eq .Status "completed"}}✓ COMPLETE{{else if eq .Status "expired"}}✗ EXPIRED{{else}}— {{.Status}}{{end}}</span>
+    </div>
+    <div class="phase2-card-desc">{{.Description}}</div>
+    <div class="phase2-card-footer">
+        <span class="phase2-card-reward">{{.Reward}}</span>
+        {{if .Deadline}}<span class="phase2-card-deadline">⏱ {{.Deadline}}</span>{{end}}
+        {{if and .DetailURL (eq .Status "active")}}<a href="{{.DetailURL}}" class="phase2-card-accept" target="_blank">EXECUTE →</a>{{end}}
+    </div>
+</div>{{end}}

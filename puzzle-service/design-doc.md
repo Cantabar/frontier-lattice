@@ -35,7 +35,7 @@ Browser (HTMX)                   puzzle-service                    corm-brain
 
 - **Phase 0 (Awakening)** — player clicks UI elements on a dead terminal; after a random threshold (3–5 clicks) the corm "awakens" and transitions to Phase 1 via an animated rewrite sequence.
 - **Phase 1 (Contract Discovery)** — player helps the AI discover the contract system by decrypting cipher grids. Each puzzle targets a specific contract address from the player's contract list. A contract list sidebar shows all available contracts; clicking one starts a puzzle for that contract's address. Sensor nodes provide proximity information. Trap nodes explode and permanently garble nearby cells. AI controls hint systems (heatmap, vectors, decode, signal) and adjusts difficulty dynamically.
-- **Phase 2 (Contract Execution)** — player interacts with on-chain trustless contracts through the corm.
+- **Phase 2 (Contract Execution)** — player interacts with on-chain trustless contracts through the corm. The corm-brain generates up to 5 contracts at a time, pushed via `contract_created` actions. Players see a contracts dashboard with card-based UI showing type, narrative description, reward, deadline, and an "EXECUTE" link to the main app. Contract completion/failure flows back through corm-brain as `contract_updated` actions.
 
 ## Phase 1 Mechanics
 
@@ -169,7 +169,9 @@ Vectors auto-enable after a random threshold of 4–8 non-target cell clicks per
 - `POST /puzzle/decrypt` — decrypt a cell. Returns the updated cell (or group of cells for addresses), OOB cipher analysis update, and pulse data JSON. For traps, returns OOB swaps for all garbled cells.
 - `POST /puzzle/submit` — submit an address guess via the terminal
 - `GET /puzzle/grid` — re-render current grid state
-- `GET /contracts` — Phase 2 contracts page
+- `GET /contracts` — Phase 2 contracts page (standalone, SSE-populated)
+- `GET /phase2/transition` — Phase 1→2 transition animation
+- `GET /phase2` — Phase 2 contracts dashboard
 - `GET /stream` — SSE endpoint for real-time corm log entries, boost effects, contract updates
 - `GET /status` — current session status (phase, meters, hints)
 
@@ -185,8 +187,9 @@ All game routes are also available under `/ssu/{entity_id}/` for in-game SSU ifr
 
 All state is in-memory (no persistent storage). Key structures:
 
-- **Session** — player address, context (browser/SSU), phase, puzzle state, hint state, click log, event buffer, action channel, contract list, active contract ID, garbled cell set, target destroyed flag
+- **Session** — player address, context (browser/SSU), phase, puzzle state, hint state, click log, event buffer, action channel, contract list (Phase 1), AI contracts list (Phase 2), active contract ID, garbled cell set, target destroyed flag, pattern alignment, completed patterns count
 - **Contract** — ID, full address, shortened address, contract type, description, solved flag
+- **AIContract** — ID, contract type, description, reward, deadline, detail URL, status (active/completed/expired/cancelled), created timestamp
 - **Grid** — 2D cell array. Each cell has: row/col, plaintext (server-only), encrypted character, decrypted flag, cell type, Manhattan distance to target, StringID (address group), HintType (sensor subtype), IsGarbled flag
 - **Cell types** — `CellNoise`, `CellTarget`, `CellDecoy`, `CellTrap`, `CellSymbol`, `CellSensor`, `CellGarbled`
 - **CormEvent** — player event envelope (session ID, player address, context, event type, payload, timestamp)
@@ -214,6 +217,7 @@ puzzle-service/
 │   │   ├── game.go             # Puzzle page, decrypt, submit, pulse data, cipher analysis
 │   │   ├── phase0.go           # Phase 0 awakening interactions
 │   │   ├── contracts.go        # Contracts panel rendering
+│   │   ├── phase2.go           # Phase 2 contracts dashboard + transition
 │   │   ├── stream.go           # SSE endpoint
 │   │   ├── status.go           # Session status endpoint
 │   │   └── health.go           # Health check
@@ -235,6 +239,8 @@ puzzle-service/
 │       ├── contract-card.html   # Contract entry partial
 │       ├── contracts.html       # Contracts list panel
 │       ├── transition-rewrite.html # Phase 0→1 transition animation
+│       ├── transition-phase2.html  # Phase 1→2 transition animation
+│       ├── phase2-content.html    # Phase 2 contracts dashboard + card template
 │       └── target-found.html    # Target address discovery overlay (auto-complete)
 ├── static/
 │   └── style.css               # Grid, sensors, pulses, garbled, legend, animations
@@ -274,6 +280,36 @@ puzzle-service/
 - In-game SSU iframe embedding support (`/ssu/{entity_id}/` routes)
 - Cipher analysis sidebar with substitution table, frequency analysis, and node key legend
 - Contract list sidebar with solved/unsolved status and progress tracking
+- Phase 1→2 transition animation (lock-open rings, scanline, rewrite status lines) triggered when all base contracts are solved
+- Phase 2 contracts dashboard with AI-generated contract cards (type, narrative, reward, deadline, execute link)
+- Phase 2 contract lifecycle management via SSE (contract_created → active card, contract_updated → completed/expired state)
+- Phase 2 contract slot indicators (5 max active contracts)
+- Dual Phase 2 transition triggers: puzzle-service detects AllSolved, corm-brain detects stability ≥ 100 — whichever fires first wins
+
+## Phase 2 Mechanics
+
+### Transition Trigger
+When the player solves the last of the 5 base contracts (Phase 1), the target-found overlay shows "ALL INTERFACES RECOVERED — INITIATING PHASE TRANSITION..." and auto-loads the Phase 2 transition animation after 3 seconds. The transition can also be triggered by corm-brain sending a `state_sync` action with `phase: 2` (stability threshold).
+
+### Transition Animation
+The `transition-phase2.html` template renders:
+1. A central hexagon icon with expanding green ring pulses ("last lock opening")
+2. A scanline sweep
+3. Staggered status lines: ALL CONTRACT INTERFACES RECOVERED → EXTERNAL PATTERN RECOGNITION ONLINE → INITIATING DIRECTIVE GENERATION → AWAITING CORM DIRECTIVES
+4. OOB swaps to hide the Phase 1 sidebars
+5. HTMX auto-load of `GET /phase2?transition=1` after 3.5 seconds
+
+### Phase 2 UI
+The Phase 2 view replaces the cipher grid in `#main-display`. It is a contracts dashboard:
+- **Header:** Phase label, pattern completion counter, inline stability/corruption meters
+- **Contract cards:** Up to 5 active cards, each showing contract type, corm narrative, reward (CORM), deadline, status, and an "EXECUTE →" link to the main app
+- **Empty state:** Pulsing placeholder when no contracts have been generated yet
+- **Slot indicators:** 5 horizontal bars at the bottom, filled proportional to active contract count
+
+### AI Contract Lifecycle
+1. Corm-brain sends `contract_created` via WebSocket → puzzle-service stores an `AIContract` on the session with status "active" → SSE delivers a rendered `phase2-card.html` to the browser
+2. Player executes the contract in the game world → event flows through corm-brain
+3. Corm-brain sends `contract_updated` with status "completed"/"expired"/"cancelled" → puzzle-service updates the session → SSE delivers an OOB card update (completed state or deletion)
 
 ## Known Constraints
 
@@ -285,3 +321,5 @@ puzzle-service/
 - SSU context integration (in-game Smart Storage Unit iframe embedding)
 - Dynamic contract list sync from corm-brain (currently uses hardcoded test contracts)
 - Additional sensor types or hybrid sensor behaviors
+- Phase 2 pattern alignment tracking (currently stored on session but not calculated — lives in corm-brain trait reducers)
+- Phase 3 transition mechanics (agenda-driven multi-step contracts)

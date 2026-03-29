@@ -1650,3 +1650,307 @@ body {
     color: var(--text-dim);
     text-align: right;
 }
+
+/* === Phase 2 — Transition Animation === */
+
+.transition-phase2 {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scanline--phase2 {
+    animation-delay: 0.8s;
+}
+
+/* Lock-open animation (central icon) */
+.phase2-lock-open {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    animation: lock-open-fade 1.8s ease forwards;
+}
+
+.phase2-lock-icon {
+    font-size: 3rem;
+    color: var(--accent-green);
+    text-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+    animation: lock-icon-pulse 1.0s ease forwards;
+}
+
+@keyframes lock-icon-pulse {
+    0%   { opacity: 0; transform: scale(0.5); }
+    40%  { opacity: 1; transform: scale(1.2); text-shadow: 0 0 40px rgba(0, 255, 136, 0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes lock-open-fade {
+    0%, 60% { opacity: 1; }
+    100%    { opacity: 0; }
+}
+
+/* Expanding rings */
+.phase2-lock-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    border: 1px solid var(--accent-green);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+}
+
+.phase2-lock-ring--1 { animation: lock-ring-expand 1.2s ease 0.2s forwards; }
+.phase2-lock-ring--2 { animation: lock-ring-expand 1.2s ease 0.4s forwards; }
+.phase2-lock-ring--3 { animation: lock-ring-expand 1.2s ease 0.6s forwards; }
+
+@keyframes lock-ring-expand {
+    0%   { opacity: 0.6; transform: translate(-50%, -50%) scale(0); }
+    50%  { opacity: 0.3; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(4); }
+}
+
+/* Rebuild text (reuses .rewrite-status from Phase 0→1) */
+.phase2-rebuild {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 500px;
+    text-align: left;
+    z-index: 6;
+}
+
+.rewrite-status--final {
+    color: var(--accent-green);
+}
+
+.phase2-progress-fill {
+    animation: progress-fill 2.0s steps(10) 1.2s forwards;
+}
+
+/* === Phase 2 — Dashboard === */
+
+.phase2-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.phase2-entrance {
+    animation: phase2-fade-in 0.5s ease;
+}
+
+@keyframes phase2-fade-in {
+    0%   { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.phase2-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+}
+
+.phase2-status-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.phase2-label {
+    font-size: 0.75rem;
+    color: var(--accent-cyan);
+    letter-spacing: 0.12em;
+}
+
+.phase2-patterns {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+}
+
+.phase2-meters {
+    display: flex;
+    gap: 12px;
+}
+
+.phase2-meter {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+}
+
+.phase2-meter--stability { color: var(--accent-green); }
+.phase2-meter--corruption { color: var(--accent-red); }
+
+/* Contract cards container */
+.phase2-contracts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Individual card */
+.phase2-card {
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    transition: all 0.2s;
+    animation: phase2-card-enter 0.3s ease;
+}
+
+@keyframes phase2-card-enter {
+    0%   { opacity: 0; transform: translateX(-10px); }
+    100% { opacity: 1; transform: translateX(0); }
+}
+
+.phase2-card:hover {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.1);
+}
+
+.phase2-card--completed {
+    opacity: 0.6;
+    border-color: var(--accent-green);
+    background: rgba(0, 255, 136, 0.03);
+}
+
+.phase2-card--expired,
+.phase2-card--cancelled {
+    opacity: 0.4;
+    border-color: var(--accent-red);
+}
+
+.phase2-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.phase2-card-type {
+    font-size: 0.7rem;
+    color: var(--accent-cyan);
+    letter-spacing: 0.1em;
+}
+
+.phase2-card-status {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+}
+
+.phase2-card-status--active { color: var(--accent-cyan); }
+.phase2-card-status--completed { color: var(--accent-green); }
+.phase2-card-status--expired { color: var(--accent-red); }
+
+.phase2-card-desc {
+    font-size: 0.78rem;
+    color: var(--text);
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.phase2-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.65rem;
+}
+
+.phase2-card-reward {
+    color: var(--accent-gold);
+    letter-spacing: 0.08em;
+}
+
+.phase2-card-deadline {
+    color: var(--text-dim);
+}
+
+.phase2-card-accept {
+    margin-left: auto;
+    color: var(--accent-green);
+    text-decoration: none;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border: 1px solid var(--accent-green);
+    transition: all 0.2s;
+}
+
+.phase2-card-accept:hover {
+    background: rgba(0, 255, 136, 0.1);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+}
+
+/* Empty state */
+.phase2-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 8px;
+    animation: phase2-empty-pulse 3s ease-in-out infinite;
+}
+
+@keyframes phase2-empty-pulse {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+}
+
+.phase2-empty-icon {
+    font-size: 2rem;
+    color: var(--text-dim);
+}
+
+.phase2-empty-text {
+    font-size: 0.8rem;
+    color: var(--accent-cyan);
+    letter-spacing: 0.1em;
+}
+
+.phase2-empty-sub {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+}
+
+/* Slot indicators */
+.phase2-slots {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.phase2-slot {
+    width: 24px;
+    height: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    transition: all 0.3s;
+}
+
+.phase2-slot--filled {
+    background: var(--accent-cyan);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 6px rgba(0, 212, 255, 0.3);
+}
