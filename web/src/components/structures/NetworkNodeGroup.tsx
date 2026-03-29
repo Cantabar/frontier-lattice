@@ -61,7 +61,7 @@ const StructureIconPlaceholder = styled.div`
 `;
 
 const NodeInfo = styled.div`
-  flex: 0 1 250px;
+  flex: 0 1 calc(250px + ${({ theme }) => theme.spacing.md} + 1px);
   min-width: 0;
 `;
 
@@ -438,12 +438,12 @@ export function NetworkNodeGroup({
           <ConnectedMeta>
             {node.connectedAssemblyCount} connected · {structureCount} shown
           </ConnectedMeta>
-          {hasLocation && (
-            <LocationBadge title="Location POD registered">📍 Location</LocationBadge>
-          )}
         </TagsLeft>
 
         <TagsRight>
+          {hasLocation && (
+            <LocationBadge title="Location POD registered">📍 Location</LocationBadge>
+          )}
           {canOnline && (
             <ActionButton
               $variant="online"
@@ -470,8 +470,8 @@ export function NetworkNodeGroup({
               {pending ? "…" : "Offline"}
             </ActionButton>
           )}
+          <Chevron $open={open}>▶</Chevron>
         </TagsRight>
-        <Chevron $open={open}>▶</Chevron>
       </CardHeader>
       <GroupBody $open={open}>{children}</GroupBody>
     </GroupContainer>

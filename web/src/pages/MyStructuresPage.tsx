@@ -802,20 +802,6 @@ function StructureRow({
         <EnergyIndicator $connected={!!structure.energySourceId}>
           {structure.energySourceId ? "⚡ Connected" : "— No energy"}
         </EnergyIndicator>
-        {hasLocation ? (
-          <LocationBadge title="Location POD registered">📍 Location</LocationBadge>
-        ) : isOwner && hasTribeId ? (
-          <AddLocationButton
-            disabled={!tlkUnlocked}
-            title={tlkUnlocked ? "Register a location for this structure" : "Unlock TLK on Locations page first"}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddLocation(structure.id);
-            }}
-          >
-            + Location
-          </AddLocationButton>
-        ) : null}
       </TagsLeft>
 
       <TagsRight>
@@ -838,6 +824,22 @@ function StructureRow({
             {enablingExt ? "…" : "Enable CORM"}
           </ActionButton>
         )}
+
+        {hasLocation ? (
+          <LocationBadge title="Location POD registered">📍 Location</LocationBadge>
+        ) : isOwner && hasTribeId ? (
+          <AddLocationButton
+            disabled={!tlkUnlocked}
+            title={tlkUnlocked ? "Register a location for this structure" : "Unlock TLK on Locations page first"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddLocation(structure.id);
+            }}
+          >
+            + Location
+          </AddLocationButton>
+        ) : null}
+
         {canOnline && (
           <ActionButton
             $variant="online"
