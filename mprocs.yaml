@@ -79,8 +79,7 @@ procs:
   puzzle-service:
     shell: |
       cd puzzle-service
-      echo "Building puzzle-service..."
-      go build -o ./puzzle-service . && echo "Running puzzle-service" && ./puzzle-service
+      air
     env:
       PUZZLE_PORT: "3300"
     stop: "SIGTERM"
