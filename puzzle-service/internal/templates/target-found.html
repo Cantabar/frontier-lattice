@@ -1,4 +1,4 @@
-{{define "target-found.html"}}<div class="target-found-overlay" hx-swap-oob="beforeend:#grid-wrapper">
+{{define "target-found.html"}}<div id="target-found" class="target-found-overlay" hx-swap-oob="outerHTML:#target-found">
     <div class="target-found-header target-found-stagger-0">&gt; PATTERN ANCHOR ISOLATED</div>
     <div class="target-found-address target-found-stagger-1">{{.Address}}</div>
     <div class="target-found-stat target-found-stagger-2">[SYS] stability +{{.StabilityGain}} → {{.Stability}}/100</div>
