@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import styled from "styled-components";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +9,7 @@ import { getStats, getEvents } from "../lib/api";
 import { timeAgo } from "../lib/format";
 import { CopyableId } from "../components/shared/CopyableId";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
+import { PortalTooltip } from "../components/shared/PortalTooltip";
 import { useNotifications } from "../hooks/useNotifications";
 import { useQuickActions } from "../hooks/useQuickActions";
 import { useInitializeTribe } from "../hooks/useInitializeTribe";
@@ -267,6 +268,17 @@ export function Dashboard() {
   const [customizing, setCustomizing] = useState(false);
   const [initName, setInitName] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState("");
+  const installBtnRef = useRef<HTMLButtonElement>(null);
+  const [installBtnHovered, setInstallBtnHovered] = useState(false);
+
+  const installDisabled = isInstalling || !selectedNodeId || !canInstall || !isConfigured;
+  const installDisabledReason = !canInstall
+    ? "You need a Network Node to install a corm."
+    : !isConfigured
+      ? "Corm contracts are not yet deployed."
+      : !selectedNodeId
+        ? "Select a Network Node first."
+        : null;
 
   const { data: stats } = useQuery({
     queryKey: ["stats"],
@@ -357,41 +369,47 @@ export function Dashboard() {
         </ClickableCard>
       </OverviewGrid>
 
-      {canInstall && (
-        <>
-          <SectionLabel>Install Corm</SectionLabel>
-          <OverviewGrid>
-            <OverviewCard>
-              <CardLabel>Network Node</CardLabel>
-              <NodeSelect
-                value={selectedNodeId}
-                onChange={(e) => setSelectedNodeId(e.target.value)}
-                disabled={isInstalling}
-              >
+      <SectionLabel>Install Corm</SectionLabel>
+      <OverviewGrid>
+        <OverviewCard>
+          <CardLabel>Network Node</CardLabel>
+          <NodeSelect
+            value={selectedNodeId}
+            onChange={(e) => setSelectedNodeId(e.target.value)}
+            disabled={isInstalling || networkNodes.length === 0}
+          >
+            {networkNodes.length === 0 ? (
+              <option value="">No Network Nodes found</option>
+            ) : (
+              <>
                 <option value="">Select a Network Node…</option>
                 {networkNodes.map((node) => (
                   <option key={node.id} value={node.id}>
                     {node.name || "Unnamed Node"} ({truncateAddress(node.id)})
                   </option>
                 ))}
-              </NodeSelect>
-              <InitButton
-                onClick={() => {
-                  if (selectedNodeId) installCorm(selectedNodeId);
-                }}
-                disabled={isInstalling || !selectedNodeId}
-              >
-                {isInstalling ? "Installing…" : "Install Corm"}
-              </InitButton>
-              {!isConfigured && (
-                <Meta style={{ marginTop: 6, display: "block" }}>
-                  Corm contracts not yet configured.
-                </Meta>
-              )}
-            </OverviewCard>
-          </OverviewGrid>
-        </>
-      )}
+              </>
+            )}
+          </NodeSelect>
+          <InitButton
+            ref={installBtnRef}
+            onClick={() => {
+              if (selectedNodeId) installCorm(selectedNodeId);
+            }}
+            disabled={installDisabled}
+            onMouseEnter={() => setInstallBtnHovered(true)}
+            onMouseLeave={() => setInstallBtnHovered(false)}
+          >
+            {isInstalling ? "Installing…" : "Install Corm"}
+          </InitButton>
+          <PortalTooltip
+            targetRef={installBtnRef}
+            visible={installBtnHovered && !!installDisabledReason}
+          >
+            <Meta>{installDisabledReason}</Meta>
+          </PortalTooltip>
+        </OverviewCard>
+      </OverviewGrid>
 
       <SectionHeader>
         <SectionLabel style={{ marginBottom: 0 }}>Quick Contract</SectionLabel>
