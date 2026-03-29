@@ -27,11 +27,11 @@
     "typeId": 77728,
     "name": "Sophrogon",
     "categoryName": "Material",
-    "luxValue": 122.1,
-    "timeSeconds": 4.396,
+    "luxValue": 1256.61,
+    "timeSeconds": 45.238,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 0.824,
+      "miningTime": 41.667,
       "craftTime": 3.571
     }
   },
@@ -159,55 +159,73 @@
     "typeId": 78416,
     "name": "Apocalypse Protocol Frame",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 9661.29,
+    "timeSeconds": 347.806,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 151.983,
+      "craftTime": 195.823
+    }
   },
   {
     "typeId": 78417,
     "name": "Bastion Program Frame",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 5024.53,
+    "timeSeconds": 180.883,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 75.06,
+      "craftTime": 105.823
+    }
   },
   {
     "typeId": 78418,
     "name": "Nomad Program Frame",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1660.18,
+    "timeSeconds": 59.766,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 39.766,
+      "craftTime": 20
+    }
   },
   {
     "typeId": 78420,
     "name": "Archangel Protocol Frame",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 5024.53,
+    "timeSeconds": 180.883,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 75.06,
+      "craftTime": 105.823
+    }
   },
   {
     "typeId": 78421,
     "name": "Exterminata Protocol Frame",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 5024.53,
+    "timeSeconds": 180.883,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 75.06,
+      "craftTime": 105.823
+    }
   },
   {
     "typeId": 78422,
     "name": "Equilibrium Program Frame",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 132202.83,
+    "timeSeconds": 4759.302,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 2345.146,
+      "craftTime": 2414.156
+    }
   },
   {
     "typeId": 78423,
@@ -249,11 +267,11 @@
     "typeId": 78435,
     "name": "Eupraxite",
     "categoryName": "Material",
-    "luxValue": 122.1,
-    "timeSeconds": 4.396,
+    "luxValue": 1256.61,
+    "timeSeconds": 45.238,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 0.824,
+      "miningTime": 41.667,
       "craftTime": 3.571
     }
   },
@@ -261,10 +279,13 @@
     "typeId": 78437,
     "name": "EU-90 Fuel",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 244.32,
+    "timeSeconds": 8.796,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 8.648,
+      "craftTime": 0.148
+    }
   },
   {
     "typeId": 78446,
@@ -330,11 +351,11 @@
     "typeId": 78502,
     "name": "Velocity CD82",
     "categoryName": "Module",
-    "luxValue": 60378.89,
-    "timeSeconds": 2173.64,
+    "luxValue": 71724.03,
+    "timeSeconds": 2582.065,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 106.273,
+      "miningTime": 514.698,
       "craftTime": 2067.367
     }
   },
@@ -354,11 +375,11 @@
     "typeId": 78507,
     "name": "Celerity CD02",
     "categoryName": "Module",
-    "luxValue": 20219.24,
-    "timeSeconds": 727.893,
+    "luxValue": 25891.81,
+    "timeSeconds": 932.105,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 101.383,
+      "miningTime": 305.596,
       "craftTime": 626.509
     }
   },
@@ -366,11 +387,11 @@
     "typeId": 78508,
     "name": "Celerity CD03",
     "categoryName": "Module",
-    "luxValue": 131771.82,
-    "timeSeconds": 4743.786,
+    "luxValue": 143116.96,
+    "timeSeconds": 5152.211,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 202.767,
+      "miningTime": 611.192,
       "craftTime": 4541.019
     }
   },
@@ -378,11 +399,11 @@
     "typeId": 78510,
     "name": "Tempo CD42",
     "categoryName": "Module",
-    "luxValue": 33302.58,
-    "timeSeconds": 1198.893,
+    "luxValue": 38975.15,
+    "timeSeconds": 1403.105,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 101.383,
+      "miningTime": 305.596,
       "craftTime": 1097.509
     }
   },
@@ -402,20 +423,23 @@
     "typeId": 78515,
     "name": "SOF-80 Fuel",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 185.41,
+    "timeSeconds": 6.675,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 6.527,
+      "craftTime": 0.148
+    }
   },
   {
     "typeId": 78516,
     "name": "EU-40 Fuel",
     "categoryName": "Commodity",
-    "luxValue": 2.87,
-    "timeSeconds": 0.103,
+    "luxValue": 21.78,
+    "timeSeconds": 0.784,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 0.014,
+      "miningTime": 0.694,
       "craftTime": 0.09
     }
   },
@@ -423,19 +447,25 @@
     "typeId": 81609,
     "name": "USV",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 543491.31,
+    "timeSeconds": 19565.687,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 5094.201,
+      "craftTime": 14471.486
+    }
   },
   {
     "typeId": 81611,
     "name": "Chumaq",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 23808017.58,
+    "timeSeconds": 857088.633,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 231791.606,
+      "craftTime": 625297.027
+    }
   },
   {
     "typeId": 81656,
@@ -477,10 +507,13 @@
     "typeId": 81808,
     "name": "TADES",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 4964974.28,
+    "timeSeconds": 178739.074,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 12739.569,
+      "craftTime": 165999.505
+    }
   },
   {
     "typeId": 81846,
@@ -498,10 +531,13 @@
     "typeId": 81904,
     "name": "MCF",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2729447.61,
+    "timeSeconds": 98260.114,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 8844.535,
+      "craftTime": 89415.579
+    }
   },
   {
     "typeId": 81972,
@@ -939,37 +975,49 @@
     "typeId": 82424,
     "name": "HAF",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 3168156.12,
+    "timeSeconds": 114053.62,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 14033.046,
+      "craftTime": 100020.574
+    }
   },
   {
     "typeId": 82425,
     "name": "LAI",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2764729.01,
+    "timeSeconds": 99530.244,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 9993.76,
+      "craftTime": 89536.484
+    }
   },
   {
     "typeId": 82426,
     "name": "LORHA",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 557920.68,
+    "timeSeconds": 20085.145,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 5273.456,
+      "craftTime": 14811.688
+    }
   },
   {
     "typeId": 82430,
     "name": "MAUL",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 9756132.65,
+    "timeSeconds": 351220.775,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 45941.031,
+      "craftTime": 305279.745
+    }
   },
   {
     "typeId": 82647,
@@ -1119,11 +1167,11 @@
     "typeId": 82915,
     "name": "Afterburner IV",
     "categoryName": "Module",
-    "luxValue": 27052.44,
-    "timeSeconds": 973.888,
+    "luxValue": 44070.15,
+    "timeSeconds": 1586.525,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 45.088,
+      "miningTime": 657.725,
       "craftTime": 928.8
     }
   },
@@ -1227,11 +1275,11 @@
     "typeId": 83437,
     "name": "Systematic Armor Restorer III",
     "categoryName": "Module",
-    "luxValue": 7585.71,
-    "timeSeconds": 273.086,
+    "luxValue": 13258.28,
+    "timeSeconds": 477.298,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 11.897,
+      "miningTime": 216.109,
       "craftTime": 261.189
     }
   },
@@ -1239,11 +1287,11 @@
     "typeId": 83438,
     "name": "Systematic Armor Restorer IV",
     "categoryName": "Module",
-    "luxValue": 41067.51,
-    "timeSeconds": 1478.43,
+    "luxValue": 63757.79,
+    "timeSeconds": 2295.28,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 173.708,
+      "miningTime": 990.558,
       "craftTime": 1304.722
     }
   },
@@ -1263,11 +1311,11 @@
     "typeId": 83442,
     "name": "Adaptive Nanitic Armor Weave III",
     "categoryName": "Module",
-    "luxValue": 6472.91,
-    "timeSeconds": 233.025,
+    "luxValue": 12145.48,
+    "timeSeconds": 437.237,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 7.418,
+      "miningTime": 211.63,
       "craftTime": 225.607
     }
   },
@@ -1275,11 +1323,11 @@
     "typeId": 83443,
     "name": "Adaptive Nanitic Armor Weave IV",
     "categoryName": "Module",
-    "luxValue": 29717.03,
-    "timeSeconds": 1069.813,
+    "luxValue": 63752.44,
+    "timeSeconds": 2295.088,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 59.67,
+      "miningTime": 1284.945,
       "craftTime": 1010.143
     }
   },
@@ -1371,11 +1419,11 @@
     "typeId": 83459,
     "name": "Shield Restorer IV",
     "categoryName": "Module",
-    "luxValue": 36078.85,
-    "timeSeconds": 1298.839,
+    "luxValue": 53096.55,
+    "timeSeconds": 1911.476,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 100.983,
+      "miningTime": 713.62,
       "craftTime": 1197.856
     }
   },
@@ -1575,11 +1623,11 @@
     "typeId": 83536,
     "name": "Afterburner III",
     "categoryName": "Module",
-    "luxValue": 6472.91,
-    "timeSeconds": 233.025,
+    "luxValue": 12145.48,
+    "timeSeconds": 437.237,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 7.418,
+      "miningTime": 211.63,
       "craftTime": 225.607
     }
   },
@@ -1887,10 +1935,13 @@
     "typeId": 83818,
     "name": "Fossilized Exotronics",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220.92,
+    "timeSeconds": 7.953,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7.953,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83839,
@@ -1908,181 +1959,241 @@
     "typeId": 83891,
     "name": "Gravionite",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 22092.49,
+    "timeSeconds": 795.33,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 795.33,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83892,
     "name": "Luminalis",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2209.25,
+    "timeSeconds": 79.533,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 79.533,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83893,
     "name": "Eclipsite",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 22092.49,
+    "timeSeconds": 795.33,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 795.33,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83894,
     "name": "Radiantium",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2209.25,
+    "timeSeconds": 79.533,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 79.533,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83895,
     "name": "Radiantium Mining Lens",
     "categoryName": "Charge",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2386.81,
+    "timeSeconds": 85.925,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 80.225,
+      "craftTime": 5.7
+    }
   },
   {
     "typeId": 83896,
     "name": "Gravionite Mining Lens",
     "categoryName": "Charge",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 22336.08,
+    "timeSeconds": 804.099,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 796.099,
+      "craftTime": 8
+    }
   },
   {
     "typeId": 83897,
     "name": "Luminalis Mining Lens",
     "categoryName": "Charge",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2386.81,
+    "timeSeconds": 85.925,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 80.225,
+      "craftTime": 5.7
+    }
   },
   {
     "typeId": 83898,
     "name": "Eclipsite Mining Lens",
     "categoryName": "Charge",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 22336.08,
+    "timeSeconds": 804.099,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 796.099,
+      "craftTime": 8
+    }
   },
   {
     "typeId": 83899,
     "name": "Catalytic Dust",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2209.25,
+    "timeSeconds": 79.533,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 79.533,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83978,
     "name": "Navigational Artefact",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83979,
     "name": "Oil Painting",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83980,
     "name": "Stranger's Head",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83981,
     "name": "Miner Hiring Form",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83982,
     "name": "Network Pollinator",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83983,
     "name": "Old Neurocord",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83984,
     "name": "Synod Propaganda",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83985,
     "name": "Normalization Permit",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83986,
     "name": "Very Strange Musical Instrument",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83987,
     "name": "Multimedia Library",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 83988,
     "name": "Drone Signal Records",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1,
+    "timeSeconds": 0.036,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 0.036,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 84180,
@@ -2148,22 +2259,13 @@
     "typeId": 84868,
     "name": "SOF-40 Fuel",
     "categoryName": "Commodity",
-    "luxValue": 2.87,
-    "timeSeconds": 0.103,
+    "luxValue": 21.78,
+    "timeSeconds": 0.784,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 0.014,
+      "miningTime": 0.694,
       "craftTime": 0.09
     }
-  },
-  {
-    "typeId": 85156,
-    "name": "Forager",
-    "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
   },
   {
     "typeId": 87599,
@@ -2181,37 +2283,49 @@
     "typeId": 87698,
     "name": "Wend",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 20820.66,
+    "timeSeconds": 749.544,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 344.5,
+      "craftTime": 405.044
+    }
   },
   {
     "typeId": 87846,
     "name": "Recurve",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 44223.84,
+    "timeSeconds": 1592.058,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 916.996,
+      "craftTime": 675.062
+    }
   },
   {
     "typeId": 87847,
     "name": "Reflex",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 12648.05,
+    "timeSeconds": 455.33,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 207.647,
+      "craftTime": 247.683
+    }
   },
   {
     "typeId": 87848,
     "name": "Reiver",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 45414.77,
+    "timeSeconds": 1634.932,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 740.386,
+      "craftTime": 894.546
+    }
   },
   {
     "typeId": 88234,
@@ -2241,10 +2355,13 @@
     "typeId": 88319,
     "name": "D2 Fuel",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 4.43,
+    "timeSeconds": 0.16,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 0.045,
+      "craftTime": 0.114
+    }
   },
   {
     "typeId": 88335,
@@ -2274,37 +2391,49 @@
     "typeId": 88564,
     "name": "Feral Echo",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220.92,
+    "timeSeconds": 7.953,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7.953,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 88565,
     "name": "Still Knot",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1421.73,
+    "timeSeconds": 51.182,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 39.844,
+      "craftTime": 11.338
+    }
   },
   {
     "typeId": 88764,
     "name": "Salvaged Materials",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 249.87,
+    "timeSeconds": 8.995,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 8.995,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 88765,
     "name": "Mummified Clone",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 34.89,
+    "timeSeconds": 1.256,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 1.256,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 88780,
@@ -2466,19 +2595,25 @@
     "typeId": 89087,
     "name": "Synod Technocore",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 22092.49,
+    "timeSeconds": 795.33,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 795.33,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89088,
     "name": "Exclave Technocore",
     "categoryName": "Material",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89089,
@@ -2532,109 +2667,145 @@
     "typeId": 89978,
     "name": "Stride Stack",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2083699.63,
+    "timeSeconds": 75013.187,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 31813.187,
+      "craftTime": 43200
+    }
   },
   {
     "typeId": 89979,
     "name": "Carom Stack",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2525549.45,
+    "timeSeconds": 90919.78,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 47719.78,
+      "craftTime": 43200
+    }
   },
   {
     "typeId": 89980,
     "name": "Stack Slice 5DZ",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89981,
     "name": "Stack Slice 5DW",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89982,
     "name": "Stack Slice 5DK",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89983,
     "name": "Stack Slice 5DE",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89984,
     "name": "Stack Slice 5C0",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89985,
     "name": "Stack Slice 5C1",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89986,
     "name": "Stack Slice 31P",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89987,
     "name": "Stack Slice 31V",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89988,
     "name": "Stack Slice 31Q",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 89989,
     "name": "Stack Slice 31F",
     "categoryName": "Commodity",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 220924.91,
+    "timeSeconds": 7953.297,
+    "source": "found",
+    "breakdown": {
+      "miningTime": 7953.297,
+      "craftTime": 0
+    }
   },
   {
     "typeId": 90887,
@@ -2652,46 +2823,61 @@
     "typeId": 91106,
     "name": "Stride",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2431692.08,
+    "timeSeconds": 87540.915,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 32753.144,
+      "craftTime": 54787.771
+    }
   },
   {
     "typeId": 91107,
     "name": "Carom",
     "categoryName": "Ship",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 2859147.92,
+    "timeSeconds": 102929.325,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 48588.035,
+      "craftTime": 54341.29
+    }
   },
   {
     "typeId": 91749,
     "name": "Reaping Shell",
     "categoryName": "Shell",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1426520.88,
+    "timeSeconds": 51354.752,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 409.261,
+      "craftTime": 50945.491
+    }
   },
   {
     "typeId": 91967,
     "name": "Aggressive Shell",
     "categoryName": "Shell",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1297165.99,
+    "timeSeconds": 46697.976,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 248.916,
+      "craftTime": 46449.06
+    }
   },
   {
     "typeId": 91968,
     "name": "Rugged Shell",
     "categoryName": "Shell",
-    "luxValue": null,
-    "timeSeconds": null,
-    "source": "unknown",
-    "breakdown": null
+    "luxValue": 1047902.43,
+    "timeSeconds": 37724.487,
+    "source": "crafted",
+    "breakdown": {
+      "miningTime": 380.638,
+      "craftTime": 37343.849
+    }
   },
   {
     "typeId": 92389,
@@ -2721,11 +2907,11 @@
     "typeId": 92394,
     "name": "Fine Young Crude Matter",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
-    "timeSeconds": 0.154,
+    "luxValue": 216.05,
+    "timeSeconds": 7.778,
     "source": "mining",
     "breakdown": {
-      "miningTime": 0.154,
+      "miningTime": 7.778,
       "craftTime": 0
     }
   },
@@ -2733,11 +2919,11 @@
     "typeId": 92414,
     "name": "Fine Old Crude Matter",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
-    "timeSeconds": 0.154,
+    "luxValue": 216.05,
+    "timeSeconds": 7.778,
     "source": "mining",
     "breakdown": {
-      "miningTime": 0.154,
+      "miningTime": 7.778,
       "craftTime": 0
     }
   },
@@ -2757,11 +2943,11 @@
     "typeId": 92422,
     "name": "Brine",
     "categoryName": "Material",
-    "luxValue": 12.21,
-    "timeSeconds": 0.44,
+    "luxValue": 125.66,
+    "timeSeconds": 4.524,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 0.082,
+      "miningTime": 4.167,
       "craftTime": 0.357
     }
   },
@@ -2769,11 +2955,11 @@
     "typeId": 92483,
     "name": "Still Kernel",
     "categoryName": "Material",
-    "luxValue": 937.42,
-    "timeSeconds": 33.747,
+    "luxValue": 6609.99,
+    "timeSeconds": 237.96,
     "source": "crafted",
     "breakdown": {
-      "miningTime": 4.89,
+      "miningTime": 209.103,
       "craftTime": 28.857
     }
   },

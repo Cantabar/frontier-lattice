@@ -61,6 +61,7 @@ Not deployed — data is consumed at build time by the web frontend and at runti
 - Icon extraction scripts for item and structure icons
 - Item enrichment with category, group, tier, and tag metadata
 - Ore seeding for local SSU testing
+- Item value computation (`scripts/build-item-values.mjs`) with found-in-world baselines (Carbon Weave multipliers, back-traced refinery values, loot commodities) and Crude Extractor 3× lens amortised cost
 - Makefile targets for enrichment and seeding workflows
 
 ## Open Questions / Future Work
