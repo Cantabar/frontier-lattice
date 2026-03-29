@@ -379,6 +379,31 @@ export interface AssemblyMetadataData {
 }
 
 // ============================================================
+// Build Request (Witnessed Contracts)
+// ============================================================
+
+export type BuildRequestStatus = "Open" | "Completed";
+
+export interface BuildRequestContractData {
+  id: string;
+  posterId: string;
+  posterAddress: string;
+  bountyAmount: string;
+  requestedTypeId: number;
+  requireCormAuth: boolean;
+  builderAddress?: string;
+  structureId?: string;
+  deadlineMs: string;
+  status: BuildRequestStatus;
+  allowedCharacters: string[];
+  allowedTribes: number[];
+  referenceStructureId?: string;
+  maxDistance?: number;
+  proximityTribeId?: string;
+  coinType?: string;
+}
+
+// ============================================================
 // Indexer event types (Phase 4)
 // ============================================================
 
@@ -413,7 +438,12 @@ export type EventTypeName =
   | "SlotFilledEvent"
   | "MultiInputContractCompletedEvent"
   | "MultiInputContractCancelledEvent"
-  | "MultiInputContractExpiredEvent";
+  | "MultiInputContractExpiredEvent"
+  // Build Request (Witnessed Contracts)
+  | "BuildRequestCreatedEvent"
+  | "BuildRequestFulfilledEvent"
+  | "BuildRequestCancelledEvent"
+  | "BuildRequestExpiredEvent";
 
 export interface ArchivedEvent {
   id: number;

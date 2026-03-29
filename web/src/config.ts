@@ -72,6 +72,7 @@ export const config = {
     cormState: import.meta.env.VITE_CORM_STATE_PACKAGE_ID ?? "0x0",
     world: import.meta.env.VITE_WORLD_PACKAGE_ID ?? "0x0",
     assemblyMetadata: import.meta.env.VITE_ASSEMBLY_METADATA_PACKAGE_ID ?? "0x0",
+    witnessedContracts: import.meta.env.VITE_WITNESSED_CONTRACTS_PACKAGE_ID ?? "0x0",
   },
 
   /** Shared object IDs */

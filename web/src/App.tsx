@@ -18,6 +18,8 @@ import { EventExplorer } from "./pages/EventExplorer";
 import { TrustlessContracts } from "./pages/TrustlessContracts";
 import { CreateContractPage } from "./pages/CreateContractPage";
 import { ContractDetailPage } from "./pages/ContractDetailPage";
+import { BuildRequestDetailPage } from "./pages/BuildRequestDetailPage";
+import { CreateBuildRequestPage } from "./pages/CreateBuildRequestPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { StructuresRedirect, MyStructuresPage } from "./pages/MyStructuresPage";
 import { LocationsPage } from "./pages/LocationsPage";
@@ -98,6 +100,8 @@ export default function App() {
               <Route path="/tribe/:tribeId" element={<TribePage />} />
               <Route path="/contracts" element={<TrustlessContracts />} />
               <Route path="/contracts/create" element={<CreateContractPage />} />
+              <Route path="/contracts/build/create" element={<CreateBuildRequestPage />} />
+              <Route path="/contracts/build/:contractId" element={<BuildRequestDetailPage />} />
               <Route path="/contracts/:contractId" element={<ContractDetailPage />} />
               <Route path="/continuity" element={<ContinuityEngine />} />
               <Route path="/events" element={<EventExplorer />} />

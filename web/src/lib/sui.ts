@@ -1580,3 +1580,92 @@ export function buildDeleteAssemblyMetadata(params: {
   });
   return tx;
 }
+
+// ============================================================
+// Build Request (Witnessed Contracts)
+// ============================================================
+
+const wcPkg = () => packages.witnessedContracts;
+const wcTarget = (fn: string) => `${wcPkg()}::build_request::${fn}`;
+
+/** Create a build request contract. Poster escrows a bounty split from gas. */
+export function buildCreateBuildRequest(params: {
+  characterId: string;
+  bountyAmount: number;
+  requestedTypeId: number;
+  requireCormAuth: boolean;
+  deadlineMs: number;
+  allowedCharacters: string[];
+  allowedTribes: number[];
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  const [bounty] = tx.splitCoins(tx.gas, [params.bountyAmount]);
+  tx.moveCall({
+    target: wcTarget("create"),
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.pure.id(params.characterId),
+      tx.pure.address(params.characterId), // poster_address — for refund routing
+      bounty,
+      tx.pure.u64(params.requestedTypeId),
+      tx.pure.bool(params.requireCormAuth),
+      tx.pure.u64(params.deadlineMs),
+      tx.pure("vector<address>", params.allowedCharacters),
+      tx.pure("vector<u32>", params.allowedTribes),
+      tx.object(SUI_CLOCK),
+    ],
+  });
+  return tx;
+}
+
+/** Cancel an open build request. Poster only. */
+export function buildCancelBuildRequest(params: {
+  contractId: string;
+  posterAddress: string;
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: wcTarget("cancel"),
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.object(params.contractId),
+      tx.pure.address(params.posterAddress),
+    ],
+  });
+  return tx;
+}
+
+/** Expire a build request after its deadline. Anyone can call. */
+export function buildExpireBuildRequest(params: {
+  contractId: string;
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: wcTarget("expire"),
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.object(params.contractId),
+      tx.object(SUI_CLOCK),
+    ],
+  });
+  return tx;
+}
+
+/** Clean up a completed build request to reclaim storage. */
+export function buildCleanupBuildRequest(params: {
+  contractId: string;
+  coinType?: string;
+}): Transaction {
+  const tx = new Transaction();
+  tx.moveCall({
+    target: wcTarget("cleanup"),
+    typeArguments: [ct(params.coinType)],
+    arguments: [
+      tx.object(params.contractId),
+    ],
+  });
+  return tx;
+}

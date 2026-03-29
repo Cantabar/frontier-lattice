@@ -71,9 +71,11 @@ Client-side privacy-preserving location sharing with ZK proof generation. The se
 
 - `/` — Dashboard (overview with quick actions for contract creation)
 - `/tribe/:tribeId` — Tribe detail (members, reputation leaderboard)
-- `/contracts` — Trustless contracts list
-- `/contracts/create` — Create new contract
-- `/contracts/:contractId` — Contract detail (fills, status)
+- `/contracts` — Contracts list (trustless + build requests)
+- `/contracts/create` — Create new trustless contract
+- `/contracts/build/create` — Create new build request
+- `/contracts/build/:contractId` — Build request detail
+- `/contracts/:contractId` — Trustless contract detail (fills, status)
 - `/continuity` — Continuity Engine (puzzle-service iframe with CormState bridge)
 - `/events` — Event Explorer (filterable event log)
 - `/structures` → redirects to `/structures/:characterId`
@@ -115,6 +117,7 @@ All via Vite environment variables (`VITE_*`), resolved in `src/config.ts`:
 - `VITE_PUZZLE_SERVICE_URL` — puzzle service URL (Continuity Engine iframe)
 - `VITE_CORM_STATE_ID` — CormState shared object ID
 - `VITE_CORM_CONFIG_ID` — CormConfig shared object ID (for permissionless corm installation)
+- `VITE_WITNESSED_CONTRACTS_PACKAGE_ID` — witnessed contracts (build_request) package ID
 
 Per-environment defaults are defined in `config.ts` and overridden by explicit `VITE_*` vars. Environment files: `.env.localnet`, `.env.utopia`, `.env.stillness`.
 
@@ -154,6 +157,7 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 - Tribe member list includes a "Structures" column linking to each member's structures page (`/structures/:characterId`) for easy cross-member structure browsing
 - Location badge deep-linking: the "📍 Location" badge on structure rows and network node headers links to `/locations?structure=<id>`, scrolling to and briefly highlighting the matching POD row on the Locations page
 - Structures → Locations navigation: structure rows and network node group headers without a registered location show a "+ Location" link to `/locations`, enabling the player to navigate directly to the Locations page to unlock the TLK and register locations
+- Build request (witnessed) contracts: create, list, and detail views for `BuildRequestContract` from the `witnessed_contracts` package. Poster escrows a bounty for building a specific structure type; the CORM witness service auto-fulfills when a matching anchor event is detected. Supports CormAuth requirement, character/tribe access control, and proximity gating. Integrated into the unified contracts list with a "Build Request" type filter.
 
 ## Open Questions / Future Work
 

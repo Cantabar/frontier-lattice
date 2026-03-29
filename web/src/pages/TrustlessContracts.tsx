@@ -2,14 +2,16 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useIdentity } from "../hooks/useIdentity";
 import { useActiveContracts } from "../hooks/useContracts";
+import { useActiveBuildRequests } from "../hooks/useBuildRequests";
 import { useContractFilters } from "../hooks/useContractFilters";
 import type { StatusTab, SortKey } from "../hooks/useContractFilters";
 import { ContractCard } from "../components/contracts/ContractCard";
+import { BuildRequestCard } from "../components/contracts/BuildRequestCard";
 import { ContractHistory } from "../components/contracts/ContractHistory";
 import { ContractFilterPanel } from "../components/contracts/ContractFilterPanel";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
-import { PrimaryButton } from "../components/shared/Button";
+import { PrimaryButton, SecondaryButton } from "../components/shared/Button";
 
 const Page = styled.div``;
 
@@ -87,16 +89,30 @@ export function TrustlessContracts() {
   const navigate = useNavigate();
   const { characterId, inGameTribeId } = useIdentity();
   const { contracts, isLoading } = useActiveContracts();
+  const { contracts: buildRequests, isLoading: buildReqLoading } = useActiveBuildRequests();
 
   const filters = useContractFilters(contracts, { characterId, inGameTribeId });
 
-  if (isLoading) return <LoadingSpinner />;
+  // Filter build requests by the current status tab
+  const filteredBuildRequests = buildRequests.filter((br) => {
+    if (filters.statusTab !== "all" && br.status !== filters.statusTab) return false;
+    if (filters.typeFilter !== "all" && filters.typeFilter !== ("BuildRequest" as never)) return false;
+    return true;
+  });
+
+  // When type filter is set to a trustless-specific type, hide build requests
+  const showBuildRequests = filters.typeFilter === "all" || filters.typeFilter === ("BuildRequest" as never);
+
+  if (isLoading || buildReqLoading) return <LoadingSpinner />;
 
   return (
     <Page>
       <Header>
-        <Title>Trustless Contracts</Title>
-        {characterId && <PrimaryButton onClick={() => navigate("/contracts/create")}>+ Create Contract</PrimaryButton>}
+        <Title>Contracts</Title>
+        <div style={{ display: "flex", gap: "8px" }}>
+          {characterId && <SecondaryButton onClick={() => navigate("/contracts/build/create")}>+ Build Request</SecondaryButton>}
+          {characterId && <PrimaryButton onClick={() => navigate("/contracts/create")}>+ Create Contract</PrimaryButton>}
+        </div>
       </Header>
 
       <FilterRow>
@@ -115,6 +131,7 @@ export function TrustlessContracts() {
           <option value="ItemForCoin">Item → Coin</option>
           <option value="ItemForItem">Item → Item</option>
           <option value="Transport">Transport</option>
+          <option value="BuildRequest">Build Request</option>
         </TypeSelect>
         <SortSelect
           value={filters.sortKey}
@@ -145,13 +162,16 @@ export function TrustlessContracts() {
         onClearAll={filters.clearFilters}
       />
 
-      {filters.filteredAndSorted.length === 0 ? (
+      {filters.filteredAndSorted.length === 0 && filteredBuildRequests.length === 0 ? (
         <EmptyState
           title="No contracts found"
-          description="Create a trustless contract or connect your wallet to browse."
+          description="Create a trustless contract or build request, or connect your wallet to browse."
         />
       ) : (
         <Grid>
+          {showBuildRequests && filteredBuildRequests.map((br) => (
+            <BuildRequestCard key={br.id} contract={br} onClick={() => navigate(`/contracts/build/${br.id}`)} />
+          ))}
           {filters.filteredAndSorted.map((c) => (
             <ContractCard key={c.id} contract={c} onClick={() => navigate(`/contracts/${c.id}`)} />
           ))}

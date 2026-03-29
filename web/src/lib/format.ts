@@ -2,6 +2,8 @@
  * Display formatting utilities.
  */
 
+import { ASSEMBLY_TYPES } from "./types";
+
 /** Truncate a Sui address/object ID for display: 0x1234...abcd */
 export function truncateAddress(addr: string | undefined | null, startLen = 6, endLen = 4): string {
   if (!addr) return "—";
@@ -100,8 +102,14 @@ export function contractTypeLabel(variant: string): string {
     case "ItemForCoin": return "Item → Coin";
     case "ItemForItem": return "Item → Item";
     case "Transport": return "Transport";
+    case "BuildRequest": return "Build Request";
     default: return variant;
   }
+}
+
+/** Resolve a structure type ID to a human-readable name using ASSEMBLY_TYPES. */
+export function structureTypeName(typeId: number): string {
+  return ASSEMBLY_TYPES[typeId]?.label ?? `Type #${typeId}`;
 }
 
 /** Format a deadline timestamp as a countdown string or "Expired". */
