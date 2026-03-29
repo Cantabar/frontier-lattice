@@ -29,7 +29,7 @@ fun test_mint_corm() {
         corm_auth::destroy_admin_cap_for_testing(admin_cap);
     };
 
-    // Mint CORM to PLAYER
+    // Mint 100 CORM (= 1_000_000 base units at 4 decimals) to PLAYER
     scenario.next_tx(ADMIN);
     {
         let mut authority = scenario.take_shared<CoinAuthority>();
@@ -41,23 +41,23 @@ fun test_mint_corm() {
             &mut authority,
             &mut mint_cap,
             corm_state_id,
-            100,
+            1_000_000,  // 100 CORM
             PLAYER,
             scenario.ctx(),
         );
 
-        assert!(corm_coin::mint_cap_total_minted(&mint_cap) == 100);
+        assert!(corm_coin::mint_cap_total_minted(&mint_cap) == 1_000_000);
 
         ts::return_shared(authority);
         ts::return_shared(state);
         scenario.return_to_sender(mint_cap);
     };
 
-    // Verify PLAYER received the coins
+    // Verify PLAYER received 100 CORM (1_000_000 base units)
     scenario.next_tx(PLAYER);
     {
         let coin = scenario.take_from_sender<Coin<CORM_COIN>>();
-        assert!(coin.value() == 100);
+        assert!(coin.value() == 1_000_000);
         scenario.return_to_sender(coin);
     };
 
@@ -81,7 +81,7 @@ fun test_mint_multiple_accumulates() {
         corm_auth::destroy_admin_cap_for_testing(admin_cap);
     };
 
-    // Mint twice
+    // Mint 50 CORM + 75 CORM = 125 CORM total
     scenario.next_tx(ADMIN);
     {
         let mut authority = scenario.take_shared<CoinAuthority>();
@@ -89,10 +89,10 @@ fun test_mint_multiple_accumulates() {
         let state = scenario.take_shared<corm_state::CormState>();
         let corm_state_id = object::id(&state);
 
-        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 50, PLAYER, scenario.ctx());
-        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 75, PLAYER, scenario.ctx());
+        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 500_000, PLAYER, scenario.ctx());  // 50 CORM
+        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 750_000, PLAYER, scenario.ctx());  // 75 CORM
 
-        assert!(corm_coin::mint_cap_total_minted(&mint_cap) == 125);
+        assert!(corm_coin::mint_cap_total_minted(&mint_cap) == 1_250_000);  // 125 CORM
 
         ts::return_shared(authority);
         ts::return_shared(state);
@@ -126,9 +126,9 @@ fun test_total_supply_after_mint() {
         let state = scenario.take_shared<corm_state::CormState>();
         let corm_state_id = object::id(&state);
 
-        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 200, PLAYER, scenario.ctx());
+        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 2_000_000, PLAYER, scenario.ctx());  // 200 CORM
 
-        assert!(corm_coin::total_supply(&authority) == 200);
+        assert!(corm_coin::total_supply(&authority) == 2_000_000);
 
         ts::return_shared(authority);
         ts::return_shared(state);
@@ -155,7 +155,7 @@ fun test_burn_reduces_supply() {
         corm_auth::destroy_admin_cap_for_testing(admin_cap);
     };
 
-    // Mint 100 to PLAYER
+    // Mint 100 CORM (1_000_000 base units) to PLAYER
     scenario.next_tx(ADMIN);
     {
         let mut authority = scenario.take_shared<CoinAuthority>();
@@ -163,22 +163,22 @@ fun test_burn_reduces_supply() {
         let state = scenario.take_shared<corm_state::CormState>();
         let corm_state_id = object::id(&state);
 
-        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 100, PLAYER, scenario.ctx());
+        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 1_000_000, PLAYER, scenario.ctx());  // 100 CORM
 
         ts::return_shared(authority);
         ts::return_shared(state);
         scenario.return_to_sender(mint_cap);
     };
 
-    // PLAYER burns 40
+    // PLAYER burns 40 CORM (400_000 base units)
     scenario.next_tx(PLAYER);
     {
         let mut authority = scenario.take_shared<CoinAuthority>();
         let mut coin = scenario.take_from_sender<Coin<CORM_COIN>>();
-        let burn_coin = coin.split(40, scenario.ctx());
+        let burn_coin = coin.split(400_000, scenario.ctx());  // 40 CORM
         corm_coin::burn(&mut authority, burn_coin, scenario.ctx());
 
-        assert!(corm_coin::total_supply(&authority) == 60);
+        assert!(corm_coin::total_supply(&authority) == 600_000);  // 60 CORM remaining
 
         ts::return_shared(authority);
         scenario.return_to_sender(coin);
@@ -213,7 +213,7 @@ fun test_mint_wrong_corm_state() {
         let wrong_id = object::id_from_address(@0xDEAD);
 
         // This should abort with ECormStateMismatch
-        corm_coin::mint(&mut authority, &mut mint_cap, wrong_id, 10, PLAYER, scenario.ctx());
+        corm_coin::mint(&mut authority, &mut mint_cap, wrong_id, 100_000, PLAYER, scenario.ctx());  // 10 CORM
 
         ts::return_shared(authority);
         scenario.return_to_sender(mint_cap);

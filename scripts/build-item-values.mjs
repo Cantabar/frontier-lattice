@@ -400,7 +400,7 @@ for (const item of items) {
     typeId: item.typeId,
     name: item.name,
     categoryName: item.categoryName,
-    luxValue: Math.round(luxValue * 100) / 100,
+    luxValue: Math.round(luxValue * 10000) / 10000,
     timeSeconds: Math.round(totalTime * 1000) / 1000,
     source,
     breakdown: {

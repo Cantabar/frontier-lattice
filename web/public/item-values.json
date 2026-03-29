@@ -3,7 +3,7 @@
     "typeId": 72960,
     "name": "Hull Repairer",
     "categoryName": "Module",
-    "luxValue": 4703.82,
+    "luxValue": 4703.8156,
     "timeSeconds": 169.337,
     "source": "crafted",
     "breakdown": {
@@ -15,7 +15,7 @@
     "typeId": 77484,
     "name": "Crude Extractor",
     "categoryName": "Module",
-    "luxValue": 22390.52,
+    "luxValue": 22390.522,
     "timeSeconds": 806.059,
     "source": "crafted",
     "breakdown": {
@@ -27,7 +27,7 @@
     "typeId": 77728,
     "name": "Sophrogon",
     "categoryName": "Material",
-    "luxValue": 1256.61,
+    "luxValue": 1256.6138,
     "timeSeconds": 45.238,
     "source": "crafted",
     "breakdown": {
@@ -39,7 +39,7 @@
     "typeId": 77729,
     "name": "Rough Old Crude Matter",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -51,7 +51,7 @@
     "typeId": 77753,
     "name": "Embark",
     "categoryName": "Module",
-    "luxValue": 4021.84,
+    "luxValue": 4021.8441,
     "timeSeconds": 144.786,
     "source": "crafted",
     "breakdown": {
@@ -63,7 +63,7 @@
     "typeId": 77800,
     "name": "Feldspar Crystals",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -75,7 +75,7 @@
     "typeId": 77801,
     "name": "Nickel-Iron Veins",
     "categoryName": "Material",
-    "luxValue": 1.45,
+    "luxValue": 1.4463,
     "timeSeconds": 0.052,
     "source": "crafted",
     "breakdown": {
@@ -87,7 +87,7 @@
     "typeId": 77803,
     "name": "Silicon Dust",
     "categoryName": "Material",
-    "luxValue": 2.09,
+    "luxValue": 2.094,
     "timeSeconds": 0.075,
     "source": "crafted",
     "breakdown": {
@@ -99,7 +99,7 @@
     "typeId": 77804,
     "name": "Tholin Aggregates",
     "categoryName": "Material",
-    "luxValue": 2.09,
+    "luxValue": 2.094,
     "timeSeconds": 0.075,
     "source": "crafted",
     "breakdown": {
@@ -111,7 +111,7 @@
     "typeId": 77805,
     "name": "Platinum-Group Veins ",
     "categoryName": "Material",
-    "luxValue": 0.14,
+    "luxValue": 0.1446,
     "timeSeconds": 0.005,
     "source": "crafted",
     "breakdown": {
@@ -123,7 +123,7 @@
     "typeId": 77810,
     "name": "Platinum-Palladium Matrix",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -135,7 +135,7 @@
     "typeId": 77811,
     "name": "Hydrated Sulfide Matrix",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -147,7 +147,7 @@
     "typeId": 77852,
     "name": "Small Cutting Laser",
     "categoryName": "Module",
-    "luxValue": 5603.37,
+    "luxValue": 5603.373,
     "timeSeconds": 201.721,
     "source": "crafted",
     "breakdown": {
@@ -159,7 +159,7 @@
     "typeId": 78416,
     "name": "Apocalypse Protocol Frame",
     "categoryName": "Commodity",
-    "luxValue": 9661.29,
+    "luxValue": 9661.286,
     "timeSeconds": 347.806,
     "source": "crafted",
     "breakdown": {
@@ -171,7 +171,7 @@
     "typeId": 78417,
     "name": "Bastion Program Frame",
     "categoryName": "Commodity",
-    "luxValue": 5024.53,
+    "luxValue": 5024.5338,
     "timeSeconds": 180.883,
     "source": "crafted",
     "breakdown": {
@@ -183,7 +183,7 @@
     "typeId": 78418,
     "name": "Nomad Program Frame",
     "categoryName": "Commodity",
-    "luxValue": 1660.18,
+    "luxValue": 1660.1801,
     "timeSeconds": 59.766,
     "source": "crafted",
     "breakdown": {
@@ -195,7 +195,7 @@
     "typeId": 78420,
     "name": "Archangel Protocol Frame",
     "categoryName": "Commodity",
-    "luxValue": 5024.53,
+    "luxValue": 5024.5338,
     "timeSeconds": 180.883,
     "source": "crafted",
     "breakdown": {
@@ -207,7 +207,7 @@
     "typeId": 78421,
     "name": "Exterminata Protocol Frame",
     "categoryName": "Commodity",
-    "luxValue": 5024.53,
+    "luxValue": 5024.5338,
     "timeSeconds": 180.883,
     "source": "crafted",
     "breakdown": {
@@ -219,7 +219,7 @@
     "typeId": 78422,
     "name": "Equilibrium Program Frame",
     "categoryName": "Commodity",
-    "luxValue": 132202.83,
+    "luxValue": 132202.8339,
     "timeSeconds": 4759.302,
     "source": "crafted",
     "breakdown": {
@@ -231,7 +231,7 @@
     "typeId": 78423,
     "name": "Water Ice",
     "categoryName": "Material",
-    "luxValue": 0.68,
+    "luxValue": 0.6752,
     "timeSeconds": 0.024,
     "source": "crafted",
     "breakdown": {
@@ -243,7 +243,7 @@
     "typeId": 78426,
     "name": "Iridosmine Nodules",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -255,7 +255,7 @@
     "typeId": 78434,
     "name": "Rough Young Crude Matter",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -267,7 +267,7 @@
     "typeId": 78435,
     "name": "Eupraxite",
     "categoryName": "Material",
-    "luxValue": 1256.61,
+    "luxValue": 1256.6138,
     "timeSeconds": 45.238,
     "source": "crafted",
     "breakdown": {
@@ -279,7 +279,7 @@
     "typeId": 78437,
     "name": "EU-90 Fuel",
     "categoryName": "Commodity",
-    "luxValue": 244.32,
+    "luxValue": 244.3222,
     "timeSeconds": 8.796,
     "source": "crafted",
     "breakdown": {
@@ -291,7 +291,7 @@
     "typeId": 78446,
     "name": "Methane Ice Shards",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -303,7 +303,7 @@
     "typeId": 78447,
     "name": "Primitive Kerogen Matrix",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -315,7 +315,7 @@
     "typeId": 78448,
     "name": "Aromatic Carbon Veins",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -327,7 +327,7 @@
     "typeId": 78449,
     "name": "Tholin Nodules",
     "categoryName": "Asteroid",
-    "luxValue": 4.27,
+    "luxValue": 4.2735,
     "timeSeconds": 0.154,
     "source": "mining",
     "breakdown": {
@@ -339,7 +339,7 @@
     "typeId": 78490,
     "name": "Velocity CD81",
     "categoryName": "Module",
-    "luxValue": 26015.91,
+    "luxValue": 26015.9105,
     "timeSeconds": 936.573,
     "source": "crafted",
     "breakdown": {
@@ -351,7 +351,7 @@
     "typeId": 78502,
     "name": "Velocity CD82",
     "categoryName": "Module",
-    "luxValue": 71724.03,
+    "luxValue": 71724.0269,
     "timeSeconds": 2582.065,
     "source": "crafted",
     "breakdown": {
@@ -363,7 +363,7 @@
     "typeId": 78506,
     "name": "Celerity CD01",
     "categoryName": "Module",
-    "luxValue": 8849.24,
+    "luxValue": 8849.2438,
     "timeSeconds": 318.573,
     "source": "crafted",
     "breakdown": {
@@ -375,7 +375,7 @@
     "typeId": 78507,
     "name": "Celerity CD02",
     "categoryName": "Module",
-    "luxValue": 25891.81,
+    "luxValue": 25891.8128,
     "timeSeconds": 932.105,
     "source": "crafted",
     "breakdown": {
@@ -387,7 +387,7 @@
     "typeId": 78508,
     "name": "Celerity CD03",
     "categoryName": "Module",
-    "luxValue": 143116.96,
+    "luxValue": 143116.9589,
     "timeSeconds": 5152.211,
     "source": "crafted",
     "breakdown": {
@@ -399,7 +399,7 @@
     "typeId": 78510,
     "name": "Tempo CD42",
     "categoryName": "Module",
-    "luxValue": 38975.15,
+    "luxValue": 38975.1461,
     "timeSeconds": 1403.105,
     "source": "crafted",
     "breakdown": {
@@ -411,7 +411,7 @@
     "typeId": 78511,
     "name": "Tempo CD41",
     "categoryName": "Module",
-    "luxValue": 14571.47,
+    "luxValue": 14571.466,
     "timeSeconds": 524.573,
     "source": "crafted",
     "breakdown": {
@@ -423,7 +423,7 @@
     "typeId": 78515,
     "name": "SOF-80 Fuel",
     "categoryName": "Commodity",
-    "luxValue": 185.41,
+    "luxValue": 185.4089,
     "timeSeconds": 6.675,
     "source": "crafted",
     "breakdown": {
@@ -435,7 +435,7 @@
     "typeId": 78516,
     "name": "EU-40 Fuel",
     "categoryName": "Commodity",
-    "luxValue": 21.78,
+    "luxValue": 21.7769,
     "timeSeconds": 0.784,
     "source": "crafted",
     "breakdown": {
@@ -447,7 +447,7 @@
     "typeId": 81609,
     "name": "USV",
     "categoryName": "Ship",
-    "luxValue": 543491.31,
+    "luxValue": 543491.3148,
     "timeSeconds": 19565.687,
     "source": "crafted",
     "breakdown": {
@@ -459,7 +459,7 @@
     "typeId": 81611,
     "name": "Chumaq",
     "categoryName": "Ship",
-    "luxValue": 23808017.58,
+    "luxValue": 23808017.5825,
     "timeSeconds": 857088.633,
     "source": "crafted",
     "breakdown": {
@@ -471,7 +471,7 @@
     "typeId": 81656,
     "name": "Tuho 7",
     "categoryName": "Module",
-    "luxValue": 4739.74,
+    "luxValue": 4739.7377,
     "timeSeconds": 170.631,
     "source": "crafted",
     "breakdown": {
@@ -483,7 +483,7 @@
     "typeId": 81657,
     "name": "Xoru 7",
     "categoryName": "Module",
-    "luxValue": 20312.81,
+    "luxValue": 20312.8087,
     "timeSeconds": 731.261,
     "source": "crafted",
     "breakdown": {
@@ -495,7 +495,7 @@
     "typeId": 81658,
     "name": "EM Disintegrator Charge (S)",
     "categoryName": "Charge",
-    "luxValue": 0.89,
+    "luxValue": 0.8912,
     "timeSeconds": 0.032,
     "source": "crafted",
     "breakdown": {
@@ -507,7 +507,7 @@
     "typeId": 81808,
     "name": "TADES",
     "categoryName": "Ship",
-    "luxValue": 4964974.28,
+    "luxValue": 4964974.2782,
     "timeSeconds": 178739.074,
     "source": "crafted",
     "breakdown": {
@@ -519,7 +519,7 @@
     "typeId": 81846,
     "name": "Sojourn",
     "categoryName": "Module",
-    "luxValue": 1829.26,
+    "luxValue": 1829.2617,
     "timeSeconds": 65.853,
     "source": "crafted",
     "breakdown": {
@@ -531,7 +531,7 @@
     "typeId": 81904,
     "name": "MCF",
     "categoryName": "Ship",
-    "luxValue": 2729447.61,
+    "luxValue": 2729447.6072,
     "timeSeconds": 98260.114,
     "source": "crafted",
     "breakdown": {
@@ -543,7 +543,7 @@
     "typeId": 81972,
     "name": "Base Coilgun (S)",
     "categoryName": "Module",
-    "luxValue": 4862.44,
+    "luxValue": 4862.4384,
     "timeSeconds": 175.048,
     "source": "crafted",
     "breakdown": {
@@ -555,7 +555,7 @@
     "typeId": 81974,
     "name": "Base Autocannon (S)",
     "categoryName": "Module",
-    "luxValue": 4625.8,
+    "luxValue": 4625.7951,
     "timeSeconds": 166.529,
     "source": "crafted",
     "breakdown": {
@@ -567,7 +567,7 @@
     "typeId": 82028,
     "name": "Base Coilgun (M)",
     "categoryName": "Module",
-    "luxValue": 19280.43,
+    "luxValue": 19280.4324,
     "timeSeconds": 694.096,
     "source": "crafted",
     "breakdown": {
@@ -579,7 +579,7 @@
     "typeId": 82030,
     "name": "Base Howitzer (M)",
     "categoryName": "Module",
-    "luxValue": 18832.89,
+    "luxValue": 18832.8942,
     "timeSeconds": 677.984,
     "source": "crafted",
     "breakdown": {
@@ -591,7 +591,7 @@
     "typeId": 82032,
     "name": "Base Rapid Plasma (S)",
     "categoryName": "Module",
-    "luxValue": 4336.75,
+    "luxValue": 4336.7462,
     "timeSeconds": 156.123,
     "source": "crafted",
     "breakdown": {
@@ -603,7 +603,7 @@
     "typeId": 82033,
     "name": "Rapid Plasma (M)",
     "categoryName": "Module",
-    "luxValue": 19201.27,
+    "luxValue": 19201.2702,
     "timeSeconds": 691.246,
     "source": "crafted",
     "breakdown": {
@@ -615,7 +615,7 @@
     "typeId": 82084,
     "name": "Tier 2 Autocannon (S)",
     "categoryName": "Module",
-    "luxValue": 8410.04,
+    "luxValue": 8410.0368,
     "timeSeconds": 302.761,
     "source": "crafted",
     "breakdown": {
@@ -627,7 +627,7 @@
     "typeId": 82085,
     "name": "Tier 3 Autocannon (S)",
     "categoryName": "Module",
-    "luxValue": 16865.38,
+    "luxValue": 16865.3787,
     "timeSeconds": 607.154,
     "source": "crafted",
     "breakdown": {
@@ -639,7 +639,7 @@
     "typeId": 82086,
     "name": "Tier 2 Rapid Plasma (S)",
     "categoryName": "Module",
-    "luxValue": 8656.83,
+    "luxValue": 8656.8317,
     "timeSeconds": 311.646,
     "source": "crafted",
     "breakdown": {
@@ -651,7 +651,7 @@
     "typeId": 82087,
     "name": "Tier 3 Rapid Plasma (S)",
     "categoryName": "Module",
-    "luxValue": 17504.69,
+    "luxValue": 17504.695,
     "timeSeconds": 630.169,
     "source": "crafted",
     "breakdown": {
@@ -663,7 +663,7 @@
     "typeId": 82088,
     "name": "Tier 2 Coilgun (S)",
     "categoryName": "Module",
-    "luxValue": 7569.39,
+    "luxValue": 7569.3874,
     "timeSeconds": 272.498,
     "source": "crafted",
     "breakdown": {
@@ -675,7 +675,7 @@
     "typeId": 82089,
     "name": "Tier 3 Coilgun (S)",
     "categoryName": "Module",
-    "luxValue": 16835.27,
+    "luxValue": 16835.2731,
     "timeSeconds": 606.07,
     "source": "crafted",
     "breakdown": {
@@ -687,7 +687,7 @@
     "typeId": 82090,
     "name": "Tuho 9",
     "categoryName": "Module",
-    "luxValue": 9626.06,
+    "luxValue": 9626.0566,
     "timeSeconds": 346.538,
     "source": "crafted",
     "breakdown": {
@@ -699,7 +699,7 @@
     "typeId": 82091,
     "name": "Tuho S",
     "categoryName": "Module",
-    "luxValue": 18638.02,
+    "luxValue": 18638.0224,
     "timeSeconds": 670.969,
     "source": "crafted",
     "breakdown": {
@@ -711,7 +711,7 @@
     "typeId": 82092,
     "name": "Tier 2 Coilgun (M)",
     "categoryName": "Module",
-    "luxValue": 70266.58,
+    "luxValue": 70266.578,
     "timeSeconds": 2529.597,
     "source": "crafted",
     "breakdown": {
@@ -723,7 +723,7 @@
     "typeId": 82093,
     "name": "Tier 3 Coilgun (M)",
     "categoryName": "Module",
-    "luxValue": 277300.8,
+    "luxValue": 277300.8041,
     "timeSeconds": 9982.829,
     "source": "crafted",
     "breakdown": {
@@ -735,7 +735,7 @@
     "typeId": 82094,
     "name": "Xoru 9",
     "categoryName": "Module",
-    "luxValue": 82307.67,
+    "luxValue": 82307.6687,
     "timeSeconds": 2963.076,
     "source": "crafted",
     "breakdown": {
@@ -747,7 +747,7 @@
     "typeId": 82095,
     "name": "Xoru S",
     "categoryName": "Module",
-    "luxValue": 329776.04,
+    "luxValue": 329776.0448,
     "timeSeconds": 11871.938,
     "source": "crafted",
     "breakdown": {
@@ -759,7 +759,7 @@
     "typeId": 82096,
     "name": "Tier 2 Rapid Plasma (M)",
     "categoryName": "Module",
-    "luxValue": 77341.44,
+    "luxValue": 77341.4412,
     "timeSeconds": 2784.292,
     "source": "crafted",
     "breakdown": {
@@ -771,7 +771,7 @@
     "typeId": 82097,
     "name": "Tier 3 Rapid Plasma (M)",
     "categoryName": "Module",
-    "luxValue": 318842.72,
+    "luxValue": 318842.7232,
     "timeSeconds": 11478.338,
     "source": "crafted",
     "breakdown": {
@@ -783,7 +783,7 @@
     "typeId": 82098,
     "name": "Tier 2 Howitzer (M)",
     "categoryName": "Module",
-    "luxValue": 75570.07,
+    "luxValue": 75570.0737,
     "timeSeconds": 2720.523,
     "source": "crafted",
     "breakdown": {
@@ -795,7 +795,7 @@
     "typeId": 82099,
     "name": "Tier 3 Howitzer (M)",
     "categoryName": "Module",
-    "luxValue": 309619.65,
+    "luxValue": 309619.6463,
     "timeSeconds": 11146.307,
     "source": "crafted",
     "breakdown": {
@@ -807,7 +807,7 @@
     "typeId": 82126,
     "name": "AC Gyrojet Ammo 2 (S)",
     "categoryName": "Charge",
-    "luxValue": 4.72,
+    "luxValue": 4.7153,
     "timeSeconds": 0.17,
     "source": "crafted",
     "breakdown": {
@@ -819,7 +819,7 @@
     "typeId": 82127,
     "name": "AC Gyrojet Ammo 3 (S)",
     "categoryName": "Charge",
-    "luxValue": 4.72,
+    "luxValue": 4.7153,
     "timeSeconds": 0.17,
     "source": "crafted",
     "breakdown": {
@@ -831,7 +831,7 @@
     "typeId": 82128,
     "name": "AC Gyrojet Ammo 1 (S) ",
     "categoryName": "Charge",
-    "luxValue": 1.78,
+    "luxValue": 1.7755,
     "timeSeconds": 0.064,
     "source": "crafted",
     "breakdown": {
@@ -843,7 +843,7 @@
     "typeId": 82130,
     "name": "Rapid Plasma Ammo 1 (S)",
     "categoryName": "Charge",
-    "luxValue": 10.34,
+    "luxValue": 10.3435,
     "timeSeconds": 0.372,
     "source": "crafted",
     "breakdown": {
@@ -855,7 +855,7 @@
     "typeId": 82131,
     "name": "Rapid Plasma Ammo 2 (S)",
     "categoryName": "Charge",
-    "luxValue": 10.34,
+    "luxValue": 10.3435,
     "timeSeconds": 0.372,
     "source": "crafted",
     "breakdown": {
@@ -867,7 +867,7 @@
     "typeId": 82132,
     "name": "Rapid Plasma Ammo 1 (M)",
     "categoryName": "Charge",
-    "luxValue": 198.1,
+    "luxValue": 198.1043,
     "timeSeconds": 7.132,
     "source": "crafted",
     "breakdown": {
@@ -879,7 +879,7 @@
     "typeId": 82133,
     "name": "Coilgun Ammo 1 (S)",
     "categoryName": "Charge",
-    "luxValue": 4.72,
+    "luxValue": 4.7153,
     "timeSeconds": 0.17,
     "source": "crafted",
     "breakdown": {
@@ -891,7 +891,7 @@
     "typeId": 82134,
     "name": "Coilgun Ammo 1 (M)",
     "categoryName": "Charge",
-    "luxValue": 26.76,
+    "luxValue": 26.7645,
     "timeSeconds": 0.964,
     "source": "crafted",
     "breakdown": {
@@ -903,7 +903,7 @@
     "typeId": 82137,
     "name": "EM Disintegrator Charge (M)",
     "categoryName": "Charge",
-    "luxValue": 1.21,
+    "luxValue": 1.2094,
     "timeSeconds": 0.044,
     "source": "crafted",
     "breakdown": {
@@ -915,7 +915,7 @@
     "typeId": 82140,
     "name": "Howitzer Ammo 1 (M)",
     "categoryName": "Charge",
-    "luxValue": 31.83,
+    "luxValue": 31.833,
     "timeSeconds": 1.146,
     "source": "crafted",
     "breakdown": {
@@ -927,7 +927,7 @@
     "typeId": 82410,
     "name": "Explosive Nanite Sequencer",
     "categoryName": "Charge",
-    "luxValue": 6464.12,
+    "luxValue": 6464.1178,
     "timeSeconds": 232.708,
     "source": "crafted",
     "breakdown": {
@@ -939,7 +939,7 @@
     "typeId": 82411,
     "name": "EM Nanite Sequencer",
     "categoryName": "Charge",
-    "luxValue": 7260.67,
+    "luxValue": 7260.6685,
     "timeSeconds": 261.384,
     "source": "crafted",
     "breakdown": {
@@ -951,7 +951,7 @@
     "typeId": 82412,
     "name": "Thermal Nanite Sequencer",
     "categoryName": "Charge",
-    "luxValue": 6464.12,
+    "luxValue": 6464.1178,
     "timeSeconds": 232.708,
     "source": "crafted",
     "breakdown": {
@@ -963,7 +963,7 @@
     "typeId": 82413,
     "name": "Kinetic Nanite Sequencer",
     "categoryName": "Charge",
-    "luxValue": 6464.12,
+    "luxValue": 6464.1178,
     "timeSeconds": 232.708,
     "source": "crafted",
     "breakdown": {
@@ -975,7 +975,7 @@
     "typeId": 82424,
     "name": "HAF",
     "categoryName": "Ship",
-    "luxValue": 3168156.12,
+    "luxValue": 3168156.118,
     "timeSeconds": 114053.62,
     "source": "crafted",
     "breakdown": {
@@ -987,7 +987,7 @@
     "typeId": 82425,
     "name": "LAI",
     "categoryName": "Ship",
-    "luxValue": 2764729.01,
+    "luxValue": 2764729.0113,
     "timeSeconds": 99530.244,
     "source": "crafted",
     "breakdown": {
@@ -999,7 +999,7 @@
     "typeId": 82426,
     "name": "LORHA",
     "categoryName": "Ship",
-    "luxValue": 557920.68,
+    "luxValue": 557920.684,
     "timeSeconds": 20085.145,
     "source": "crafted",
     "breakdown": {
@@ -1011,7 +1011,7 @@
     "typeId": 82430,
     "name": "MAUL",
     "categoryName": "Ship",
-    "luxValue": 9756132.65,
+    "luxValue": 9756132.6507,
     "timeSeconds": 351220.775,
     "source": "crafted",
     "breakdown": {
@@ -1023,7 +1023,7 @@
     "typeId": 82647,
     "name": "Bulky Armor Plates II",
     "categoryName": "Module",
-    "luxValue": 5628.61,
+    "luxValue": 5628.6089,
     "timeSeconds": 202.63,
     "source": "crafted",
     "breakdown": {
@@ -1035,7 +1035,7 @@
     "typeId": 82648,
     "name": "Coated Armor Plates II",
     "categoryName": "Module",
-    "luxValue": 5661.48,
+    "luxValue": 5661.4774,
     "timeSeconds": 203.813,
     "source": "crafted",
     "breakdown": {
@@ -1047,7 +1047,7 @@
     "typeId": 82649,
     "name": "Reactive Armor Plates II",
     "categoryName": "Module",
-    "luxValue": 6158.12,
+    "luxValue": 6158.1197,
     "timeSeconds": 221.692,
     "source": "crafted",
     "breakdown": {
@@ -1059,7 +1059,7 @@
     "typeId": 82650,
     "name": "Nimble Armor Plates II",
     "categoryName": "Module",
-    "luxValue": 5049.12,
+    "luxValue": 5049.1182,
     "timeSeconds": 181.768,
     "source": "crafted",
     "breakdown": {
@@ -1071,7 +1071,7 @@
     "typeId": 82651,
     "name": "Systematic Armor Restorer II",
     "categoryName": "Module",
-    "luxValue": 3564.95,
+    "luxValue": 3564.9514,
     "timeSeconds": 128.338,
     "source": "crafted",
     "breakdown": {
@@ -1083,7 +1083,7 @@
     "typeId": 82652,
     "name": "Bulwark Shield Generator II",
     "categoryName": "Module",
-    "luxValue": 10844.14,
+    "luxValue": 10844.1388,
     "timeSeconds": 390.389,
     "source": "crafted",
     "breakdown": {
@@ -1095,7 +1095,7 @@
     "typeId": 82653,
     "name": "Attuned Shield Generator II",
     "categoryName": "Module",
-    "luxValue": 8120.82,
+    "luxValue": 8120.8181,
     "timeSeconds": 292.349,
     "source": "crafted",
     "breakdown": {
@@ -1107,7 +1107,7 @@
     "typeId": 82654,
     "name": "Reinforced Shield Generator II",
     "categoryName": "Module",
-    "luxValue": 8120.82,
+    "luxValue": 8120.8181,
     "timeSeconds": 292.349,
     "source": "crafted",
     "breakdown": {
@@ -1119,7 +1119,7 @@
     "typeId": 82667,
     "name": "Shield Restorer II",
     "categoryName": "Module",
-    "luxValue": 13072.13,
+    "luxValue": 13072.1335,
     "timeSeconds": 470.597,
     "source": "crafted",
     "breakdown": {
@@ -1131,7 +1131,7 @@
     "typeId": 82681,
     "name": "Afterburner II",
     "categoryName": "Module",
-    "luxValue": 2841.04,
+    "luxValue": 2841.0409,
     "timeSeconds": 102.277,
     "source": "crafted",
     "breakdown": {
@@ -1143,7 +1143,7 @@
     "typeId": 82682,
     "name": "Warp Entangler II",
     "categoryName": "Module",
-    "luxValue": 6653.79,
+    "luxValue": 6653.7886,
     "timeSeconds": 239.536,
     "source": "crafted",
     "breakdown": {
@@ -1155,7 +1155,7 @@
     "typeId": 82683,
     "name": "Stasis Net II",
     "categoryName": "Module",
-    "luxValue": 6494.07,
+    "luxValue": 6494.0663,
     "timeSeconds": 233.786,
     "source": "crafted",
     "breakdown": {
@@ -1167,7 +1167,7 @@
     "typeId": 82915,
     "name": "Afterburner IV",
     "categoryName": "Module",
-    "luxValue": 44070.15,
+    "luxValue": 44070.1465,
     "timeSeconds": 1586.525,
     "source": "crafted",
     "breakdown": {
@@ -1191,7 +1191,7 @@
     "typeId": 83423,
     "name": "Bulky Armor Plates V",
     "categoryName": "Module",
-    "luxValue": 33521.65,
+    "luxValue": 33521.6532,
     "timeSeconds": 1206.78,
     "source": "crafted",
     "breakdown": {
@@ -1203,7 +1203,7 @@
     "typeId": 83425,
     "name": "Coated Armor Plates III",
     "categoryName": "Module",
-    "luxValue": 12407.59,
+    "luxValue": 12407.5855,
     "timeSeconds": 446.673,
     "source": "crafted",
     "breakdown": {
@@ -1215,7 +1215,7 @@
     "typeId": 83426,
     "name": "Coated Armor Plates IV",
     "categoryName": "Module",
-    "luxValue": 29118.13,
+    "luxValue": 29118.1319,
     "timeSeconds": 1048.253,
     "source": "crafted",
     "breakdown": {
@@ -1227,7 +1227,7 @@
     "typeId": 83429,
     "name": "Reactive Armor Plates III",
     "categoryName": "Module",
-    "luxValue": 13899.57,
+    "luxValue": 13899.5726,
     "timeSeconds": 500.385,
     "source": "crafted",
     "breakdown": {
@@ -1239,7 +1239,7 @@
     "typeId": 83430,
     "name": "Reactive Armor Plates IV",
     "categoryName": "Module",
-    "luxValue": 30237.18,
+    "luxValue": 30237.1795,
     "timeSeconds": 1088.538,
     "source": "crafted",
     "breakdown": {
@@ -1251,7 +1251,7 @@
     "typeId": 83433,
     "name": "Nimble Armor Plates III",
     "categoryName": "Module",
-    "luxValue": 11681.57,
+    "luxValue": 11681.5698,
     "timeSeconds": 420.537,
     "source": "crafted",
     "breakdown": {
@@ -1263,7 +1263,7 @@
     "typeId": 83434,
     "name": "Nimble Armor Plates IV",
     "categoryName": "Module",
-    "luxValue": 26585.36,
+    "luxValue": 26585.3618,
     "timeSeconds": 957.073,
     "source": "crafted",
     "breakdown": {
@@ -1275,7 +1275,7 @@
     "typeId": 83437,
     "name": "Systematic Armor Restorer III",
     "categoryName": "Module",
-    "luxValue": 13258.28,
+    "luxValue": 13258.2766,
     "timeSeconds": 477.298,
     "source": "crafted",
     "breakdown": {
@@ -1287,7 +1287,7 @@
     "typeId": 83438,
     "name": "Systematic Armor Restorer IV",
     "categoryName": "Module",
-    "luxValue": 63757.79,
+    "luxValue": 63757.7863,
     "timeSeconds": 2295.28,
     "source": "crafted",
     "breakdown": {
@@ -1299,7 +1299,7 @@
     "typeId": 83441,
     "name": "Adaptive Nanitic Armor Weave II",
     "categoryName": "Module",
-    "luxValue": 2841.04,
+    "luxValue": 2841.0409,
     "timeSeconds": 102.277,
     "source": "crafted",
     "breakdown": {
@@ -1311,7 +1311,7 @@
     "typeId": 83442,
     "name": "Adaptive Nanitic Armor Weave III",
     "categoryName": "Module",
-    "luxValue": 12145.48,
+    "luxValue": 12145.4772,
     "timeSeconds": 437.237,
     "source": "crafted",
     "breakdown": {
@@ -1323,7 +1323,7 @@
     "typeId": 83443,
     "name": "Adaptive Nanitic Armor Weave IV",
     "categoryName": "Module",
-    "luxValue": 63752.44,
+    "luxValue": 63752.442,
     "timeSeconds": 2295.088,
     "source": "crafted",
     "breakdown": {
@@ -1335,7 +1335,7 @@
     "typeId": 83448,
     "name": "Bulwark Shield Generator III",
     "categoryName": "Module",
-    "luxValue": 29310.19,
+    "luxValue": 29310.1943,
     "timeSeconds": 1055.167,
     "source": "crafted",
     "breakdown": {
@@ -1347,7 +1347,7 @@
     "typeId": 83449,
     "name": "Bulwark Shield Generator IV",
     "categoryName": "Module",
-    "luxValue": 62181.2,
+    "luxValue": 62181.1952,
     "timeSeconds": 2238.523,
     "source": "crafted",
     "breakdown": {
@@ -1359,7 +1359,7 @@
     "typeId": 83450,
     "name": "Attuned Shield Generator III",
     "categoryName": "Module",
-    "luxValue": 21140.23,
+    "luxValue": 21140.232,
     "timeSeconds": 761.048,
     "source": "crafted",
     "breakdown": {
@@ -1371,7 +1371,7 @@
     "typeId": 83451,
     "name": "Attuned Shield Generator IV",
     "categoryName": "Module",
-    "luxValue": 50846.06,
+    "luxValue": 50846.0623,
     "timeSeconds": 1830.458,
     "source": "crafted",
     "breakdown": {
@@ -1383,7 +1383,7 @@
     "typeId": 83456,
     "name": "Reinforced Shield Generator III",
     "categoryName": "Module",
-    "luxValue": 21140.23,
+    "luxValue": 21140.232,
     "timeSeconds": 761.048,
     "source": "crafted",
     "breakdown": {
@@ -1395,7 +1395,7 @@
     "typeId": 83457,
     "name": "Reinforced Shield Generator IV",
     "categoryName": "Module",
-    "luxValue": 50846.06,
+    "luxValue": 50846.0623,
     "timeSeconds": 1830.458,
     "source": "crafted",
     "breakdown": {
@@ -1407,7 +1407,7 @@
     "typeId": 83458,
     "name": "Shield Restorer III",
     "categoryName": "Module",
-    "luxValue": 20994.61,
+    "luxValue": 20994.6145,
     "timeSeconds": 755.806,
     "source": "crafted",
     "breakdown": {
@@ -1419,7 +1419,7 @@
     "typeId": 83459,
     "name": "Shield Restorer IV",
     "categoryName": "Module",
-    "luxValue": 53096.55,
+    "luxValue": 53096.5536,
     "timeSeconds": 1911.476,
     "source": "crafted",
     "breakdown": {
@@ -1431,7 +1431,7 @@
     "typeId": 83463,
     "name": "Synthetic Mining Lens",
     "categoryName": "Charge",
-    "luxValue": 108.65,
+    "luxValue": 108.6538,
     "timeSeconds": 3.912,
     "source": "crafted",
     "breakdown": {
@@ -1443,7 +1443,7 @@
     "typeId": 83497,
     "name": "Cargo Grid II",
     "categoryName": "Module",
-    "luxValue": 8675.08,
+    "luxValue": 8675.0832,
     "timeSeconds": 312.303,
     "source": "crafted",
     "breakdown": {
@@ -1455,7 +1455,7 @@
     "typeId": 83498,
     "name": "Cargo Grid III",
     "categoryName": "Module",
-    "luxValue": 18215.14,
+    "luxValue": 18215.1449,
     "timeSeconds": 655.745,
     "source": "crafted",
     "breakdown": {
@@ -1467,7 +1467,7 @@
     "typeId": 83499,
     "name": "Cargo Grid IV",
     "categoryName": "Module",
-    "luxValue": 39652.51,
+    "luxValue": 39652.512,
     "timeSeconds": 1427.49,
     "source": "crafted",
     "breakdown": {
@@ -1479,7 +1479,7 @@
     "typeId": 83500,
     "name": "Cargo Grid V",
     "categoryName": "Module",
-    "luxValue": 85721.69,
+    "luxValue": 85721.6907,
     "timeSeconds": 3085.981,
     "source": "crafted",
     "breakdown": {
@@ -1491,7 +1491,7 @@
     "typeId": 83501,
     "name": "Cargo Grid VI",
     "categoryName": "Module",
-    "luxValue": 184387.83,
+    "luxValue": 184387.8258,
     "timeSeconds": 6637.962,
     "source": "crafted",
     "breakdown": {
@@ -1503,7 +1503,7 @@
     "typeId": 83516,
     "name": "Warp Entangler III",
     "categoryName": "Module",
-    "luxValue": 12262.33,
+    "luxValue": 12262.3297,
     "timeSeconds": 441.444,
     "source": "crafted",
     "breakdown": {
@@ -1515,7 +1515,7 @@
     "typeId": 83517,
     "name": "Warp Entangler IV",
     "categoryName": "Module",
-    "luxValue": 23911.89,
+    "luxValue": 23911.8871,
     "timeSeconds": 860.828,
     "source": "crafted",
     "breakdown": {
@@ -1527,7 +1527,7 @@
     "typeId": 83518,
     "name": "Warp Entangler V",
     "categoryName": "Module",
-    "luxValue": 46687.09,
+    "luxValue": 46687.0948,
     "timeSeconds": 1680.735,
     "source": "crafted",
     "breakdown": {
@@ -1539,7 +1539,7 @@
     "typeId": 83519,
     "name": "Warp Entangler VI",
     "categoryName": "Module",
-    "luxValue": 93975.54,
+    "luxValue": 93975.5411,
     "timeSeconds": 3383.119,
     "source": "crafted",
     "breakdown": {
@@ -1551,7 +1551,7 @@
     "typeId": 83520,
     "name": "Stasis Net III",
     "categoryName": "Module",
-    "luxValue": 12047.05,
+    "luxValue": 12047.0519,
     "timeSeconds": 433.694,
     "source": "crafted",
     "breakdown": {
@@ -1563,7 +1563,7 @@
     "typeId": 83521,
     "name": "Stasis Net IV",
     "categoryName": "Module",
-    "luxValue": 23288.95,
+    "luxValue": 23288.9475,
     "timeSeconds": 838.402,
     "source": "crafted",
     "breakdown": {
@@ -1575,7 +1575,7 @@
     "typeId": 83522,
     "name": "Stasis Net V",
     "categoryName": "Module",
-    "luxValue": 45647.49,
+    "luxValue": 45647.4886,
     "timeSeconds": 1643.31,
     "source": "crafted",
     "breakdown": {
@@ -1587,7 +1587,7 @@
     "typeId": 83523,
     "name": "Stasis Net VI",
     "categoryName": "Module",
-    "luxValue": 91472.72,
+    "luxValue": 91472.7175,
     "timeSeconds": 3293.018,
     "source": "crafted",
     "breakdown": {
@@ -1599,7 +1599,7 @@
     "typeId": 83524,
     "name": "Large Cutting Laser",
     "categoryName": "Module",
-    "luxValue": 417230.97,
+    "luxValue": 417230.9676,
     "timeSeconds": 15020.315,
     "source": "crafted",
     "breakdown": {
@@ -1611,7 +1611,7 @@
     "typeId": 83528,
     "name": "Medium Cutting Laser",
     "categoryName": "Module",
-    "luxValue": 26935.74,
+    "luxValue": 26935.7448,
     "timeSeconds": 969.687,
     "source": "crafted",
     "breakdown": {
@@ -1623,7 +1623,7 @@
     "typeId": 83536,
     "name": "Afterburner III",
     "categoryName": "Module",
-    "luxValue": 12145.48,
+    "luxValue": 12145.4772,
     "timeSeconds": 437.237,
     "source": "crafted",
     "breakdown": {
@@ -1635,7 +1635,7 @@
     "typeId": 83613,
     "name": "Thermal-electro Nanitic Brace II",
     "categoryName": "Module",
-    "luxValue": 6206.87,
+    "luxValue": 6206.8681,
     "timeSeconds": 223.447,
     "source": "crafted",
     "breakdown": {
@@ -1647,7 +1647,7 @@
     "typeId": 83614,
     "name": "Thermal-electro Nanitic Brace III",
     "categoryName": "Module",
-    "luxValue": 13162.07,
+    "luxValue": 13162.0726,
     "timeSeconds": 473.835,
     "source": "crafted",
     "breakdown": {
@@ -1659,7 +1659,7 @@
     "typeId": 83615,
     "name": "Thermal-electro Nanitic Brace IV ",
     "categoryName": "Module",
-    "luxValue": 28969.08,
+    "luxValue": 28969.0781,
     "timeSeconds": 1042.887,
     "source": "crafted",
     "breakdown": {
@@ -1671,7 +1671,7 @@
     "typeId": 83618,
     "name": "Explonetic-electro Nanitic Brace II ",
     "categoryName": "Module",
-    "luxValue": 5155.97,
+    "luxValue": 5155.9676,
     "timeSeconds": 185.615,
     "source": "crafted",
     "breakdown": {
@@ -1683,7 +1683,7 @@
     "typeId": 83619,
     "name": "Explonetic-electro Nanitic Brace III",
     "categoryName": "Module",
-    "luxValue": 11234.65,
+    "luxValue": 11234.6459,
     "timeSeconds": 404.447,
     "source": "crafted",
     "breakdown": {
@@ -1707,7 +1707,7 @@
     "typeId": 83623,
     "name": "Explo-electro Nanitic Brace II",
     "categoryName": "Module",
-    "luxValue": 5155.97,
+    "luxValue": 5155.9676,
     "timeSeconds": 185.615,
     "source": "crafted",
     "breakdown": {
@@ -1719,7 +1719,7 @@
     "typeId": 83624,
     "name": "Explo-electro Nanitic Brace III",
     "categoryName": "Module",
-    "luxValue": 10754.72,
+    "luxValue": 10754.7161,
     "timeSeconds": 387.17,
     "source": "crafted",
     "breakdown": {
@@ -1731,7 +1731,7 @@
     "typeId": 83625,
     "name": "Explo-electro Nanitic Brace IV",
     "categoryName": "Module",
-    "luxValue": 23876.59,
+    "luxValue": 23876.5873,
     "timeSeconds": 859.557,
     "source": "crafted",
     "breakdown": {
@@ -1743,7 +1743,7 @@
     "typeId": 83628,
     "name": "Thermalnetic Nanitic Brace II",
     "categoryName": "Module",
-    "luxValue": 6206.87,
+    "luxValue": 6206.8681,
     "timeSeconds": 223.447,
     "source": "crafted",
     "breakdown": {
@@ -1755,7 +1755,7 @@
     "typeId": 83629,
     "name": "Thermalnetic Nanitic Brace III",
     "categoryName": "Module",
-    "luxValue": 13160.01,
+    "luxValue": 13160.0122,
     "timeSeconds": 473.76,
     "source": "crafted",
     "breakdown": {
@@ -1767,7 +1767,7 @@
     "typeId": 83630,
     "name": "Thermalnetic Nanitic Brace IV",
     "categoryName": "Module",
-    "luxValue": 29308.06,
+    "luxValue": 29308.0586,
     "timeSeconds": 1055.09,
     "source": "crafted",
     "breakdown": {
@@ -1779,7 +1779,7 @@
     "typeId": 83768,
     "name": "EM Field Array II",
     "categoryName": "Module",
-    "luxValue": 8706.65,
+    "luxValue": 8706.6545,
     "timeSeconds": 313.44,
     "source": "crafted",
     "breakdown": {
@@ -1791,7 +1791,7 @@
     "typeId": 83769,
     "name": "EM Field Array III",
     "categoryName": "Module",
-    "luxValue": 16340.35,
+    "luxValue": 16340.3541,
     "timeSeconds": 588.253,
     "source": "crafted",
     "breakdown": {
@@ -1803,7 +1803,7 @@
     "typeId": 83770,
     "name": "EM Field Array IV",
     "categoryName": "Module",
-    "luxValue": 30558.68,
+    "luxValue": 30558.6844,
     "timeSeconds": 1100.113,
     "source": "crafted",
     "breakdown": {
@@ -1815,7 +1815,7 @@
     "typeId": 83772,
     "name": "Thermal Field Array II",
     "categoryName": "Module",
-    "luxValue": 7342.49,
+    "luxValue": 7342.4908,
     "timeSeconds": 264.33,
     "source": "crafted",
     "breakdown": {
@@ -1827,7 +1827,7 @@
     "typeId": 83773,
     "name": "Thermal Field Array III",
     "categoryName": "Module",
-    "luxValue": 14178.88,
+    "luxValue": 14178.8767,
     "timeSeconds": 510.44,
     "source": "crafted",
     "breakdown": {
@@ -1839,7 +1839,7 @@
     "typeId": 83774,
     "name": "Thermal Field Array IV",
     "categoryName": "Module",
-    "luxValue": 27257.55,
+    "luxValue": 27257.5549,
     "timeSeconds": 981.272,
     "source": "crafted",
     "breakdown": {
@@ -1851,7 +1851,7 @@
     "typeId": 83775,
     "name": "Thermal Field Array V",
     "categoryName": "Module",
-    "luxValue": 53530.68,
+    "luxValue": 53530.6777,
     "timeSeconds": 1927.104,
     "source": "crafted",
     "breakdown": {
@@ -1863,7 +1863,7 @@
     "typeId": 83777,
     "name": "Explosive Field Array II",
     "categoryName": "Module",
-    "luxValue": 8447.49,
+    "luxValue": 8447.4921,
     "timeSeconds": 304.11,
     "source": "crafted",
     "breakdown": {
@@ -1875,7 +1875,7 @@
     "typeId": 83778,
     "name": "Explosive Field Array III",
     "categoryName": "Module",
-    "luxValue": 14869.3,
+    "luxValue": 14869.2963,
     "timeSeconds": 535.295,
     "source": "crafted",
     "breakdown": {
@@ -1887,7 +1887,7 @@
     "typeId": 83779,
     "name": "Explosive Field Array IV",
     "categoryName": "Module",
-    "luxValue": 28121.86,
+    "luxValue": 28121.8639,
     "timeSeconds": 1012.387,
     "source": "crafted",
     "breakdown": {
@@ -1899,7 +1899,7 @@
     "typeId": 83782,
     "name": "Kinetic Field Array II",
     "categoryName": "Module",
-    "luxValue": 7757.22,
+    "luxValue": 7757.2177,
     "timeSeconds": 279.26,
     "source": "crafted",
     "breakdown": {
@@ -1911,7 +1911,7 @@
     "typeId": 83783,
     "name": "Kinetic Field Array III",
     "categoryName": "Module",
-    "luxValue": 14057.63,
+    "luxValue": 14057.6333,
     "timeSeconds": 506.075,
     "source": "crafted",
     "breakdown": {
@@ -1923,7 +1923,7 @@
     "typeId": 83784,
     "name": "Kinetic Field Array IV",
     "categoryName": "Module",
-    "luxValue": 26302.49,
+    "luxValue": 26302.4933,
     "timeSeconds": 946.89,
     "source": "crafted",
     "breakdown": {
@@ -1935,7 +1935,7 @@
     "typeId": 83818,
     "name": "Fossilized Exotronics",
     "categoryName": "Commodity",
-    "luxValue": 220.92,
+    "luxValue": 220.9249,
     "timeSeconds": 7.953,
     "source": "found",
     "breakdown": {
@@ -1959,7 +1959,7 @@
     "typeId": 83891,
     "name": "Gravionite",
     "categoryName": "Material",
-    "luxValue": 22092.49,
+    "luxValue": 22092.4908,
     "timeSeconds": 795.33,
     "source": "found",
     "breakdown": {
@@ -1971,7 +1971,7 @@
     "typeId": 83892,
     "name": "Luminalis",
     "categoryName": "Material",
-    "luxValue": 2209.25,
+    "luxValue": 2209.2491,
     "timeSeconds": 79.533,
     "source": "found",
     "breakdown": {
@@ -1983,7 +1983,7 @@
     "typeId": 83893,
     "name": "Eclipsite",
     "categoryName": "Material",
-    "luxValue": 22092.49,
+    "luxValue": 22092.4908,
     "timeSeconds": 795.33,
     "source": "found",
     "breakdown": {
@@ -1995,7 +1995,7 @@
     "typeId": 83894,
     "name": "Radiantium",
     "categoryName": "Material",
-    "luxValue": 2209.25,
+    "luxValue": 2209.2491,
     "timeSeconds": 79.533,
     "source": "found",
     "breakdown": {
@@ -2007,7 +2007,7 @@
     "typeId": 83895,
     "name": "Radiantium Mining Lens",
     "categoryName": "Charge",
-    "luxValue": 2386.81,
+    "luxValue": 2386.8132,
     "timeSeconds": 85.925,
     "source": "crafted",
     "breakdown": {
@@ -2019,7 +2019,7 @@
     "typeId": 83896,
     "name": "Gravionite Mining Lens",
     "categoryName": "Charge",
-    "luxValue": 22336.08,
+    "luxValue": 22336.0806,
     "timeSeconds": 804.099,
     "source": "crafted",
     "breakdown": {
@@ -2031,7 +2031,7 @@
     "typeId": 83897,
     "name": "Luminalis Mining Lens",
     "categoryName": "Charge",
-    "luxValue": 2386.81,
+    "luxValue": 2386.8132,
     "timeSeconds": 85.925,
     "source": "crafted",
     "breakdown": {
@@ -2043,7 +2043,7 @@
     "typeId": 83898,
     "name": "Eclipsite Mining Lens",
     "categoryName": "Charge",
-    "luxValue": 22336.08,
+    "luxValue": 22336.0806,
     "timeSeconds": 804.099,
     "source": "crafted",
     "breakdown": {
@@ -2055,7 +2055,7 @@
     "typeId": 83899,
     "name": "Catalytic Dust",
     "categoryName": "Material",
-    "luxValue": 2209.25,
+    "luxValue": 2209.2491,
     "timeSeconds": 79.533,
     "source": "found",
     "breakdown": {
@@ -2199,7 +2199,7 @@
     "typeId": 84180,
     "name": "Printed Circuits",
     "categoryName": "Material",
-    "luxValue": 150.85,
+    "luxValue": 150.8547,
     "timeSeconds": 5.431,
     "source": "crafted",
     "breakdown": {
@@ -2211,7 +2211,7 @@
     "typeId": 84182,
     "name": "Reinforced Alloys",
     "categoryName": "Material",
-    "luxValue": 330.76,
+    "luxValue": 330.7633,
     "timeSeconds": 11.907,
     "source": "crafted",
     "breakdown": {
@@ -2223,7 +2223,7 @@
     "typeId": 84204,
     "name": "Batched Reinforced Alloys",
     "categoryName": "Material",
-    "luxValue": 3502.08,
+    "luxValue": 3502.0777,
     "timeSeconds": 126.075,
     "source": "crafted",
     "breakdown": {
@@ -2235,7 +2235,7 @@
     "typeId": 84206,
     "name": "Packaged Reinforced Alloys",
     "categoryName": "Material",
-    "luxValue": 35909.67,
+    "luxValue": 35909.6663,
     "timeSeconds": 1292.748,
     "source": "crafted",
     "breakdown": {
@@ -2247,7 +2247,7 @@
     "typeId": 84210,
     "name": "Carbon Weave",
     "categoryName": "Material",
-    "luxValue": 220.92,
+    "luxValue": 220.9249,
     "timeSeconds": 7.953,
     "source": "crafted",
     "breakdown": {
@@ -2259,7 +2259,7 @@
     "typeId": 84868,
     "name": "SOF-40 Fuel",
     "categoryName": "Commodity",
-    "luxValue": 21.78,
+    "luxValue": 21.7769,
     "timeSeconds": 0.784,
     "source": "crafted",
     "breakdown": {
@@ -2271,7 +2271,7 @@
     "typeId": 87599,
     "name": "Cryogenic Ejector S",
     "categoryName": "Module",
-    "luxValue": 29796.4,
+    "luxValue": 29796.4047,
     "timeSeconds": 1072.671,
     "source": "crafted",
     "breakdown": {
@@ -2283,7 +2283,7 @@
     "typeId": 87698,
     "name": "Wend",
     "categoryName": "Ship",
-    "luxValue": 20820.66,
+    "luxValue": 20820.6632,
     "timeSeconds": 749.544,
     "source": "crafted",
     "breakdown": {
@@ -2295,7 +2295,7 @@
     "typeId": 87846,
     "name": "Recurve",
     "categoryName": "Ship",
-    "luxValue": 44223.84,
+    "luxValue": 44223.8391,
     "timeSeconds": 1592.058,
     "source": "crafted",
     "breakdown": {
@@ -2307,7 +2307,7 @@
     "typeId": 87847,
     "name": "Reflex",
     "categoryName": "Ship",
-    "luxValue": 12648.05,
+    "luxValue": 12648.0491,
     "timeSeconds": 455.33,
     "source": "crafted",
     "breakdown": {
@@ -2319,7 +2319,7 @@
     "typeId": 87848,
     "name": "Reiver",
     "categoryName": "Ship",
-    "luxValue": 45414.77,
+    "luxValue": 45414.7717,
     "timeSeconds": 1634.932,
     "source": "crafted",
     "breakdown": {
@@ -2331,7 +2331,7 @@
     "typeId": 88234,
     "name": "Troilite Sulfide Grains",
     "categoryName": "Material",
-    "luxValue": 2.09,
+    "luxValue": 2.094,
     "timeSeconds": 0.075,
     "source": "crafted",
     "breakdown": {
@@ -2343,7 +2343,7 @@
     "typeId": 88235,
     "name": "Feldspar Crystal Shards",
     "categoryName": "Material",
-    "luxValue": 2.09,
+    "luxValue": 2.094,
     "timeSeconds": 0.075,
     "source": "crafted",
     "breakdown": {
@@ -2355,7 +2355,7 @@
     "typeId": 88319,
     "name": "D2 Fuel",
     "categoryName": "Commodity",
-    "luxValue": 4.43,
+    "luxValue": 4.4318,
     "timeSeconds": 0.16,
     "source": "crafted",
     "breakdown": {
@@ -2367,7 +2367,7 @@
     "typeId": 88335,
     "name": "D1 Fuel",
     "categoryName": "Commodity",
-    "luxValue": 3.59,
+    "luxValue": 3.5869,
     "timeSeconds": 0.129,
     "source": "crafted",
     "breakdown": {
@@ -2379,7 +2379,7 @@
     "typeId": 88561,
     "name": "Thermal Composites",
     "categoryName": "Material",
-    "luxValue": 146.6,
+    "luxValue": 146.5965,
     "timeSeconds": 5.277,
     "source": "crafted",
     "breakdown": {
@@ -2391,7 +2391,7 @@
     "typeId": 88564,
     "name": "Feral Echo",
     "categoryName": "Material",
-    "luxValue": 220.92,
+    "luxValue": 220.9249,
     "timeSeconds": 7.953,
     "source": "found",
     "breakdown": {
@@ -2403,7 +2403,7 @@
     "typeId": 88565,
     "name": "Still Knot",
     "categoryName": "Material",
-    "luxValue": 1421.73,
+    "luxValue": 1421.7301,
     "timeSeconds": 51.182,
     "source": "crafted",
     "breakdown": {
@@ -2415,7 +2415,7 @@
     "typeId": 88764,
     "name": "Salvaged Materials",
     "categoryName": "Commodity",
-    "luxValue": 249.87,
+    "luxValue": 249.8698,
     "timeSeconds": 8.995,
     "source": "found",
     "breakdown": {
@@ -2427,7 +2427,7 @@
     "typeId": 88765,
     "name": "Mummified Clone",
     "categoryName": "Commodity",
-    "luxValue": 34.89,
+    "luxValue": 34.886,
     "timeSeconds": 1.256,
     "source": "found",
     "breakdown": {
@@ -2439,7 +2439,7 @@
     "typeId": 88780,
     "name": "Echo Chamber",
     "categoryName": "Material",
-    "luxValue": 959.88,
+    "luxValue": 959.8788,
     "timeSeconds": 34.556,
     "source": "crafted",
     "breakdown": {
@@ -2451,7 +2451,7 @@
     "typeId": 88781,
     "name": "Chitinous Organics",
     "categoryName": "Material",
-    "luxValue": 146.79,
+    "luxValue": 146.7856,
     "timeSeconds": 5.284,
     "source": "crafted",
     "breakdown": {
@@ -2463,7 +2463,7 @@
     "typeId": 88782,
     "name": "Aromatic Carbon Weave",
     "categoryName": "Material",
-    "luxValue": 93.78,
+    "luxValue": 93.7797,
     "timeSeconds": 3.376,
     "source": "crafted",
     "breakdown": {
@@ -2475,7 +2475,7 @@
     "typeId": 88783,
     "name": "Kerogen Tar",
     "categoryName": "Material",
-    "luxValue": 46.89,
+    "luxValue": 46.8898,
     "timeSeconds": 1.688,
     "source": "crafted",
     "breakdown": {
@@ -2487,7 +2487,7 @@
     "typeId": 88839,
     "name": "Batched Printed Circuits",
     "categoryName": "Material",
-    "luxValue": 1647.44,
+    "luxValue": 1647.4359,
     "timeSeconds": 59.308,
     "source": "crafted",
     "breakdown": {
@@ -2499,7 +2499,7 @@
     "typeId": 88840,
     "name": "Packaged Printed Circuits",
     "categoryName": "Material",
-    "luxValue": 17141.03,
+    "luxValue": 17141.0256,
     "timeSeconds": 617.077,
     "source": "crafted",
     "breakdown": {
@@ -2511,7 +2511,7 @@
     "typeId": 88841,
     "name": "Batched Carbon Weave",
     "categoryName": "Material",
-    "luxValue": 2431.47,
+    "luxValue": 2431.4713,
     "timeSeconds": 87.533,
     "source": "crafted",
     "breakdown": {
@@ -2523,7 +2523,7 @@
     "typeId": 88842,
     "name": "Packaged Carbon Weave",
     "categoryName": "Material",
-    "luxValue": 25342.49,
+    "luxValue": 25342.4908,
     "timeSeconds": 912.33,
     "source": "crafted",
     "breakdown": {
@@ -2535,7 +2535,7 @@
     "typeId": 88843,
     "name": "Batched Thermal Composites",
     "categoryName": "Material",
-    "luxValue": 1660.41,
+    "luxValue": 1660.409,
     "timeSeconds": 59.775,
     "source": "crafted",
     "breakdown": {
@@ -2547,7 +2547,7 @@
     "typeId": 88844,
     "name": "Packaged Thermal Composites",
     "categoryName": "Material",
-    "luxValue": 17492.98,
+    "luxValue": 17492.9792,
     "timeSeconds": 629.747,
     "source": "crafted",
     "breakdown": {
@@ -2559,7 +2559,7 @@
     "typeId": 88886,
     "name": "Heat Exchanger XS",
     "categoryName": "Module",
-    "luxValue": 7508.1,
+    "luxValue": 7508.0993,
     "timeSeconds": 270.292,
     "source": "crafted",
     "breakdown": {
@@ -2571,7 +2571,7 @@
     "typeId": 88887,
     "name": "Compressed Coolant ",
     "categoryName": "Charge",
-    "luxValue": 49.98,
+    "luxValue": 49.9752,
     "timeSeconds": 1.799,
     "source": "crafted",
     "breakdown": {
@@ -2583,7 +2583,7 @@
     "typeId": 88889,
     "name": "Heat Exchanger S",
     "categoryName": "Module",
-    "luxValue": 17240.85,
+    "luxValue": 17240.8492,
     "timeSeconds": 620.671,
     "source": "crafted",
     "breakdown": {
@@ -2595,7 +2595,7 @@
     "typeId": 89087,
     "name": "Synod Technocore",
     "categoryName": "Material",
-    "luxValue": 22092.49,
+    "luxValue": 22092.4908,
     "timeSeconds": 795.33,
     "source": "found",
     "breakdown": {
@@ -2607,7 +2607,7 @@
     "typeId": 89088,
     "name": "Exclave Technocore",
     "categoryName": "Material",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2619,7 +2619,7 @@
     "typeId": 89089,
     "name": "Building Foam",
     "categoryName": "Material",
-    "luxValue": 4608.29,
+    "luxValue": 4608.295,
     "timeSeconds": 165.899,
     "source": "crafted",
     "breakdown": {
@@ -2631,7 +2631,7 @@
     "typeId": 89258,
     "name": "Hydrocarbon Residue",
     "categoryName": "Material",
-    "luxValue": 8.44,
+    "luxValue": 8.4402,
     "timeSeconds": 0.304,
     "source": "crafted",
     "breakdown": {
@@ -2643,7 +2643,7 @@
     "typeId": 89259,
     "name": "Silica Grains",
     "categoryName": "Material",
-    "luxValue": 8.44,
+    "luxValue": 8.4402,
     "timeSeconds": 0.304,
     "source": "crafted",
     "breakdown": {
@@ -2655,7 +2655,7 @@
     "typeId": 89260,
     "name": "Iron-Rich Nodules",
     "categoryName": "Material",
-    "luxValue": 3.93,
+    "luxValue": 3.9257,
     "timeSeconds": 0.141,
     "source": "crafted",
     "breakdown": {
@@ -2667,7 +2667,7 @@
     "typeId": 89978,
     "name": "Stride Stack",
     "categoryName": "Commodity",
-    "luxValue": 2083699.63,
+    "luxValue": 2083699.6337,
     "timeSeconds": 75013.187,
     "source": "crafted",
     "breakdown": {
@@ -2679,7 +2679,7 @@
     "typeId": 89979,
     "name": "Carom Stack",
     "categoryName": "Commodity",
-    "luxValue": 2525549.45,
+    "luxValue": 2525549.4505,
     "timeSeconds": 90919.78,
     "source": "crafted",
     "breakdown": {
@@ -2691,7 +2691,7 @@
     "typeId": 89980,
     "name": "Stack Slice 5DZ",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2703,7 +2703,7 @@
     "typeId": 89981,
     "name": "Stack Slice 5DW",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2715,7 +2715,7 @@
     "typeId": 89982,
     "name": "Stack Slice 5DK",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2727,7 +2727,7 @@
     "typeId": 89983,
     "name": "Stack Slice 5DE",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2739,7 +2739,7 @@
     "typeId": 89984,
     "name": "Stack Slice 5C0",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2751,7 +2751,7 @@
     "typeId": 89985,
     "name": "Stack Slice 5C1",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2763,7 +2763,7 @@
     "typeId": 89986,
     "name": "Stack Slice 31P",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2775,7 +2775,7 @@
     "typeId": 89987,
     "name": "Stack Slice 31V",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2787,7 +2787,7 @@
     "typeId": 89988,
     "name": "Stack Slice 31Q",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2799,7 +2799,7 @@
     "typeId": 89989,
     "name": "Stack Slice 31F",
     "categoryName": "Commodity",
-    "luxValue": 220924.91,
+    "luxValue": 220924.9084,
     "timeSeconds": 7953.297,
     "source": "found",
     "breakdown": {
@@ -2811,7 +2811,7 @@
     "typeId": 90887,
     "name": "Hop",
     "categoryName": "Module",
-    "luxValue": 3777.38,
+    "luxValue": 3777.381,
     "timeSeconds": 135.986,
     "source": "crafted",
     "breakdown": {
@@ -2823,7 +2823,7 @@
     "typeId": 91106,
     "name": "Stride",
     "categoryName": "Ship",
-    "luxValue": 2431692.08,
+    "luxValue": 2431692.077,
     "timeSeconds": 87540.915,
     "source": "crafted",
     "breakdown": {
@@ -2835,7 +2835,7 @@
     "typeId": 91107,
     "name": "Carom",
     "categoryName": "Ship",
-    "luxValue": 2859147.92,
+    "luxValue": 2859147.9239,
     "timeSeconds": 102929.325,
     "source": "crafted",
     "breakdown": {
@@ -2847,7 +2847,7 @@
     "typeId": 91749,
     "name": "Reaping Shell",
     "categoryName": "Shell",
-    "luxValue": 1426520.88,
+    "luxValue": 1426520.8798,
     "timeSeconds": 51354.752,
     "source": "crafted",
     "breakdown": {
@@ -2859,7 +2859,7 @@
     "typeId": 91967,
     "name": "Aggressive Shell",
     "categoryName": "Shell",
-    "luxValue": 1297165.99,
+    "luxValue": 1297165.9909,
     "timeSeconds": 46697.976,
     "source": "crafted",
     "breakdown": {
@@ -2871,7 +2871,7 @@
     "typeId": 91968,
     "name": "Rugged Shell",
     "categoryName": "Shell",
-    "luxValue": 1047902.43,
+    "luxValue": 1047902.4271,
     "timeSeconds": 37724.487,
     "source": "crafted",
     "breakdown": {
@@ -2883,7 +2883,7 @@
     "typeId": 92389,
     "name": "Skip",
     "categoryName": "Module",
-    "luxValue": 2841.04,
+    "luxValue": 2841.0409,
     "timeSeconds": 102.277,
     "source": "crafted",
     "breakdown": {
@@ -2895,7 +2895,7 @@
     "typeId": 92390,
     "name": "Lunge",
     "categoryName": "Module",
-    "luxValue": 31100.88,
+    "luxValue": 31100.8824,
     "timeSeconds": 1119.632,
     "source": "crafted",
     "breakdown": {
@@ -2907,7 +2907,7 @@
     "typeId": 92394,
     "name": "Fine Young Crude Matter",
     "categoryName": "Asteroid",
-    "luxValue": 216.05,
+    "luxValue": 216.0494,
     "timeSeconds": 7.778,
     "source": "mining",
     "breakdown": {
@@ -2919,7 +2919,7 @@
     "typeId": 92414,
     "name": "Fine Old Crude Matter",
     "categoryName": "Asteroid",
-    "luxValue": 216.05,
+    "luxValue": 216.0494,
     "timeSeconds": 7.778,
     "source": "mining",
     "breakdown": {
@@ -2931,7 +2931,7 @@
     "typeId": 92421,
     "name": "Leap",
     "categoryName": "Module",
-    "luxValue": 11401.75,
+    "luxValue": 11401.7468,
     "timeSeconds": 410.463,
     "source": "crafted",
     "breakdown": {
@@ -2943,7 +2943,7 @@
     "typeId": 92422,
     "name": "Brine",
     "categoryName": "Material",
-    "luxValue": 125.66,
+    "luxValue": 125.6614,
     "timeSeconds": 4.524,
     "source": "crafted",
     "breakdown": {
@@ -2955,7 +2955,7 @@
     "typeId": 92483,
     "name": "Still Kernel",
     "categoryName": "Material",
-    "luxValue": 6609.99,
+    "luxValue": 6609.9919,
     "timeSeconds": 237.96,
     "source": "crafted",
     "breakdown": {
@@ -2967,7 +2967,7 @@
     "typeId": 99001,
     "name": "Palladium",
     "categoryName": "Material",
-    "luxValue": 19.63,
+    "luxValue": 19.6283,
     "timeSeconds": 0.707,
     "source": "crafted",
     "breakdown": {

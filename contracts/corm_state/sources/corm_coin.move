@@ -2,6 +2,10 @@
 /// to continuity. Standard fungible coin; can be merged, split, and used
 /// directly in trustless contracts.
 ///
+/// Uses 4 decimal places (1 CORM = 10,000 base units) to maintain a 1:1
+/// value relationship with LUX, the in-game currency. This allows item
+/// prices with fractional LUX values to be expressed exactly in CORM.
+///
 /// Minting is gated through `MintCap` objects issued per-corm, held by the
 /// corm-brain service keypair.
 module corm_state::corm_coin;
@@ -63,7 +67,7 @@ public struct CormCoinBurnedEvent has copy, drop {
 fun init(witness: CORM_COIN, ctx: &mut TxContext) {
     let (treasury_cap, metadata) = coin::create_currency<CORM_COIN>(
         witness,
-        0,                              // decimals — CORM is a whole-unit token
+        4,                              // decimals — 1 CORM = 10,000 base units (1:1 with LUX)
         b"CORM",                        // symbol
         b"CORM",                        // name
         b"Continuity contribution token", // description
