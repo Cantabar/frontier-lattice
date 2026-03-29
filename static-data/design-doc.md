@@ -55,6 +55,14 @@ Makefile targets (from project root):
 
 Not deployed — data is consumed at build time by the web frontend and at runtime by seeding scripts. Icons are bundled into the web build.
 
+## Features
+
+- Phobos data extraction and processing for Eve Frontier item types, groups, and categories
+- Icon extraction scripts for item and structure icons
+- Item enrichment with category, group, tier, and tag metadata
+- Ore seeding for local SSU testing
+- Makefile targets for enrichment and seeding workflows
+
 ## Open Questions / Future Work
 
 - Automate Phobos re-export when Eve Frontier updates game data

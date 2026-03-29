@@ -55,6 +55,14 @@ Mixed — each tool is self-contained:
 - package-search: Python
 - world-contract-tracker: JavaScript, Vite
 
+## Features
+
+- Local Sui wallet (Chrome extension) with auto-discovery via wallet standard, bulk key import from `.env`
+- Quick item distribution UI for testing trustless contracts and SSU interactions
+- On-chain package dependency analysis (Sui JSON-RPC, fast and full scan modes)
+- Transfer exploit proof-of-concept for contract safety validation
+- World contract deployment tracker comparing on-chain state against GitHub repo
+
 ## Deployment
 
 None — all tools run locally. dev-wallet is loaded as an unpacked Chrome extension; Vite tools run via `npm run dev`; package-search runs as a CLI script.

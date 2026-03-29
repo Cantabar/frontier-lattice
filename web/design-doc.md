@@ -34,25 +34,53 @@ Browser
 
 - **Identity Resolver** (`hooks/useIdentity`) — maps the connected Sui wallet to an Eve Frontier Character object. Provides `IdentityContext` to the entire app for character-aware UI.
 - **Notification System** (`hooks/useNotifications`, `hooks/usePayoutWatcher`) — push-style notification provider. Payout watcher polls the indexer for contract fill/completion events targeting the current character and surfaces them as toast notifications.
-- **Continuity Engine** (`continuity-engine/ContinuityEngine`) — embeds the puzzle-service as an iframe, providing the in-app gateway to the corm interaction.
+- **Continuity Engine** (`continuity-engine/ContinuityEngine`) — embeds the puzzle-service as an iframe, providing the in-app gateway to the corm interaction. Includes `useCormState` and `useCormStateBridge` hooks for reading on-chain CormState and bridging it to the iframe, plus a `CormStateBar` component.
+- **Auto-Join Tribe** (`hooks/useAutoJoinTribe`) — detects when the connected wallet’s Character belongs to an in-game tribe that has an on-chain Tribe, but the user hasn’t joined yet. Resolves via indexer events or on-chain registry lookup (`devInspect`). Exposes a one-click `self_join` action. Displayed via `AutoJoinBanner`.
+- **Initialize Tribe** (`hooks/useInitializeTribe`, `InitializeTribeBanner`) — detects when the user’s in-game tribe has no on-chain Tribe and prompts creation.
+- **Quick Actions** (`hooks/useQuickActions`) — configurable dashboard shortcuts for contract creation (CoinForCoin, CoinForItem, ItemForCoin, ItemForItem, Transport). Persisted to localStorage.
 - **Indexer Error Handler** (`lib/api`) — global subscriber for indexer fetch errors, surfaced as error notifications.
+
+### Shadow Location Network
+
+Client-side privacy-preserving location sharing with ZK proof generation. The server never sees plaintext coordinates.
+
+- **Location Crypto** (`lib/locationCrypto.ts`) — Poseidon4 hash commitment, AES-256-GCM encrypt/decrypt with TLK, X25519 TLK unwrap (ECIES), signature-derived X25519 keypair (deterministic from wallet’s `signPersonalMessage`), wallet auth challenge construction.
+- **ZK Prover** (`lib/zkProver.ts`) — browser-side Groth16 proof generation via snarkjs. Generates region-filter proofs (3D bounding box containment) and proximity-filter proofs (distance threshold). Circuit WASM + zkey files served by the indexer at `/zk/`.
+- **Location PODs Hook** (`hooks/useLocationPods`) — fetches, decrypts, submits, and revokes location PODs. Handles TLK initialization, wrapped TLK fetching, Network Node POD registration and refresh. Caches wallet auth headers.
+- **TLK Status Hook** (`hooks/useTlkStatus`) — checks TLK initialization state for a tribe.
+- **TLK Distribution Hook** (`hooks/useTlkDistribution`) — manages wrapping TLK for pending tribe members.
+- **ZK Filter Hook** (`hooks/useZkLocationFilter`) — generates and submits region/proximity proofs for batches of PODs, queries verified results. Supports named region/constellation proof by ID. Deduplicates Network Node derived PODs.
+- **Region Data** (`lib/regions.ts`, `lib/solarSystems.ts`) — client-side region/constellation/solar system reference data with bounding boxes.
+- **Locations Page** (`pages/LocationsPage`) — TLK status banner, decrypted POD listing grouped by solar system, register/revoke actions, pending member key distribution.
+
+### Forge Planner
+
+- **Forge Planner Page** (`pages/ForgePlanner`) — three-tab interface: Blueprints (browse game blueprints), Planner (optimizer + build queue), Orders (active multi-input contracts with create/detail modals).
+- **Blueprints Hook** (`hooks/useBlueprints`) — loads blueprint data from `/blueprints.json`, converts to `RecipeData[]` for the optimizer.
+- **Optimizer Hook** (`hooks/useOptimizer`) — browser-side recipe tree resolution and gap analysis. Resolves a target item + quantity to a full dependency tree, collects leaf materials, and compares against inventory for a shopping list.
+- **BOM Library** (`lib/bom.ts`) — Bill of Materials expansion at configurable depth (0 = finished items, 1 = direct inputs, ∞ = raw materials). Used by both optimizer UI and multi-input contract creation to generate slot lists.
+
+### SSU Delivery dApp
+
+- **SsuDeliveryDapp** (`pages/SsuDeliveryDapp`) — lightweight SSU-specific dApp for contract fulfillment. Fetches SSU metadata and inventory, filters contracts for deliverable items from the user’s player inventory, and provides a delivery modal. Rendered under `/dapp/ssu/:ssuId`.
 
 ### Page Routes
 
-- `/` — Dashboard (overview)
+- `/` — Dashboard (overview with quick actions for contract creation)
 - `/tribes` — Tribe list
 - `/tribe/:tribeId` — Tribe detail (members, reputation leaderboard)
 - `/contracts` — Trustless contracts list
 - `/contracts/create` — Create new contract
 - `/contracts/:contractId` — Contract detail (fills, status)
-- `/continuity` — Continuity Engine (puzzle-service iframe)
+- `/continuity` — Continuity Engine (puzzle-service iframe with CormState bridge)
 - `/events` — Event Explorer (filterable event log)
 - `/structures` → redirects to `/structures/:characterId`
 - `/structures/:characterId` — Player's structures
-- `/locations` — Location browser
+- `/locations` — Shadow Location Network (TLK management, encrypted PODs, ZK proof generation)
 - `/notifications` — Notification history
 - `/settings` — App settings
-- `/dapp/*` — Lightweight dApp shell (no sidebar/header) for in-game SSU embedding
+- `/dapp/ssu/:ssuId` — SSU Delivery dApp (lightweight, no sidebar/header)
+- `/dapp/*` — Lightweight dApp shell for in-game SSU embedding
 
 ## Tech Stack
 
@@ -95,8 +123,28 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
   - Deploy: `make deploy-frontend ENV=utopia|stillness` (S3 sync + CloudFront invalidation)
   - SPA routing: CloudFront 404 → `/index.html`
 
+## Features
+
+- Wallet-connected SPA with Eve Frontier Character identity resolution
+- Tribe management: creation, self-join (auto-detected), member management, leadership transfer
+- Trustless contract creation and filling for all 6 contract types (coin-for-coin, coin-for-item, item-for-coin, item-for-item, multi-input, transport)
+- Contract visibility filtering (character and tribe access control)
+- Dashboard with configurable quick actions (persisted to localStorage)
+- Forge Planner with blueprint browser, recipe tree optimizer, gap analysis, and multi-input order management
+- Bill of Materials expansion at configurable depth for contract slot generation
+- Continuity Engine with on-chain CormState bridge
+- Shadow Location Network: encrypted POD management, TLK lifecycle (init/wrap/rotate), signature-derived X25519 keypairs, Poseidon hash commitments
+- Browser-side ZK proof generation (Groth16/snarkjs) for region and proximity location filters
+- Named region/constellation proof with canonical bounding box validation
+- SSU Delivery dApp for in-game contract fulfillment
+- Payout and item pickup notification watcher
+- Auto-join tribe detection and one-click self_join
+- Initialize tribe banner for unclaimed in-game tribes
+- Event Explorer with type/tribe/character filtering and pagination
+- Structure browser with aggregated SSU inventory
+
 ## Open Questions / Future Work
 
-- SSU dApp shell (`/dapp/*`) — lightweight embedded view for in-game Smart Storage Units
 - Offline-capable PWA for mobile access
 - Real-time event streaming (WebSocket from indexer) instead of polling
+- Forge Planner: multi-recipe selection for optimizer, batch order creation

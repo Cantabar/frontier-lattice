@@ -88,6 +88,19 @@ No application data — this service provisions infrastructure only. Database sc
 - **Teardown:** `make teardown ENV=utopia` (interactive confirmation required)
 - **Region:** `us-east-1` (configurable via `AWS_REGION`)
 
+## Features
+
+- Single parameterized CDK stack supporting multiple game-world environments (utopia, stillness)
+- VPC with 2-AZ layout, NAT gateway, public/private subnet isolation
+- ECS Fargate with 512 CPU / 1024 MB per indexer task
+- RDS Postgres 16 (t4g.micro, gp3 20GB, single-AZ)
+- S3 static frontend with CloudFront CDN and SPA routing
+- ECR container registry per service per environment
+- Secrets Manager for DB credentials and Sui RPC config
+- CloudWatch Logs with 2-week retention
+- Makefile-driven deployment: infra, images, frontend, teardown
+- CDK stack outputs for ECR URI, S3 bucket, CloudFront URL, ALB DNS
+
 ## Open Questions / Future Work
 
 - HTTPS (ACM certificate + HTTPS listener on ALB) — currently HTTP-only for hackathon

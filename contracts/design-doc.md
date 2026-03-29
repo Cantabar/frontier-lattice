@@ -103,6 +103,19 @@ Each contract package has a `Move.toml` with dependency addresses. Package IDs a
 - **Testnet:** `make publish-contracts ENV=utopia|stillness` (via `scripts/publish-contracts.sh`)
 - Publishing order: `corm_auth` → `corm_state` → `tribe` → `trustless_contracts` → `witnessed_contracts`
 
+## Features
+
+- CormAuth typed witness for SSU/Gate/Turret extension authorization
+- Ed25519 witness registry for off-chain attestation verification
+- CormState shared object with phase progression (0–6), stability/corruption meters, and admin-gated updates
+- CORM fungible token with per-corm MintCap and shared CoinAuthority
+- Tribe registry with 1:1 in-game tribe mapping, membership roles (Leader/Officer/Member), autonomous self-join, and versioned migration
+- Six trustless contract types with on-chain escrow: coin-for-coin, coin-for-item, item-for-coin, item-for-item, multi-input, transport
+- Partial fills, free giveaways (wanted_amount=0), filler access control (character/tribe allowlists)
+- Contract lifecycle: create, fill, cancel, expire, cleanup (garbage collection)
+- Witnessed build request contracts with cryptographic fulfillment via Ed25519 attestations and BCS deserialization
+- Shared contract utilities: deadline validation, fill tracking, divisibility checks, item deposit/release via CormAuth extension
+
 ## Open Questions / Future Work
 
 - Migration from EVM to Sui is underway — some Eve Frontier resources may still reference EVM patterns

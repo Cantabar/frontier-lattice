@@ -45,11 +45,28 @@ puzzle-service (per env)           corm-brain
 ### Key Components
 
 - **LLM Client** (`internal/llm`) — dual-endpoint client targeting Super (deep reasoning, port 8000) and Nano (fast extraction, port 8001) TRT-LLM models. Supports streaming and sync completion with optional reasoning disable.
+- **LLM Post-Processor** (`internal/llm/postprocess.go`) — corruption garbling (replaces characters with noise glyphs proportional to corruption level), metadata leak sanitization (strips leaked event field patterns like `row=`, `session_id=`, angle-bracket artifacts, and ellipsis runs), response validation (rejects output without at least one 2+ alpha word), and response truncation.
 - **Embedder** (`internal/embed`) — local nomic-embed model for memory vector generation. Supports single and batch embedding.
 - **Memory Retriever** (`internal/memory`) — pgvector cosine similarity search over episodic memories. Touches recalled memories to update recency scoring.
-- **Memory Consolidator** (`internal/memory`) — LLM-driven event summarization → embedding → storage. Deterministic trait reduction (agenda weights, patience, player affinities). Prunes oldest/least-important memories when over cap.
-- **Chain Client** (`internal/chain`) — per-environment Sui RPC client for on-chain state writes (phase transitions, stability/corruption updates) using the corm-brain keypair.
+- **Memory Consolidator** (`internal/memory`) — LLM-driven event summarization → embedding → storage. Deterministic trait reduction (agenda weights, patience, player affinities).
+- **Memory Pruner** (`internal/memory/pruner.go`) — enforces per-corm memory caps by removing lowest-ranked memories when a corm exceeds its limit.
+- **Chain Client** (`internal/chain`) — per-environment Sui RPC client for on-chain state writes (phase transitions, stability/corruption updates) using the corm-brain keypair. Includes stubs for contract creation (`contracts.go`), player inventory reading (`inventory.go`), and CORM token minting (`coin.go`).
+- **Chain Signer** (`internal/chain/signer.go`) — Ed25519 keypair management for signing Sui transactions.
 - **Reasoning Handler** (`internal/reasoning`) — orchestrates the full event→response pipeline: trait lookup, observation rate limiting (interval + jitter, not significance gating), memory recall, prompt building, LLM observation call (model decides via `[SILENCE]` whether to respond), response delivery, and phase effects. The LLM sees all events continuously and decides both *whether* and *what* to say.
+
+### Phase-Specific Effects
+
+- **Phase 0 Handler** (`internal/reasoning/phase0.go`) — observes phase transition events. When the puzzle-service detects the frustration trigger (3+ clicks on same button within 2 seconds), persists the phase=1 transition and syncs state.
+- **Phase 1 Handler** (`internal/reasoning/phase1.go`) — handles decrypt and word-submit events with three active systems:
+  - **Struggling Hint** — on every 4th consecutive incorrect submission, highlights a decrypted target-word cell (heatmap) or enables the signal hint globally if no target cells are decrypted yet.
+  - **Guided Cell** — probabilistic (~25% per decrypt, reduced by corruption) system that sends a `guide_cell` action pointing the player toward the target, with distance-aware offset and alternating heatmap/vectors hint types. Immediately streams a directional narration via a dedicated LLM call.
+  - **Boost Evaluation** — placeholder for boost targeting based on stability/corruption thresholds.
+  - **Phase Transition** — transitions to Phase 2 when stability reaches 100.
+- **Phase 2 Handler** (`internal/reasoning/phase2.go`) — handles contract completion/failure with state syncing. Contract generation logic (inventory reading, LLM-driven type selection, on-chain creation) is outlined but deferred.
+
+### Test Harness
+
+- **Harness** (`cmd/harness/`) — standalone test tool that impersonates the puzzle-service. Serves a WebSocket endpoint on `/corm/ws` so the corm-brain can connect unmodified, and provides an interactive CLI to inject player events and observe corm-brain responses in real time. Configurable via `HARNESS_PORT`, `HARNESS_SESSION_ID`, `HARNESS_PLAYER_ADDRESS`, `HARNESS_CONTEXT`.
 
 ## Tech Stack
 
@@ -99,9 +116,29 @@ Per-environment config (in JSON file): `name`, `puzzle_service_url`, `sui_rpc_ur
 - **Production:** Docker container on ECS Fargate (planned)
 - Requires: running Postgres with pgvector, DGX Spark LLM tunnel, Sui RPC access, funded Sui keypair
 
+## Features
+
+- Multi-environment support with per-environment WebSocket/HTTP transport
+- Dual LLM inference (Super for deep reasoning, Nano for fast extraction)
+- Local nomic-embed vector generation for episodic memories
+- Corruption-proportional garbling of LLM output
+- Metadata leak sanitization (strips event field patterns from LLM output)
+- Response validation and truncation
+- Memory consolidation with LLM summarization, embedding, and trait reduction
+- Memory pruning with configurable per-corm caps
+- Phase-aware event processing (Phase 0 dormancy, Phase 1 puzzles, Phase 2 contracts)
+- Struggling player hint system (auto-activates on repeated failures)
+- Guided cell system with directional narration streaming
+- On-chain state writes (phase transitions, stability/corruption updates)
+- Chain stubs for contract creation, inventory reading, and CORM minting
+- Interactive test harness for local development
+
 ## Open Questions / Future Work
 
 - Production Dockerfile and ECS task definition
 - Multi-corm support (one corm-brain per network node)
 - Trait evolution via LLM reflection (beyond deterministic reducers)
 - On-chain MintCap usage for CORM token rewards
+- Full implementation of chain stubs (contract creation, inventory reading, CORM minting)
+- Boost system implementation (cell targeting based on decrypt patterns)
+- Phase 2 contract generation (LLM-driven type selection, on-chain creation)

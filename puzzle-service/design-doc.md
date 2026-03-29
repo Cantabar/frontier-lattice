@@ -214,6 +214,27 @@ puzzle-service/
 - **Production:** Dockerfile present for containerized deployment on AWS ECS/Fargate
 - Stateless (sessions lost on restart) — designed for single-instance use per environment
 
+## Features
+
+- Three-phase game progression: awakening (Phase 0), SUI address discovery puzzles (Phase 1), trustless contracts (Phase 2)
+- Phase 0 awakening with random frustration trigger threshold (3–5 clicks) and animated transition sequence
+- Phase 1 cipher grid puzzles with 20×20 grid, configurable difficulty, and three cipher tiers (Caesar, variable shift, position-based)
+- SUI address discovery mechanic with group-reveal (clicking any cell reveals the entire address)
+- Seven cell types: noise, symbol, target, decoy, trap, sensor (sonar/thermal/vector), garbled
+- Trap explosion system with Euclidean radius 3 blast zone and permanent garbling
+- Localized sonar pulse system on every decrypt (radius 2) with color-coded type signatures
+- Sonar sensor triple-pulse override (radius 5, 3 pulses at 1-second intervals)
+- Four AI-controlled hint systems: heatmap, vectors, decode, signal
+- AI-controlled guided cell targeting with hint type rewards
+- Auto-enabling vectors after 4–8 non-target clicks per puzzle
+- Difficulty scaling across three tiers with increasing decoys, traps, and cipher complexity
+- Dynamic difficulty adjustment via corm-brain DifficultyMod
+- HTMX server-rendered UI with SSE log streaming
+- WebSocket relay for bidirectional corm-brain communication with HTTP fallback
+- In-game SSU iframe embedding support (`/ssu/{entity_id}/` routes)
+- Cipher analysis sidebar with substitution table and frequency analysis
+- Stability and corruption meter UI
+
 ## Open Questions / Future Work
 
 - Session persistence (Redis or Postgres) for multi-instance deployment

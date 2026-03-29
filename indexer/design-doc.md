@@ -18,9 +18,28 @@ Sui Checkpoints → Checkpoint Subscriber → Event Archiver → Postgres
 
 - **Checkpoint Subscriber** (`subscriber/checkpoint-subscriber.ts`) — polls Sui RPC for events from the `tribe`, `trustless_contracts`, `witnessed_contracts`, and `corm_state` packages. Each event is enriched with checkpoint metadata (sequence, digest, timestamp). Maintains a resumable cursor in the database.
 - **Event Archiver** (`archiver/event-archiver.ts`) — writes events with denormalized fields (`tribe_id`, `character_id`, `primary_id`) and updates materialized views (reputation snapshots).
-- **Express API** (`api/server.ts`) — serves historical queries, reputation audit trails, and checkpoint inclusion proofs on the configured port.
+- **Express API** (`api/server.ts`) — serves historical queries, reputation audit trails, checkpoint inclusion proofs, shadow location endpoints, and ZK proof endpoints on the configured port.
 - **Cleanup Worker** (`cleanup/cleanup-worker.ts`) — optional background process that finds expired contracts on-chain and submits cancel/expire transactions using a funded keypair.
-- **Witness Service** (`witness/witness-service.ts`) — signs `BuildAttestation` messages for witnessed contract fulfillment when on-chain structure events match open build requests.
+- **Witness Service** (`witness/witness-service.ts`) — polls for open `BuildRequestContract` objects on-chain, matches them against archived anchor events (StorageUnitCreated, GateCreated, TurretCreated) and CormAuth extension events, resolves builder identity from OwnerCap chains, and submits `fulfill` transactions with BCS-encoded Ed25519-signed `BuildAttestation` messages.
+- **Attestation Encoder** (`witness/attestation.ts`) — BCS encoding and Ed25519 signing for `BuildAttestation` payloads matching the on-chain `witness_utils::unpack_build_attestation` deserialization order. Uses SUI PersonalMessage signing format.
+
+### Shadow Location Network
+
+A privacy-preserving location sharing system built into the indexer, providing encrypted structure location data with ZK proof verification.
+
+- **Location Routes** (`api/location-routes.ts`) — REST API for location PODs (encrypted structure positions) and Tribe Location Key (TLK) management. All mutation endpoints require wallet signature authentication (`SuiSig` auth header). Supports:
+  - POD CRUD: submit, fetch, list by tribe, revoke
+  - TLK lifecycle: init (generate + wrap to members), wrap (client-side wrapping for new members), rotate (version bump + re-wrap), register (X25519 public key registration), pending member listing
+  - Network Node PODs: register a node's location and auto-derive PODs for all connected assemblies (via on-chain `connected_assembly_ids`), refresh/cleanup when assemblies connect or disconnect
+- **ZK Routes** (`api/zk-routes.ts`) — REST API for Groth16 proof submission and verified location queries:
+  - `POST /submit` — submit a region or proximity proof; verifies cryptographically, confirms POD existence and location_hash match, validates named region/constellation bounds, stores proof, propagates to derived structures
+  - `GET /region` — query PODs with verified region-filter proofs by bounding box
+  - `GET /proximity` — query PODs with verified proximity-filter proofs
+  - `GET /tags` — public (no auth) query for structure location tags (region/constellation membership)
+- **ZK Verifier** (`location/zk-verifier.ts`) — server-side Groth16 proof verification using snarkjs. Lazy-loads circuit verification keys from `circuits/artifacts/`. Gracefully rejects proofs when keys are unavailable.
+- **Location Crypto** (`location/crypto.ts`) — wallet signature verification, TLK generation (256-bit random), X25519 ECIES wrapping (ephemeral key + AES-256-GCM).
+- **Region Data** (`location/region-data.ts`) — server-side reference data for Eve Frontier regions and constellations with canonical bounding boxes. Used to validate ZK proof public signals against named regions.
+- **Sui RPC Helper** (`location/sui-rpc.ts`) — fetches `connected_assembly_ids` from Network Node objects for POD propagation.
 
 ### Tracked Events (20+)
 
@@ -50,8 +69,17 @@ Environment variables (all optional with defaults):
 - `POLL_INTERVAL_MS` — event poll interval (default: 2000)
 - `CLEANUP_ENABLED` — enable cleanup worker (default: false)
 - `CLEANUP_WORKER_PRIVATE_KEY` — Sui keypair for contract cleanup transactions
+- `WITNESS_ENABLED` — enable witness service (default: false)
+- `WITNESS_PRIVATE_KEY` — Ed25519 keypair for signing build attestations
+- `WITNESS_POLL_INTERVAL_MS` — witness service poll interval (default: 5000)
+- `WITNESS_ATTESTATION_TTL_MS` — attestation validity window (default: 300000)
+- `WITNESS_REGISTRY_ID` — WitnessRegistry shared object ID
+- `WITNESSED_CONTRACTS_PACKAGE_ID` — witnessed_contracts package ID
+- `ZK_ARTIFACTS_DIR` — path to Groth16 circuit verification keys (default: `circuits/artifacts/`)
 
 ## API / Interface
+
+### Core Event API
 
 All routes under `/api/v1`. Pagination via `?limit=50&offset=0&order=desc`.
 
@@ -66,6 +94,36 @@ All routes under `/api/v1`. Pagination via `?limit=50&offset=0&order=desc`.
 - `GET /proof/:eventId` — checkpoint inclusion proof for a single event
 - `GET /event-types` — list of all tracked event types
 
+### Shadow Location API
+
+Mounted under `/api/v1/locations`. All endpoints (except `/proofs/tags`) require wallet signature auth (`Authorization: SuiSig <message>.<signature>`).
+
+**POD Management:**
+- `POST /pod` — submit or update an encrypted location POD
+- `GET /tribe/:tribeId` — list all PODs for a tribe
+- `GET /pod/:structureId?tribeId=X` — fetch a single POD
+- `DELETE /pod/:structureId` — revoke a POD (owner only)
+- `POST /network-node-pod` — register a Network Node location + derive PODs for connected assemblies
+- `POST /network-node-pod/refresh` — re-derive PODs for a Network Node (sync new/removed assemblies)
+
+**TLK Management:**
+- `GET /keys/:tribeId/status` — check TLK initialization state
+- `GET /keys/:tribeId` — fetch caller's wrapped TLK
+- `POST /keys/init` — initialize TLK for a tribe (generates key, wraps to all members)
+- `POST /keys/wrap` — store a client-wrapped TLK for a new member (server never sees plaintext)
+- `POST /keys/rotate` — rotate TLK (new key, wraps to all members, increments version)
+- `POST /keys/register` — register caller's X25519 public key for TLK distribution
+- `GET /keys/pending/:tribeId` — list members who need a wrapped TLK
+
+### ZK Proof API
+
+Mounted under `/api/v1/locations/proofs`.
+
+- `POST /submit` — submit a Groth16 proof for a structure × filter (region or proximity)
+- `GET /region` — query PODs with verified region-filter proofs
+- `GET /proximity` — query PODs with verified proximity-filter proofs
+- `GET /tags` — public (no auth) query for structure location tags
+
 ## Data Model
 
 ### Postgres Tables
@@ -73,7 +131,11 @@ All routes under `/api/v1`. Pagination via `?limit=50&offset=0&order=desc`.
 - `events` — all archived events with checkpoint proof metadata (`tx_digest`, `event_seq`, `checkpoint_seq`, `checkpoint_digest`), denormalized fields, raw JSON payload
 - `reputation_snapshots` — materialized latest reputation per tribe×character
 - `indexer_cursor` — resumable polling cursor
-- Location tables (managed by `db/location-schema.ts`)
+- `location_pods` — encrypted location PODs per structure×tribe with owner, location_hash, encrypted_blob, nonce, signature, pod/TLK version, optional network_node_id for derived PODs
+- `tribe_location_keys` — per-member wrapped TLK blobs (X25519 ECIES), versioned for rotation
+- `member_public_keys` — X25519 public keys registered by members for TLK distribution
+- `filter_proofs` — verified Groth16 proofs (region/proximity) per structure×tribe with filter key, public signals, and proof JSON
+- `location_tags` — public location tags (region/constellation membership) derived from verified ZK proofs
 
 ### Checkpoint Proof Verification
 
@@ -91,9 +153,23 @@ Each archived event includes proof metadata for independent verification:
   - Deploy: `make deploy-images` (pushes to ECR + forces ECS redeployment)
 - Database: RDS Postgres (managed by CDK stack)
 
+## Features
+
+- Checkpoint-based event archival with inclusion proofs for long-term verifiability
+- Resumable polling cursor for crash recovery
+- Reputation snapshots and leaderboard queries
+- Paginated event queries with filtering by type, tribe, character, and object
+- Optional cleanup worker for expiring stale on-chain contracts
+- Witness service for automated build request fulfillment (polls open contracts, matches anchor/extension events, signs BCS attestations, submits fulfill transactions)
+- Shadow Location Network with encrypted PODs, TLK key management (init/wrap/rotate/register), and Network Node POD propagation
+- ZK proof verification and storage for region and proximity location filters (Groth16/snarkjs)
+- Public location tagging from verified ZK proofs (region/constellation membership)
+- Wallet signature authentication for location API endpoints
+
 ## Open Questions / Future Work
 
-- ZK location proofs (Groth16 circuits for region/proximity verification) — artifacts in `circuits/`
-- Witness service integration with additional witnessed contract types
+- Additional witnessed contract types beyond `build_request`
 - Event replay / reindexing tooling
 - Read replica support for API scaling
+- ZK circuit compilation automation (`make zk-build`)
+- Location POD re-encryption on TLK rotation

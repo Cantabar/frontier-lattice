@@ -59,6 +59,16 @@ No environment variables. Paths are relative within the directory. The scraper r
 
 Not deployed — training runs locally. Output artifacts (LoRA adapters, merged GGUF) are consumed by corm-brain's LLM inference stack. The `raw/`, `datasets/`, and `output/` directories contain generated artifacts and are gitignored.
 
+## Features
+
+- Playwright-based headless scraper for The Keep SPA (evefrontier.com)
+- YAML-frontmatter markdown output per lore entry (title, slug, category, source URL, timestamp)
+- Category-aware Q&A pair generation (Keepedia/Stories/Fragments templates)
+- Instruct-tuning dataset generation with Eve Frontier lore expert system prompt
+- Automatic “Organization” → “Tribe” terminology replacement
+- Two training backends: Unsloth (GPU, QLoRA) and llama.cpp (CPU, LoRA)
+- Multiple recommended base models from 1B to 8B parameters
+
 ## Open Questions / Future Work
 
 - Automated re-scraping when new Keep entries are published
