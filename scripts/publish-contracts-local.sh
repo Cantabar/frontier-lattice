@@ -250,7 +250,7 @@ if [ -n "$CORM_AUTH_PKG" ] && [ -n "$CORM_STATE_PKG" ]; then
     }
 
     CORM_CONFIG_ID=$(
-      jq -r '.objectChanges[] | select(.type == "created") | select(.objectType | contains("CormConfig")) | .objectId' /tmp/create-config-result.json
+      jq -r '(.changed_objects // .objectChanges // [])[] | select(.idOperation == "CREATED" or .type == "created") | select(.objectType | contains("CormConfig")) | .objectId' /tmp/create-config-result.json
     )
 
     if [ -n "$CORM_CONFIG_ID" ] && [ "$CORM_CONFIG_ID" != "null" ]; then

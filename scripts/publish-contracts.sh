@@ -181,7 +181,7 @@ for i in "${!PACKAGES[@]}"; do
   }
 
   # Extract package ID from publish transaction result
-  PACKAGE_ID=$(jq -r '.objectChanges[] | select(.type == "published") | .packageId' /tmp/publish-result.json)
+  PACKAGE_ID=$(jq -r '(.objectChanges // [])[] | select(.type == "published") | .packageId // empty' /tmp/publish-result.json)
   if [ -z "$PACKAGE_ID" ] || [ "$PACKAGE_ID" = "null" ]; then
     # Fallback: try reading from Pub.{ENV}.toml
     PACKAGE_ID=$(grep -A1 "$pkg_path" "$PUB_FILE" | grep 'published-at' | sed 's/.*"\(0x[^"]*\)".*/\1/')
@@ -277,9 +277,9 @@ if [ -n "$CORM_AUTH_PKG" ] && [ -n "$CORM_STATE_PKG" ]; then
         cat /tmp/create-config-result.json >&2
       }
 
-      CORM_CONFIG_ID=$(
-        jq -r '.objectChanges[] | select(.type == "created") | select(.objectType | contains("CormConfig")) | .objectId' /tmp/create-config-result.json
-      )
+    CORM_CONFIG_ID=$(
+      jq -r '(.changed_objects // .objectChanges // [])[] | select(.idOperation == "CREATED" or .type == "created") | select(.objectType | contains("CormConfig")) | .objectId' /tmp/create-config-result.json
+    )
 
       if [ -n "$CORM_CONFIG_ID" ] && [ "$CORM_CONFIG_ID" != "null" ]; then
         echo "  VITE_CORM_CONFIG_ID=$CORM_CONFIG_ID"
