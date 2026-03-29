@@ -32,7 +32,8 @@ export interface AutoJoinState {
 export function useAutoJoinTribe(): AutoJoinState {
   const { address, characterId, inGameTribeId, tribeCaps, isLoading: identityLoading } = useIdentity();
   const { tribes } = useTribes();
-  const { tribeInfo } = useWorldTribeInfo();
+  const tribeIdsToResolve = useMemo(() => (inGameTribeId ? [inGameTribeId] : []), [inGameTribeId]);
+  const { tribeInfo } = useWorldTribeInfo(tribeIdsToResolve);
   const { push } = useNotifications();
   const client = useSuiClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();

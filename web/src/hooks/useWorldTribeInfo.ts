@@ -9,19 +9,17 @@
  * tribe IDs, and the real names appear once the data is available.
  *
  * Gracefully returns an empty map if the API is unreachable (e.g. local-only dev).
+ *
+ * Uses the individual `/v2/tribes/{id}` endpoint instead of the bulk list
+ * endpoint, which has broken pagination on Stillness.
  */
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { config } from "../config";
 import { mockWorldTribes } from "../lib/mock/data";
 import type { WorldTribeInfo } from "../lib/types";
 
-interface TribeApiResponse {
-  data: WorldTribeInfo[];
-  metadata: { total: number; limit: number; offset: number };
-}
-
-const PAGE_SIZE = 100;
 const STORAGE_KEY = "frontier-corm:worldTribeInfo";
 
 // ---------------------------------------------------------------------------
@@ -58,56 +56,65 @@ export function clearWorldTribeInfoCache(): string {
 }
 
 // ---------------------------------------------------------------------------
-// Fetch with localStorage merge
+// Fetch individual tribes with localStorage merge
 // ---------------------------------------------------------------------------
 
-async function fetchAllTribes(): Promise<Map<number, WorldTribeInfo>> {
+/**
+ * Fetch metadata for a specific set of tribe IDs. Checks localStorage first
+ * and only hits the API for IDs not already cached.
+ */
+async function fetchTribes(
+  tribeIds: number[],
+): Promise<Map<number, WorldTribeInfo>> {
   // In local mode, return mock tribe data without hitting any API.
   if (config.appEnv === "local") {
     return new Map(mockWorldTribes.map((t) => [t.id, t]));
   }
 
-  // Start with whatever is already persisted
   const cached = loadFromStorage();
 
-  const fetched = new Map<number, WorldTribeInfo>();
-  let page = 1;
+  // Determine which IDs we still need to fetch
+  const missing = tribeIds.filter((id) => id > 0 && !cached.has(id));
+  if (missing.length === 0) return cached;
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const url = `${config.worldApiUrl}/v2/tribes?page=${page}&pageSize=${PAGE_SIZE}`;
-    const res = await fetch(url);
-    if (!res.ok) break;
+  // Fetch missing IDs individually via /v2/tribes/{id}
+  const results = await Promise.allSettled(
+    missing.map(async (id) => {
+      const res = await fetch(`${config.worldApiUrl}/v2/tribes/${id}`);
+      if (!res.ok) return null;
+      return (await res.json()) as WorldTribeInfo;
+    }),
+  );
 
-    const body: TribeApiResponse = await res.json();
-    for (const tribe of body.data) {
-      fetched.set(tribe.id, tribe);
+  let updated = false;
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value) {
+      cached.set(result.value.id, result.value);
+      updated = true;
     }
-
-    // Check if we've fetched all entries
-    if (body.data.length < PAGE_SIZE || fetched.size >= body.metadata.total) break;
-    page++;
   }
 
-  // Merge: new API data wins, but keep any cached entries the API didn't return
-  // (shouldn't happen, but defensive)
-  if (fetched.size > 0) {
-    for (const [id, tribe] of fetched) {
-      cached.set(id, tribe);
-    }
+  if (updated) {
     saveToStorage(cached);
   }
 
   return cached;
 }
 
-export function useWorldTribeInfo() {
+export function useWorldTribeInfo(tribeIds: number[]) {
+  // Stable query key: sort so order doesn't cause unnecessary refetches
+  const sortedIds = useMemo(
+    () => [...new Set(tribeIds.filter((id) => id > 0))].sort((a, b) => a - b),
+    [tribeIds],
+  );
+
   const { data, isLoading } = useQuery({
-    queryKey: ["worldTribeInfo"],
-    queryFn: fetchAllTribes,
+    queryKey: ["worldTribeInfo", sortedIds],
+    queryFn: () => fetchTribes(sortedIds),
     staleTime: Infinity, // tribe names never change after creation
     gcTime: Infinity,
     retry: 1,
+    enabled: sortedIds.length > 0 || config.appEnv === "local",
     // Seed from localStorage immediately so names render before the API call
     initialData: () => {
       const cached = loadFromStorage();

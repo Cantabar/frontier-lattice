@@ -18,7 +18,18 @@ import type { InGameTribe, TribeListItem } from "../lib/types";
 export function useAllTribes(options?: { refetchInterval?: number | false }) {
   const { tribes, isLoading: tribesLoading } = useTribes(options);
   const { worldTribes, isLoading: worldLoading } = useWorldTribes();
-  const { tribeInfo } = useWorldTribeInfo();
+
+  // Collect all known in-game tribe IDs so useWorldTribeInfo only fetches what we need
+  const allGameIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const id of worldTribes.keys()) ids.add(id);
+    for (const t of tribes) {
+      if (t.inGameTribeId > 0) ids.add(t.inGameTribeId);
+    }
+    return [...ids];
+  }, [worldTribes, tribes]);
+
+  const { tribeInfo } = useWorldTribeInfo(allGameIds);
 
   const allTribes = useMemo(() => {
     // Index on-chain tribes by in-game tribe ID for fast lookup

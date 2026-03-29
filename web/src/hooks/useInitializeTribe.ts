@@ -8,7 +8,7 @@
  * the tribe doesn't exist on-chain at all.
  */
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useIdentity } from "./useIdentity";
@@ -42,7 +42,8 @@ export function useInitializeTribe(): InitializeTribeState {
     isLoading: identityLoading,
   } = useIdentity();
   const { tribes } = useTribes();
-  const { tribeInfo } = useWorldTribeInfo();
+  const tribeIdsToResolve = useMemo(() => (inGameTribeId ? [inGameTribeId] : []), [inGameTribeId]);
+  const { tribeInfo } = useWorldTribeInfo(tribeIdsToResolve);
   const { push } = useNotifications();
   const client = useSuiClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
