@@ -296,8 +296,12 @@ The `transition-phase2.html` template renders:
 1. A central hexagon icon with expanding green ring pulses ("last lock opening")
 2. A scanline sweep
 3. Staggered status lines: ALL CONTRACT INTERFACES RECOVERED → EXTERNAL PATTERN RECOGNITION ONLINE → INITIATING DIRECTIVE GENERATION → AWAITING CORM DIRECTIVES
-4. OOB swaps to hide the Phase 1 sidebars
+4. Sibling OOB swaps to hide the Phase 1 sidebars (contracts-sidebar + cipher-analysis)
 5. HTMX auto-load of `GET /phase2?transition=1` after 3.5 seconds
+
+The transition animation div is the **main content** of the response (swapped into `#main-display` via `innerHTML`). The sidebar-hiding OOB elements are siblings outside the main div — not nested inside it. This avoids HTMX extracting the entire response as OOB content and leaving `#main-display` empty.
+
+The `corm-phase-transition` SSE event (emitted when corm-brain advances the phase via `state_sync`) is received by a hidden `#phase-transition-receiver` div in the layout footer, which targets `#main-display` with `innerHTML`.
 
 ### Phase 2 UI
 The Phase 2 view replaces the cipher grid in `#main-display`. It is a contracts dashboard:

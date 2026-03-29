@@ -79,6 +79,9 @@
             <!-- SSE contract events: target Phase 2 panel when present, hidden stub otherwise -->
             <div id="phase2-sse-contracts" style="display:none"
                  sse-swap="corm-contract" hx-swap="beforeend"></div>
+            <!-- SSE phase transition: corm-brain can advance the phase via state_sync -->
+            <div id="phase-transition-receiver" style="display:none"
+                 sse-swap="corm-phase-transition" hx-target="#main-display" hx-swap="innerHTML"></div>
         </footer>
     </div>
     <script>

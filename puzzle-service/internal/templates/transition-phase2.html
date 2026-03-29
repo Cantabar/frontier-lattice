@@ -1,4 +1,4 @@
-{{define "transition-phase2.html"}}<div class="transition-phase2" hx-swap-oob="outerHTML:#target-found">
+{{define "transition-phase2.html"}}<div class="transition-phase2">
     <!-- Scanline sweep -->
     <div class="scanline scanline--phase2"></div>
 
@@ -26,10 +26,6 @@
         </div>
     </div>
 
-    <!-- OOB: Hide Phase 1 sidebars during transition -->
-    <aside id="contracts-sidebar" class="contracts-sidebar" style="display:none" hx-swap-oob="outerHTML:#contracts-sidebar"></aside>
-    <aside id="cipher-analysis" class="right-sidebar" style="display:none" hx-swap-oob="outerHTML:#cipher-analysis"></aside>
-
     <!-- HTMX auto-load: fetch Phase 2 after animation completes -->
     <div hx-get="/phase2?transition=1"
          hx-trigger="load delay:3500ms"
@@ -37,4 +33,7 @@
          hx-swap="innerHTML"
          hx-push-url="/phase2"
          style="display:none"></div>
-</div>{{end}}
+</div>
+<!-- OOB: Hide Phase 1 sidebars during transition -->
+<aside id="contracts-sidebar" class="contracts-sidebar" style="display:none" hx-swap-oob="outerHTML:#contracts-sidebar"></aside>
+<aside id="cipher-analysis" class="right-sidebar" style="display:none" hx-swap-oob="outerHTML:#cipher-analysis"></aside>{{end}}
