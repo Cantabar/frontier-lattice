@@ -2,7 +2,7 @@
  * Frontier Corm Event Indexer — Entry Point
  *
  * Initialises:
- *   1. SQLite database (schema migration)
+ *   1. Postgres database (schema migration)
  *   2. Event archiver (write-side)
  *   3. Checkpoint subscriber (Sui RPC polling)
  *   4. Express API server (read-side)

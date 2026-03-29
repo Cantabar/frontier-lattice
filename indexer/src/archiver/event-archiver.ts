@@ -1,6 +1,6 @@
 /**
  * Event Archiver — receives filtered Sui events from the subscriber,
- * enriches them with denormalised fields, stores them in SQLite with
+ * enriches them with denormalised fields, stores them in Postgres with
  * checkpoint proof metadata.
  *
  * The archiver is the write-side of the indexer. It:

@@ -361,7 +361,7 @@ export const EVENT_TYPES = [
 export type EventTypeName = (typeof EVENT_TYPES)[number];
 
 // ============================================================
-// Archived Event — stored in SQLite with checkpoint proof data
+// Archived Event — stored in Postgres with checkpoint proof data
 // ============================================================
 
 /**

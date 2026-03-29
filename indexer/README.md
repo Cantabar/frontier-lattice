@@ -5,9 +5,9 @@ Off-chain TypeScript service that subscribes to Sui on-chain events from all Fro
 ## Architecture
 
 ```
-Sui Checkpoints → Checkpoint Subscriber → Event Archiver → SQLite
-                                                              ↓
-                                              Express API ← Query Layer
+Sui Checkpoints → Checkpoint Subscriber → Event Archiver → Postgres
+                                                               ↓
+                                               Express API ← Query Layer
 ```
 
 **Subscriber** polls Sui RPC for events from the tribe and trustless_contracts packages. Each event is enriched with checkpoint metadata (sequence, digest, timestamp).
@@ -38,7 +38,7 @@ npm run dev
 | `SUI_RPC_URL` | `http://127.0.0.1:9000` | Sui RPC endpoint |
 | `PACKAGE_TRIBE` | — | Deployed tribe package ID |
 | `PACKAGE_TRUSTLESS_CONTRACTS` | — | Deployed trustless_contracts package ID |
-| `DB_PATH` | `./data/frontier-corm.db` | SQLite database path |
+| `DATABASE_URL` | `postgresql://corm:corm@localhost:5432/frontier_corm` | Postgres connection string |
 | `API_PORT` | `3100` | API server port |
 | `POLL_INTERVAL_MS` | `2000` | Event poll interval (ms) |
 
@@ -72,9 +72,11 @@ To verify independently:
 
 ## Database
 
-SQLite with WAL mode. Tables:
+Postgres. Tables:
 - `events` — All archived events with checkpoint proof metadata
-- `reputation_snapshots` — Materialised latest reputation per tribe×character
-- `indexer_cursor` — Resumable polling cursor
+- `event_type_cursors` — Per-event-type resumable polling cursors
+- `cleanup_jobs` — Contract cleanup job queue and storage rebate tracking
+- `metadata_snapshots` — Materialised latest assembly metadata state
+- `indexer_cursor` — Legacy single-cursor table (kept for backward compat)
 
 Run standalone migration: `npm run migrate`
