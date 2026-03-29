@@ -146,9 +146,9 @@ procs:
         export SUI_PRIVATE_KEY
         echo "Derived SUI_PRIVATE_KEY from active SUI address"
       fi
-      echo "Dependencies ready — building corm-brain"
+      echo "Dependencies ready — starting corm-brain (air live-reload)"
       cd corm-brain
-      go build -o ./corm-brain . && echo "Running corm-brain" && ./corm-brain
+      air
     env:
       LLM_SUPER_URL: "http://localhost:8000"
       LLM_FAST_URL: "http://localhost:8001"

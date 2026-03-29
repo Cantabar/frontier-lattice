@@ -64,8 +64,8 @@ procs:
       else
         echo "WARN: Super not available — corm-brain will use Nano only."
       fi
-      echo "Dependencies ready — building corm-brain"
-      go build -o ./corm-brain . && echo "Running corm-brain" && ./corm-brain
+      echo "Dependencies ready — starting corm-brain (air live-reload)"
+      air
     env:
       LLM_SUPER_URL: "http://localhost:8000"
       LLM_FAST_URL: "http://localhost:8001"

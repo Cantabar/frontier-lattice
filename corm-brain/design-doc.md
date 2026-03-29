@@ -112,7 +112,7 @@ Per-environment config (in JSON file): `name`, `puzzle_service_url`, `sui_rpc_ur
 
 ## Deployment
 
-- **Local:** built and run via `mprocs.yaml` (`go build -o ./corm-brain .`)
+- **Local:** built and run via `mprocs.yaml` using [air](https://github.com/air-verse/air) for live-reload on source changes (see `.air.toml`)
 - **Production:** Docker container on ECS Fargate (planned)
 - Requires: running Postgres with pgvector, DGX Spark LLM tunnel, Sui RPC access, funded Sui keypair
 

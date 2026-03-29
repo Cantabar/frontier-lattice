@@ -1,0 +1,25 @@
+root = "."
+tmp_dir = ".air_tmp"
+
+[build]
+  cmd = "go build -o ./.air_tmp/corm-brain ."
+  bin = "./.air_tmp/corm-brain"
+  delay = 500
+  exclude_dir = ["tests", "configs/lore", "scripts", ".air_tmp"]
+  include_ext = ["go", "json", "yaml"]
+  kill_delay = "2s"
+  rerun = false
+  send_interrupt = true
+
+[log]
+  main_only = false
+  time = false
+
+[color]
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
+
+[misc]
+  clean_on_exit = true
