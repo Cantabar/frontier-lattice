@@ -106,8 +106,11 @@ All via Vite environment variables (`VITE_*`), resolved in `src/config.ts`:
 - `VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID` — trustless contracts package ID
 - `VITE_CORM_AUTH_PACKAGE_ID` — corm_auth package ID
 - `VITE_CORM_STATE_PACKAGE_ID` — corm_state package ID
+- `VITE_WITNESSED_CONTRACTS_PACKAGE_ID` — witnessed contracts (build_request) package ID
+- `VITE_ASSEMBLY_METADATA_PACKAGE_ID` — assembly_metadata package ID
 - `VITE_WORLD_PACKAGE_ID` — Eve Frontier world package ID
 - `VITE_TRIBE_REGISTRY_ID` — TribeRegistry shared object ID
+- `VITE_METADATA_REGISTRY_ID` — MetadataRegistry shared object ID (assembly_metadata)
 - `VITE_ENERGY_CONFIG_ID` — energy config shared object ID
 - `VITE_CORM_COIN_TYPE` — CORM coin type string
 - `VITE_COIN_TYPE` — default coin type for escrow/treasury (default: `0x2::sui::SUI`)
@@ -117,9 +120,8 @@ All via Vite environment variables (`VITE_*`), resolved in `src/config.ts`:
 - `VITE_PUZZLE_SERVICE_URL` — puzzle service URL (Continuity Engine iframe)
 - `VITE_CORM_STATE_ID` — CormState shared object ID
 - `VITE_CORM_CONFIG_ID` — CormConfig shared object ID (for permissionless corm installation)
-- `VITE_WITNESSED_CONTRACTS_PACKAGE_ID` — witnessed contracts (build_request) package ID
 
-Per-environment defaults are defined in `config.ts` and overridden by explicit `VITE_*` vars. Environment files: `.env.localnet`, `.env.utopia`, `.env.stillness`.
+Per-environment defaults are defined in `config.ts` and overridden by explicit `VITE_*` vars. Environment files: `.env.localnet`, `.env.utopia`, `.env.stillness`. Package IDs and shared object IDs are auto-populated by `scripts/publish-contracts.sh`; any package left at `0x0` will trigger an "Unconfigured Packages" warning on page load.
 
 ## Deployment
 
