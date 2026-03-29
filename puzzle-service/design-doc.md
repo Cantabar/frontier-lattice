@@ -81,13 +81,9 @@ Sonar sensor nodes override the default radius 2 pulse with a **triple pulse** a
 
 ### Trap Sonar Attraction
 
-Trap nodes are attracted to sonar pulse sources. After every cell decrypt, undecrypted trap nodes within a detection range move one cell closer to the pulse origin by swapping positions with an adjacent noise/symbol cell.
+Trap nodes are attracted to sonar pulse sources. After every cell decrypt, undecrypted trap nodes that were **revealed by the pulse** (i.e., within the pulse radius and flashed red) move one cell closer to the pulse origin by swapping positions with an adjacent noise/symbol cell. Only traps that the player actually saw in the pulse are affected — there is no separate detection range.
 
-**Pulse strengths:**
-- **Weak** (regular decrypt): detection range 5 cells (Euclidean), 1 move per event
-- **Strong** (sonar sensor): detection range 8 cells (Euclidean), 1 move per event with the larger range compensating for the triple-pulse's visual feedback
-
-This creates a risk/reward dynamic: every click reveals information through the pulse but also draws traps closer. Sonar sensors are especially dangerous — their large detection range can pull distant traps significantly closer.
+Since regular decrypts pulse at radius 2 and sonar sensors pulse at radius 5, sonar sensors attract traps from a much wider area. This creates a risk/reward dynamic: sonar sensors reveal more information but also draw more distant traps closer.
 
 **Movement rules:**
 - Traps move toward the adjacent cell (including diagonals) that minimizes Euclidean distance to the pulse source
@@ -261,7 +257,7 @@ puzzle-service/
 - Auto-complete on target address discovery with "CONTRACT INTERFACE RECOVERED" overlay showing contract type and description, with staggered entrance animation
 - Seven cell types: noise, symbol, target, decoy, trap, sensor (sonar/thermal/vector), garbled
 - Trap explosion system with Euclidean radius 3 blast zone and permanent garbling
-- Trap sonar attraction: trap nodes move toward pulse sources (weak: range 5, strong/sonar: range 8) with subtle red flicker animation on arrival
+- Trap sonar attraction: trap nodes revealed by a sonar pulse move one cell toward the pulse source, with subtle red flicker animation on arrival
 - Localized sonar pulse system on every decrypt (radius 2) with color-coded type signatures
 - Sonar sensor triple-pulse override (radius 5, 3 pulses at 1-second intervals)
 - Four AI-controlled hint systems: heatmap, vectors, decode, signal

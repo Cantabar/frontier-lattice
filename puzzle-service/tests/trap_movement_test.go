@@ -23,10 +23,11 @@ func setupTrapGrid(rows, cols, tr, tc int) (*puzzle.Grid, map[string]bool, map[s
 }
 
 func TestTrapMovesTowardPulse(t *testing.T) {
-	// 10x10 grid, trap at (5,5), pulse at (5,2) — trap should move left
+	// 10x10 grid, trap at (5,5), pulse at (5,2) — trap is within radius 5
 	grid, dec, gar := setupTrapGrid(10, 10, 5, 5)
+	pulsed := puzzle.CellsInRadius(grid, 5, 2, 5.0)
 
-	moves := puzzle.MoveTrapsToPulse(grid, 5, 2, puzzle.PulseWeak, dec, gar)
+	moves := puzzle.MoveRevealedTraps(grid, 5, 2, pulsed, dec, gar)
 	if len(moves) != 1 {
 		t.Fatalf("expected 1 move, got %d", len(moves))
 	}
@@ -48,8 +49,7 @@ func TestTrapMovesTowardPulse(t *testing.T) {
 }
 
 func TestTrapBlockedByAddress(t *testing.T) {
-	// Trap at (5,5), pulse at (5,4). Only move option toward pulse is (5,4).
-	// Block (5,4) with a target address cell.
+	// Trap at (5,5), pulse at (5,4). Block (5,4) with a target address cell.
 	grid, dec, gar := setupTrapGrid(10, 10, 5, 5)
 	grid.Cells[5][4].Type = puzzle.CellTarget
 	grid.Cells[5][4].StringID = "target_main"
@@ -58,10 +58,10 @@ func TestTrapBlockedByAddress(t *testing.T) {
 	grid.Cells[4][4].Type = puzzle.CellDecoy
 	grid.Cells[6][4].Type = puzzle.CellSensor
 
-	moves := puzzle.MoveTrapsToPulse(grid, 5, 4, puzzle.PulseWeak, dec, gar)
+	pulsed := puzzle.CellsInRadius(grid, 5, 4, 2.0)
+	moves := puzzle.MoveRevealedTraps(grid, 5, 4, pulsed, dec, gar)
 
 	// The trap should not move onto the address/decoy/sensor cells.
-	// It might move diagonally if an open noise cell is closer, or not move at all.
 	for _, m := range moves {
 		dest := grid.Cells[m.To.Row][m.To.Col]
 		if dest.Type != puzzle.CellTrap {
@@ -70,31 +70,33 @@ func TestTrapBlockedByAddress(t *testing.T) {
 	}
 }
 
-func TestTrapOutOfRange(t *testing.T) {
-	// Trap at (0,0), pulse at (9,9) — Euclidean distance ~12.7, beyond weak range 5
+func TestTrapOutsidePulseRadiusDoesNotMove(t *testing.T) {
+	// Trap at (0,0), pulse at (5,2) with radius 2 — trap is far outside
 	grid, dec, gar := setupTrapGrid(10, 10, 0, 0)
+	pulsed := puzzle.CellsInRadius(grid, 5, 2, 2.0)
 
-	moves := puzzle.MoveTrapsToPulse(grid, 9, 9, puzzle.PulseWeak, dec, gar)
+	moves := puzzle.MoveRevealedTraps(grid, 5, 2, pulsed, dec, gar)
 	if len(moves) != 0 {
-		t.Errorf("expected 0 moves for out-of-range trap, got %d", len(moves))
+		t.Errorf("expected 0 moves for trap outside pulse radius, got %d", len(moves))
 	}
 }
 
-func TestStrongPulseLargerRange(t *testing.T) {
-	// Trap at (0,0), pulse at (5,5) — Euclidean ~7.07, beyond weak (5) but within strong (8)
-	grid, dec, gar := setupTrapGrid(10, 10, 0, 0)
+func TestLargerPulseRadiusReachesMoreTraps(t *testing.T) {
+	// Trap at (5,8), pulse at (5,2).
+	// Radius 2: trap at distance 6 — not pulsed, no move.
+	// Radius 7: trap at distance 6 — pulsed, should move.
+	grid, dec, gar := setupTrapGrid(10, 10, 5, 8)
 
-	weakMoves := puzzle.MoveTrapsToPulse(grid, 5, 5, puzzle.PulseWeak, dec, gar)
-	if len(weakMoves) != 0 {
-		t.Errorf("expected 0 weak moves for trap at distance ~7.07, got %d", len(weakMoves))
+	smallPulsed := puzzle.CellsInRadius(grid, 5, 2, 2.0)
+	smallMoves := puzzle.MoveRevealedTraps(grid, 5, 2, smallPulsed, dec, gar)
+	if len(smallMoves) != 0 {
+		t.Errorf("expected 0 moves with radius 2, got %d", len(smallMoves))
 	}
 
-	// Reset trap position (it shouldn't have moved, but be explicit)
-	grid.Cells[0][0].Type = puzzle.CellTrap
-
-	strongMoves := puzzle.MoveTrapsToPulse(grid, 5, 5, puzzle.PulseStrong, dec, gar)
-	if len(strongMoves) != 1 {
-		t.Fatalf("expected 1 strong move for trap at distance ~7.07, got %d", len(strongMoves))
+	largePulsed := puzzle.CellsInRadius(grid, 5, 2, 7.0)
+	largeMoves := puzzle.MoveRevealedTraps(grid, 5, 2, largePulsed, dec, gar)
+	if len(largeMoves) != 1 {
+		t.Fatalf("expected 1 move with radius 7, got %d", len(largeMoves))
 	}
 }
 
@@ -105,7 +107,8 @@ func TestTrapDoesNotMoveOntoDecryptedCell(t *testing.T) {
 	dec[puzzle.CellKey(4, 4)] = true
 	dec[puzzle.CellKey(6, 4)] = true
 
-	moves := puzzle.MoveTrapsToPulse(grid, 5, 3, puzzle.PulseWeak, dec, gar)
+	pulsed := puzzle.CellsInRadius(grid, 5, 3, 5.0)
+	moves := puzzle.MoveRevealedTraps(grid, 5, 3, pulsed, dec, gar)
 	for _, m := range moves {
 		key := puzzle.CellKey(m.To.Row, m.To.Col)
 		if dec[key] {
@@ -116,7 +119,7 @@ func TestTrapDoesNotMoveOntoDecryptedCell(t *testing.T) {
 
 func TestTrapDoesNotMoveOntoGarbledCell(t *testing.T) {
 	grid, dec, gar := setupTrapGrid(10, 10, 5, 5)
-	// Surround the trap with garbled cells except (5,5) itself
+	// Surround the trap with garbled cells
 	for dr := -1; dr <= 1; dr++ {
 		for dc := -1; dc <= 1; dc++ {
 			if dr == 0 && dc == 0 {
@@ -127,7 +130,8 @@ func TestTrapDoesNotMoveOntoGarbledCell(t *testing.T) {
 		}
 	}
 
-	moves := puzzle.MoveTrapsToPulse(grid, 5, 2, puzzle.PulseWeak, dec, gar)
+	pulsed := puzzle.CellsInRadius(grid, 5, 2, 5.0)
+	moves := puzzle.MoveRevealedTraps(grid, 5, 2, pulsed, dec, gar)
 	if len(moves) != 0 {
 		t.Errorf("expected 0 moves when surrounded by garbled cells, got %d", len(moves))
 	}
@@ -153,8 +157,9 @@ func TestCollectTrapPositions(t *testing.T) {
 
 func TestTrapPositionsSyncAfterMove(t *testing.T) {
 	grid, dec, gar := setupTrapGrid(10, 10, 5, 5)
+	pulsed := puzzle.CellsInRadius(grid, 5, 2, 5.0)
 
-	moves := puzzle.MoveTrapsToPulse(grid, 5, 2, puzzle.PulseWeak, dec, gar)
+	moves := puzzle.MoveRevealedTraps(grid, 5, 2, pulsed, dec, gar)
 	if len(moves) == 0 {
 		t.Fatal("expected at least 1 move")
 	}
@@ -170,12 +175,13 @@ func TestTrapPositionsSyncAfterMove(t *testing.T) {
 }
 
 func TestMultipleTrapsDoNotCollide(t *testing.T) {
-	// Two traps side by side, both attracted to the same pulse
+	// Two traps side by side, both within pulse radius
 	grid, dec, gar := setupTrapGrid(10, 10, 5, 5)
 	grid.Cells[5][6].Type = puzzle.CellTrap
 	grid.Cells[5][6].Plaintext = '$'
 
-	moves := puzzle.MoveTrapsToPulse(grid, 5, 2, puzzle.PulseWeak, dec, gar)
+	pulsed := puzzle.CellsInRadius(grid, 5, 2, 5.0)
+	moves := puzzle.MoveRevealedTraps(grid, 5, 2, pulsed, dec, gar)
 
 	// Verify no two moves have the same destination
 	seen := map[string]bool{}

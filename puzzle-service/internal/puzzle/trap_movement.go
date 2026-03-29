@@ -2,64 +2,36 @@ package puzzle
 
 import "math"
 
-// PulseStrength classifies the sonar pulse that triggers trap attraction.
-type PulseStrength int
-
-const (
-	PulseWeak   PulseStrength = iota // regular decrypt — detection range 5
-	PulseStrong                      // sonar sensor — detection range 8
-)
-
-// detectionRange returns the Euclidean distance within which traps are
-// attracted to a pulse of the given strength.
-func (s PulseStrength) detectionRange() float64 {
-	switch s {
-	case PulseStrong:
-		return 8.0
-	default:
-		return 5.0
-	}
-}
-
 // TrapMoveResult records a single trap cell that moved.
 type TrapMoveResult struct {
 	From CellCoord `json:"from"`
 	To   CellCoord `json:"to"`
 }
 
-// MoveTrapsToPulse moves undecrypted trap nodes one cell toward the pulse
-// source if they are within the detection range for the given strength.
-// Traps swap positions with the destination noise/symbol cell.
+// MoveRevealedTraps moves undecrypted trap nodes that were revealed by a
+// sonar pulse one cell toward the pulse source. Only traps present in
+// pulsedCells are eligible — this ties movement directly to the visual
+// pulse the player sees.
 // decrypted and garbled are maps keyed by CellKey(row, col).
-func MoveTrapsToPulse(grid *Grid, pulseRow, pulseCol int, strength PulseStrength, decrypted, garbled map[string]bool) []TrapMoveResult {
-	detRange := strength.detectionRange()
+func MoveRevealedTraps(grid *Grid, pulseRow, pulseCol int, pulsedCells []CellCoord, decrypted, garbled map[string]bool) []TrapMoveResult {
 	var moves []TrapMoveResult
 
-	// Collect eligible traps first (iterate a snapshot so moves don't
-	// interfere with each other within the same pulse).
+	// Collect eligible traps from the pulsed set.
 	type trapCandidate struct {
 		row, col int
-		dist     float64
 	}
 	var candidates []trapCandidate
 
-	for r := range grid.Cells {
-		for c := range grid.Cells[r] {
-			cell := &grid.Cells[r][c]
-			if cell.Type != CellTrap {
-				continue
-			}
-			key := CellKey(r, c)
-			if decrypted[key] || garbled[key] {
-				continue
-			}
-			dx := float64(c - pulseCol)
-			dy := float64(r - pulseRow)
-			dist := math.Sqrt(dx*dx + dy*dy)
-			if dist <= detRange && dist > 0 {
-				candidates = append(candidates, trapCandidate{r, c, dist})
-			}
+	for _, coord := range pulsedCells {
+		cell := &grid.Cells[coord.Row][coord.Col]
+		if cell.Type != CellTrap {
+			continue
 		}
+		key := CellKey(coord.Row, coord.Col)
+		if decrypted[key] || garbled[key] {
+			continue
+		}
+		candidates = append(candidates, trapCandidate{coord.Row, coord.Col})
 	}
 
 	// Track cells that have already been claimed as destinations this pulse

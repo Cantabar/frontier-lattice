@@ -364,9 +364,9 @@ func (s *Session) CellHasHint(row, col int, hintType string) bool {
 	return false
 }
 
-// MoveTrapsToPulse moves trap nodes toward the given pulse source and
-// updates TrapPositions accordingly. Returns the list of moves made.
-func (s *Session) MoveTrapsToPulse(pulseRow, pulseCol int, strength PulseStrength) []TrapMoveResult {
+// MoveRevealedTraps moves trap nodes that were revealed by a sonar pulse
+// toward the pulse source and updates TrapPositions accordingly.
+func (s *Session) MoveRevealedTraps(pulseRow, pulseCol int, pulsedCells []CellCoord) []TrapMoveResult {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -374,7 +374,7 @@ func (s *Session) MoveTrapsToPulse(pulseRow, pulseCol int, strength PulseStrengt
 		return nil
 	}
 
-	moves := MoveTrapsToPulse(s.Grid, pulseRow, pulseCol, strength, s.DecryptedCells, s.GarbledCells)
+	moves := MoveRevealedTraps(s.Grid, pulseRow, pulseCol, pulsedCells, s.DecryptedCells, s.GarbledCells)
 	if len(moves) > 0 {
 		s.TrapPositions = CollectTrapPositions(s.Grid)
 	}

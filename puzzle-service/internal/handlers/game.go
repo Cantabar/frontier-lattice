@@ -301,7 +301,8 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, `<div id="pulse-data" hx-swap-oob="innerHTML" data-game-over="true"></div>`)
 		} else {
 			// Emit pulse data for the explosion radius (visual feedback)
-			writePulseData(w, sess, row, col, 3.0, 1, 0)
+			explosionCells := puzzle.CellsInRadius(sess.Grid, row, col, 3.0)
+			writePulseData(w, sess, explosionCells, 1, 0)
 		}
 
 		emitDecryptEvent(h, sess, row, col, cell, isTrap, prevDecrypt, guidedCellWasActive, false, nil)
@@ -339,10 +340,11 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 		h.templates.ExecuteTemplate(w, "cipher-analysis.html", analysis)
 
 		// Localized pulse (radius 2) from the clicked cell
-		writePulseData(w, sess, row, col, 2.0, 1, 0)
+		pulsedCells := puzzle.CellsInRadius(sess.Grid, row, col, 2.0)
+		writePulseData(w, sess, pulsedCells, 1, 0)
 
-		// Trap attraction: move traps toward pulse source
-		trapMoves := sess.MoveTrapsToPulse(row, col, puzzle.PulseWeak)
+		// Trap attraction: move traps that were revealed by the pulse
+		trapMoves := sess.MoveRevealedTraps(row, col, pulsedCells)
 		writeTrapMoves(w, sess, h, trapMoves)
 
 		emitDecryptEvent(h, sess, row, col, cell, false, prevDecrypt, guidedCellWasActive, false, trapMoves)
@@ -423,15 +425,16 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 	h.templates.ExecuteTemplate(w, "cell.html", cellData)
 	h.templates.ExecuteTemplate(w, "cipher-analysis.html", analysis)
 
-	// Sonar sensor: triple pulse (radius 5, 3 iterations at 1s intervals)
+	// Compute pulse cells once, use for both visual pulse and trap movement
 	var trapMoves []puzzle.TrapMoveResult
 	if isSonarSensor {
-		writePulseData(w, sess, row, col, 5.0, 3, 1000)
-		trapMoves = sess.MoveTrapsToPulse(row, col, puzzle.PulseStrong)
+		pulsedCells := puzzle.CellsInRadius(sess.Grid, row, col, 5.0)
+		writePulseData(w, sess, pulsedCells, 3, 1000)
+		trapMoves = sess.MoveRevealedTraps(row, col, pulsedCells)
 	} else {
-		// Localized pulse (radius 2) on every decrypt
-		writePulseData(w, sess, row, col, 2.0, 1, 0)
-		trapMoves = sess.MoveTrapsToPulse(row, col, puzzle.PulseWeak)
+		pulsedCells := puzzle.CellsInRadius(sess.Grid, row, col, 2.0)
+		writePulseData(w, sess, pulsedCells, 1, 0)
+		trapMoves = sess.MoveRevealedTraps(row, col, pulsedCells)
 	}
 	writeTrapMoves(w, sess, h, trapMoves)
 
@@ -448,8 +451,8 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 }
 
 // writePulseData writes the OOB pulse-data div with JSON for client-side pulse animation.
-func writePulseData(w http.ResponseWriter, sess *puzzle.Session, centerRow, centerCol int, radius float64, pulseCount, pulseInterval int) {
-	cells := puzzle.CellsInRadius(sess.Grid, centerRow, centerCol, radius)
+// cells are pre-computed via CellsInRadius so the same set can be reused for trap movement.
+func writePulseData(w http.ResponseWriter, sess *puzzle.Session, cells []puzzle.CellCoord, pulseCount, pulseInterval int) {
 	var entries []PulseEntry
 	for _, coord := range cells {
 		key := puzzle.CellKey(coord.Row, coord.Col)
