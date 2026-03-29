@@ -58,8 +58,8 @@ Players can also type the full address into the terminal input (`submit 0x...`) 
 - **Trap** — anomaly nodes. On reveal, explode with Euclidean radius 3, permanently garbling all cells in the blast zone (setting them to `CellGarbled`). Garbled cells display unique foreign-script glyphs with a purple flicker and cannot be interacted with. If any target address cell is caught in the explosion, the game is over.
 - **Sensor** — hint nodes (~0.8% of noise/symbol cells). Three subtypes:
   - **Sonar** `[S]` (cyan) — on reveal, triggers a triple pulse: 3 pulses at 1-second intervals, Euclidean radius 5, revealing the color signature of all cells in range.
-  - **Thermal** `[T]` (blue) — on reveal, shows proximity-based coloring (distance to target).
-  - **Vector** `[V]` (gold) — on reveal, shows directional indicators pointing toward the target.
+  - **Thermal** `[T]` (blue) — on reveal, inherently shows proximity-based heatmap coloring (Manhattan distance to target) on the sensor cell itself. This is independent of the AI-controlled heatmap hint toggle.
+  - **Vector** `[V]` (gold) — on reveal, inherently shows a directional CSS indicator (pulsing radial gradient) pointing toward the target on the sensor cell itself. This is independent of the AI-controlled vectors hint toggle.
 - **Garbled** — permanently corrupted by trap explosion. Foreign-script glyph, purple flicker, no interaction.
 
 ### Pulse System

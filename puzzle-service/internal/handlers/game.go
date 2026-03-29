@@ -564,11 +564,13 @@ func buildCellData(sess *puzzle.Session, r, c int) CellData {
 	isTrap := cell.Type == puzzle.CellTrap || cell.Type == puzzle.CellGarbled
 	isSensor := cell.Type == puzzle.CellSensor
 	isAddress := cell.StringID != ""
+	isSensorThermal := isSensor && cell.HintType == "thermal"
+	isSensorVector := isSensor && cell.HintType == "vector"
 
-	if decrypted && !garbled && sess.CellHasHint(r, c, "heatmap") {
+	if decrypted && !garbled && (isSensorThermal || sess.CellHasHint(r, c, "heatmap")) {
 		heatmapClass = heatmapClassForCell(cell)
 	}
-	if decrypted && !garbled && sess.CellHasHint(r, c, "vectors") && cell.Type != puzzle.CellTarget {
+	if decrypted && !garbled && (isSensorVector || sess.CellHasHint(r, c, "vectors")) && cell.Type != puzzle.CellTarget {
 		directionClass = directionClassForCell(r, c, sess.TargetPlacement)
 	}
 
