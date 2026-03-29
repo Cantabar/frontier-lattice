@@ -17,6 +17,7 @@ import { useMyStructures } from "../hooks/useStructures";
 import { TlkStatusBanner } from "../components/locations/TlkStatusBanner";
 import { RegisterNetworkNodeLocationModal } from "../components/locations/RegisterNetworkNodeLocationModal";
 import { PodProofModal } from "../components/locations/PodProofModal";
+import { MutualProximityProofModal } from "../components/locations/MutualProximityProofModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../components/shared/Button";
@@ -236,6 +237,7 @@ export function LocationsPage() {
   const { structures } = useMyStructures();
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showProximityModal, setShowProximityModal] = useState(false);
   const [proofStructureId, setProofStructureId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [refreshingNodeId, setRefreshingNodeId] = useState<string | null>(null);
@@ -446,6 +448,12 @@ export function LocationsPage() {
         <ActionBar>
           <SecondaryButton onClick={handleRefresh} disabled={podsLoading || !tlk.tlkBytes}>
             {podsLoading ? "Loading…" : "Refresh"}
+          </SecondaryButton>
+          <SecondaryButton
+            onClick={() => setShowProximityModal(true)}
+            disabled={!tlk.tlkBytes || pods.length < 2}
+          >
+            Prove Proximity
           </SecondaryButton>
           <PrimaryButton
             onClick={() => setShowRegisterModal(true)}
@@ -673,6 +681,16 @@ export function LocationsPage() {
           tlkBytes={tlk.tlkBytes}
           tlkVersion={tlk.tlkVersion}
           onClose={() => setShowRegisterModal(false)}
+          onSuccess={handleRefresh}
+        />
+      )}
+
+      {/* Mutual proximity proof modal */}
+      {showProximityModal && tribeId && (
+        <MutualProximityProofModal
+          tribeId={tribeId}
+          pods={pods}
+          onClose={() => setShowProximityModal(false)}
           onSuccess={handleRefresh}
         />
       )}

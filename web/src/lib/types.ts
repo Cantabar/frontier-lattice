@@ -191,6 +191,12 @@ export interface TrustlessContractData {
   useOwnerInventory?: boolean;
   /** Full coin type string extracted from the on-chain Move struct phantom type parameter. */
   coinType?: string;
+  /** Optional: reference structure ID for proximity-gated contracts. */
+  referenceStructureId?: string;
+  /** Optional: max distance (ly) for proximity-gated contracts. */
+  maxDistance?: number;
+  /** Optional: tribe ID for proximity ZK proof lookup. */
+  proximityTribeId?: string;
 }
 
 // ============================================================

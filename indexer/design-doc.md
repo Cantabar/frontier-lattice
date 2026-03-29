@@ -180,5 +180,4 @@ Each archived event includes proof metadata for independent verification:
 - Event replay / reindexing tooling
 - Read replica support for API scaling
 - ZK circuit compilation automation (`make zk-build`)
-- UI for mutual proximity proof generation on contract detail pages
 - Location POD re-encryption on TLK rotation

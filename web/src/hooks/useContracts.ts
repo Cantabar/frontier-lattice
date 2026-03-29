@@ -201,6 +201,10 @@ function objectToContract(objectId: string, fields: Record<string, unknown>, mov
     itemsReleased: fields.items_released != null ? Number(fields.items_released) : undefined,
     useOwnerInventory: fields.use_owner_inventory != null ? Boolean(fields.use_owner_inventory) : undefined,
     coinType,
+    // Proximity fields (optional — present on proximity-gated build requests)
+    referenceStructureId: fields.reference_structure_id ? String(fields.reference_structure_id) : undefined,
+    maxDistance: fields.max_distance != null ? Number(fields.max_distance) : undefined,
+    proximityTribeId: fields.proximity_tribe_id ? String(fields.proximity_tribe_id) : undefined,
   };
 }
 

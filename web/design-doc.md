@@ -51,8 +51,9 @@ Client-side privacy-preserving location sharing with ZK proof generation. The se
 - **TLK Distribution Hook** (`hooks/useTlkDistribution`) — manages wrapping TLK for pending tribe members.
 - **ZK Filter Hook** (`hooks/useZkLocationFilter`) — generates and submits region/proximity/mutual proximity proofs for PODs, queries verified results. Supports named region/constellation proof by ID, and mutual proximity proofs between two decrypted PODs for witnessed contract fulfillment. Deduplicates Network Node derived PODs.
 - **Region Data** (`lib/regions.ts`, `lib/solarSystems.ts`) — client-side region/constellation/solar system reference data with bounding boxes.
-- **Locations Page** (`pages/LocationsPage`) — TLK status banner, decrypted POD listing grouped by solar system, register/revoke actions, pending member key distribution.
+- **Locations Page** (`pages/LocationsPage`) — TLK status banner, decrypted POD listing grouped by solar system, register/revoke actions, pending member key distribution. "Prove Proximity" action launches mutual proximity proof modal.
 - **POD Proof Modal** (`components/locations/PodProofModal`) — review and copy a shareable proof bundle for an owned POD. Displays public attestation fields (location hash, wallet signature, versions), associated ZK proofs, and location tags. Supports details and raw JSON views with copy-to-clipboard.
+- **Mutual Proximity Proof Modal** (`components/locations/MutualProximityProofModal`) — select two decrypted PODs and a distance threshold, generate a Groth16 mutual proximity proof in-browser, and submit to the indexer. Shows actual distance, confirmation step, and success state. Used for fulfilling proximity-gated witnessed contracts.
 
 ### Forge Planner
 
@@ -139,6 +140,8 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 - Browser-side ZK proof generation (Groth16/snarkjs) for region, proximity, and mutual proximity location filters
 - POD proof review and copy: owners can review and export a shareable proof bundle (public attestation + ZK proofs + location tags) for external applications
 - Named region/constellation proof with canonical bounding box validation
+- Mutual proximity proof modal for two-structure distance attestation (witnessed contract fulfillment)
+- Contract detail page proximity requirement display with link to proof generation
 - SSU Delivery dApp for in-game contract fulfillment
 - Payout and item pickup notification watcher
 - Auto-join tribe detection and one-click self_join

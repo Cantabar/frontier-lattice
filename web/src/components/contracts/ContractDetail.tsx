@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import styled from "styled-components";
 import { useSuiClient, useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { useQueryClient } from "@tanstack/react-query";
@@ -114,6 +114,37 @@ const AccessSection = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   font-size: 12px;
   color: ${({ theme }) => theme.colors.text.muted};
+`;
+
+const ProximitySection = styled.div`
+  background: ${({ theme }) => theme.colors.surface.bg};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
+  font-size: 12px;
+`;
+
+const ProximityTitle = styled.strong`
+  color: ${({ theme }) => theme.colors.text.secondary};
+`;
+
+const ProximityRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  color: ${({ theme }) => theme.colors.text.muted};
+`;
+
+const ProximityLink = styled(Link)`
+  color: ${({ theme }) => theme.colors.primary.main};
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ActionRow = styled.div`
@@ -583,6 +614,26 @@ export function ContractDetail({ contract: initial, onStatusChange }: Props) {
               <div>Tribes: {c.allowedTribes.join(", ")}</div>
             )}
           </AccessSection>
+        )}
+
+        {c.referenceStructureId && c.maxDistance != null && (
+          <ProximitySection>
+            <ProximityTitle>Proximity Requirement</ProximityTitle>
+            <ProximityRow>
+              <span>Reference Structure</span>
+              <CopyableId id={c.referenceStructureId} />
+            </ProximityRow>
+            <ProximityRow>
+              <span>Max Distance</span>
+              <span>{c.maxDistance} ly</span>
+            </ProximityRow>
+            <ProximityRow>
+              <span />
+              <ProximityLink to="/locations">
+                Generate proximity proof →
+              </ProximityLink>
+            </ProximityRow>
+          </ProximitySection>
         )}
 
         <ActionRow>
