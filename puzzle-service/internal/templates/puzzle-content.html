@@ -1,3 +1,3 @@
-{{define "puzzle-content.html"}}{{if .NeedsMeasure}}<div id="grid-wrapper" class="grid-container" data-needs-measure="1"></div>{{else}}<div id="grid-wrapper" class="grid-container{{if .ShowEntrance}} grid-entrance{{end}}">
+{{define "puzzle-content.html"}}<div id="grid-wrapper" class="grid-wrapper">{{if .NeedsMeasure}}<div class="grid-container" data-needs-measure="1"></div>{{else}}<div class="grid-container{{if .ShowEntrance}} grid-entrance{{end}}">
     {{template "grid.html" .}}
-</div>{{end}}{{end}}
+</div>{{end}}</div>{{end}}

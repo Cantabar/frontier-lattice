@@ -289,7 +289,8 @@ body {
 }
 
 /* === Cipher Grid === */
-.grid-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+.grid-wrapper { width: 100%; height: 100%; position: relative; }
+.grid-container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
 
 .cipher-grid {
     display: grid;
@@ -1077,10 +1078,6 @@ body {
 }
 
 /* === Target Found Overlay === */
-
-.puzzle-main {
-    position: relative;
-}
 
 .target-found-overlay {
     position: absolute;
