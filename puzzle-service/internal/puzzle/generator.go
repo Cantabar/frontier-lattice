@@ -52,7 +52,7 @@ func DefaultDifficulty(solveCount int, mod *DifficultyMod, vpRows, vpCols int) D
 		GridRows:   gridRows,
 		GridCols:   gridCols,
 		DecoyCount: 4,
-		TrapCount:  20,
+		TrapCount:  40,
 		Tier:       tier,
 	}
 
@@ -60,10 +60,10 @@ func DefaultDifficulty(solveCount int, mod *DifficultyMod, vpRows, vpCols int) D
 	switch tier {
 	case TierVariable:
 		cfg.DecoyCount = 4 + (solveCount - 3)
-		cfg.TrapCount = 35
+		cfg.TrapCount = 70
 	case TierPosition:
 		cfg.DecoyCount = 5 + (solveCount - 6)
-		cfg.TrapCount = 50
+		cfg.TrapCount = 100
 	}
 
 	// Apply pending AI adjustment
@@ -254,7 +254,7 @@ func placeTrapNodes(grid *Grid, count int) {
 	}
 }
 
-// placeSensorNodes randomly converts ~2.4% of noise/symbol cells into sensor nodes.
+// placeSensorNodes randomly converts ~4.8% of noise/symbol cells into sensor nodes.
 // Sensor types are evenly distributed: sonar, thermal, vector.
 func placeSensorNodes(grid *Grid) {
 	const hexChars = "0123456789abcdef"
@@ -265,8 +265,8 @@ func placeSensorNodes(grid *Grid) {
 			if cell.Type != CellNoise && cell.Type != CellSymbol {
 				continue
 			}
-			// ~2.4% chance
-		if randRange(0, 999) >= 24 {
+			// ~4.8% chance
+		if randRange(0, 999) >= 48 {
 				continue
 			}
 			cell.Type = CellSensor

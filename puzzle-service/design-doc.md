@@ -58,7 +58,7 @@ Players can also type the full address into the terminal input (`submit 0x...`) 
 - **Target** — cells of the hidden SUI address. White text on reveal, green border.
 - **Decoy** — cells of decoy addresses. Same group-reveal behavior as target but no win. Visually distinct after reveal: dim orange text at reduced opacity, no border, subtle orange-tinted background with a brief fade-in animation — contrasting with the target's bright white text and green border.
 - **Trap** — anomaly nodes. On reveal, explode with Euclidean radius 3, permanently garbling all cells in the blast zone (setting them to `CellGarbled`). Garbled cells display unique foreign-script glyphs with a purple flicker and cannot be interacted with. If any target address cell is caught in the explosion, the game is over. Trap nodes are not static — they are attracted toward sonar pulse sources (see Trap Sonar Attraction below).
-- **Sensor** — hint nodes (~2.4% of noise/symbol cells). Three subtypes:
+- **Sensor** — hint nodes (~4.8% of noise/symbol cells). Three subtypes:
   - **Sonar** `[S]` (cyan) — on reveal, triggers a triple pulse: 3 pulses at 1-second intervals, Euclidean radius 5, revealing the color signature of all cells in range.
   - **Thermal** `[T]` (blue→red gradient) — on reveal, the sensor cell's text color, background, and glow are set to a smooth blue-to-red gradient based on Manhattan distance to the target. Close to the target = red (hue 0°), far away = blue (hue 240°). The color is computed server-side via HSL interpolation and applied as an inline style. This is independent of the AI-controlled heatmap hint toggle.
   - **Vector** `[V]` (gold) — on reveal, inherently shows a directional CSS indicator (pulsing radial gradient) pointing toward the target on the sensor cell itself. This is independent of the AI-controlled vectors hint toggle.
@@ -122,9 +122,9 @@ Fallback: when no viewport dimensions are available (e.g. non-browser clients), 
 ### Difficulty Scaling
 
 Difficulty scales with solve count:
-- Tier 1: 4 decoy addresses, 20 trap nodes
-- Tier 2: 4+ decoy addresses (scales with solve count), 35 trap nodes
-- Tier 3: 5+ decoy addresses, 50 trap nodes
+- Tier 1: 4 decoy addresses, 40 trap nodes
+- Tier 2: 4+ decoy addresses (scales with solve count), 70 trap nodes
+- Tier 3: 5+ decoy addresses, 100 trap nodes
 
 The corm-brain AI can dynamically adjust grid size, decoy count, trap count, and cipher tier via `DifficultyMod` applied on the next puzzle generation.
 
