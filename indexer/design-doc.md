@@ -32,11 +32,12 @@ A privacy-preserving location sharing system built into the indexer, providing e
   - TLK lifecycle: init (generate + wrap to members), wrap (client-side wrapping for new members), rotate (version bump + re-wrap), register (X25519 public key registration), pending member listing
   - Network Node PODs: register a node's location and auto-derive PODs for all connected assemblies (via on-chain `connected_assembly_ids`), refresh/cleanup when assemblies connect or disconnect
 - **ZK Routes** (`api/zk-routes.ts`) — REST API for Groth16 proof submission and verified location queries:
-  - `POST /submit` — submit a region or proximity proof; verifies cryptographically, confirms POD existence and location_hash match, validates named region/constellation bounds, stores proof, propagates to derived structures
+  - `POST /submit` — submit a region, proximity, or mutual proximity proof; verifies cryptographically, confirms POD existence and location_hash match, validates named region/constellation bounds, stores proof, propagates to derived structures
   - `GET /region` — query PODs with verified region-filter proofs by bounding box
   - `GET /proximity` — query PODs with verified proximity-filter proofs
+  - `GET /mutual-proximity` — query for a verified mutual proximity proof between two structures
   - `GET /tags` — public (no auth) query for structure location tags (region/constellation membership)
-- **ZK Verifier** (`location/zk-verifier.ts`) — server-side Groth16 proof verification using snarkjs. Lazy-loads circuit verification keys from `circuits/artifacts/`. Gracefully rejects proofs when keys are unavailable.
+- **ZK Verifier** (`location/zk-verifier.ts`) — server-side Groth16 proof verification using snarkjs. Lazy-loads circuit verification keys from `circuits/artifacts/`. Supports region, proximity, and mutual proximity filter types. Gracefully rejects proofs when keys are unavailable.
 - **Location Crypto** (`location/crypto.ts`) — wallet signature verification, TLK generation (256-bit random), X25519 ECIES wrapping (ephemeral key + AES-256-GCM).
 - **Region Data** (`location/region-data.ts`) — server-side reference data for Eve Frontier regions and constellations with canonical bounding boxes. Used to validate ZK proof public signals against named regions.
 - **Sui RPC Helper** (`location/sui-rpc.ts`) — fetches `connected_assembly_ids` from Network Node objects for POD propagation.
@@ -54,7 +55,7 @@ A privacy-preserving location sharing system built into the indexer, providing e
 - **Database:** PostgreSQL (with location tables)
 - **HTTP Framework:** Express
 - **Blockchain:** Sui JSON-RPC (`@mysten/sui`)
-- **ZK:** Groth16 circuits for region/proximity location proofs (optional, `circuits/`)
+- **ZK:** Groth16 circuits for region/proximity/mutual proximity location proofs (optional, `circuits/`)
 
 ## Configuration
 
@@ -120,9 +121,10 @@ Mounted under `/api/v1/locations`. All endpoints (except `/proofs/tags`) require
 
 Mounted under `/api/v1/locations/proofs`.
 
-- `POST /submit` — submit a Groth16 proof for a structure × filter (region or proximity)
+- `POST /submit` — submit a Groth16 proof for a structure × filter (region, proximity, or mutual proximity)
 - `GET /region` — query PODs with verified region-filter proofs
 - `GET /proximity` — query PODs with verified proximity-filter proofs
+- `GET /mutual-proximity` — query for a verified mutual proximity proof between two structures
 - `GET /tags` — public (no auth) query for structure location tags
 
 ## Data Model
@@ -135,7 +137,7 @@ Mounted under `/api/v1/locations/proofs`.
 - `location_pods` — encrypted location PODs per structure×tribe with owner, location_hash, encrypted_blob, nonce, signature, pod/TLK version, optional network_node_id for derived PODs
 - `tribe_location_keys` — per-member wrapped TLK blobs (X25519 ECIES), versioned for rotation
 - `member_public_keys` — X25519 public keys registered by members for TLK distribution
-- `filter_proofs` — verified Groth16 proofs (region/proximity) per structure×tribe with filter key, public signals, and proof JSON
+- `filter_proofs` — verified Groth16 proofs (region/proximity/mutual proximity) per structure×tribe with filter key, public signals, proof JSON, and optional reference_structure_id for mutual proximity proofs
 - `location_tags` — public location tags (region/constellation membership) derived from verified ZK proofs
 
 ### Checkpoint Proof Verification
@@ -161,9 +163,9 @@ Each archived event includes proof metadata for independent verification:
 - Reputation snapshots and leaderboard queries
 - Paginated event queries with filtering by type, tribe, character, and object
 - Optional cleanup worker for expiring stale on-chain contracts
-- Witness service for automated build request fulfillment (polls open contracts, matches anchor/extension events, signs BCS attestations, submits fulfill transactions)
+- Witness service for automated build request fulfillment (polls open contracts, matches anchor/extension events, signs BCS attestations, submits fulfill transactions) with optional mutual proximity proof verification for proximity-gated contracts
 - Shadow Location Network with encrypted PODs, TLK key management (init/wrap/rotate/register), and Network Node POD propagation
-- ZK proof verification and storage for region and proximity location filters (Groth16/snarkjs)
+- ZK proof verification and storage for region, proximity, and mutual proximity location filters (Groth16/snarkjs)
 - Public location tagging from verified ZK proofs (region/constellation membership)
 - Wallet signature authentication for location API endpoints
 - Shareable POD proof bundle export (public attestation + ZK proofs + location tags, no encrypted data)
@@ -174,4 +176,5 @@ Each archived event includes proof metadata for independent verification:
 - Event replay / reindexing tooling
 - Read replica support for API scaling
 - ZK circuit compilation automation (`make zk-build`)
+- UI for mutual proximity proof generation on contract detail pages
 - Location POD re-encryption on TLK rotation

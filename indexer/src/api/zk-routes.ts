@@ -26,6 +26,7 @@ import {
   upsertLocationTag,
   getLocationTagsByStructure,
   getStructuresByTag,
+  getMutualProximityProof,
 } from "../db/location-queries.js";
 import {
   getRegionBounds,
@@ -90,14 +91,16 @@ export function createZkRouter(pool: pg.Pool): Router {
       proof,
       regionId,
       constellationId,
+      referenceStructureId,
     } = req.body as {
       structureId: string;
       tribeId: string;
-      filterType: "region" | "proximity";
+      filterType: "region" | "proximity" | "mutual_proximity";
       publicSignals: string[];
       proof: Record<string, unknown>;
       regionId?: number;
       constellationId?: number;
+      referenceStructureId?: string;
     };
 
     if (
@@ -111,8 +114,13 @@ export function createZkRouter(pool: pg.Pool): Router {
       return;
     }
 
-    if (filterType !== "region" && filterType !== "proximity") {
-      res.status(400).json({ error: "filterType must be 'region' or 'proximity'" });
+    if (filterType !== "region" && filterType !== "proximity" && filterType !== "mutual_proximity") {
+      res.status(400).json({ error: "filterType must be 'region', 'proximity', or 'mutual_proximity'" });
+      return;
+    }
+
+    if (filterType === "mutual_proximity" && !referenceStructureId) {
+      res.status(400).json({ error: "referenceStructureId is required for mutual_proximity proofs" });
       return;
     }
 
@@ -127,15 +135,24 @@ export function createZkRouter(pool: pg.Pool): Router {
         return;
       }
 
-      // 2. Confirm the POD exists for this structure × tribe
+      // 2. Confirm the POD(s) exist for this structure × tribe
       const pod = await getLocationPod(pool, structureId, tribeId);
       if (!pod) {
         res.status(404).json({ error: "No location POD found for this structure and tribe" });
         return;
       }
 
-      // 3. Verify the proof's location_hash matches the POD
-      // publicSignals[0] is always location_hash
+      // 2b. For mutual_proximity, also confirm the reference POD exists
+      let referencePod: typeof pod | undefined;
+      if (filterType === "mutual_proximity") {
+        referencePod = await getLocationPod(pool, referenceStructureId!, tribeId);
+        if (!referencePod) {
+          res.status(404).json({ error: "No location POD found for the reference structure and tribe" });
+          return;
+        }
+      }
+
+      // 3. Verify the proof's location_hash(es) match the POD(s)
       const proofLocationHash = publicSignals[0];
       if (!proofLocationHash) {
         res.status(400).json({ error: "publicSignals[0] must be location_hash" });
@@ -149,6 +166,18 @@ export function createZkRouter(pool: pg.Pool): Router {
           error: "Proof location_hash does not match the stored POD",
         });
         return;
+      }
+
+      // 3b. For mutual_proximity, verify the second hash matches the reference POD
+      if (filterType === "mutual_proximity" && referencePod) {
+        const refHash = publicSignals[1];
+        const refPodHashDecimal = BigInt(referencePod.location_hash).toString();
+        if (refHash !== refPodHashDecimal) {
+          res.status(422).json({
+            error: "Proof locationHash2 does not match the reference structure's POD",
+          });
+          return;
+        }
       }
 
       // 4. If a named region/constellation was specified, validate the proof bounds
@@ -202,6 +231,12 @@ export function createZkRouter(pool: pg.Pool): Router {
         filterKey,
         publicSignals,
         proofJson: proof,
+        ...(filterType === "mutual_proximity" && referencePod
+          ? {
+              referenceStructureId: referenceStructureId!,
+              referenceLocationHash: referencePod.location_hash,
+            }
+          : {}),
       });
 
       // 6. Propagate proof to derived structures if this is a Network Node
@@ -242,6 +277,7 @@ export function createZkRouter(pool: pg.Pool): Router {
         propagated: propagatedCount,
         ...(regionId != null ? { regionId } : {}),
         ...(constellationId != null ? { constellationId } : {}),
+        ...(referenceStructureId ? { referenceStructureId } : {}),
       });
     } catch (err) {
       console.error("[zk] Failed to submit proof:", err);
@@ -307,6 +343,51 @@ export function createZkRouter(pool: pg.Pool): Router {
     } catch (err) {
       console.error("[zk] Failed to query proximity proofs:", err);
       res.status(500).json({ error: "Failed to query proofs" });
+    }
+  });
+
+  // ================================================================
+  // GET /mutual-proximity — Query for a verified mutual proximity proof
+  //
+  // Query params: tribeId, structureIdA, structureIdB
+  // ================================================================
+  router.get("/mutual-proximity", async (req: Request, res: Response) => {
+    const address = await authenticate(req, res);
+    if (!address) return;
+
+    const { tribeId, structureIdA, structureIdB } = req.query as Record<string, string>;
+    if (!tribeId || !structureIdA || !structureIdB) {
+      res.status(400).json({ error: "tribeId, structureIdA, and structureIdB are required" });
+      return;
+    }
+
+    try {
+      const proof = await getMutualProximityProof(pool, structureIdA, structureIdB, tribeId);
+      if (!proof) {
+        res.json({
+          tribe_id: tribeId,
+          structure_id_a: structureIdA,
+          structure_id_b: structureIdB,
+          verified: false,
+        });
+        return;
+      }
+
+      res.json({
+        tribe_id: tribeId,
+        structure_id_a: structureIdA,
+        structure_id_b: structureIdB,
+        verified: true,
+        proof: {
+          id: proof.id,
+          filter_key: proof.filter_key,
+          public_signals: proof.public_signals,
+          verified_at: proof.verified_at,
+        },
+      });
+    } catch (err) {
+      console.error("[zk] Failed to query mutual proximity proof:", err);
+      res.status(500).json({ error: "Failed to query mutual proximity proof" });
     }
   });
 

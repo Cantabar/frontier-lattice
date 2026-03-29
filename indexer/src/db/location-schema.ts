@@ -66,19 +66,21 @@ const LOCATION_SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_member_pubkeys_tribe
     ON member_public_keys(tribe_id);
 
-  -- Verified Groth16 proofs for location filters (region / proximity)
+  -- Verified Groth16 proofs for location filters (region / proximity / mutual_proximity)
   CREATE TABLE IF NOT EXISTS location_filter_proofs (
-    id                      BIGSERIAL PRIMARY KEY,
-    structure_id            TEXT NOT NULL,
-    tribe_id                TEXT NOT NULL,
-    location_hash           TEXT NOT NULL,
-    filter_type             TEXT NOT NULL CHECK (filter_type IN ('region', 'proximity')),
-    filter_key              TEXT NOT NULL,
-    public_signals          JSONB NOT NULL,
-    proof_json              JSONB NOT NULL,
-    source_network_node_id  TEXT,
-    created_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    verified_at             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    id                       BIGSERIAL PRIMARY KEY,
+    structure_id             TEXT NOT NULL,
+    tribe_id                 TEXT NOT NULL,
+    location_hash            TEXT NOT NULL,
+    filter_type              TEXT NOT NULL CHECK (filter_type IN ('region', 'proximity', 'mutual_proximity')),
+    filter_key               TEXT NOT NULL,
+    public_signals           JSONB NOT NULL,
+    proof_json               JSONB NOT NULL,
+    source_network_node_id   TEXT,
+    reference_structure_id   TEXT,
+    reference_location_hash  TEXT,
+    created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    verified_at              TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (structure_id, tribe_id, filter_type, filter_key)
   );
 
@@ -88,6 +90,9 @@ const LOCATION_SCHEMA_SQL = `
     ON location_filter_proofs(location_hash);
   CREATE INDEX IF NOT EXISTS idx_location_filter_proofs_source
     ON location_filter_proofs(source_network_node_id);
+  CREATE INDEX IF NOT EXISTS idx_location_filter_proofs_mutual
+    ON location_filter_proofs(reference_structure_id, tribe_id)
+    WHERE filter_type = 'mutual_proximity';
 
   -- Public location tags — unencrypted region/constellation membership per structure.
   -- Populated when a ZK region proof is verified against a canonical game region.

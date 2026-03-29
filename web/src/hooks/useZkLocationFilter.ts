@@ -15,13 +15,16 @@ import { useLocationPods, type DecryptedPod } from "./useLocationPods";
 import {
   generateRegionProof,
   generateProximityProof,
+  generateMutualProximityProof,
   type ZkProof,
 } from "../lib/zkProver";
 import {
   submitZkProof,
   getZkRegionResults,
   getZkProximityResults,
+  getZkMutualProximityResult,
   type ZkFilteredResult,
+  type MutualProximityResult,
 } from "../lib/api";
 import {
   getRegionBounds,
@@ -102,6 +105,18 @@ export interface UseZkLocationFilterReturn {
     params: ProximityParams,
   ) => Promise<ProveResult>;
 
+  /**
+   * Generate and submit a mutual proximity proof proving two decrypted PODs
+   * are within `maxDistance` of each other. Used for witnessed contract
+   * proximity requirements.
+   */
+  proveMutualProximity: (
+    podA: DecryptedPod,
+    podB: DecryptedPod,
+    tribeId: string,
+    maxDistance: number,
+  ) => Promise<{ submitted: boolean }>;
+
   /** Query the server for PODs with verified region-filter proofs. */
   queryRegion: (
     tribeId: string,
@@ -113,6 +128,13 @@ export interface UseZkLocationFilterReturn {
     tribeId: string,
     params: ProximityParams,
   ) => Promise<ZkFilteredResult[]>;
+
+  /** Query the server for a verified mutual proximity proof between two structures. */
+  queryMutualProximity: (
+    tribeId: string,
+    structureIdA: string,
+    structureIdB: string,
+  ) => Promise<MutualProximityResult>;
 }
 
 // ============================================================
@@ -401,6 +423,72 @@ export function useZkLocationFilter(): UseZkLocationFilterReturn {
     [getAuthHeader],
   );
 
+  // ---- Prove Mutual Proximity ----
+  const proveMutualProximity = useCallback(
+    async (
+      podA: DecryptedPod,
+      podB: DecryptedPod,
+      tribeId: string,
+      maxDistance: number,
+    ): Promise<{ submitted: boolean }> => {
+      setIsProving(true);
+      setError(null);
+
+      try {
+        const authHeader = await getAuthHeader();
+
+        const proof = await generateMutualProximityProof({
+          locationHash1: podA.locationHash,
+          x1: podA.location.x,
+          y1: podA.location.y,
+          z1: podA.location.z,
+          salt1: BigInt(podA.location.salt),
+          locationHash2: podB.locationHash,
+          x2: podB.location.x,
+          y2: podB.location.y,
+          z2: podB.location.z,
+          salt2: BigInt(podB.location.salt),
+          maxDistance,
+        });
+
+        await submitZkProof(authHeader, {
+          structureId: podA.structureId,
+          tribeId,
+          filterType: "mutual_proximity",
+          publicSignals: proof.publicSignals,
+          proof: proof.proof,
+          referenceStructureId: podB.structureId,
+        });
+
+        return { submitted: true };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Mutual proximity proof failed";
+        setError(msg);
+        throw err;
+      } finally {
+        setIsProving(false);
+      }
+    },
+    [getAuthHeader],
+  );
+
+  // ---- Query Mutual Proximity ----
+  const queryMutualProximity = useCallback(
+    async (
+      tribeId: string,
+      structureIdA: string,
+      structureIdB: string,
+    ): Promise<MutualProximityResult> => {
+      const authHeader = await getAuthHeader();
+      return getZkMutualProximityResult(authHeader, {
+        tribeId,
+        structureIdA,
+        structureIdB,
+      });
+    },
+    [getAuthHeader],
+  );
+
   return {
     isProving,
     error,
@@ -408,7 +496,9 @@ export function useZkLocationFilter(): UseZkLocationFilterReturn {
     proveRegionById,
     proveConstellationById,
     proveProximity,
+    proveMutualProximity,
     queryRegion,
     queryProximity,
+    queryMutualProximity,
   };
 }

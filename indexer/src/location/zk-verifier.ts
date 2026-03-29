@@ -43,13 +43,16 @@ interface VKey {
 const vkeys: Record<string, VKey | null> = {
   region: null,
   proximity: null,
+  mutual_proximity: null,
 };
 
-function loadVKey(filterType: "region" | "proximity"): VKey | null {
-  const filename =
-    filterType === "region"
-      ? "region_filter_vkey.json"
-      : "proximity_filter_vkey.json";
+function loadVKey(filterType: "region" | "proximity" | "mutual_proximity"): VKey | null {
+  const filenames: Record<string, string> = {
+    region: "region_filter_vkey.json",
+    proximity: "proximity_filter_vkey.json",
+    mutual_proximity: "mutual_proximity_filter_vkey.json",
+  };
+  const filename = filenames[filterType];
   const path = resolve(ARTIFACTS_DIR, filename);
 
   if (!existsSync(path)) {
@@ -67,10 +70,11 @@ function loadVKey(filterType: "region" | "proximity"): VKey | null {
   }
 }
 
-/** Attempt to load both verification keys. Safe to call multiple times. */
+/** Attempt to load all verification keys. Safe to call multiple times. */
 export function initVerifier(): void {
   if (!vkeys.region) vkeys.region = loadVKey("region");
   if (!vkeys.proximity) vkeys.proximity = loadVKey("proximity");
+  if (!vkeys.mutual_proximity) vkeys.mutual_proximity = loadVKey("mutual_proximity");
 }
 
 // ============================================================
@@ -91,7 +95,7 @@ export interface VerifyResult {
  * @param proof  The Groth16 proof object ({ pi_a, pi_b, pi_c, protocol, curve })
  */
 export async function verifyFilterProof(
-  filterType: "region" | "proximity",
+  filterType: "region" | "proximity" | "mutual_proximity",
   publicSignals: string[],
   proof: Record<string, unknown>,
 ): Promise<VerifyResult> {
@@ -127,9 +131,15 @@ export async function verifyFilterProof(
  * filters it encodes the reference point + max distance².
  */
 export function buildFilterKey(
-  filterType: "region" | "proximity",
+  filterType: "region" | "proximity" | "mutual_proximity",
   publicSignals: string[],
 ): string {
+  if (filterType === "mutual_proximity") {
+    // publicSignals: [locationHash1, locationHash2, maxDistanceSquared]
+    // Key on the max distance only — structure IDs are in the DB columns
+    const maxDistSq = publicSignals[2] ?? "0";
+    return `mutual_proximity:${maxDistSq}`;
+  }
   // publicSignals[0] is always location_hash — skip it for the key since the
   // unique constraint already includes structure_id
   const params = publicSignals.slice(1);

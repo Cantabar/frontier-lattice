@@ -45,11 +45,11 @@ Browser
 Client-side privacy-preserving location sharing with ZK proof generation. The server never sees plaintext coordinates.
 
 - **Location Crypto** (`lib/locationCrypto.ts`) — Poseidon4 hash commitment, AES-256-GCM encrypt/decrypt with TLK, X25519 TLK unwrap (ECIES), signature-derived X25519 keypair (deterministic from wallet’s `signPersonalMessage`), wallet auth challenge construction.
-- **ZK Prover** (`lib/zkProver.ts`) — browser-side Groth16 proof generation via snarkjs. Generates region-filter proofs (3D bounding box containment) and proximity-filter proofs (distance threshold). Circuit WASM + zkey files served by the indexer at `/zk/`.
+- **ZK Prover** (`lib/zkProver.ts`) — browser-side Groth16 proof generation via snarkjs. Generates region-filter proofs (3D bounding box containment), proximity-filter proofs (distance threshold), and mutual proximity proofs (two-structure distance within threshold). Circuit WASM + zkey files served by the indexer at `/zk/`.
 - **Location PODs Hook** (`hooks/useLocationPods`) — fetches, decrypts, submits, and revokes location PODs. Handles TLK initialization, wrapped TLK fetching, Network Node POD registration and refresh. Caches wallet auth headers.
 - **TLK Status Hook** (`hooks/useTlkStatus`) — checks TLK initialization state for a tribe.
 - **TLK Distribution Hook** (`hooks/useTlkDistribution`) — manages wrapping TLK for pending tribe members.
-- **ZK Filter Hook** (`hooks/useZkLocationFilter`) — generates and submits region/proximity proofs for batches of PODs, queries verified results. Supports named region/constellation proof by ID. Deduplicates Network Node derived PODs.
+- **ZK Filter Hook** (`hooks/useZkLocationFilter`) — generates and submits region/proximity/mutual proximity proofs for PODs, queries verified results. Supports named region/constellation proof by ID, and mutual proximity proofs between two decrypted PODs for witnessed contract fulfillment. Deduplicates Network Node derived PODs.
 - **Region Data** (`lib/regions.ts`, `lib/solarSystems.ts`) — client-side region/constellation/solar system reference data with bounding boxes.
 - **Locations Page** (`pages/LocationsPage`) — TLK status banner, decrypted POD listing grouped by solar system, register/revoke actions, pending member key distribution.
 - **POD Proof Modal** (`components/locations/PodProofModal`) — review and copy a shareable proof bundle for an owned POD. Displays public attestation fields (location hash, wallet signature, versions), associated ZK proofs, and location tags. Supports details and raw JSON views with copy-to-clipboard.
@@ -136,7 +136,7 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 - Bill of Materials expansion at configurable depth for contract slot generation
 - Continuity Engine with on-chain CormState bridge
 - Shadow Location Network: encrypted POD management, TLK lifecycle (init/wrap/rotate), signature-derived X25519 keypairs, Poseidon hash commitments
-- Browser-side ZK proof generation (Groth16/snarkjs) for region and proximity location filters
+- Browser-side ZK proof generation (Groth16/snarkjs) for region, proximity, and mutual proximity location filters
 - POD proof review and copy: owners can review and export a shareable proof bundle (public attestation + ZK proofs + location tags) for external applications
 - Named region/constellation proof with canonical bounding box validation
 - SSU Delivery dApp for in-game contract fulfillment

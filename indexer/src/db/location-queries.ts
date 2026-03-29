@@ -328,10 +328,12 @@ export interface FilterProofRow {
   structure_id: string;
   tribe_id: string;
   location_hash: string;
-  filter_type: "region" | "proximity";
+  filter_type: "region" | "proximity" | "mutual_proximity";
   filter_key: string;
   public_signals: string[];
   proof_json: Record<string, unknown>;
+  reference_structure_id: string | null;
+  reference_location_hash: string | null;
   created_at: string;
   verified_at: string;
 }
@@ -339,12 +341,14 @@ export interface FilterProofRow {
 const UPSERT_FILTER_PROOF_SQL = `
   INSERT INTO location_filter_proofs (
     structure_id, tribe_id, location_hash, filter_type, filter_key,
-    public_signals, proof_json
-  ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+    public_signals, proof_json, reference_structure_id, reference_location_hash
+  ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
   ON CONFLICT (structure_id, tribe_id, filter_type, filter_key) DO UPDATE SET
-    public_signals = EXCLUDED.public_signals,
-    proof_json     = EXCLUDED.proof_json,
-    verified_at    = NOW()
+    public_signals          = EXCLUDED.public_signals,
+    proof_json              = EXCLUDED.proof_json,
+    reference_structure_id  = EXCLUDED.reference_structure_id,
+    reference_location_hash = EXCLUDED.reference_location_hash,
+    verified_at             = NOW()
   RETURNING id
 `;
 
@@ -354,10 +358,12 @@ export async function upsertFilterProof(
     structureId: string;
     tribeId: string;
     locationHash: string;
-    filterType: "region" | "proximity";
+    filterType: "region" | "proximity" | "mutual_proximity";
     filterKey: string;
     publicSignals: string[];
     proofJson: Record<string, unknown>;
+    referenceStructureId?: string;
+    referenceLocationHash?: string;
   },
 ): Promise<number> {
   const result = await pool.query(UPSERT_FILTER_PROOF_SQL, [
@@ -368,6 +374,8 @@ export async function upsertFilterProof(
     proof.filterKey,
     JSON.stringify(proof.publicSignals),
     JSON.stringify(proof.proofJson),
+    proof.referenceStructureId ?? null,
+    proof.referenceLocationHash ?? null,
   ]);
   return result.rows[0]?.id ?? 0;
 }
@@ -402,6 +410,32 @@ export async function getFilterProofsForStructure(
     [structureId, tribeId],
   );
   return result.rows as FilterProofRow[];
+}
+
+/**
+ * Look up a verified mutual proximity proof linking two structures.
+ * Checks both orderings (A↔B) since the proof is symmetric in intent.
+ */
+export async function getMutualProximityProof(
+  pool: pg.Pool,
+  structureIdA: string,
+  structureIdB: string,
+  tribeId: string,
+): Promise<FilterProofRow | undefined> {
+  const result = await pool.query(
+    `SELECT * FROM location_filter_proofs
+     WHERE filter_type = 'mutual_proximity'
+       AND tribe_id = $1
+       AND (
+         (structure_id = $2 AND reference_structure_id = $3)
+         OR
+         (structure_id = $3 AND reference_structure_id = $2)
+       )
+     ORDER BY verified_at DESC
+     LIMIT 1`,
+    [tribeId, structureIdA, structureIdB],
+  );
+  return result.rows[0] as FilterProofRow | undefined;
 }
 
 // ============================================================
@@ -528,7 +562,7 @@ export async function upsertDerivedFilterProof(
     structureId: string;
     tribeId: string;
     locationHash: string;
-    filterType: "region" | "proximity";
+    filterType: "region" | "proximity" | "mutual_proximity";
     filterKey: string;
     publicSignals: string[];
     proofJson: Record<string, unknown>;

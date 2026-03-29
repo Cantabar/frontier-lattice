@@ -356,11 +356,12 @@ export function getPendingMembers(tribeId: string, authHeader: string) {
 export interface ZkProofSubmission {
   structureId: string;
   tribeId: string;
-  filterType: "region" | "proximity";
+  filterType: "region" | "proximity" | "mutual_proximity";
   publicSignals: string[];
   proof: Record<string, unknown>;
   regionId?: number;
   constellationId?: number;
+  referenceStructureId?: string;
 }
 
 export interface ZkFilteredResult {
@@ -422,6 +423,34 @@ export function getZkProximityResults(
   const q = `tribeId=${enc(params.tribeId)}&refX=${enc(params.refX)}&refY=${enc(params.refY)}&refZ=${enc(params.refZ)}&maxDistSq=${enc(params.maxDistSq)}`;
   return authedGet<{ tribe_id: string; filter_type: string; count: number; results: ZkFilteredResult[] }>(
     `/locations/proofs/proximity?${q}`,
+    authHeader,
+  );
+}
+
+export interface MutualProximityResult {
+  tribe_id: string;
+  structure_id_a: string;
+  structure_id_b: string;
+  verified: boolean;
+  proof?: {
+    id: number;
+    filter_key: string;
+    public_signals: string[];
+    verified_at: string;
+  };
+}
+
+export function getZkMutualProximityResult(
+  authHeader: string,
+  params: {
+    tribeId: string;
+    structureIdA: string;
+    structureIdB: string;
+  },
+) {
+  const q = `tribeId=${enc(params.tribeId)}&structureIdA=${enc(params.structureIdA)}&structureIdB=${enc(params.structureIdB)}`;
+  return authedGet<MutualProximityResult>(
+    `/locations/proofs/mutual-proximity?${q}`,
     authHeader,
   );
 }

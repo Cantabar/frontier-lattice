@@ -70,6 +70,7 @@ setup_ptau
 
 build_circuit "region_filter"
 build_circuit "proximity_filter"
+build_circuit "mutual_proximity_filter"
 
 echo "[zk] Done. Artifacts written to:"
 echo "  - $ARTIFACTS_DIR"

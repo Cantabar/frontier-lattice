@@ -27,6 +27,7 @@ import {
   loadKeypair,
   type BuildAttestationData,
 } from "./attestation.js";
+import { getMutualProximityProof } from "../db/location-queries.js";
 
 const CORM_AUTH_EXT_SUFFIX = "corm_auth::CormAuth";
 
@@ -51,6 +52,12 @@ interface OpenBuildRequest {
   bountyAmount: string;
   allowedCharacters: string[];
   allowedTribes: number[];
+  /** Optional: reference structure ID for proximity-gated contracts */
+  referenceStructureId?: string;
+  /** Optional: max distance (ly) for proximity-gated contracts */
+  maxDistance?: number;
+  /** Optional: tribe ID for ZK proof lookup */
+  proximityTribeId?: string;
 }
 
 /** Row returned by the anchor event query. */
@@ -200,6 +207,22 @@ export class WitnessService {
         continue; // builder not in allowlist
       }
 
+      // 4b. Check proximity requirement if specified
+      if (
+        contract.referenceStructureId &&
+        contract.maxDistance != null &&
+        contract.proximityTribeId
+      ) {
+        const proximityProof = await this.checkProximityProof(
+          structureId,
+          contract.referenceStructureId,
+          contract.proximityTribeId,
+        );
+        if (!proximityProof) {
+          continue; // no verified mutual proximity proof yet — skip
+        }
+      }
+
       // 5. Encode, sign, and submit
       console.log(
         `[witness] Match found: contract=${contract.contractId} ` +
@@ -300,6 +323,11 @@ export class WitnessService {
     const deadlineMs = String(f.deadline_ms ?? "0");
     if (Number(deadlineMs) <= Date.now()) return null;
 
+    // Proximity fields (optional — may be absent from older contracts)
+    const refStructure = f.reference_structure_id as string | undefined;
+    const maxDist = f.max_distance != null ? Number(f.max_distance) : undefined;
+    const proxTribe = f.proximity_tribe_id as string | undefined;
+
     return {
       contractId: obj.data!.objectId,
       posterId: String(f.poster_id ?? ""),
@@ -310,7 +338,48 @@ export class WitnessService {
       bountyAmount: String(f.bounty_amount ?? "0"),
       allowedCharacters: (f.allowed_characters as string[] | undefined) ?? [],
       allowedTribes: (f.allowed_tribes as number[] | undefined) ?? [],
+      ...(refStructure ? { referenceStructureId: refStructure } : {}),
+      ...(maxDist != null ? { maxDistance: maxDist } : {}),
+      ...(proxTribe ? { proximityTribeId: proxTribe } : {}),
     };
+  }
+
+  // ================================================================
+  // Proximity: check for a verified mutual proximity proof
+  // ================================================================
+
+  /**
+   * Query the location_filter_proofs table for a verified mutual
+   * proximity proof linking two structures within the given tribe.
+   */
+  private async checkProximityProof(
+    structureId: string,
+    referenceStructureId: string,
+    tribeId: string,
+  ): Promise<boolean> {
+    try {
+      const proof = await getMutualProximityProof(
+        this.pool,
+        structureId,
+        referenceStructureId,
+        tribeId,
+      );
+      if (proof) {
+        console.log(
+          `[witness] Mutual proximity proof found: ` +
+          `${structureId} ↔ ${referenceStructureId} (tribe=${tribeId})`,
+        );
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.warn(
+        `[witness] Failed to check proximity proof for ` +
+        `${structureId} ↔ ${referenceStructureId}:`,
+        err,
+      );
+      return false;
+    }
   }
 
   // ================================================================
