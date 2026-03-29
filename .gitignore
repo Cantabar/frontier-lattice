@@ -7,9 +7,9 @@ dist/
 
 # Environment (contains secrets)
 .env
-.env.localnet
-.env.utopia
-.env.stillness
+.env.*
+**/.env
+**/.env.*
 
 # CDK
 infra/cdk.out/
