@@ -30,6 +30,7 @@ type CellData struct {
 	IsGarbled      bool
 	IsAddress      bool   // part of target or decoy address
 	PulseColor     string // color class for pulse JS system
+	SwapOOB        bool   // true when this cell should be swapped out-of-band
 }
 
 // TargetFoundData is the template data for the target-found overlay.
@@ -206,9 +207,13 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.TargetDestroyed = targetDestroyed
 
-		// Return OOB swaps for all garbled cells
+		// Return swaps for all garbled cells (OOB for non-clicked cells)
 		for _, gc := range garbled {
-			h.templates.ExecuteTemplate(w, "cell.html", buildCellData(sess, gc.Row, gc.Col))
+			cd := buildCellData(sess, gc.Row, gc.Col)
+			if gc.Row != row || gc.Col != col {
+				cd.SwapOOB = true
+			}
+			h.templates.ExecuteTemplate(w, "cell.html", cd)
 		}
 		analysis := buildCipherAnalysis(sess)
 		analysis.SwapOOB = true
@@ -236,13 +241,16 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// Return OOB swaps for all cells in the address
+		// Return swaps for all cells in the address (OOB for non-clicked cells)
 		for rr := range sess.Grid.Cells {
 			for cc := range sess.Grid.Cells[rr] {
 				if sess.Grid.Cells[rr][cc].StringID == cell.StringID {
 					cd := buildCellData(sess, rr, cc)
 					if isTargetAddress {
 						cd.CSSClass += " cell--target-locked"
+					}
+					if rr != row || cc != col {
+						cd.SwapOOB = true
 					}
 					h.templates.ExecuteTemplate(w, "cell.html", cd)
 				}

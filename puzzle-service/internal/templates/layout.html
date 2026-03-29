@@ -324,11 +324,12 @@
     })();
 
     // === Pulse animation system ===
-    // Processes JSON from #pulse-data (OOB-swapped by server) after HTMX swaps
+    // Processes JSON from #pulse-data (OOB-swapped by server) after HTMX settles
     // and applies temporary CSS pulse classes to cells.
-    // Uses htmx:afterSwap instead of a MutationObserver so that it works
-    // regardless of when #pulse-data is created (Phase 0 → 1 transition,
-    // new puzzle loads, etc.).
+    // Uses htmx:afterSettle (not afterSwap) because the cell decrypt swap is
+    // outerHTML — the original triggering element is detached from the DOM before
+    // afterSwap fires, so that event never bubbles to document.body. afterSettle
+    // fires on newly-inserted elements that ARE in the DOM.
     (function() {
         function firePulse(cells) {
             cells.forEach(function(entry) {
@@ -377,7 +378,7 @@
             pulseEl.textContent = '';
         }
 
-        document.body.addEventListener('htmx:afterSwap', processPulseData);
+        document.body.addEventListener('htmx:afterSettle', processPulseData);
     })();
 
     // Listen for on-chain state updates from the parent React app.

@@ -43,7 +43,7 @@ Browser (HTMX)                   puzzle-service                    corm-brain
 
 The puzzle target is a shortened SUI address (12 characters: `0x` + 10 hex chars) hidden in the cipher grid. The grid also contains 4+ decoy addresses of the same format. All addresses are placed horizontally.
 
-Cells belonging to the same address share a `StringID` (e.g. `"target_main"`, `"decoy_0"`). **Clicking any cell of an address reveals the entire address** — all cells with the same StringID are decrypted simultaneously and returned as OOB HTMX swaps.
+Cells belonging to the same address share a `StringID` (e.g. `"target_main"`, `"decoy_0"`). **Clicking any cell of an address reveals the entire address** — all cells with the same StringID are decrypted simultaneously. The clicked cell is returned as the primary HTMX swap target and the remaining cells are returned as OOB `outerHTML` swaps so the fixed-size grid is updated in place instead of gaining extra DOM nodes.
 
 **Auto-complete on target discovery:** When the target address is revealed (via clicking any of its cells), the puzzle auto-completes: stability is gained, the solve count increments, a `submit` event (with `auto_discovered: true`) is emitted to corm-brain, and a **"PATTERN ANCHOR ISOLATED" overlay** replaces the grid. The overlay displays the confirmed address, stability gain, and solve count, with a `[ RESOLVE NEXT ANCHOR ]` button the player must click to proceed to the next puzzle. The overlay elements use staggered fade-in animations. Target address cells briefly receive a `cell--target-locked` glow animation before the overlay appears.
 
@@ -55,7 +55,7 @@ Players can also type the full address into the terminal input (`submit 0x...`) 
 - **Symbol** — non-alphabet printable ASCII (`#@%&*~^|<>{}[]` etc.) filling 60% of empty cells.
 - **Target** — cells of the hidden SUI address. White text on reveal, green border.
 - **Decoy** — cells of decoy addresses. Same reveal behavior as target but no win.
-- **Trap** — anomaly nodes. On reveal, explode with Euclidean radius 3, permanently garbling all cells in the blast zone (setting them to `CellGarbled`). Garbled cells display a purple flickering glyph and cannot be interacted with. If any target address cell is caught in the explosion, the game is over.
+- **Trap** — anomaly nodes. On reveal, explode with Euclidean radius 3, permanently garbling all cells in the blast zone (setting them to `CellGarbled`). Garbled cells display a purple flickering glyph and cannot be interacted with. The clicked trap cell is returned as the primary swap and the rest of the blast zone is returned as OOB `outerHTML` swaps so the grid dimensions stay stable. If any target address cell is caught in the explosion, the game is over.
 - **Sensor** — hint nodes (~0.8% of noise/symbol cells). Three subtypes:
   - **Sonar** `[S]` (cyan) — on reveal, triggers a triple pulse: 3 pulses at 1-second intervals, Euclidean radius 5, revealing the color signature of all cells in range.
   - **Thermal** `[T]` (blue) — on reveal, shows proximity-based coloring (distance to target).
