@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import styled from "styled-components";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, Navigate, Link } from "react-router-dom";
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { useStructures } from "../hooks/useStructures";
 import { useNetworkNodes } from "../hooks/useNetworkNodes";
@@ -273,7 +273,7 @@ const EnergyIndicator = styled.span<{ $connected: boolean }>`
   flex-shrink: 0;
 `;
 
-const LocationBadge = styled.span`
+const LocationBadge = styled(Link)`
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -281,6 +281,11 @@ const LocationBadge = styled.span`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.primary.main};
   white-space: nowrap;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const AddLocationButton = styled.button`
@@ -826,7 +831,13 @@ function StructureRow({
         )}
 
         {hasLocation ? (
-          <LocationBadge title="Location POD registered">📍 Location</LocationBadge>
+          <LocationBadge
+            to={`/locations?structure=${structure.id}`}
+            title="View location"
+            onClick={(e) => e.stopPropagation()}
+          >
+            📍 Location
+          </LocationBadge>
         ) : isOwner && hasTribeId ? (
           <AddLocationButton
             disabled={!tlkUnlocked}

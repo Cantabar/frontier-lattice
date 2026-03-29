@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import styled from "styled-components";
+import { Link } from "react-router-dom";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { CopyableId } from "../shared/CopyableId";
 import { buildOnlineStructure, buildOfflineStructure } from "../../lib/sui";
@@ -178,7 +179,7 @@ const BarLabel = styled.span`
   white-space: nowrap;
 `;
 
-const LocationBadge = styled.span`
+const LocationBadge = styled(Link)`
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -186,6 +187,11 @@ const LocationBadge = styled.span`
   font-weight: 600;
   color: ${({ theme }) => theme.colors.primary.main};
   white-space: nowrap;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ConnectedMeta = styled.span`
@@ -434,7 +440,13 @@ export function NetworkNodeGroup({
 
         <TagsRight>
           {hasLocation && (
-            <LocationBadge title="Location POD registered">📍 Location</LocationBadge>
+            <LocationBadge
+              to={`/locations?structure=${node.id}`}
+              title="View location"
+              onClick={(e) => e.stopPropagation()}
+            >
+              📍 Location
+            </LocationBadge>
           )}
           {canOnline && (
             <ActionButton

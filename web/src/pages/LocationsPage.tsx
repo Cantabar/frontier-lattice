@@ -5,8 +5,9 @@
  * and provides register / revoke actions.
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import styled from "styled-components";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import styled, { keyframes } from "styled-components";
+import { useSearchParams } from "react-router-dom";
 import { useCurrentAccount, useSignPersonalMessage } from "@mysten/dapp-kit";
 import { useIdentity } from "../hooks/useIdentity";
 import { useLocationPods, type DecryptedPod } from "../hooks/useLocationPods";
@@ -122,7 +123,12 @@ const PodList = styled.div`
   gap: ${({ theme }) => theme.spacing.xs};
 `;
 
-const PodRow = styled.div`
+const highlightFade = keyframes`
+  0% { background: ${"rgba(99, 179, 237, 0.25)"}; }
+  100% { background: transparent; }
+`;
+
+const PodRow = styled.div<{ $highlight?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.md};
@@ -131,6 +137,7 @@ const PodRow = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.surface.border};
   border-radius: ${({ theme }) => theme.radii.sm};
   font-size: 13px;
+  ${({ $highlight }) => $highlight && `animation: ${highlightFade} 2s ease-out forwards;`}
 `;
 
 const PodInfo = styled.div`
@@ -213,6 +220,9 @@ const PendingAddress = styled.span`
 
 export function LocationsPage() {
   const account = useCurrentAccount();
+  const [searchParams] = useSearchParams();
+  const highlightStructureId = searchParams.get("structure");
+  const scrolledRef = useRef(false);
   const { tribeCaps, address } = useIdentity();
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
   const tribeId = tribeCaps[0]?.tribeId ?? null;
@@ -247,6 +257,16 @@ export function LocationsPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tribeId, tlk.tlkBytes]);
+
+  // Scroll to highlighted structure once pods are loaded
+  useEffect(() => {
+    if (!highlightStructureId || scrolledRef.current || pods.length === 0) return;
+    const el = document.getElementById(`pod-${highlightStructureId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      scrolledRef.current = true;
+    }
+  }, [highlightStructureId, pods]);
 
   // Structure name lookup
   const structureMap = useMemo(() => {
@@ -540,7 +560,11 @@ export function LocationsPage() {
                 </GroupHeader>
                 <PodList>
                   {groupPods.map((pod) => (
-                    <PodRow key={pod.structureId}>
+                    <PodRow
+                      key={pod.structureId}
+                      id={`pod-${pod.structureId}`}
+                      $highlight={pod.structureId === highlightStructureId}
+                    >
                       <PodInfo>
                         <PodName>
                           {pod.structureId === nodeId
@@ -596,7 +620,11 @@ export function LocationsPage() {
               </GroupHeader>
               <PodList>
                 {grouped.ungrouped.map((pod) => (
-                  <PodRow key={pod.structureId}>
+                  <PodRow
+                    key={pod.structureId}
+                    id={`pod-${pod.structureId}`}
+                    $highlight={pod.structureId === highlightStructureId}
+                  >
                     <PodInfo>
                       <PodName>
                         {structureMap.get(pod.structureId) ??
