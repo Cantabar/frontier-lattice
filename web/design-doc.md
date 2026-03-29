@@ -147,6 +147,7 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 - Event Explorer with type/tribe/character filtering and pagination
 - Structure browser with aggregated SSU inventory
 - Structure rows use CSS Grid for column-aligned tags (type, status, energy, extension, location, actions) so values line up vertically across rows
+- Tribe member list includes a "Structures" column linking to each member's structures page (`/structures/:characterId`) for easy cross-member structure browsing
 
 ## Open Questions / Future Work
 

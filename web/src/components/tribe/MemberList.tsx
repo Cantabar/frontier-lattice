@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import styled from "styled-components";
 import type { TribeMember, TribeCapData, Role } from "../../lib/types";
 import { RemoveMemberButton } from "./RemoveMemberButton";
@@ -70,6 +71,18 @@ const RepButton = styled.button`
   }
 `;
 
+const StructuresLink = styled(Link)`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.primary.main};
+  text-decoration: none;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
 interface Props {
   members: TribeMember[];
   tribeId: string;
@@ -90,6 +103,7 @@ export function MemberList({ members, tribeId, leaderCharacterId, cap, onChangeR
         <tr>
           <Th>Character</Th>
           <Th>Role</Th>
+          <Th>Structures</Th>
           {(isLeader || isLeaderOrOfficer) && <Th>Actions</Th>}
         </tr>
       </thead>
@@ -104,6 +118,11 @@ export function MemberList({ members, tribeId, leaderCharacterId, cap, onChangeR
             </Td>
             <Td>
               <RoleBadge $role={m.role}>{m.role}</RoleBadge>
+            </Td>
+            <Td>
+              <StructuresLink to={`/structures/${m.characterId}`}>
+                View ▸
+              </StructuresLink>
             </Td>
             {(isLeader || isLeaderOrOfficer) && (
               <Td>
