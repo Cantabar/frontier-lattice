@@ -120,6 +120,7 @@ Vectors auto-enable after a random threshold of 4–8 non-target cell clicks per
 - **Transport:** HTTP (handlers) + SSE (log streaming) + WebSocket (corm relay)
 - **Assets:** Embedded via `go:embed` (templates in `internal/templates/`, static files in `static/`)
 - **Client-side JS:** Minimal — pulse animation system, terminal command dispatcher, collapsible sidebar, streaming log relay. No framework.
+- **Layout:** Fixed viewport (`100vh`) split vertically — scrollable puzzle area on top, terminal bar (120px–30vh) on bottom. The puzzle main area scrolls independently when the grid exceeds available height.
 
 ## Configuration
 

@@ -209,7 +209,8 @@ body {
     align-items: stretch;
     padding: 8px;
     gap: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     flex: 1;
     min-width: 0;
 }
