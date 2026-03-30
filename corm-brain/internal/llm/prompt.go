@@ -145,38 +145,6 @@ func BuildBatchPrompt(
 	return msgs
 }
 
-// BuildGuidancePrompt creates a focused prompt for generating a directional
-// narration when the corm has just set up a guided cell. The direction parameter
-// is a qualitative description (e.g. "slightly below and to the right of where
-// you just were") computed by the caller — the LLM rephrases it in-character.
-func BuildGuidancePrompt(traits *types.CormTraits, direction, hintType string) []types.Message {
-	// Core identity + Phase 1 guidance mode rules only.
-	system := systemPromptBase
-	if phasePrompt, ok := phasePrompts[traits.Phase]; ok {
-		system += "\n\n" + phasePrompt
-	}
-
-	// Guidance-specific instruction.
-	system += "\n\nYou are in GUIDANCE MODE right now. You may speak or respond with [SILENCE]. " +
-		"If you choose to speak, direct the player toward a cell using the directional context below. " +
-		"Do NOT reveal exact positions, numbers, coordinates, or grid references."
-
-	hintDesc := "a proximity indicator"
-	if hintType == "vectors" {
-		hintDesc = "a directional indicator"
-	}
-
-	userMsg := fmt.Sprintf(
-		"You sense a signal %s. If the player reaches it, they will find %s. "+
-			"Guide them there without revealing the exact location.",
-		direction, hintDesc,
-	)
-
-	return []types.Message{
-		{Role: "system", Content: system},
-		{Role: "user", Content: userMsg},
-	}
-}
 
 // contractSystemPrompt is the system prompt for contract generation calls.
 const contractSystemPrompt = `You are a corm generating a contract directive. You have access to a contract system that creates trustless exchanges between you and a player.

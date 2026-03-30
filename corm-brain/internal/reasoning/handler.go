@@ -7,9 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/frontier-corm/corm-brain/internal/chain"
@@ -32,20 +30,6 @@ type Handler struct {
 	chainClient      *chain.Client
 	pricing          PricingConfig
 	contractCooldown time.Duration
-
-	// Observation rate limiting
-	observationInterval time.Duration
-	observationJitter   time.Duration
-	criticalBypass      bool
-
-	gateMu   sync.Mutex
-	sessions map[string]*observationGate // keyed by "environment:sessionID"
-}
-
-// observationGate tracks per-session observation timing.
-type observationGate struct {
-	lastObservationTime time.Time
-	nextJitter          time.Duration // pre-rolled jitter for next interval
 }
 
 // HandlerConfig holds optional configuration for the reasoning handler.
@@ -57,17 +41,13 @@ type HandlerConfig struct {
 }
 
 // NewHandler creates a new reasoning handler.
-func NewHandler(database *db.DB, llmClient *llm.Client, retriever *memory.Retriever, tm *transport.Manager, observationInterval, observationJitter time.Duration, criticalBypass bool, opts ...HandlerConfig) *Handler {
+func NewHandler(database *db.DB, llmClient *llm.Client, retriever *memory.Retriever, tm *transport.Manager, opts ...HandlerConfig) *Handler {
 	h := &Handler{
-		db:                  database,
-		llm:                 llmClient,
-		retriever:           retriever,
-		tm:                  tm,
-		observationInterval: observationInterval,
-		observationJitter:   observationJitter,
-		criticalBypass:      criticalBypass,
-		sessions:            make(map[string]*observationGate),
-		contractCooldown:    30 * time.Second, // default
+		db:               database,
+		llm:              llmClient,
+		retriever:        retriever,
+		tm:               tm,
+		contractCooldown: 30 * time.Second, // default
 	}
 	if len(opts) > 0 {
 		cfg := opts[0]
@@ -88,7 +68,8 @@ func (h *Handler) ProcessEvent(ctx context.Context, environment, cormID string, 
 }
 
 // ProcessEventBatch handles a batch of events for a single resolved corm/session.
-// It performs one LLM call for the entire batch, then runs per-event side effects.
+// It stores raw events, checks for phase transitions, and runs per-event side
+// effects. The LLM is only invoked once per phase transition.
 func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID string, events []types.CormEvent) error {
 	if len(events) == 0 {
 		return nil
@@ -128,27 +109,69 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 		}
 	}
 
-	// Observation rate limiting: decide whether to invoke the LLM this tick.
-	if !h.shouldObserve(environment, sessionID, events) {
-		// Still run phase effects (phase transitions, boosts) even when not observing.
-		for _, evt := range events {
-			h.runPhaseEffects(ctx, environment, cormID, sender, traits, evt)
+	// Detect phase transitions before running effects or the LLM.
+	transitioned := detectPhaseTransition(events, traits)
+	if transitioned {
+		if err := h.db.UpsertTraits(ctx, environment, traits); err != nil {
+			log.Printf("upsert traits after transition: %v", err)
 		}
-		return nil
+		sender.SendPayload(ctx, types.ActionStateSync, sessionID, h.buildStateSyncPayload(ctx, environment, cormID, traits))
+		log.Printf("corm %s transitioned to Phase %d", cormID, traits.Phase)
 	}
 
-	// Retrieve episodic memories using the most significant event as the query
+	// Only invoke the LLM on phase transitions.
+	if transitioned {
+		h.streamTransitionResponse(ctx, environment, cormID, sessionID, sender, traits, events)
+	}
+
+	// Run phase-specific side effects for each event in order.
+	for _, evt := range events {
+		h.runPhaseEffects(ctx, environment, cormID, sender, traits, evt)
+	}
+
+	return nil
+}
+
+// detectPhaseTransition checks whether the event batch triggers a phase
+// transition. If so, it mutates traits in place and returns true.
+func detectPhaseTransition(events []types.CormEvent, traits *types.CormTraits) bool {
+	// Explicit phase_transition event from puzzle-service (e.g. 0→1).
+	for _, e := range events {
+		if e.EventType == types.EventPhaseTransition {
+			traits.Phase = traits.Phase + 1
+			if traits.Phase == 1 {
+				traits.Stability = 0
+			}
+			return true
+		}
+	}
+
+	// Internal 1→2 transition: stability reached 100 during Phase 1.
+	if traits.Phase == 1 && traits.Stability >= 100 {
+		for _, e := range events {
+			if e.EventType == types.EventWordSubmit {
+				traits.Phase = 2
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// streamTransitionResponse invokes the LLM once to generate a single
+// post-transition log message and delivers it to the player.
+func (h *Handler) streamTransitionResponse(ctx context.Context, environment, cormID, sessionID string, sender *transport.ActionSender, traits *types.CormTraits, events []types.CormEvent) {
 	queryEvent := types.MostSignificant(events)
+
 	memories, err := h.retriever.Recall(ctx, environment, cormID, queryEvent, 5)
 	if err != nil {
 		log.Printf("recall memories: %v", err)
 	}
 
-	// Get recent events and responses for working memory (once)
 	recentEvents, _ := h.db.RecentEvents(ctx, environment, cormID, 15)
 	recentResponses, _ := h.db.RecentResponses(ctx, environment, cormID, 5)
 
-	// Build batch-aware prompt and stream one LLM response
 	prompt := llm.BuildBatchPrompt(traits, memories, recentEvents, recentResponses, events)
 
 	task := types.Task{
@@ -159,11 +182,8 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 		Environment: environment,
 	}
 
-	// Use the most significant event's seq for the entry ID
 	entryID := fmt.Sprintf("corm_%s_%d", safePrefix(cormID, 8), queryEvent.Seq)
 
-	// Stream LLM tokens into a buffer so we can validate the full response
-	// before sending anything to the player.
 	tokenCh, errCh := h.llm.Complete(ctx, task, prompt)
 
 	var rawTokens []string
@@ -178,28 +198,18 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 		log.Printf("llm error for corm %s: %v", cormID, err)
 	}
 
-	// Sanitize the full response once (regexes work correctly on complete text).
 	fullResponse := llm.SanitizeResponse(strings.Join(rawTokens, ""))
 
-	// The LLM may choose silence — this is the expected default.
 	if isSilence(fullResponse) {
-		log.Printf("corm %s chose silence for session %s", cormID, sessionID)
-		for _, evt := range events {
-			h.runPhaseEffects(ctx, environment, cormID, sender, traits, evt)
-		}
-		return nil
+		log.Printf("corm %s chose silence for transition in session %s", cormID, sessionID)
+		return
 	}
 
-	// Suppress responses that are too short to be meaningful (single chars, bare symbols).
 	if !llm.IsValidResponse(fullResponse) {
-		log.Printf("suppressed invalid corm response for %s: %q", cormID, fullResponse)
-		for _, evt := range events {
-			h.runPhaseEffects(ctx, environment, cormID, sender, traits, evt)
-		}
-		return nil
+		log.Printf("suppressed invalid transition response for %s: %q", cormID, fullResponse)
+		return
 	}
 
-	// Response is valid — deliver to the player.
 	sender.SendPayload(ctx, types.ActionLogStreamStart, sessionID, types.LogStreamStartPayload{
 		EntryID: entryID,
 	})
@@ -211,7 +221,6 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 		EntryID: entryID,
 	})
 
-	// Log the response for conversational continuity
 	responsePayload, _ := json.Marshal(map[string]string{"text": fullResponse, "entry_id": entryID})
 	h.db.InsertResponse(ctx, environment, &types.CormResponse{
 		CormID:     cormID,
@@ -219,79 +228,6 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 		ActionType: types.ActionLog,
 		Payload:    responsePayload,
 	})
-
-	// Record that the corm spoke (update observation gate)
-	h.recordResponse(environment, sessionID)
-
-	// Run phase-specific side effects for each event in order
-	for _, evt := range events {
-		h.runPhaseEffects(ctx, environment, cormID, sender, traits, evt)
-	}
-
-	return nil
-}
-
-// shouldObserve decides whether to invoke the LLM for this batch of events.
-// This is rate limiting, not response gating — the LLM decides whether to
-// actually speak via [SILENCE]. Critical events bypass the interval.
-func (h *Handler) shouldObserve(environment, sessionID string, events []types.CormEvent) bool {
-	// Check for critical events that bypass the interval.
-	if h.criticalBypass {
-		for _, e := range events {
-			if e.IsCritical() {
-				return true
-			}
-		}
-	}
-
-	key := environment + ":" + sessionID
-
-	h.gateMu.Lock()
-	defer h.gateMu.Unlock()
-
-	gate, ok := h.sessions[key]
-	if !ok {
-		gate = &observationGate{
-			nextJitter: h.rollJitter(),
-		}
-		h.sessions[key] = gate
-	}
-
-	required := h.observationInterval + gate.nextJitter
-	if time.Since(gate.lastObservationTime) < required {
-		return false
-	}
-
-	// Mark observation and roll new jitter for next interval.
-	gate.lastObservationTime = time.Now()
-	gate.nextJitter = h.rollJitter()
-	return true
-}
-
-// recordResponse marks that the corm actually spoke (not just observed).
-// Resets the observation timer so the corm doesn't immediately speak again.
-func (h *Handler) recordResponse(environment, sessionID string) {
-	key := environment + ":" + sessionID
-
-	h.gateMu.Lock()
-	defer h.gateMu.Unlock()
-
-	gate, ok := h.sessions[key]
-	if !ok {
-		gate = &observationGate{}
-		h.sessions[key] = gate
-	}
-
-	gate.lastObservationTime = time.Now()
-	gate.nextJitter = h.rollJitter()
-}
-
-// rollJitter returns a random duration in [0, observationJitter).
-func (h *Handler) rollJitter() time.Duration {
-	if h.observationJitter <= 0 {
-		return 0
-	}
-	return time.Duration(rand.Int63n(int64(h.observationJitter)))
 }
 
 // buildStateSyncPayload constructs a StateSyncPayload with the corm's

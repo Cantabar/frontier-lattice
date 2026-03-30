@@ -18,10 +18,10 @@ puzzle-service (per env)           corm-brain
                                    │    └─ Debounce → GroupBySession│
                                    ├──────────────────────────────┤
                                    │  Reasoning Handler            │
-                                   │    ├─ Observation Rate Limit  │
+                                   │    ├─ Phase Transition Gate   │
                                    │    ├─ Memory Retrieval        │
-                                   │    ├─ LLM Observe → [SILENCE] │
-                                   │    │    or Stream Response     │
+                                   │    ├─ LLM Stream Response     │
+                                   │    │    (transitions only)     │
                                    │    └─ Phase Effects           │
                                    ├──────────────────────────────┤
                                    │  Consolidation Loop           │
@@ -39,7 +39,7 @@ puzzle-service (per env)           corm-brain
 ### Goroutines
 
 1. **Transport Manager** — runs per-environment WebSocket listeners with automatic fallback to HTTP polling when WS disconnects. All environments share a single `eventChan`.
-2. **Event Processor** — reads from `eventChan`, debounces events into per-session batches (configurable coalesce window + batch cap), then dispatches one LLM call per session group.
+2. **Event Processor** — reads from `eventChan`, debounces events into per-session batches (configurable coalesce window + batch cap), then dispatches to the reasoning handler. The LLM is only invoked on phase transitions.
 3. **Consolidation Loop** — periodic sweep across all environments/corms. Summarizes unconsolidated events into episodic memories via LLM, generates embeddings, runs deterministic trait reducers, and prunes memories exceeding the per-corm cap.
 
 ### Key Components
@@ -52,16 +52,15 @@ puzzle-service (per env)           corm-brain
 - **Memory Pruner** (`internal/memory/pruner.go`) — enforces per-corm memory caps by removing lowest-ranked memories when a corm exceeds its limit.
 - **Chain Client** (`internal/chain`) — per-environment Sui RPC client for on-chain state writes (phase transitions, stability/corruption updates) using the corm-brain keypair. Includes stubs for contract creation (`contracts.go`), player inventory reading (`inventory.go`), and CORM token minting (`coin.go`).
 - **Chain Signer** (`internal/chain/signer.go`) — Ed25519 keypair management for signing Sui transactions.
-- **Reasoning Handler** (`internal/reasoning`) — orchestrates the full event→response pipeline: trait lookup, observation rate limiting (interval + jitter, not significance gating), memory recall, prompt building, LLM observation call (model decides via `[SILENCE]` whether to respond), response delivery, and phase effects. The LLM sees all events continuously and decides both *whether* and *what* to say.
+- **Reasoning Handler** (`internal/reasoning`) — orchestrates the full event→response pipeline: trait lookup, phase transition detection, memory recall, prompt building, LLM response (on transitions only), response delivery, and phase effects. The conversational LLM is invoked exactly once per phase transition (0→1, 1→2). All other events are processed for side effects only (state sync, hints, boosts, contract generation).
 
 ### Phase-Specific Effects
 
-- **Phase 0 Handler** (`internal/reasoning/phase0.go`) — observes phase transition events. When the puzzle-service detects the frustration trigger (3+ clicks on same button within 2 seconds), persists the phase=1 transition and syncs state.
-- **Phase 1 Handler** (`internal/reasoning/phase1.go`) — handles decrypt and word-submit events with three active systems:
+- **Phase 0 Handler** (`internal/reasoning/phase0.go`) — no active side effects. Phase 0→1 transitions are detected centrally by `detectPhaseTransition` in the handler.
+- **Phase 1 Handler** (`internal/reasoning/phase1.go`) — handles decrypt and word-submit events:
   - **Struggling Hint** — on every 4th consecutive incorrect submission, highlights a decrypted target-word cell (heatmap) or enables the signal hint globally if no target cells are decrypted yet.
-  - **Guided Cell** — probabilistic (~25% per decrypt, reduced by corruption) system that sends a `guide_cell` action pointing the player toward the target, with distance-aware offset and alternating heatmap/vectors hint types. Immediately streams a directional narration via a dedicated LLM call.
   - **Boost Evaluation** — placeholder for boost targeting based on stability/corruption thresholds.
-  - **Phase Transition** — transitions to Phase 2 when stability reaches 100.
+  - Phase 1→2 transitions (stability reaches 100) are detected centrally by `detectPhaseTransition` in the handler.
 - **Phase 2 Handler** (`internal/reasoning/phase2.go`) — handles contract completion/failure with state syncing. Contract generation triggered by any Phase 2 event (rate-limited per corm). Requires a bound `network_node_id` on events to initialize the on-chain `CormState` and populate the world snapshot.
 
 ### Test Harness
@@ -90,9 +89,6 @@ All via environment variables (see `internal/config/config.go`):
 - `DATABASE_URL` — Postgres connection string
 - `EVENT_COALESCE_MS` — debounce window (default: 300ms)
 - `EVENT_BATCH_MAX` — max events per batch (default: 20)
-- `OBSERVATION_INTERVAL_MS` — min time between LLM observation calls per session (default: 4000ms)
-- `OBSERVATION_JITTER_MS` — random jitter added to observation interval (default: 2000ms)
-- `CRITICAL_EVENT_BYPASS` — phase transitions and correct submissions bypass interval (default: true)
 - `CONSOLIDATION_INTERVAL_MS` — memory sweep interval (default: 60000ms)
 - `MEMORY_CAP_PER_CORM` — max episodic memories per corm (default: 500)
 - `WS_RECONNECT_MAX_MS` — max WS reconnect backoff (default: 30000ms)
@@ -132,8 +128,8 @@ Per-environment config (in JSON file): `name`, `puzzle_service_url`, `sui_rpc_ur
 - Memory consolidation with LLM summarization, embedding, and trait reduction
 - Memory pruning with configurable per-corm caps
 - Phase-aware event processing (Phase 0 dormancy, Phase 1 puzzles, Phase 2 contracts)
+- Phase-transition-only LLM responses (one conversational message per transition)
 - Struggling player hint system (auto-activates on repeated failures)
-- Guided cell system with directional narration streaming
 - On-chain state writes (phase transitions, stability/corruption updates)
 - Chain stubs for contract creation, inventory reading, and CORM minting
 - Seed chain data mode (`SEED_CHAIN_DATA`) for development without live SUI

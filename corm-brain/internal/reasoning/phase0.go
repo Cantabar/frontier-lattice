@@ -2,30 +2,15 @@ package reasoning
 
 import (
 	"context"
-	"log"
 
 	"github.com/frontier-corm/corm-brain/internal/transport"
 	"github.com/frontier-corm/corm-brain/internal/types"
 )
 
 // handlePhase0Effects handles side effects for Phase 0 (dormant/awakening).
-// In Phase 0, the corm tracks click patterns and checks for the frustration
-// trigger (3+ clicks on same button within 2 seconds) to transition to Phase 1.
+// Phase transitions are now detected centrally by detectPhaseTransition in
+// handler.go before effects run, so this handler only needs to cover any
+// Phase-0-specific non-transition side effects.
 func handlePhase0Effects(ctx context.Context, h *Handler, environment, cormID string, sender *transport.ActionSender, traits *types.CormTraits, evt types.CormEvent) {
-	// Phase 0 is purely observational for the corm-brain.
-	// The frustration trigger detection and phase transition happen in the puzzle-service.
-	// When the puzzle-service detects the trigger, it sends a phase_transition event.
-
-	if evt.EventType == types.EventPhaseTransition {
-		traits.Phase = 1
-		traits.Stability = 0
-		if err := h.db.UpsertTraits(ctx, environment, traits); err != nil {
-			log.Printf("phase0: upsert traits: %v", err)
-		}
-
-		// Sync state to puzzle-service
-		sender.SendPayload(ctx, types.ActionStateSync, evt.SessionID, h.buildStateSyncPayload(ctx, environment, cormID, traits))
-
-		log.Printf("corm %s transitioned to Phase 1", cormID)
-	}
+	// No Phase 0 side effects beyond the transition (handled by handler.go).
 }

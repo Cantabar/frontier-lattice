@@ -92,7 +92,7 @@ func main() {
 		break
 	}
 
-	handler := reasoning.NewHandler(database, llmClient, retriever, tm, cfg.ObservationInterval, cfg.ObservationJitter, cfg.CriticalEventBypass, reasoning.HandlerConfig{
+	handler := reasoning.NewHandler(database, llmClient, retriever, tm, reasoning.HandlerConfig{
 		Registry:         registry,
 		ChainClient:      defaultChainClient,
 		Pricing:          reasoning.PricingConfig{CORMPerLUX: cfg.CORMPerLUX, CORMFloorPerUnit: cfg.CORMFloorPerUnit},

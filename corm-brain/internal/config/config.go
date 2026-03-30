@@ -49,18 +49,6 @@ type Config struct {
 	// Maximum events to collect per coalesce window before forcing a flush.
 	EventBatchMax int
 
-	// Minimum time between LLM observation calls for the same session.
-	// Controls how often the corm evaluates the event stream, not whether it responds.
-	ObservationInterval time.Duration
-
-	// Random jitter added to the observation interval so timing feels organic.
-	// Actual interval = ObservationInterval + rand(0, ObservationJitter).
-	ObservationJitter time.Duration
-
-	// When true, phase transitions and correct submissions bypass the observation
-	// interval and trigger an immediate LLM evaluation.
-	CriticalEventBypass bool
-
 	// Memory consolidation interval
 	ConsolidationInterval time.Duration
 
@@ -104,11 +92,8 @@ func Load() Config {
 		EmbedModelPath:        envOrDefault("EMBED_MODEL_PATH", "./models/nomic-embed"),
 		WSReconnectMax:        envDurationMs("WS_RECONNECT_MAX_MS", 30000),
 		FallbackPollInterval:  envDurationMs("FALLBACK_POLL_INTERVAL_MS", 2000),
-		EventCoalesceWindow:   envDurationMs("EVENT_COALESCE_MS", 300),
-		EventBatchMax:         envInt("EVENT_BATCH_MAX", 20),
-		ObservationInterval:   envDurationMs("OBSERVATION_INTERVAL_MS", 4000),
-		ObservationJitter:     envDurationMs("OBSERVATION_JITTER_MS", 2000),
-		CriticalEventBypass:   envBool("CRITICAL_EVENT_BYPASS", true),
+		EventCoalesceWindow:        envDurationMs("EVENT_COALESCE_MS", 300),
+		EventBatchMax:              envInt("EVENT_BATCH_MAX", 20),
 		ConsolidationInterval:      envDurationMs("CONSOLIDATION_INTERVAL_MS", 60000),
 		MemoryCapPerCorm:           envInt("MEMORY_CAP_PER_CORM", 500),
 		ItemRegistryPath:           envOrDefault("ITEM_REGISTRY_PATH", "./static-data/data/phobos/fsd_built"),
