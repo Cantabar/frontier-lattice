@@ -69,7 +69,7 @@ Client-side privacy-preserving location sharing with ZK proof generation. The se
 
 ### Page Routes
 
-- `/` — Dashboard (overview with quick actions for contract creation)
+- `/` — Dashboard (overview cards, corm install, configurable quick actions for contract creation)
 - `/tribe/:tribeId` — Tribe detail (members, reputation leaderboard)
 - `/contracts` — Contracts list (trustless + build requests)
 - `/contracts/create` — Create new trustless contract

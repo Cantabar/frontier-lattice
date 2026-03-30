@@ -5,17 +5,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { useIdentity } from "../hooks/useIdentity";
 import { useTribe } from "../hooks/useTribe";
-import { getStats, getEvents } from "../lib/api";
-import { timeAgo, eventDisplayName } from "../lib/format";
-import { CopyableId } from "../components/shared/CopyableId";
-import { LoadingSpinner } from "../components/shared/LoadingSpinner";
+import { getStats } from "../lib/api";
 import { PortalTooltip } from "../components/shared/PortalTooltip";
 import { useNotifications } from "../hooks/useNotifications";
 import { useQuickActions } from "../hooks/useQuickActions";
 import { useInitializeTribe } from "../hooks/useInitializeTribe";
 import { useInstallCorm } from "../hooks/useInstallCorm";
 import { truncateAddress } from "../lib/format";
-import type { ArchivedEvent } from "../lib/types";
 
 const Page = styled.div``;
 
@@ -155,28 +151,6 @@ const SectionHeader = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
 `;
 
-const ActivityList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.spacing.xs};
-`;
-
-const ActivityRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.md};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  background: ${({ theme }) => theme.colors.surface.raised};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-left: 2px solid ${({ theme }) => theme.colors.rust.muted}44;
-  font-size: 13px;
-`;
-
-const EventName = styled.span`
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text.primary};
-  flex: 1;
-`;
 
 const Meta = styled.span`
   color: ${({ theme }) => theme.colors.text.muted};
@@ -285,10 +259,6 @@ export function Dashboard() {
     queryFn: getStats,
   });
 
-  const { data: recentEvents, isLoading: eventsLoading } = useQuery({
-    queryKey: ["recentEvents"],
-    queryFn: () => getEvents({ limit: 10, order: "desc" }),
-  });
 
   if (!account) {
     return (
@@ -298,8 +268,6 @@ export function Dashboard() {
       </Page>
     );
   }
-
-  const events: ArchivedEvent[] = recentEvents?.events ?? [];
 
   return (
     <Page>
@@ -443,22 +411,6 @@ export function Dashboard() {
           ))}
       </QuickActions>
 
-      <SectionLabel>Recent Activity</SectionLabel>
-      {eventsLoading ? (
-        <LoadingSpinner />
-      ) : events.length === 0 ? (
-        <Meta>No events yet.</Meta>
-      ) : (
-        <ActivityList>
-          {events.map((ev) => (
-            <ActivityRow key={ev.id}>
-              <EventName>{eventDisplayName(ev)}</EventName>
-              {ev.character_id && <Meta><CopyableId id={ev.character_id} /></Meta>}
-              <Meta>{timeAgo(ev.timestamp_ms)}</Meta>
-            </ActivityRow>
-          ))}
-        </ActivityList>
-      )}
     </Page>
   );
 }
