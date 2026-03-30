@@ -421,6 +421,8 @@ export interface ArchivedEvent {
 export interface IndexerConfig {
   /** Sui RPC endpoint (e.g. http://127.0.0.1:9000 for local) */
   suiRpcUrl: string;
+  /** Sui GraphQL endpoint for zkLogin verification (e.g. https://graphql.testnet.sui.io/graphql) */
+  suiGraphqlUrl: string;
   /** Package IDs to subscribe to (one per deployed Move package) */
   packageIds: {
     tribe: string;
@@ -466,6 +468,7 @@ export interface CleanupConfig {
 
 export const DEFAULT_CONFIG: IndexerConfig = {
   suiRpcUrl: process.env.SUI_RPC_URL ?? "http://127.0.0.1:9000",
+  suiGraphqlUrl: process.env.SUI_GRAPHQL_URL ?? "https://graphql.testnet.sui.io/graphql",
   packageIds: {
     tribe: process.env.PACKAGE_TRIBE ?? "",
     trustlessContracts: process.env.PACKAGE_TRUSTLESS_CONTRACTS ?? "",

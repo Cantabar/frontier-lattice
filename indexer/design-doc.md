@@ -39,7 +39,7 @@ A privacy-preserving location sharing system built into the indexer, providing e
   - `GET /mutual-proximity` — query for a verified mutual proximity proof between two structures
   - `GET /tags` — public (no auth) query for structure location tags (region/constellation membership)
 - **ZK Verifier** (`location/zk-verifier.ts`) — server-side Groth16 proof verification using snarkjs. Lazy-loads circuit verification keys from `circuits/artifacts/`. Supports region, proximity, and mutual proximity filter types. Gracefully rejects proofs when keys are unavailable.
-- **Location Crypto** (`location/crypto.ts`) — wallet signature verification (Ed25519, Secp256k1/r1, zkLogin with JSON-RPC fallback), TLK generation (256-bit random), X25519 ECIES wrapping (ephemeral key + AES-256-GCM). Supports both legacy and human-readable challenge message formats.
+- **Location Crypto** (`location/crypto.ts`) — wallet signature verification (Ed25519, Secp256k1/r1, zkLogin with direct GraphQL + JSON-RPC fallback chain), TLK generation (256-bit random), X25519 ECIES wrapping (ephemeral key + AES-256-GCM). Supports both legacy and human-readable challenge message formats.
 - **Session Management** (`location/session.ts`) — opaque session token lifecycle. Tokens are random 32-byte hex strings; only SHA-256 hashes are stored in Postgres. 1-hour TTL with lazy cleanup.
 - **Auth Helper** (`api/auth.ts`) — shared authentication for location-routes and zk-routes. Accepts `SuiSig` (wallet signature) and `Bearer` (session token) authorization schemes.
 - **Region Data** (`location/region-data.ts`) — server-side reference data for Eve Frontier regions and constellations with canonical bounding boxes. Used to validate ZK proof public signals against named regions.
@@ -81,6 +81,7 @@ Environment variables (all optional with defaults):
 - `WITNESS_ATTESTATION_TTL_MS` — attestation validity window (default: 300000)
 - `WITNESS_REGISTRY_ID` — WitnessRegistry shared object ID
 - `WITNESSED_CONTRACTS_PACKAGE_ID` — witnessed_contracts package ID
+- `SUI_GRAPHQL_URL` — Sui GraphQL endpoint for zkLogin verification (default: `https://graphql.testnet.sui.io/graphql`)
 - `ZK_ARTIFACTS_DIR` — path to Groth16 circuit verification keys (default: `circuits/artifacts/`)
 
 ## API / Interface
@@ -181,7 +182,7 @@ Each archived event includes proof metadata for independent verification:
 - ZK proof verification and storage for region, proximity, and mutual proximity location filters (Groth16/snarkjs)
 - Public location tagging from verified ZK proofs (region/constellation membership)
 - Wallet signature authentication with session token support (sign once, Bearer token for session)
-- zkLogin wallet support with JSON-RPC fallback for signature verification
+- zkLogin wallet support with three-tier verification: SDK → direct GraphQL → JSON-RPC fallback
 - Shareable POD proof bundle export (public attestation + ZK proofs + location tags, no encrypted data)
 
 ## Open Questions / Future Work
