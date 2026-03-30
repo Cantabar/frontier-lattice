@@ -41,7 +41,7 @@ ACM Certificate: ef-corm.com + *.ef-corm.com (DNS-validated via Route 53)
 - **Root domain:** `ef-corm.com` (purchased in AWS Route 53)
 - **Stillness (production):** apex `ef-corm.com` + `api.ef-corm.com` + `continuity-engine.ef-corm.com`
 - **Other environments:** `{env}.ef-corm.com` + `api.{env}.ef-corm.com` + `continuity-engine.{env}.ef-corm.com`
-- **Continuity Engine subdomain:** dedicated `continuity-engine.{env}.ef-corm.com` A record → ALB. Used by corm-brain WebSocket connections and direct browser access. Routes through the same ALB path rules as `api.{env}.ef-corm.com`.
+- **Continuity Engine subdomain:** dedicated `continuity-engine.{env}.ef-corm.com` A record → ALB. Used by the SPA iframe, corm-brain WebSocket connections, and direct browser access. A host-header ALB rule routes all traffic on this domain to the continuity-engine target group (priority 5), so the Go service handles all paths including the root `/` redirect.
 - **ACM certificate:** covers `ef-corm.com` + `*.ef-corm.com`, DNS-validated via Route 53
 
 ### Resource Naming

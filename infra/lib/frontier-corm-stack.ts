@@ -461,6 +461,16 @@ export class FrontierCormStack extends cdk.Stack {
       priority: 22,
     });
 
+    // Host-based catch-all: all traffic to the dedicated continuity-engine
+    // subdomain routes to the continuity-engine service regardless of path.
+    // This ensures the Go service's root "/" → "/phase0" redirect works and
+    // static assets (/static/*) are reachable without adding individual path rules.
+    httpsListener.addTargetGroups("ContinuityHostRule", {
+      targetGroups: [continuityTg],
+      conditions: [elbv2.ListenerCondition.hostHeaders([continuityDomain])],
+      priority: 5,
+    });
+
     // Default action
     httpsListener.addAction("Default", {
       action: elbv2.ListenerAction.fixedResponse(404, {
