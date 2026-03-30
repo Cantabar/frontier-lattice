@@ -67,3 +67,4 @@ indexer/circuits/artifacts/*
 !indexer/circuits/artifacts/.gitkeep
 web/public/zk/*
 !web/public/zk/.gitkeep
+.envrc

@@ -29,6 +29,8 @@
 
 SHELL := /bin/bash
 AWS_REGION ?= us-east-1
+AWS_PROFILE ?= frontier-corm
+export AWS_PROFILE
 
 # ENV selects the game-world environment: utopia (default) or stillness.
 # Each environment gets its own CDK stack, contracts, and frontend build.
