@@ -13,6 +13,9 @@ import * as logs from "aws-cdk-lib/aws-logs";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53Targets from "aws-cdk-lib/aws-route53-targets";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
+import * as cw_actions from "aws-cdk-lib/aws-cloudwatch-actions";
+import * as sns from "aws-cdk-lib/aws-sns";
 
 export class FrontierCormStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -135,6 +138,16 @@ export class FrontierCormStack extends cdk.Stack {
       },
     });
 
+    const dbParameterGroup = new rds.ParameterGroup(this, "DbParameterGroup", {
+      engine: rds.DatabaseInstanceEngine.postgres({
+        version: rds.PostgresEngineVersion.VER_16,
+      }),
+      parameters: {
+        log_min_duration_statement: "1000", // log queries > 1s
+        log_statement: "ddl",
+      },
+    });
+
     const db = new rds.DatabaseInstance(this, "Database", {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_16,
@@ -154,6 +167,10 @@ export class FrontierCormStack extends cdk.Stack {
       backupRetention: cdk.Duration.days(3),
       deletionProtection: false,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+      parameterGroup: dbParameterGroup,
+      enablePerformanceInsights: true,
+      performanceInsightRetention: rds.PerformanceInsightRetention.DEFAULT,
+      cloudwatchLogsExports: ["postgresql"],
     });
 
     // ================================================================
@@ -199,6 +216,15 @@ export class FrontierCormStack extends cdk.Stack {
       autoDeleteObjects: true,
     });
 
+    const cfLogBucket = new s3.Bucket(this, "CfLogBucket", {
+      bucketName: `${prefix}-cf-logs-${this.account}`,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      lifecycleRules: [{ expiration: cdk.Duration.days(30) }],
+    });
+
     // ================================================================
     // CloudFront
     // ================================================================
@@ -228,6 +254,8 @@ export class FrontierCormStack extends cdk.Stack {
     const distribution = new cloudfront.Distribution(this, "CfDistribution", {
       domainNames: [siteDomain],
       certificate,
+      logBucket: cfLogBucket,
+      logFilePrefix: `${prefix}/`,
       defaultBehavior: {
         origin: origins.S3BucketOrigin.withOriginAccessControl(uiBucket),
         viewerProtocolPolicy:
@@ -278,17 +306,26 @@ export class FrontierCormStack extends cdk.Stack {
     const cluster = new ecs.Cluster(this, "Cluster", {
       vpc,
       clusterName: `${prefix}-cluster`,
-      containerInsights: false, // save cost for hackathon
+      containerInsights: true,
     });
 
     // ================================================================
     // ALB
     // ================================================================
+    const albLogBucket = new s3.Bucket(this, "AlbLogBucket", {
+      bucketName: `${prefix}-alb-logs-${this.account}`,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      lifecycleRules: [{ expiration: cdk.Duration.days(30) }],
+    });
+
     const alb = new elbv2.ApplicationLoadBalancer(this, "Alb", {
       vpc,
       internetFacing: true,
       securityGroup: albSg,
     });
+    alb.logAccessLogs(albLogBucket, prefix);
 
     const httpsListener = alb.addListener("HttpsListener", {
       port: 443,
@@ -513,6 +550,301 @@ export class FrontierCormStack extends cdk.Stack {
     });
 
     // ================================================================
+    // Observability — Dashboard
+    // ================================================================
+    const dashboard = new cloudwatch.Dashboard(this, "Dashboard", {
+      dashboardName: `${prefix}-overview`,
+    });
+
+    dashboard.addWidgets(
+      new cloudwatch.GraphWidget({
+        title: "ECS CPU Utilization",
+        left: [
+          indexerService.metricCpuUtilization({ label: "Indexer" }),
+          continuityService.metricCpuUtilization({ label: "Continuity Engine" }),
+        ],
+        width: 12,
+      }),
+      new cloudwatch.GraphWidget({
+        title: "ECS Memory Utilization",
+        left: [
+          indexerService.metricMemoryUtilization({ label: "Indexer" }),
+          continuityService.metricMemoryUtilization({ label: "Continuity Engine" }),
+        ],
+        width: 12,
+      }),
+    );
+
+    dashboard.addWidgets(
+      new cloudwatch.GraphWidget({
+        title: "ALB Requests",
+        left: [
+          new cloudwatch.Metric({
+            namespace: "AWS/ApplicationELB",
+            metricName: "RequestCount",
+            dimensionsMap: { LoadBalancer: alb.loadBalancerFullName },
+            statistic: "Sum",
+            label: "Requests",
+          }),
+          new cloudwatch.Metric({
+            namespace: "AWS/ApplicationELB",
+            metricName: "HTTPCode_Target_5XX_Count",
+            dimensionsMap: { LoadBalancer: alb.loadBalancerFullName },
+            statistic: "Sum",
+            label: "5xx",
+          }),
+          new cloudwatch.Metric({
+            namespace: "AWS/ApplicationELB",
+            metricName: "HTTPCode_Target_4XX_Count",
+            dimensionsMap: { LoadBalancer: alb.loadBalancerFullName },
+            statistic: "Sum",
+            label: "4xx",
+          }),
+        ],
+        width: 12,
+      }),
+      new cloudwatch.GraphWidget({
+        title: "ALB Target Response Time",
+        left: [
+          new cloudwatch.Metric({
+            namespace: "AWS/ApplicationELB",
+            metricName: "TargetResponseTime",
+            dimensionsMap: { LoadBalancer: alb.loadBalancerFullName },
+            statistic: "p50",
+            label: "p50",
+          }),
+          new cloudwatch.Metric({
+            namespace: "AWS/ApplicationELB",
+            metricName: "TargetResponseTime",
+            dimensionsMap: { LoadBalancer: alb.loadBalancerFullName },
+            statistic: "p95",
+            label: "p95",
+          }),
+          new cloudwatch.Metric({
+            namespace: "AWS/ApplicationELB",
+            metricName: "TargetResponseTime",
+            dimensionsMap: { LoadBalancer: alb.loadBalancerFullName },
+            statistic: "p99",
+            label: "p99",
+          }),
+        ],
+        width: 12,
+      }),
+    );
+
+    dashboard.addWidgets(
+      new cloudwatch.GraphWidget({
+        title: "RDS CPU & Connections",
+        left: [db.metricCPUUtilization({ label: "CPU %" })],
+        right: [db.metricDatabaseConnections({ label: "Connections" })],
+        width: 12,
+      }),
+      new cloudwatch.GraphWidget({
+        title: "RDS Storage",
+        left: [
+          db.metricFreeableMemory({ label: "Freeable Memory" }),
+          db.metricFreeStorageSpace({ label: "Free Storage" }),
+        ],
+        width: 12,
+      }),
+    );
+
+    dashboard.addWidgets(
+      new cloudwatch.GraphWidget({
+        title: "CloudFront Requests & Errors",
+        left: [
+          new cloudwatch.Metric({
+            namespace: "AWS/CloudFront",
+            metricName: "Requests",
+            dimensionsMap: {
+              DistributionId: distribution.distributionId,
+              Region: "Global",
+            },
+            statistic: "Sum",
+            label: "Requests",
+          }),
+        ],
+        right: [
+          new cloudwatch.Metric({
+            namespace: "AWS/CloudFront",
+            metricName: "4xxErrorRate",
+            dimensionsMap: {
+              DistributionId: distribution.distributionId,
+              Region: "Global",
+            },
+            statistic: "Average",
+            label: "4xx %",
+          }),
+          new cloudwatch.Metric({
+            namespace: "AWS/CloudFront",
+            metricName: "5xxErrorRate",
+            dimensionsMap: {
+              DistributionId: distribution.distributionId,
+              Region: "Global",
+            },
+            statistic: "Average",
+            label: "5xx %",
+          }),
+        ],
+        width: 12,
+      }),
+      new cloudwatch.SingleValueWidget({
+        title: "ALB Healthy Hosts",
+        metrics: [
+          new cloudwatch.Metric({
+            namespace: "AWS/ApplicationELB",
+            metricName: "HealthyHostCount",
+            dimensionsMap: {
+              TargetGroup: indexerTg.targetGroupFullName,
+              LoadBalancer: alb.loadBalancerFullName,
+            },
+            label: "Indexer",
+          }),
+          new cloudwatch.Metric({
+            namespace: "AWS/ApplicationELB",
+            metricName: "HealthyHostCount",
+            dimensionsMap: {
+              TargetGroup: continuityTg.targetGroupFullName,
+              LoadBalancer: alb.loadBalancerFullName,
+            },
+            label: "Continuity Engine",
+          }),
+        ],
+        width: 12,
+      }),
+    );
+
+    dashboard.addWidgets(
+      new cloudwatch.LogQueryWidget({
+        title: "Indexer Errors (last 1h)",
+        logGroupNames: [logGroup.logGroupName],
+        queryLines: [
+          'filter @logStream like /indexer/',
+          'filter @message like /error|Error|ERROR|WARN|warn/',
+          'sort @timestamp desc',
+          'limit 20',
+        ],
+        width: 12,
+        height: 8,
+      }),
+      new cloudwatch.LogQueryWidget({
+        title: "Continuity Engine Errors (last 1h)",
+        logGroupNames: [logGroup.logGroupName],
+        queryLines: [
+          'filter @logStream like /continuity-engine/',
+          'filter @message like /error|Error|ERROR|WARN|warn/',
+          'sort @timestamp desc',
+          'limit 20',
+        ],
+        width: 12,
+        height: 8,
+      }),
+    );
+
+    // ================================================================
+    // Observability — Alarms
+    // ================================================================
+    const alertTopic = new sns.Topic(this, "AlertTopic", {
+      topicName: `${prefix}-alerts`,
+    });
+
+    new cloudwatch.Alarm(this, "IndexerUnhealthy", {
+      alarmName: `${prefix}-indexer-unhealthy`,
+      metric: new cloudwatch.Metric({
+        namespace: "AWS/ApplicationELB",
+        metricName: "HealthyHostCount",
+        dimensionsMap: {
+          TargetGroup: indexerTg.targetGroupFullName,
+          LoadBalancer: alb.loadBalancerFullName,
+        },
+        statistic: "Minimum",
+        period: cdk.Duration.minutes(1),
+      }),
+      threshold: 1,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+      evaluationPeriods: 3,
+      treatMissingData: cloudwatch.TreatMissingData.BREACHING,
+      alarmDescription: "Indexer has no healthy targets",
+    }).addAlarmAction(new cw_actions.SnsAction(alertTopic));
+
+    new cloudwatch.Alarm(this, "ContinuityUnhealthy", {
+      alarmName: `${prefix}-continuity-unhealthy`,
+      metric: new cloudwatch.Metric({
+        namespace: "AWS/ApplicationELB",
+        metricName: "HealthyHostCount",
+        dimensionsMap: {
+          TargetGroup: continuityTg.targetGroupFullName,
+          LoadBalancer: alb.loadBalancerFullName,
+        },
+        statistic: "Minimum",
+        period: cdk.Duration.minutes(1),
+      }),
+      threshold: 1,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+      evaluationPeriods: 3,
+      treatMissingData: cloudwatch.TreatMissingData.BREACHING,
+      alarmDescription: "Continuity Engine has no healthy targets",
+    }).addAlarmAction(new cw_actions.SnsAction(alertTopic));
+
+    new cloudwatch.Alarm(this, "Alb5xxAlarm", {
+      alarmName: `${prefix}-alb-5xx`,
+      metric: new cloudwatch.Metric({
+        namespace: "AWS/ApplicationELB",
+        metricName: "HTTPCode_Target_5XX_Count",
+        dimensionsMap: { LoadBalancer: alb.loadBalancerFullName },
+        statistic: "Sum",
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 10,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      evaluationPeriods: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      alarmDescription: "ALB saw >10 5xx responses in 5 minutes",
+    }).addAlarmAction(new cw_actions.SnsAction(alertTopic));
+
+    new cloudwatch.Alarm(this, "AlbLatencyAlarm", {
+      alarmName: `${prefix}-alb-latency`,
+      metric: new cloudwatch.Metric({
+        namespace: "AWS/ApplicationELB",
+        metricName: "TargetResponseTime",
+        dimensionsMap: { LoadBalancer: alb.loadBalancerFullName },
+        statistic: "p99",
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 5,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      evaluationPeriods: 1,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+      alarmDescription: "ALB p99 latency >5s for 5 minutes",
+    }).addAlarmAction(new cw_actions.SnsAction(alertTopic));
+
+    new cloudwatch.Alarm(this, "DbCpuAlarm", {
+      alarmName: `${prefix}-db-cpu`,
+      metric: db.metricCPUUtilization({ period: cdk.Duration.minutes(5) }),
+      threshold: 80,
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+      evaluationPeriods: 2,
+      alarmDescription: "RDS CPU >80% for 10 minutes",
+    }).addAlarmAction(new cw_actions.SnsAction(alertTopic));
+
+    new cloudwatch.Alarm(this, "DbStorageAlarm", {
+      alarmName: `${prefix}-db-storage`,
+      metric: db.metricFreeStorageSpace({
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 2 * 1024 * 1024 * 1024, // 2 GB
+      comparisonOperator:
+        cloudwatch.ComparisonOperator.LESS_THAN_THRESHOLD,
+      evaluationPeriods: 1,
+      alarmDescription: "RDS free storage < 2GB",
+    }).addAlarmAction(new cw_actions.SnsAction(alertTopic));
+
+    // ================================================================
     // Outputs
     // ================================================================
     new cdk.CfnOutput(this, "AlbDns", {
@@ -558,6 +890,11 @@ export class FrontierCormStack extends cdk.Stack {
     new cdk.CfnOutput(this, "CloudFrontDistributionId", {
       value: distribution.distributionId,
       description: "CloudFront distribution ID (for cache invalidation)",
+    });
+
+    new cdk.CfnOutput(this, "DashboardUrl", {
+      value: `https://${this.region}.console.aws.amazon.com/cloudwatch/home?region=${this.region}#dashboards/dashboard/${prefix}-overview`,
+      description: "CloudWatch observability dashboard",
     });
   }
 }
