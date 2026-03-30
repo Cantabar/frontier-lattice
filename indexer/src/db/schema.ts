@@ -10,6 +10,9 @@
 
 import pg from "pg";
 const { Pool } = pg;
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "db" });
 
 /**
  * Initialise a Postgres connection pool and apply the schema.
@@ -25,12 +28,12 @@ export async function initDatabase(databaseUrl: string): Promise<pg.Pool> {
       break;
     } catch (err) {
       if (attempt < 5) {
-        console.log(
+        log.info(
           `[db] Postgres not ready (attempt ${attempt}/5), retrying in 2s...`,
         );
         await new Promise((r) => setTimeout(r, 2000));
       } else {
-        console.error("[db] Could not connect to Postgres after 5 attempts.");
+        log.error("Could not connect to Postgres after 5 attempts.");
         throw err;
       }
     }
@@ -139,9 +142,9 @@ if (isMain) {
     process.argv[2] ??
     process.env.DATABASE_URL ??
     "postgresql://corm:corm@localhost:5432/frontier_corm";
-  console.log(`Migrating database at ${databaseUrl}...`);
+  log.info(`Migrating database at ${databaseUrl}...`);
   initDatabase(databaseUrl).then((pool) => {
-    console.log("Schema applied successfully.");
+    log.info("Schema applied successfully.");
     pool.end();
   });
 }

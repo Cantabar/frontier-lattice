@@ -12,6 +12,9 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "zk-verifier" });
 
 // snarkjs is optional at startup — circuits may not be compiled yet.
 // We dynamic-import at verification time so the server still boots.
@@ -56,7 +59,7 @@ function loadVKey(filterType: "region" | "proximity" | "mutual_proximity"): VKey
   const path = resolve(ARTIFACTS_DIR, filename);
 
   if (!existsSync(path)) {
-    console.warn(
+    log.warn(
       `[zk] Verification key not found: ${path} — ${filterType} proofs will be rejected until circuits are built.`,
     );
     return null;
@@ -65,7 +68,7 @@ function loadVKey(filterType: "region" | "proximity" | "mutual_proximity"): VKey
   try {
     return JSON.parse(readFileSync(path, "utf-8")) as VKey;
   } catch (err) {
-    console.error(`[zk] Failed to parse verification key ${path}:`, err);
+    log.error({ err }, `Failed to parse verification key ${path}`);
     return null;
   }
 }

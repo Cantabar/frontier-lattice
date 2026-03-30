@@ -28,6 +28,9 @@ import {
   type BuildAttestationData,
 } from "./attestation.js";
 import { getMutualProximityProof } from "../db/location-queries.js";
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "witness" });
 
 const CORM_AUTH_EXT_SUFFIX = "corm_auth::CormAuth";
 
@@ -99,14 +102,11 @@ export class WitnessService {
   start(): void {
     if (this.running) return;
     if (!this.config.enabled) {
-      console.log("[witness] Service disabled, skipping.");
+      log.info("Service disabled, skipping.");
       return;
     }
     this.running = true;
-    console.log(
-      `[witness] Starting (interval=${this.config.intervalMs}ms, ` +
-      `address=${this.keypair.toSuiAddress()})`,
-    );
+    log.info(`Starting (interval=${this.config.intervalMs}ms, address=${this.keypair.toSuiAddress()})`);
     this.poll();
   }
 
@@ -117,7 +117,7 @@ export class WitnessService {
       clearTimeout(this.timer);
       this.timer = null;
     }
-    console.log("[witness] Stopped.");
+    log.info("Stopped.");
   }
 
   private async poll(): Promise<void> {
@@ -126,7 +126,7 @@ export class WitnessService {
     try {
       await this.processOnce();
     } catch (err) {
-      console.error("[witness] Poll error:", err);
+      log.error({ err }, "Poll error");
     }
 
     if (this.running) {
@@ -154,10 +154,7 @@ export class WitnessService {
       try {
         await this.tryFulfill(contract);
       } catch (err) {
-        console.error(
-          `[witness] Error processing contract ${contract.contractId}:`,
-          err,
-        );
+        log.error({ err }, `Error processing contract ${contract.contractId}`);
       }
     }
   }
@@ -196,9 +193,7 @@ export class WitnessService {
       // 3. Resolve builder address from the OwnerCap's parent Character
       const builderInfo = await this.resolveBuilder(ownerCapId);
       if (!builderInfo) {
-        console.warn(
-          `[witness] Could not resolve builder for ownerCap ${ownerCapId}, skipping`,
-        );
+        log.warn(`Could not resolve builder for ownerCap ${ownerCapId}, skipping`);
         continue;
       }
 
@@ -227,10 +222,7 @@ export class WitnessService {
       }
 
       // 5. Encode, sign, and submit
-      console.log(
-        `[witness] Match found: contract=${contract.contractId} ` +
-        `structure=${structureId} type=${typeId} builder=${builderInfo.address}`,
-      );
+      log.info(`Match found: contract=${contract.contractId} structure=${structureId} type=${typeId} builder=${builderInfo.address}`);
 
       const now = Date.now();
       const attestationData: BuildAttestationData = {
@@ -363,19 +355,12 @@ export class WitnessService {
         tribeId,
       );
       if (proof) {
-        console.log(
-          `[witness] Mutual proximity proof found: ` +
-          `${structureId} ↔ ${referenceStructureId} (tribe=${tribeId})`,
-        );
+        log.info(`Mutual proximity proof found: ${structureId} ↔ ${referenceStructureId} (tribe=${tribeId})`);
         return true;
       }
       return false;
     } catch (err) {
-      console.warn(
-        `[witness] Failed to check proximity proof for ` +
-        `${structureId} ↔ ${referenceStructureId}:`,
-        err,
-      );
+      log.warn({ err }, `Failed to check proximity proof for ${structureId} ↔ ${referenceStructureId}`);
       return false;
     }
   }
@@ -504,10 +489,7 @@ export class WitnessService {
         address: playerAddress,
       };
     } catch (err) {
-      console.warn(
-        `[witness] Failed to resolve builder for ownerCap ${ownerCapId}:`,
-        err,
-      );
+      log.warn({ err }, `Failed to resolve builder for ownerCap ${ownerCapId}`);
       return null;
     }
   }
@@ -554,14 +536,10 @@ export class WitnessService {
 
     const status = result.effects?.status?.status;
     if (status === "success") {
-      console.log(
-        `[witness] ✓ Fulfilled contract ${contractId} (tx=${result.digest})`,
-      );
+      log.info(`Fulfilled contract ${contractId} (tx=${result.digest})`);
     } else {
       const errMsg = result.effects?.status?.error ?? "unknown error";
-      console.warn(
-        `[witness] ✗ Fulfill tx failed for ${contractId}: ${errMsg}`,
-      );
+      log.warn(`Fulfill tx failed for ${contractId}: ${errMsg}`);
     }
   }
   // ================================================================

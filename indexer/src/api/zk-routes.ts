@@ -12,6 +12,9 @@
 
 import { Router, type Request, type Response } from "express";
 import type pg from "pg";
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "zk" });
 import { authenticate } from "./auth.js";
 import {
   verifyFilterProof,
@@ -239,10 +242,7 @@ export function createZkRouter(pool: pg.Pool): Router {
         }
       } catch (propErr) {
         // Non-fatal — the primary proof is still stored
-        console.warn(
-          "[zk] Failed to propagate proof to derived structures:",
-          propErr,
-        );
+        log.warn({ err: propErr }, "Failed to propagate proof to derived structures");
       }
 
       res.json({
@@ -257,7 +257,7 @@ export function createZkRouter(pool: pg.Pool): Router {
         ...(referenceStructureId ? { referenceStructureId } : {}),
       });
     } catch (err) {
-      console.error("[zk] Failed to submit proof:", err);
+      log.error({ err }, "Failed to submit proof");
       res.status(500).json({ error: "Failed to submit proof" });
     }
   });
@@ -288,7 +288,7 @@ export function createZkRouter(pool: pg.Pool): Router {
         results: proofs,
       });
     } catch (err) {
-      console.error("[zk] Failed to query region proofs:", err);
+      log.error({ err }, "Failed to query region proofs");
       res.status(500).json({ error: "Failed to query proofs" });
     }
   });
@@ -318,7 +318,7 @@ export function createZkRouter(pool: pg.Pool): Router {
         results: proofs,
       });
     } catch (err) {
-      console.error("[zk] Failed to query proximity proofs:", err);
+      log.error({ err }, "Failed to query proximity proofs");
       res.status(500).json({ error: "Failed to query proofs" });
     }
   });
@@ -363,7 +363,7 @@ export function createZkRouter(pool: pg.Pool): Router {
         },
       });
     } catch (err) {
-      console.error("[zk] Failed to query mutual proximity proof:", err);
+      log.error({ err }, "Failed to query mutual proximity proof");
       res.status(500).json({ error: "Failed to query mutual proximity proof" });
     }
   });
@@ -420,7 +420,7 @@ export function createZkRouter(pool: pg.Pool): Router {
 
       res.status(400).json({ error: "Provide either structureId or tagType+tagId" });
     } catch (err) {
-      console.error("[zk] Failed to query location tags:", err);
+      log.error({ err }, "Failed to query location tags");
       res.status(500).json({ error: "Failed to query location tags" });
     }
   });

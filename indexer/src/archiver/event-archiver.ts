@@ -20,6 +20,9 @@
 import type pg from "pg";
 import type { ArchivedEvent, EventTypeName } from "../types.js";
 import { insertEvent } from "../db/queries.js";
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "archiver" });
 
 export interface RawEventInput {
   eventType: string;
@@ -71,7 +74,7 @@ export class EventArchiver {
     this.eventCount++;
 
     if (this.eventCount % 100 === 0) {
-      console.log(`[archiver] Archived ${this.eventCount} events total`);
+      log.info(`Archived ${this.eventCount} events total`);
     }
   }
 

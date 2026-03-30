@@ -32,6 +32,9 @@ import {
   buildCleanupAssemblyMetadata,
   isItemContract,
 } from "./cleanup-transactions.js";
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "cleanup" });
 
 export class CleanupWorker {
   private client: SuiClient;
@@ -59,10 +62,7 @@ export class CleanupWorker {
     if (this.running) return;
     this.running = true;
     const addr = this.keypair.getPublicKey().toSuiAddress();
-    console.log(
-      `[cleanup] Starting cleanup worker (interval=${this.config.cleanup.intervalMs}ms, ` +
-      `delay=${this.config.cleanup.delayMs}ms, address=${addr})`,
-    );
+    log.info(`Starting cleanup worker (interval=${this.config.cleanup.intervalMs}ms, delay=${this.config.cleanup.delayMs}ms, address=${addr})`);
     this.poll();
   }
 
@@ -73,7 +73,7 @@ export class CleanupWorker {
       clearTimeout(this.timer);
       this.timer = null;
     }
-    console.log(`[cleanup] Stopped. Total jobs processed: ${this.jobsProcessed}`);
+    log.info(`Stopped. Total jobs processed: ${this.jobsProcessed}`);
   }
 
   private async poll(): Promise<void> {
@@ -83,7 +83,7 @@ export class CleanupWorker {
       await this.enqueueNewJobs();
       await this.processPendingJobs();
     } catch (err) {
-      console.error("[cleanup] Poll error:", err);
+      log.error({ err }, "Poll error");
     }
 
     if (this.running) {
@@ -191,7 +191,7 @@ export class CleanupWorker {
     }
 
     if (enqueued > 0) {
-      console.log(`[cleanup] Enqueued ${enqueued} new cleanup job(s)`);
+      log.info(`Enqueued ${enqueued} new cleanup job(s)`);
     }
   }
 
@@ -253,7 +253,7 @@ export class CleanupWorker {
         await this.processJob(job);
         this.jobsProcessed++;
       } catch (err) {
-        console.error(`[cleanup] Error processing job ${job.id} (contract ${job.contract_id}):`, err);
+        log.error({ err }, `Error processing job ${job.id} (contract ${job.contract_id})`);
       }
     }
   }
@@ -271,13 +271,13 @@ export class CleanupWorker {
       const obj = await this.client.getObject({ id: job.contract_id });
       if (!obj.data) {
         // Object already deleted (cleaned up by someone else)
-        console.log(`[cleanup] Contract ${job.contract_id} already deleted, marking not_found`);
+        log.info(`Contract ${job.contract_id} already deleted, marking not_found`);
         await markCleanupNotFound(this.pool, job.id);
         return;
       }
     } catch {
       // Object not found or RPC error — mark as not_found
-      console.log(`[cleanup] Contract ${job.contract_id} not found on-chain, marking not_found`);
+      log.info(`Contract ${job.contract_id} not found on-chain, marking not_found`);
       await markCleanupNotFound(this.pool, job.id);
       return;
     }
@@ -292,9 +292,7 @@ export class CleanupWorker {
     } else if (isItemContract(job.contract_type)) {
       // Item-bearing trustless contract needs poster + SSU
       if (!job.poster_id || !job.source_ssu_id) {
-        console.warn(
-          `[cleanup] Job ${job.id}: item contract missing poster_id or source_ssu_id, skipping`,
-        );
+        log.warn(`Job ${job.id}: item contract missing poster_id or source_ssu_id, skipping`);
         await markCleanupFailed(
           this.pool, job.id,
           "Missing poster_id or source_ssu_id for item contract cleanup",
@@ -345,18 +343,15 @@ export class CleanupWorker {
         );
 
         const netMist = storageRebate - computationCost - storageCost;
-        console.log(
-          `[cleanup] ✓ Contract ${job.contract_id} cleaned up ` +
-          `(rebate=${storageRebate} MIST, net=${netMist} MIST, tx=${result.digest})`,
-        );
+        log.info(`Contract ${job.contract_id} cleaned up (rebate=${storageRebate} MIST, net=${netMist} MIST, tx=${result.digest})`);
       } else {
         const errMsg = effects?.status?.error ?? "Transaction failed with unknown error";
-        console.warn(`[cleanup] Transaction failed for ${job.contract_id}: ${errMsg}`);
+        log.warn(`Transaction failed for ${job.contract_id}: ${errMsg}`);
         await markCleanupFailed(this.pool, job.id, errMsg, this.config.cleanup.maxRetries);
       }
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.warn(`[cleanup] Execution error for ${job.contract_id}: ${errMsg}`);
+      log.warn(`Execution error for ${job.contract_id}: ${errMsg}`);
       await markCleanupFailed(this.pool, job.id, errMsg, this.config.cleanup.maxRetries);
     }
   }

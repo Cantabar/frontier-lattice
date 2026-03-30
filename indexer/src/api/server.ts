@@ -11,6 +11,9 @@ import { createRouter } from "./routes.js";
 import { createLocationRouter } from "./location-routes.js";
 import { createZkRouter } from "./zk-routes.js";
 import { initVerifier } from "../location/zk-verifier.js";
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "api" });
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export function createServer(pool: pg.Pool, port: number) {
@@ -51,11 +54,11 @@ export function createServer(pool: pg.Pool, port: number) {
   });
 
   const server = app.listen(port, () => {
-    console.log(`[api] Indexer API listening on http://localhost:${port}`);
-    console.log(`[api] Endpoints: GET /api/v1/events, /api/v1/reputation/:tribeId/:characterId, /api/v1/proof/:eventId`);
-    console.log(`[api] Shadow Location Network: /api/v1/locations/*`);
-    console.log(`[api] ZK Proofs: /api/v1/locations/proofs/*`);
-    console.log(`[api] ZK Artifacts: /zk/*`);
+    log.info(`Indexer API listening on http://localhost:${port}`);
+    log.info(`Endpoints: GET /api/v1/events, /api/v1/reputation/:tribeId/:characterId, /api/v1/proof/:eventId`);
+    log.info(`Shadow Location Network: /api/v1/locations/*`);
+    log.info(`ZK Proofs: /api/v1/locations/proofs/*`);
+    log.info(`ZK Artifacts: /zk/*`);
   });
 
   return server;

@@ -16,6 +16,9 @@ import type { IndexerConfig, EventTypeName } from "../types.js";
 import { EVENT_TYPES } from "../types.js";
 import { getAllEventTypeCursors, updateEventTypeCursor } from "../db/queries.js";
 import { EventArchiver } from "../archiver/event-archiver.js";
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "subscriber" });
 
 export interface CheckpointMetadata {
   checkpointSeq: string;
@@ -139,10 +142,7 @@ export class CheckpointSubscriber {
   start(): void {
     if (this.running) return;
     this.running = true;
-    console.log(
-      `[subscriber] Starting event poll (interval=${this.config.pollIntervalMs}ms, ` +
-      `filters=${this.eventTypeFilters.length} event types)`,
-    );
+    log.info(`Starting event poll (interval=${this.config.pollIntervalMs}ms, filters=${this.eventTypeFilters.length} event types)`);
     this.poll();
   }
 
@@ -153,7 +153,7 @@ export class CheckpointSubscriber {
       clearTimeout(this.timer);
       this.timer = null;
     }
-    console.log("[subscriber] Stopped.");
+    log.info("Stopped.");
   }
 
   private async poll(): Promise<void> {
@@ -162,7 +162,7 @@ export class CheckpointSubscriber {
     try {
       await this.pollOnce();
     } catch (err) {
-      console.error("[subscriber] Poll error:", err);
+      log.error({ err }, "Poll error");
     }
 
     // Schedule next poll
@@ -222,12 +222,12 @@ export class CheckpointSubscriber {
       } catch (err) {
         // Log but continue with other event types — this type's cursor
         // is NOT advanced, so missed events will be retried next poll.
-        console.error(`[subscriber] Error querying ${eventType}:`, err);
+        log.error({ err }, `Error querying ${eventType}`);
       }
     }
 
     if (totalProcessed > 0) {
-      console.log(`[subscriber] Processed ${totalProcessed} events`);
+      log.info(`Processed ${totalProcessed} events`);
     }
   }
 
@@ -246,7 +246,7 @@ export class CheckpointSubscriber {
 
     // Validate this is a known event type
     if (!EVENT_TYPES.includes(eventName)) {
-      console.warn(`[subscriber] Unknown event type: ${event.type}`);
+      log.warn(`Unknown event type: ${event.type}`);
       return;
     }
 
@@ -319,7 +319,7 @@ export class CheckpointSubscriber {
 
       return meta;
     } catch (err) {
-      console.error(`[subscriber] Failed to get checkpoint for tx ${txDigest}:`, err);
+      log.error({ err }, `Failed to get checkpoint for tx ${txDigest}`);
       return {
         checkpointSeq: "0",
         checkpointDigest: "",

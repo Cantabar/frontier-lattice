@@ -23,15 +23,18 @@ import { CheckpointSubscriber } from "./subscriber/checkpoint-subscriber.js";
 import { CleanupWorker } from "./cleanup/cleanup-worker.js";
 import { createServer } from "./api/server.js";
 import { DEFAULT_CONFIG } from "./types.js";
+import { logger } from "./logger.js";
+
+const log = logger.child({ component: "main" });
 
 async function main() {
   const config = DEFAULT_CONFIG;
 
-  console.log("=== Frontier Corm Event Indexer ===");
-  console.log(`  Sui RPC:   ${config.suiRpcUrl}`);
-  console.log(`  DB:        ${config.databaseUrl.replace(/\/\/.*@/, "//***@")}`);
-  console.log(`  API port:  ${config.apiPort}`);
-  console.log(`  Poll:      ${config.pollIntervalMs}ms`);
+  log.info("=== Frontier Corm Event Indexer ===");
+  log.info(`  Sui RPC:   ${config.suiRpcUrl}`);
+  log.info(`  DB:        ${config.databaseUrl.replace(/\/\/.*@/, "//***@")}`);
+  log.info(`  API port:  ${config.apiPort}`);
+  log.info(`  Poll:      ${config.pollIntervalMs}ms`);
 
   // Validate package IDs
   const missingPackages = Object.entries(config.packageIds)
@@ -39,13 +42,13 @@ async function main() {
     .map(([k]) => k);
 
   if (missingPackages.length > 0) {
-    console.warn(
+    log.warn(
       `\n  ⚠  Missing package IDs: ${missingPackages.join(", ")}`,
     );
-    console.warn(
+    log.warn(
       "     Set PACKAGE_TRIBE, PACKAGE_TRUSTLESS_CONTRACTS env vars.",
     );
-    console.warn(
+    log.warn(
       "     The indexer will start but won't subscribe to events for missing packages.\n",
     );
   }
@@ -53,7 +56,7 @@ async function main() {
   // 1. Init database
   const pool = await initDatabase(config.databaseUrl);
   await initLocationSchema(pool);
-  console.log("[db] Database initialised (including location tables).");
+  log.info("Database initialised (including location tables).");
 
   // 2. Init archiver
   const archiver = new EventArchiver(pool);
@@ -68,8 +71,8 @@ async function main() {
   if (missingPackages.length < Object.keys(config.packageIds).length) {
     subscriber.start();
   } else {
-    console.log("[subscriber] No package IDs configured — subscriber not started.");
-    console.log("[subscriber] The API server is running; set package IDs and restart to begin indexing.");
+    log.info("No package IDs configured — subscriber not started.");
+    log.info("The API server is running; set package IDs and restart to begin indexing.");
   }
 
   // 6. Start cleanup worker (if enabled and private key is configured)
@@ -78,19 +81,19 @@ async function main() {
     cleanupWorker = new CleanupWorker(config, pool);
     cleanupWorker.start();
   } else if (config.cleanup.enabled && !config.cleanup.privateKey) {
-    console.warn("[cleanup] CLEANUP_ENABLED=true but no CLEANUP_WORKER_PRIVATE_KEY set — cleanup worker not started.");
+    log.warn("CLEANUP_ENABLED=true but no CLEANUP_WORKER_PRIVATE_KEY set — cleanup worker not started.");
   } else {
-    console.log("[cleanup] Cleanup worker disabled (set CLEANUP_ENABLED=true to enable).");
+    log.info("Cleanup worker disabled (set CLEANUP_ENABLED=true to enable).");
   }
 
   // Graceful shutdown
   const shutdown = () => {
-    console.log("\nShutting down...");
+    log.info("\nShutting down...");
     subscriber.stop();
     cleanupWorker?.stop();
     server.close(async () => {
       await pool.end();
-      console.log("Goodbye.");
+      log.info("Goodbye.");
       process.exit(0);
     });
   };
@@ -100,6 +103,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("Fatal error:", err);
+  log.error({ err }, "Fatal error");
   process.exit(1);
 });

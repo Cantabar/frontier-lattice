@@ -9,6 +9,9 @@
 
 import { Router, type Request, type Response } from "express";
 import type pg from "pg";
+import { logger } from "../logger.js";
+
+const log = logger.child({ component: "locations" });
 import { generateTlk, wrapTlk } from "../location/crypto.js";
 import { authenticate } from "./auth.js";
 import { createSession } from "../location/session.js";
@@ -104,7 +107,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
       const session = await createSession(pool, address);
       res.json({ token: session.token, expires_at: session.expiresAt });
     } catch (err) {
-      console.error("[locations] Failed to create session:", err);
+      log.error({ err }, "Failed to create session");
       res.status(500).json({ error: "Failed to create session" });
     }
   });
@@ -150,7 +153,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
 
       res.json({ id, structureId, tribeId });
     } catch (err) {
-      console.error("[locations] Failed to upsert POD:", err);
+      log.error({ err }, "Failed to upsert POD");
       res.status(500).json({ error: "Failed to store POD" });
     }
   });
@@ -175,7 +178,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         count: pods.length,
       });
     } catch (err) {
-      console.error("[locations] Failed to list PODs:", err);
+      log.error({ err }, "Failed to list PODs");
       res.status(500).json({ error: "Failed to fetch PODs" });
     }
   });
@@ -205,7 +208,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
       }
       res.json(serialisePod(pod));
     } catch (err) {
-      console.error("[locations] Failed to fetch POD:", err);
+      log.error({ err }, "Failed to fetch POD");
       res.status(500).json({ error: "Failed to fetch POD" });
     }
   });
@@ -274,7 +277,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         })),
       });
     } catch (err) {
-      console.error("[locations] Failed to build proof bundle:", err);
+      log.error({ err }, "Failed to build proof bundle");
       res.status(500).json({ error: "Failed to build proof bundle" });
     }
   });
@@ -296,7 +299,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
       }
       res.json({ deleted: true, structureId });
     } catch (err) {
-      console.error("[locations] Failed to delete POD:", err);
+      log.error({ err }, "Failed to delete POD");
       res.status(500).json({ error: "Failed to delete POD" });
     }
   });
@@ -333,7 +336,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         has_wrapped_key: hasWrappedKey,
       });
     } catch (err) {
-      console.error("[locations] Failed to fetch TLK status:", err);
+      log.error({ err }, "Failed to fetch TLK status");
       res.status(500).json({ error: "Failed to fetch TLK status" });
     }
   });
@@ -363,7 +366,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         wrapped_key: tlk.wrapped_key.toString("base64"),
       });
     } catch (err) {
-      console.error("[locations] Failed to fetch TLK:", err);
+      log.error({ err }, "Failed to fetch TLK");
       res.status(500).json({ error: "Failed to fetch TLK" });
     }
   });
@@ -408,7 +411,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
 
       res.json({ tribe_id: tribeId, tlk_version: newVersion, members_wrapped: memberPublicKeys.length });
     } catch (err) {
-      console.error("[locations] Failed to init TLK:", err);
+      log.error({ err }, "Failed to init TLK");
       res.status(500).json({ error: "Failed to initialise TLK" });
     }
   });
@@ -460,7 +463,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         member: newMemberAddress,
       });
     } catch (err) {
-      console.error("[locations] Failed to store wrapped TLK for new member:", err);
+      log.error({ err }, "Failed to store wrapped TLK for new member");
       res.status(500).json({ error: "Failed to store wrapped TLK" });
     }
   });
@@ -504,7 +507,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         members_wrapped: memberPublicKeys.length,
       });
     } catch (err) {
-      console.error("[locations] Failed to rotate TLK:", err);
+      log.error({ err }, "Failed to rotate TLK");
       res.status(500).json({ error: "Failed to rotate TLK" });
     }
   });
@@ -541,7 +544,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
       await upsertMemberPublicKey(pool, tribeId, address, pubBuf);
       res.json({ tribe_id: tribeId, member: address, registered: true });
     } catch (err) {
-      console.error("[locations] Failed to register public key:", err);
+      log.error({ err }, "Failed to register public key");
       res.status(500).json({ error: "Failed to register public key" });
     }
   });
@@ -570,7 +573,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         })),
       });
     } catch (err) {
-      console.error("[locations] Failed to fetch pending members:", err);
+      log.error({ err }, "Failed to fetch pending members");
       res.status(500).json({ error: "Failed to fetch pending members" });
     }
   });
@@ -636,10 +639,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
       try {
         connectedIds = await getConnectedAssemblies(networkNodeId);
       } catch (err) {
-        console.warn(
-          `[locations] Could not fetch connected assemblies for ${networkNodeId}:`,
-          err,
-        );
+        log.warn({ err }, `Could not fetch connected assemblies for ${networkNodeId}`);
         connectedIds = [];
       }
 
@@ -668,7 +668,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         structureCount: connectedIds.length,
       });
     } catch (err) {
-      console.error("[locations] Failed to register Network Node POD:", err);
+      log.error({ err }, "Failed to register Network Node POD");
       res.status(500).json({ error: "Failed to register Network Node location" });
     }
   });
@@ -707,10 +707,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
       try {
         connectedIds = await getConnectedAssemblies(networkNodeId);
       } catch (err) {
-        console.warn(
-          `[locations] Could not fetch connected assemblies for ${networkNodeId}:`,
-          err,
-        );
+        log.warn({ err }, `Could not fetch connected assemblies for ${networkNodeId}`);
         connectedIds = [];
       }
 
@@ -745,7 +742,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         staleRemoved: deleted,
       });
     } catch (err) {
-      console.error("[locations] Failed to refresh Network Node PODs:", err);
+      log.error({ err }, "Failed to refresh Network Node PODs");
       res.status(500).json({ error: "Failed to refresh Network Node location" });
     }
   });
@@ -794,7 +791,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
 
       res.json({ tribe_id: soloTribeId, tlk_version: 1, solo: true });
     } catch (err) {
-      console.error("[locations] Failed to init solo PLK:", err);
+      log.error({ err }, "Failed to init solo PLK");
       res.status(500).json({ error: "Failed to initialise Personal Location Key" });
     }
   });
@@ -820,7 +817,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
         solo: true,
       });
     } catch (err) {
-      console.error("[locations] Failed to list solo PODs:", err);
+      log.error({ err }, "Failed to list solo PODs");
       res.status(500).json({ error: "Failed to fetch solo PODs" });
     }
   });
