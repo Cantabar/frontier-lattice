@@ -129,6 +129,9 @@ continuity-engine/
 - Corruption-proportional garbling of transition response text
 - Phase-aware event processing (Phase 0 dormancy, Phase 1 puzzles, Phase 2 contracts)
 - Dynamically-sized cipher grids, three cipher tiers, sensor/trap mechanics
+  - Sonar sensors: radius-5 pulse revealing nearby cell types (3 pulses, 1000ms interval), triggers trap movement
+  - Thermal sensors: radius-4 area-of-effect applying heatmap proximity hints to nearby cells (2 pulses, 500ms interval), own cell shows blue-to-red gradient based on distance to target
+  - Vector sensors: directional arrow toward target on revealed cell
 - Contract address discovery with group-reveal and auto-complete
 - Four AI-controlled hint systems: heatmap, vectors, decode, signal
 - Deterministic Phase 2 contract generation from traits + inventory state

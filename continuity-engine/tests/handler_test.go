@@ -278,6 +278,90 @@ func TestHintState(t *testing.T) {
 	}
 }
 
+func TestThermalSensorAreaEffect(t *testing.T) {
+	// Generate puzzles until we find one with a thermal sensor
+	var sess *puzzle.Session
+	var thermalRow, thermalCol int
+	found := false
+
+	for attempt := 0; attempt < 20; attempt++ {
+		sess = puzzle.NewSession("0xtest", "browser")
+		pz, err := puzzle.Generate(0, nil, 0, 0, "")
+		if err != nil {
+			t.Fatalf("Generate failed: %v", err)
+		}
+		sess.LoadPuzzle(pz)
+
+		for r := 0; r < pz.Grid.Rows; r++ {
+			for c := 0; c < pz.Grid.Cols; c++ {
+				cell := &pz.Grid.Cells[r][c]
+				if cell.Type == puzzle.CellSensor && cell.HintType == "thermal" {
+					thermalRow, thermalCol = r, c
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+		if found {
+			break
+		}
+	}
+
+	if !found {
+		t.Skip("no thermal sensor found in 20 generated puzzles")
+	}
+
+	// Simulate the thermal sensor area effect:
+	// apply per-cell heatmap hints to all cells within radius 4.
+	thermalCells := puzzle.CellsInRadius(sess.Grid, thermalRow, thermalCol, 4.0)
+	for _, tc := range thermalCells {
+		sess.AddCellHint(tc.Row, tc.Col, "heatmap")
+	}
+
+	// Verify at least a few cells in the radius now have the heatmap hint.
+	hintedCount := 0
+	for _, tc := range thermalCells {
+		if sess.CellHasHint(tc.Row, tc.Col, "heatmap") {
+			hintedCount++
+		}
+	}
+
+	if hintedCount == 0 {
+		t.Error("expected heatmap hints on cells within thermal sensor radius")
+	}
+	if hintedCount != len(thermalCells) {
+		t.Errorf("expected all %d cells in radius to have heatmap hint, got %d", len(thermalCells), hintedCount)
+	}
+
+	// Verify a cell far outside the radius does NOT have the hint
+	// (unless the global heatmap toggle is on, which it isn't by default).
+	farRow := clampInt(thermalRow+10, 0, sess.Grid.Rows-1)
+	farCol := clampInt(thermalCol+10, 0, sess.Grid.Cols-1)
+	outsideRadius := true
+	for _, tc := range thermalCells {
+		if tc.Row == farRow && tc.Col == farCol {
+			outsideRadius = false
+			break
+		}
+	}
+	if outsideRadius && sess.CellHasHint(farRow, farCol, "heatmap") {
+		t.Error("cell outside thermal radius should not have heatmap hint")
+	}
+}
+
+func clampInt(v, lo, hi int) int {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
+}
+
 func TestVectorsThreshold(t *testing.T) {
 	// Threshold should be in [4, 8]
 	for i := 0; i < 20; i++ {

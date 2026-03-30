@@ -265,6 +265,7 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 	cell := &sess.Grid.Cells[row][col]
 	isTrap := cell.Type == puzzle.CellTrap
 	isSonarSensor := cell.Type == puzzle.CellSensor && cell.HintType == "sonar"
+	isThermalSensor := cell.Type == puzzle.CellSensor && cell.HintType == "thermal"
 	isAddress := cell.StringID != ""
 	isTargetAddress := cell.StringID == "target_main"
 
@@ -458,6 +459,26 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 		pulsedCells := puzzle.CellsInRadius(sess.Grid, row, col, 5.0)
 		writePulseData(w, sess, pulsedCells, 3, 1000)
 		trapMoves = sess.MoveRevealedTraps(row, col, pulsedCells)
+	} else if isThermalSensor {
+		thermalCells := puzzle.CellsInRadius(sess.Grid, row, col, 4.0)
+		// Apply per-cell heatmap hints to all cells in the thermal radius
+		for _, tc := range thermalCells {
+			sess.AddCellHint(tc.Row, tc.Col, "heatmap")
+		}
+		// OOB re-render already-revealed cells so heatmap coloring appears immediately
+		for _, tc := range thermalCells {
+			if tc.Row == row && tc.Col == col {
+				continue
+			}
+			key := puzzle.CellKey(tc.Row, tc.Col)
+			if sess.DecryptedCells[key] && !sess.GarbledCells[key] {
+				cd := buildCellData(sess, tc.Row, tc.Col)
+				cd.SwapOOB = true
+				h.templates.ExecuteTemplate(w, "cell.html", cd)
+			}
+		}
+		writePulseData(w, sess, thermalCells, 2, 500)
+		trapMoves = sess.MoveRevealedTraps(row, col, thermalCells)
 	} else {
 		pulsedCells := puzzle.CellsInRadius(sess.Grid, row, col, 2.0)
 		writePulseData(w, sess, pulsedCells, 1, 0)
@@ -949,7 +970,7 @@ func thermalGradientStyle(distance, gridRows, gridCols int) string {
 	r, g, b := hslToRGB(hue, 1.0, 0.55)
 
 	return fmt.Sprintf(
-		"color: rgb(%d,%d,%d); background: rgba(%d,%d,%d,0.12); box-shadow: inset 0 0 8px rgba(%d,%d,%d,0.3)",
+		"color: rgb(%d,%d,%d); background: rgba(%d,%d,%d,0.18); box-shadow: inset 0 0 8px rgba(%d,%d,%d,0.4)",
 		r, g, b, r, g, b, r, g, b,
 	)
 }

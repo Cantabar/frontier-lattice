@@ -933,8 +933,13 @@ body {
     background: rgba(0, 255, 255, 0.08);
 }
 .cell--sensor-thermal.cell--revealed {
-    /* color and background driven by inline thermal gradient style */
+    /* Override cell-reveal animation so it doesn't mask the inline thermal gradient */
+    animation: thermal-reveal 0.3s ease;
     transition: color 0.3s, background 0.3s, box-shadow 0.3s;
+}
+@keyframes thermal-reveal {
+    0%   { transform: scale(1.2); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
 }
 .cell--sensor-vector.cell--revealed {
     color: var(--accent-gold);
