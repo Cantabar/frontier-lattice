@@ -498,6 +498,37 @@ export function getStructuresByLocationTag(
   );
 }
 
+// ---- Solo Mode Helpers ----
+
+const SOLO_PREFIX = "solo:";
+
+/** Check whether a tribeId represents a solo (personal) namespace. */
+export function isSoloTribeId(tribeId: string): boolean {
+  return tribeId.startsWith(SOLO_PREFIX);
+}
+
+/** Build the synthetic solo tribeId for a given wallet address. */
+export function buildSoloTribeId(address: string): string {
+  return `${SOLO_PREFIX}${address}`;
+}
+
+/** Initialize a Personal Location Key (PLK) for solo mode. */
+export function initSoloPlk(authHeader: string, body: { x25519Pub: string }) {
+  return authedPost<{ tribe_id: string; tlk_version: number; solo: boolean }>(
+    "/locations/keys/solo-init",
+    authHeader,
+    body,
+  );
+}
+
+/** List the caller's solo location PODs. */
+export function getSoloLocationPods(authHeader: string) {
+  return authedGet<{ pods: LocationPodResponse[]; tribe_id: string; count: number; solo: boolean }>(
+    "/locations/solo",
+    authHeader,
+  );
+}
+
 // ---- Network Node Location PODs ----
 
 export function submitNetworkNodeLocationPod(

@@ -43,16 +43,16 @@ Browser
 
 ### Shadow Location Network
 
-Client-side privacy-preserving location sharing with ZK proof generation. The server never sees plaintext coordinates.
+Client-side privacy-preserving location sharing with ZK proof generation. The server never sees plaintext coordinates. Supports both **tribe mode** (shared with tribe members via TLK) and **solo mode** (private via Personal Location Key).
 
-- **Location Crypto** (`lib/locationCrypto.ts`) — Poseidon4 hash commitment, AES-256-GCM encrypt/decrypt with TLK, X25519 TLK unwrap (ECIES), signature-derived X25519 keypair (deterministic from wallet’s `signPersonalMessage`), wallet auth challenge construction.
+- **Location Crypto** (`lib/locationCrypto.ts`) — Poseidon4 hash commitment, AES-256-GCM encrypt/decrypt with TLK/PLK, X25519 key unwrap (ECIES), signature-derived X25519 keypair (deterministic from wallet's `signPersonalMessage`), wallet auth challenge construction.
 - **ZK Prover** (`lib/zkProver.ts`) — browser-side Groth16 proof generation via snarkjs. Generates region-filter proofs (3D bounding box containment), proximity-filter proofs (distance threshold), and mutual proximity proofs (two-structure distance within threshold). Circuit WASM + zkey files served by the indexer at `/zk/`.
-- **Location PODs Hook** (`hooks/useLocationPods`) — fetches, decrypts, submits, and revokes location PODs. Handles TLK initialization, wrapped TLK fetching, Network Node POD registration and refresh. Caches wallet auth headers.
-- **TLK Status Hook** (`hooks/useTlkStatus`) — checks TLK initialization state for a tribe.
-- **TLK Distribution Hook** (`hooks/useTlkDistribution`) — manages wrapping TLK for pending tribe members.
+- **Location PODs Hook** (`hooks/useLocationPods`) — fetches, decrypts, submits, and revokes location PODs. Handles TLK/PLK initialization (including solo mode via `initializeSoloPlk`), wrapped key fetching, Network Node POD registration and refresh. Auto-detects solo mode via synthetic `solo:<address>` tribe IDs and uses the `GET /solo` endpoint for solo fetches. Caches wallet auth headers.
+- **TLK Status Hook** (`hooks/useTlkStatus`) — checks TLK/PLK initialization state for a tribe or solo namespace.
+- **TLK Distribution Hook** (`hooks/useTlkDistribution`) — manages wrapping TLK for pending tribe members (not used in solo mode).
 - **ZK Filter Hook** (`hooks/useZkLocationFilter`) — generates and submits region/proximity/mutual proximity proofs for PODs, queries verified results. Supports named region/constellation proof by ID, and mutual proximity proofs between two decrypted PODs for witnessed contract fulfillment. Deduplicates Network Node derived PODs.
 - **Region Data** (`lib/regions.ts`, `lib/solarSystems.ts`) — client-side region/constellation/solar system reference data with bounding boxes.
-- **Locations Page** (`pages/LocationsPage`) — TLK status banner, decrypted POD listing grouped by solar system, register/revoke actions, pending member key distribution. "Prove Proximity" action launches mutual proximity proof modal.
+- **Locations Page** (`pages/LocationsPage`) — Supports both tribe mode and solo mode. Solo mode auto-activates when the user has no tribe, using a synthetic `solo:<address>` tribe ID. Shows TLK/PLK status banner (context-aware messaging), decrypted POD listing grouped by solar system, register/revoke actions, pending member key distribution (tribe mode only). "Prove Proximity" action launches mutual proximity proof modal.
 - **POD Proof Modal** (`components/locations/PodProofModal`) — review and copy a shareable proof bundle for an owned POD. Displays public attestation fields (location hash, wallet signature, versions), associated ZK proofs, and location tags. Supports details and raw JSON views with copy-to-clipboard.
 - **Mutual Proximity Proof Modal** (`components/locations/MutualProximityProofModal`) — select two decrypted PODs and a distance threshold, generate a Groth16 mutual proximity proof in-browser, and submit to the indexer. Shows actual distance, confirmation step, and success state. Used for fulfilling proximity-gated witnessed contracts.
 
@@ -146,7 +146,7 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 - Forge Planner with blueprint browser, recipe tree optimizer, gap analysis, and multi-input order management
 - Bill of Materials expansion at configurable depth for contract slot generation
 - Continuity Engine with on-chain CormState bridge
-- Shadow Location Network: encrypted POD management, TLK lifecycle (init/wrap/rotate), signature-derived X25519 keypairs, Poseidon hash commitments
+- Shadow Location Network: encrypted POD management, TLK/PLK lifecycle (init/wrap/rotate), solo mode (Personal Location Key for tribeless players), signature-derived X25519 keypairs, Poseidon hash commitments
 - Browser-side ZK proof generation (Groth16/snarkjs) for region, proximity, and mutual proximity location filters
 - POD proof review and copy: owners can review and export a shareable proof bundle (public attestation + ZK proofs + location tags) for external applications
 - Named region/constellation proof with canonical bounding box validation
@@ -173,4 +173,6 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 
 - Offline-capable PWA for mobile access
 - Real-time event streaming (WebSocket from indexer) instead of polling
+- Solo → tribe migration: auto-re-encrypt solo PODs under a tribe TLK when a solo player joins a tribe
+- Solo mutual proximity proofs: cross-namespace proof support for two solo players
 - Forge Planner: multi-recipe selection for optimizer, batch order creation

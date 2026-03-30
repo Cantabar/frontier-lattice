@@ -65,6 +65,7 @@ interface Props {
   isUnlocked: boolean;
   isOfficer: boolean;
   isLoading: boolean;
+  isSoloMode: boolean;
   onInitialize: () => void;
   onUnlock: () => void;
   unlockLoading: boolean;
@@ -77,11 +78,26 @@ export function TlkStatusBanner({
   isUnlocked,
   isOfficer,
   isLoading,
+  isSoloMode,
   onInitialize,
   onUnlock,
   unlockLoading,
 }: Props) {
   if (!isInitialized) {
+    if (isSoloMode) {
+      return (
+        <Banner $variant="warning">
+          <Dot $color="var(--color-warning, #f0ad4e)" />
+          <Text>
+            Initialize your Personal Location Key to encrypt your structure locations privately.
+          </Text>
+          <PrimaryButton onClick={onInitialize} disabled={isLoading}>
+            {isLoading ? "Initializing…" : "Initialize PLK"}
+          </PrimaryButton>
+        </Banner>
+      );
+    }
+
     return (
       <Banner $variant="warning">
         <Dot $color="var(--color-warning, #f0ad4e)" />
@@ -101,16 +117,35 @@ export function TlkStatusBanner({
   }
 
   if (isUnlocked) {
+    const keyLabel = isSoloMode ? "PLK" : "TLK";
     return (
       <Banner $variant="success">
         <Dot $color="var(--color-success, #5cb85c)" />
-        <Text>Encryption key unlocked — locations are decrypted for this session.</Text>
-        {tlkVersion != null && <VersionLabel>TLK v{tlkVersion}</VersionLabel>}
+        <Text>
+          {isSoloMode
+            ? "Personal encryption key unlocked — your locations are decrypted for this session."
+            : "Encryption key unlocked — locations are decrypted for this session."}
+        </Text>
+        {tlkVersion != null && <VersionLabel>{keyLabel} v{tlkVersion}</VersionLabel>}
       </Banner>
     );
   }
 
   if (!hasWrappedKey) {
+    if (isSoloMode) {
+      // Solo mode: no concept of "requesting access from another member"
+      return (
+        <Banner $variant="info">
+          <Dot $color="var(--color-primary, #00d4ff)" />
+          <Text>Personal Location Key is active. Unlock to view and manage your locations.</Text>
+          {tlkVersion != null && <VersionLabel>PLK v{tlkVersion}</VersionLabel>}
+          <PrimaryButton onClick={onUnlock} disabled={unlockLoading}>
+            {unlockLoading ? "Unlocking…" : "Unlock PLK"}
+          </PrimaryButton>
+        </Banner>
+      );
+    }
+
     return (
       <Banner $variant="info">
         <Dot $color="var(--color-primary, #00d4ff)" />
@@ -126,15 +161,18 @@ export function TlkStatusBanner({
     );
   }
 
+  const keyLabel = isSoloMode ? "PLK" : "TLK";
   return (
     <Banner $variant="info">
       <Dot $color="var(--color-primary, #00d4ff)" />
       <Text>
-        Tribe Location Key is initialized. Unlock to view and register encrypted locations.
+        {isSoloMode
+          ? "Personal Location Key is initialized. Unlock to view and manage your encrypted locations."
+          : "Tribe Location Key is initialized. Unlock to view and register encrypted locations."}
       </Text>
-      {tlkVersion != null && <VersionLabel>TLK v{tlkVersion}</VersionLabel>}
+      {tlkVersion != null && <VersionLabel>{keyLabel} v{tlkVersion}</VersionLabel>}
       <PrimaryButton onClick={onUnlock} disabled={unlockLoading}>
-        {unlockLoading ? "Unlocking…" : "Unlock TLK"}
+        {unlockLoading ? "Unlocking…" : `Unlock ${keyLabel}`}
       </PrimaryButton>
     </Banner>
   );

@@ -25,7 +25,7 @@ import { CopyableId } from "../components/shared/CopyableId";
 import { solarSystemName } from "../lib/solarSystems";
 import { truncateAddress, timeAgo } from "../lib/format";
 import { ASSEMBLY_TYPES } from "../lib/types";
-import { registerPublicKey } from "../lib/api";
+import { registerPublicKey, buildSoloTribeId } from "../lib/api";
 import {
   bytesToBase64,
   getKeygenMessageBytes,
@@ -226,11 +226,15 @@ export function LocationsPage() {
   const scrolledRef = useRef(false);
   const { tribeCaps, address } = useIdentity();
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
-  const tribeId = tribeCaps[0]?.tribeId ?? null;
+  const rawTribeId = tribeCaps[0]?.tribeId ?? null;
   const isOfficer =
     tribeCaps[0]?.role === "Leader" || tribeCaps[0]?.role === "Officer";
 
-  const { pods, isLoading: podsLoading, error: podsError, fetchPods, deletePod, refreshNetworkNodePod, getAuthHeader } =
+  // Solo mode: player has no tribe — use a synthetic solo tribeId
+  const isSoloMode = !rawTribeId && !!address;
+  const tribeId = rawTribeId ?? (address ? buildSoloTribeId(address) : null);
+
+  const { pods, isLoading: podsLoading, error: podsError, fetchPods, deletePod, refreshNetworkNodePod, initializeSoloPlk, getAuthHeader } =
     useLocationPods();
   const tlk = useTlkStatus();
   const distribution = useTlkDistribution(tribeId, tlk.tlkBytes);
@@ -360,23 +364,26 @@ export function LocationsPage() {
       // 1. Derive X25519 keypair from wallet signature
       const { x25519Pub, x25519Priv } = await deriveX25519();
 
-      // 2. Initialize TLK — server generates key and wraps to our X25519 pub
-      await tlk.initialize({
-        tribeId,
-        memberPublicKeys: [{ address, x25519Pub: bytesToBase64(x25519Pub) }],
-      });
+      if (isSoloMode) {
+        // Solo flow: initialize PLK via dedicated endpoint
+        await initializeSoloPlk(bytesToBase64(x25519Pub));
+      } else {
+        // Tribe flow: initialize TLK and wrap to our X25519 pub
+        await tlk.initialize({
+          tribeId,
+          memberPublicKeys: [{ address, x25519Pub: bytesToBase64(x25519Pub) }],
+        });
+      }
 
-      // 3. Fetch the wrapped TLK and auto-unlock
+      // 3. Fetch the wrapped TLK/PLK and auto-unlock
       await tlk.fetchStatus(tribeId);
-      // Re-read wrappedKey after fetchStatus updated state
-      // (fetchStatus is async and sets state, so we re-fetch inline)
       const authHeader = await getAuthHeader();
       const { getTlk: getTlkApi } = await import("../lib/indexer");
       const result = await getTlkApi(tribeId, authHeader);
       const tlkBytes = await unwrapTlk(result.wrapped_key, x25519Priv);
       tlk.setUnwrappedTlk(tlkBytes, result.tlk_version);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to initialize TLK";
+      const msg = err instanceof Error ? err.message : isSoloMode ? "Failed to initialize PLK" : "Failed to initialize TLK";
       setUnlockError(msg);
     } finally {
       setUnlockLoading(false);
@@ -423,7 +430,7 @@ export function LocationsPage() {
   if (!account) {
     return (
       <Page>
-        <Title>Tribe Locations</Title>
+        <Title>Locations</Title>
         <ConnectPrompt>Connect your wallet to manage locations.</ConnectPrompt>
       </Page>
     );
@@ -432,11 +439,8 @@ export function LocationsPage() {
   if (!tribeId) {
     return (
       <Page>
-        <Title>Tribe Locations</Title>
-        <EmptyState
-          title="No tribe membership"
-          description="Join or create a Tribe to access location management."
-        />
+        <Title>Locations</Title>
+        <ConnectPrompt>Connect your wallet to manage locations.</ConnectPrompt>
       </Page>
     );
   }
@@ -444,7 +448,7 @@ export function LocationsPage() {
   return (
     <Page>
       <Header>
-        <Title>Tribe Locations</Title>
+        <Title>{isSoloMode ? "Solo Locations" : "Tribe Locations"}</Title>
         <ActionBar>
           <SecondaryButton onClick={handleRefresh} disabled={podsLoading || !tlk.tlkBytes}>
             {podsLoading ? "Loading…" : "Refresh"}
@@ -464,7 +468,7 @@ export function LocationsPage() {
         </ActionBar>
       </Header>
 
-      {/* TLK banner */}
+      {/* TLK / PLK banner */}
       <TlkStatusBanner
         isInitialized={tlk.isInitialized}
         hasWrappedKey={tlk.hasWrappedKey}
@@ -472,6 +476,7 @@ export function LocationsPage() {
         isUnlocked={!!tlk.tlkBytes}
         isOfficer={isOfficer}
         isLoading={tlk.isLoading}
+        isSoloMode={isSoloMode}
         onInitialize={handleInitializeTlk}
         onUnlock={handleUnlockTlk}
         unlockLoading={unlockLoading}
@@ -490,14 +495,14 @@ export function LocationsPage() {
             <CardValue>{systemCount}</CardValue>
           </SummaryCard>
           <SummaryCard>
-            <CardLabel>TLK Version</CardLabel>
+            <CardLabel>{isSoloMode ? "PLK Version" : "TLK Version"}</CardLabel>
             <CardValue>v{tlk.tlkVersion ?? "—"}</CardValue>
           </SummaryCard>
         </SummaryGrid>
       )}
 
-      {/* Pending members — key distribution */}
-      {tlk.tlkBytes && distribution.pendingMembers.length > 0 && (
+      {/* Pending members — key distribution (tribe mode only) */}
+      {!isSoloMode && tlk.tlkBytes && distribution.pendingMembers.length > 0 && (
         <PendingSection>
           <PendingSectionHeader>
             <PendingSectionTitle>
@@ -539,7 +544,10 @@ export function LocationsPage() {
       ) : pods.length === 0 ? (
         <EmptyState
           title="No locations registered"
-          description="Register your first Network Node location to share it securely with your Tribe."
+          description={isSoloMode
+            ? "Register your first Network Node location to track it privately."
+            : "Register your first Network Node location to share it securely with your Tribe."
+          }
         />
       ) : (
         <>

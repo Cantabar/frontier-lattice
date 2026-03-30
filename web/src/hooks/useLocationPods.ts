@@ -13,12 +13,15 @@ import { useSignPersonalMessage } from "@mysten/dapp-kit";
 import { useIdentity } from "./useIdentity";
 import {
   getLocationPodsByTribe,
+  getSoloLocationPods,
   submitLocationPod,
   deleteLocationPod as apiDeletePod,
   getTlk,
   initTlk,
+  initSoloPlk,
   submitNetworkNodeLocationPod,
   refreshNetworkNodeLocationPod,
+  isSoloTribeId,
   type LocationPodResponse,
 } from "../lib/api";
 import {
@@ -84,6 +87,8 @@ export interface UseLocationPodsReturn {
     tribeId: string;
     memberPublicKeys: { address: string; x25519Pub: string }[];
   }) => Promise<{ tlkVersion: number }>;
+  /** Initialise a Personal Location Key for solo mode */
+  initializeSoloPlk: (x25519Pub: string) => Promise<{ tlkVersion: number; soloTribeId: string }>;
   /** Fetch the caller's wrapped TLK from the server */
   fetchWrappedTlk: (tribeId: string) => Promise<{ wrappedKey: string; tlkVersion: number } | null>;
   /** Get a fresh auth header (signs a challenge with the wallet) */
@@ -128,7 +133,9 @@ export function useLocationPods(): UseLocationPodsReturn {
       setError(null);
       try {
         const authHeader = await getAuthHeader();
-        const { pods: rawPods } = await getLocationPodsByTribe(tribeId, authHeader);
+        const { pods: rawPods } = isSoloTribeId(tribeId)
+          ? await getSoloLocationPods(authHeader)
+          : await getLocationPodsByTribe(tribeId, authHeader);
 
         const decrypted: DecryptedPod[] = [];
         for (const pod of rawPods) {
@@ -338,6 +345,15 @@ export function useLocationPods(): UseLocationPodsReturn {
     [getAuthHeader],
   );
 
+  const initializeSoloPlk = useCallback(
+    async (x25519Pub: string): Promise<{ tlkVersion: number; soloTribeId: string }> => {
+      const authHeader = await getAuthHeader();
+      const result = await initSoloPlk(authHeader, { x25519Pub });
+      return { tlkVersion: result.tlk_version, soloTribeId: result.tribe_id };
+    },
+    [getAuthHeader],
+  );
+
   const fetchWrappedTlk = useCallback(
     async (tribeId: string): Promise<{ wrappedKey: string; tlkVersion: number } | null> => {
       try {
@@ -361,6 +377,7 @@ export function useLocationPods(): UseLocationPodsReturn {
     refreshNetworkNodePod,
     deletePod,
     initializeTlk,
+    initializeSoloPlk,
     fetchWrappedTlk,
     getAuthHeader,
   };

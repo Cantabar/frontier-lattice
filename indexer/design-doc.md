@@ -25,11 +25,12 @@ Sui Checkpoints → Checkpoint Subscriber → Event Archiver → Postgres
 
 ### Shadow Location Network
 
-A privacy-preserving location sharing system built into the indexer, providing encrypted structure location data with ZK proof verification.
+A privacy-preserving location sharing system built into the indexer, providing encrypted structure location data with ZK proof verification. Supports both **tribe mode** (shared with tribe members) and **solo mode** (private to a single player).
 
-- **Location Routes** (`api/location-routes.ts`) — REST API for location PODs (encrypted structure positions) and Tribe Location Key (TLK) management. All mutation endpoints require wallet signature authentication (`SuiSig` auth header). Supports:
+- **Location Routes** (`api/location-routes.ts`) — REST API for location PODs (encrypted structure positions) and Tribe/Personal Location Key management. All mutation endpoints require wallet signature authentication (`SuiSig` auth header). Supports:
   - POD CRUD: submit, fetch, list by tribe, revoke
   - TLK lifecycle: init (generate + wrap to members), wrap (client-side wrapping for new members), rotate (version bump + re-wrap), register (X25519 public key registration), pending member listing
+  - Solo mode: Personal Location Key (PLK) initialization via `POST /keys/solo-init`, solo POD listing via `GET /solo`. Uses synthetic `solo:<address>` tribe IDs with owner-only access enforcement
   - Network Node PODs: register a node's location and auto-derive PODs for all connected assemblies (via on-chain `connected_assembly_ids`), refresh/cleanup when assemblies connect or disconnect
 - **ZK Routes** (`api/zk-routes.ts`) — REST API for Groth16 proof submission and verified location queries:
   - `POST /submit` — submit a region, proximity, or mutual proximity proof; verifies cryptographically, confirms POD existence and location_hash match, validates named region/constellation bounds, stores proof, propagates to derived structures
@@ -99,21 +100,23 @@ All routes under `/api/v1`. Pagination via `?limit=50&offset=0&order=desc`.
 
 ### Shadow Location API
 
-Mounted under `/api/v1/locations`. All endpoints (except `/proofs/tags`) require wallet signature auth (`Authorization: SuiSig <message>.<signature>`).
+Mounted under `/api/v1/locations`. All endpoints (except `/proofs/tags`) require wallet signature auth (`Authorization: SuiSig <message>.<signature>`). Solo mode endpoints use synthetic `solo:<address>` tribe IDs with owner-only access enforcement.
 
 **POD Management:**
 - `POST /pod` — submit or update an encrypted location POD
-- `GET /tribe/:tribeId` — list all PODs for a tribe
+- `GET /tribe/:tribeId` — list all PODs for a tribe (or solo namespace)
+- `GET /solo` — list the caller's solo location PODs (convenience wrapper)
 - `GET /pod/:structureId?tribeId=X` — fetch a single POD
 - `GET /pod/:structureId/proof?tribeId=X` — shareable proof bundle (owner only): public POD metadata, ZK proofs, location tags (excludes encrypted blob)
 - `DELETE /pod/:structureId` — revoke a POD (owner only)
 - `POST /network-node-pod` — register a Network Node location + derive PODs for connected assemblies
 - `POST /network-node-pod/refresh` — re-derive PODs for a Network Node (sync new/removed assemblies)
 
-**TLK Management:**
-- `GET /keys/:tribeId/status` — check TLK initialization state
-- `GET /keys/:tribeId` — fetch caller's wrapped TLK
+**TLK / PLK Management:**
+- `GET /keys/:tribeId/status` — check TLK/PLK initialization state
+- `GET /keys/:tribeId` — fetch caller's wrapped TLK/PLK
 - `POST /keys/init` — initialize TLK for a tribe (generates key, wraps to all members)
+- `POST /keys/solo-init` — initialize a Personal Location Key for solo mode (generates key, wraps to caller only)
 - `POST /keys/wrap` — store a client-wrapped TLK for a new member (server never sees plaintext)
 - `POST /keys/rotate` — rotate TLK (new key, wraps to all members, increments version)
 - `POST /keys/register` — register caller's X25519 public key for TLK distribution
@@ -168,7 +171,7 @@ Each archived event includes proof metadata for independent verification:
 - Optional cleanup worker for expiring stale on-chain contracts and removing metadata for unanchored structures
 - Assembly metadata materialization: event-sourced snapshots with batch query API (`GET /metadata?assemblyIds=`)
 - Witness service for automated build request fulfillment (polls open contracts, matches anchor/extension events, signs BCS attestations, submits fulfill transactions) with optional mutual proximity proof verification for proximity-gated contracts
-- Shadow Location Network with encrypted PODs, TLK key management (init/wrap/rotate/register), and Network Node POD propagation
+- Shadow Location Network with encrypted PODs, TLK/PLK key management (init/wrap/rotate/register), solo mode (Personal Location Key), and Network Node POD propagation
 - ZK proof verification and storage for region, proximity, and mutual proximity location filters (Groth16/snarkjs)
 - Public location tagging from verified ZK proofs (region/constellation membership)
 - Wallet signature authentication for location API endpoints
@@ -181,3 +184,5 @@ Each archived event includes proof metadata for independent verification:
 - Read replica support for API scaling
 - ZK circuit compilation automation (`make zk-build`)
 - Location POD re-encryption on TLK rotation
+- Solo → tribe migration: auto-re-encrypt solo PODs under a tribe TLK when a solo player joins a tribe
+- Solo mutual proximity proofs: cross-namespace proof support for two solo players

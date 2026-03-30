@@ -30,6 +30,46 @@ import {
 } from "../db/location-queries.js";
 import { getConnectedAssemblies } from "../location/sui-rpc.js";
 
+// ================================================================
+// Solo mode helpers
+// ================================================================
+
+const SOLO_PREFIX = "solo:";
+
+/** Check whether a tribeId represents a solo (personal) namespace. */
+export function isSoloTribeId(tribeId: string): boolean {
+  return tribeId.startsWith(SOLO_PREFIX);
+}
+
+/** Extract the wallet address from a solo tribeId. Returns null if not a solo ID. */
+export function parseSoloAddress(tribeId: string): string | null {
+  if (!isSoloTribeId(tribeId)) return null;
+  return tribeId.slice(SOLO_PREFIX.length);
+}
+
+/** Build the synthetic solo tribeId for a given wallet address. */
+export function buildSoloTribeId(address: string): string {
+  return `${SOLO_PREFIX}${address}`;
+}
+
+/**
+ * Enforce that the authenticated address owns the solo namespace.
+ * Returns true if the check passes, false if a 403 was sent.
+ */
+function enforceSoloOwnership(
+  tribeId: string,
+  authenticatedAddress: string,
+  res: Response,
+): boolean {
+  if (!isSoloTribeId(tribeId)) return true; // not a solo namespace — no enforcement
+  const ownerAddress = parseSoloAddress(tribeId);
+  if (ownerAddress?.toLowerCase() !== authenticatedAddress.toLowerCase()) {
+    res.status(403).json({ error: "You can only access your own solo location namespace" });
+    return false;
+  }
+  return true;
+}
+
 export function createLocationRouter(pool: pg.Pool): Router {
   const router = Router();
 
@@ -87,6 +127,9 @@ export function createLocationRouter(pool: pg.Pool): Router {
       return;
     }
 
+    // Solo namespace: only the owner can submit PODs
+    if (!enforceSoloOwnership(tribeId, address, res)) return;
+
     try {
       const id = await upsertLocationPod(pool, {
         structureId,
@@ -108,13 +151,16 @@ export function createLocationRouter(pool: pg.Pool): Router {
   });
 
   // ================================================================
-  // GET /tribe/:tribeId — List all PODs for a tribe
+  // GET /tribe/:tribeId — List all PODs for a tribe (or solo namespace)
   // ================================================================
   router.get("/tribe/:tribeId", async (req: Request, res: Response) => {
     const address = await authenticate(req, res);
     if (!address) return;
 
     const tribeId = req.params.tribeId as string;
+
+    // Solo namespace: only the owner can read
+    if (!enforceSoloOwnership(tribeId, address, res)) return;
 
     try {
       const pods = await getLocationPodsByTribe(pool, tribeId);
@@ -142,6 +188,9 @@ export function createLocationRouter(pool: pg.Pool): Router {
       res.status(400).json({ error: "tribeId query param required" });
       return;
     }
+
+    // Solo namespace: only the owner can read
+    if (!enforceSoloOwnership(tribeId, address, res)) return;
 
     try {
       const pod = await getLocationPod(pool, structureId, tribeId);
@@ -173,6 +222,9 @@ export function createLocationRouter(pool: pg.Pool): Router {
       res.status(400).json({ error: "tribeId query param required" });
       return;
     }
+
+    // Solo namespace: only the owner can read
+    if (!enforceSoloOwnership(tribeId, address, res)) return;
 
     try {
       const pod = await getLocationPod(pool, structureId, tribeId);
@@ -245,7 +297,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   });
 
   // ================================================================
-  // GET /keys/:tribeId/status — Check TLK initialisation state for a tribe
+  // GET /keys/:tribeId/status — Check TLK initialisation state for a tribe or solo namespace
   //
   // Returns whether a TLK has been initialised for the tribe and whether
   // the calling member has a wrapped copy. Does NOT return key material.
@@ -255,6 +307,9 @@ export function createLocationRouter(pool: pg.Pool): Router {
     if (!address) return;
 
     const tribeId = req.params.tribeId as string;
+
+    // Solo namespace: only the owner can check status
+    if (!enforceSoloOwnership(tribeId, address, res)) return;
 
     try {
       const latestVersion = await getLatestTlkVersion(pool, tribeId);
@@ -286,6 +341,9 @@ export function createLocationRouter(pool: pg.Pool): Router {
     if (!address) return;
 
     const tribeId = req.params.tribeId as string;
+
+    // Solo namespace: only the owner can fetch their key
+    if (!enforceSoloOwnership(tribeId, address, res)) return;
 
     try {
       const tlk = await getTlkForMember(pool, tribeId, address);
@@ -545,6 +603,9 @@ export function createLocationRouter(pool: pg.Pool): Router {
       return;
     }
 
+    // Solo namespace: only the owner can register
+    if (!enforceSoloOwnership(tribeId, address, res)) return;
+
     try {
       const blobBuf = Buffer.from(encryptedBlob, "base64");
       const nonceBuf = Buffer.from(nonce, "base64");
@@ -623,6 +684,9 @@ export function createLocationRouter(pool: pg.Pool): Router {
       return;
     }
 
+    // Solo namespace: only the owner can refresh
+    if (!enforceSoloOwnership(tribeId, address, res)) return;
+
     try {
       // 1. Fetch the primary (Network Node) POD
       const nodePod = await getLocationPod(pool, networkNodeId, tribeId);
@@ -678,6 +742,81 @@ export function createLocationRouter(pool: pg.Pool): Router {
     } catch (err) {
       console.error("[locations] Failed to refresh Network Node PODs:", err);
       res.status(500).json({ error: "Failed to refresh Network Node location" });
+    }
+  });
+
+  // ================================================================
+  // POST /keys/solo-init — Initialize a Personal Location Key (PLK)
+  //
+  // Body: { x25519Pub (base64) }
+  //
+  // Generates a PLK (functionally identical to a TLK) and wraps it
+  // only to the caller. The synthetic tribeId is `solo:<address>`.
+  // ================================================================
+  router.post("/keys/solo-init", async (req: Request, res: Response) => {
+    const address = await authenticate(req, res);
+    if (!address) return;
+
+    const { x25519Pub } = req.body as { x25519Pub: string };
+
+    if (!x25519Pub) {
+      res.status(400).json({ error: "x25519Pub required" });
+      return;
+    }
+
+    const soloTribeId = buildSoloTribeId(address);
+
+    try {
+      // Check if PLK already exists
+      const existingVersion = await getLatestTlkVersion(pool, soloTribeId);
+      if (existingVersion > 0) {
+        res.status(409).json({ error: "Personal Location Key already initialised", tlk_version: existingVersion });
+        return;
+      }
+
+      const pubBuf = Buffer.from(x25519Pub, "base64");
+      if (pubBuf.length !== 32) {
+        res.status(400).json({ error: "Invalid X25519 public key length — expected 32 bytes" });
+        return;
+      }
+
+      const tlk = generateTlk();
+      const wrapped = wrapTlk(tlk, pubBuf);
+      await upsertTlk(pool, soloTribeId, address, wrapped, 1);
+
+      // Also register the public key for consistency
+      await upsertMemberPublicKey(pool, soloTribeId, address, pubBuf);
+
+      res.json({ tribe_id: soloTribeId, tlk_version: 1, solo: true });
+    } catch (err) {
+      console.error("[locations] Failed to init solo PLK:", err);
+      res.status(500).json({ error: "Failed to initialise Personal Location Key" });
+    }
+  });
+
+  // ================================================================
+  // GET /solo — List the caller's solo location PODs
+  //
+  // Convenience endpoint — equivalent to GET /tribe/solo:<address>
+  // but the caller doesn't need to construct the synthetic tribeId.
+  // ================================================================
+  router.get("/solo", async (req: Request, res: Response) => {
+    const address = await authenticate(req, res);
+    if (!address) return;
+
+    const soloTribeId = buildSoloTribeId(address);
+
+    try {
+      const pods = await getLocationPodsByTribe(pool, soloTribeId);
+      res.json({
+        pods: pods.map(serialisePod),
+        tribe_id: soloTribeId,
+        count: pods.length,
+        solo: true,
+      });
+    } catch (err) {
+      console.error("[locations] Failed to list solo PODs:", err);
+      res.status(500).json({ error: "Failed to fetch solo PODs" });
     }
   });
 
