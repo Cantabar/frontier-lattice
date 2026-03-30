@@ -13,6 +13,7 @@
 import { randomBytes, createCipheriv, createDecipheriv, createHmac } from "node:crypto";
 import { x25519 } from "@noble/curves/ed25519";
 import { verifyPersonalMessageSignature } from "@mysten/sui/verify";
+import { DEFAULT_CONFIG } from "../types.js";
 
 // ============================================================
 // TLK Generation
@@ -95,7 +96,17 @@ export function unwrapTlk(wrappedKey: Buffer, memberX25519Priv: Uint8Array): Buf
 // ============================================================
 
 /**
- * Challenge format: "frontier-corm:<address>:<timestamp_ms>"
+ * Challenge format (human-readable, multi-line):
+ *
+ *   CORM Location Network \u2014 Identity Verification
+ *
+ *   This signature proves you own this wallet.
+ *   No transaction will be submitted and no funds will be spent.
+ *   Address: <address>
+ *   Timestamp: <timestamp_ms>
+ *
+ * Legacy format (still accepted for backward compatibility):
+ *   frontier-corm:<address>:<timestamp_ms>
  *
  * The client signs this with signPersonalMessage(). The server verifies
  * that the signature was produced by the claimed address and that the
@@ -107,6 +118,24 @@ export interface AuthResult {
   valid: boolean;
   address: string;
   error?: string;
+}
+
+/** Parse the human-readable or legacy challenge text into address + timestamp. */
+function parseChallenge(text: string): { address: string; timestampMs: number } | null {
+  // New multi-line format: look for "Address: ..." and "Timestamp: ..." lines
+  const addressMatch = text.match(/^Address:\s*(.+)$/m);
+  const timestampMatch = text.match(/^Timestamp:\s*(\d+)$/m);
+  if (addressMatch && timestampMatch) {
+    return { address: addressMatch[1].trim(), timestampMs: Number(timestampMatch[1]) };
+  }
+
+  // Legacy format: "frontier-corm:<address>:<timestamp_ms>"
+  const parts = text.split(":");
+  if (parts.length === 3 && parts[0] === "frontier-corm") {
+    return { address: parts[1], timestampMs: Number(parts[2]) };
+  }
+
+  return null;
 }
 
 /**
@@ -123,13 +152,12 @@ export async function verifyWalletAuth(
   try {
     // Parse the challenge text
     const text = new TextDecoder().decode(message);
-    const parts = text.split(":");
-    if (parts.length !== 3 || parts[0] !== "frontier-corm") {
+    const parsed = parseChallenge(text);
+    if (!parsed) {
       return { valid: false, address: "", error: "Invalid challenge format" };
     }
 
-    const claimedAddress = parts[1];
-    const timestampMs = Number(parts[2]);
+    const { address: claimedAddress, timestampMs } = parsed;
 
     // Check timestamp freshness
     const now = Date.now();
@@ -137,22 +165,98 @@ export async function verifyWalletAuth(
       return { valid: false, address: claimedAddress, error: "Challenge expired" };
     }
 
-    // Verify the signature using the Sui SDK
-    const publicKey = await verifyPersonalMessageSignature(message, signature, {
-      address: claimedAddress,
-    });
+    // Verify the signature using the Sui SDK.
+    // For standard Ed25519/Secp signatures this is local-only.
+    // For zkLogin signatures the SDK makes a GraphQL call which may fail
+    // if the SDK's query is out of sync with the Sui GraphQL schema.
+    // In that case we fall back to the JSON-RPC endpoint.
+    try {
+      const publicKey = await verifyPersonalMessageSignature(message, signature, {
+        address: claimedAddress,
+      });
 
-    const recoveredAddress = publicKey.toSuiAddress();
-    if (recoveredAddress !== claimedAddress) {
-      return { valid: false, address: claimedAddress, error: "Address mismatch" };
+      const recoveredAddress = publicKey.toSuiAddress();
+      if (recoveredAddress !== claimedAddress) {
+        return { valid: false, address: claimedAddress, error: "Address mismatch" };
+      }
+
+      return { valid: true, address: claimedAddress };
+    } catch (sdkErr) {
+      // Check if this is a zkLogin GraphQL schema mismatch
+      const errMsg = sdkErr instanceof Error ? sdkErr.message : String(sdkErr);
+      if (errMsg.includes("ZkLoginVerifyResult") || errMsg.includes("ZkLogin")) {
+        // Attempt verification via JSON-RPC fallback
+        const rpcResult = await verifyZkLoginViaRpc(
+          message,
+          signature,
+          claimedAddress,
+        );
+        if (rpcResult !== null) return rpcResult;
+      }
+      // Not a zkLogin issue or RPC fallback unavailable — propagate
+      throw sdkErr;
     }
-
-    return { valid: true, address: claimedAddress };
   } catch (err) {
     return {
       valid: false,
       address: "",
       error: err instanceof Error ? err.message : "Verification failed",
     };
+  }
+}
+
+/**
+ * Fallback: verify a zkLogin signature via the Sui JSON-RPC endpoint
+ * `suix_verifyZkLoginSignature` (available since Feb 2025).
+ *
+ * Returns an AuthResult on success/failure, or `null` if the RPC endpoint
+ * is not available (older node) so the caller can fall through.
+ */
+async function verifyZkLoginViaRpc(
+  message: Uint8Array,
+  signature: string,
+  expectedAddress: string,
+): Promise<AuthResult | null> {
+  try {
+    const rpcUrl = DEFAULT_CONFIG.suiRpcUrl;
+    const messageB64 = Buffer.from(message).toString("base64");
+
+    const res = await fetch(rpcUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "suix_verifyZkLoginSignature",
+        params: {
+          bytes: messageB64,
+          signature,
+          intentScope: "PersonalMessage",
+          author: expectedAddress,
+        },
+      }),
+    });
+
+    if (!res.ok) return null; // RPC not available
+
+    const json = (await res.json()) as {
+      result?: { success: boolean; errors?: string[] };
+      error?: { message: string };
+    };
+
+    if (json.error) {
+      // Method not found = older node without this endpoint
+      if (json.error.message?.includes("not found")) return null;
+      return { valid: false, address: expectedAddress, error: json.error.message };
+    }
+
+    if (json.result?.success) {
+      return { valid: true, address: expectedAddress };
+    }
+
+    const errors = json.result?.errors?.join("; ") ?? "zkLogin verification failed";
+    return { valid: false, address: expectedAddress, error: errors };
+  } catch {
+    return null; // Network error — let caller handle
   }
 }

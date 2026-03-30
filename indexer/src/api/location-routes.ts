@@ -9,7 +9,9 @@
 
 import { Router, type Request, type Response } from "express";
 import type pg from "pg";
-import { verifyWalletAuth, generateTlk, wrapTlk } from "../location/crypto.js";
+import { generateTlk, wrapTlk } from "../location/crypto.js";
+import { authenticate } from "./auth.js";
+import { createSession } from "../location/session.js";
 // Note: wrapTlk is still used by /keys/init and /keys/rotate (server-generated TLK).
 // The /keys/wrap endpoint now accepts client-produced wrapped blobs instead.
 import {
@@ -74,41 +76,44 @@ export function createLocationRouter(pool: pg.Pool): Router {
   const router = Router();
 
   // ================================================================
-  // Auth middleware helper — extracts and verifies wallet signature
-  // from Authorization header: "SuiSig <base64_message>.<base64_signature>"
+  // Shared auth helper — accepts both SuiSig and Bearer (session token)
   // ================================================================
-  async function authenticate(req: Request, res: Response): Promise<string | null> {
+  async function auth(req: Request, res: Response): Promise<string | null> {
+    return authenticate(req, res, pool);
+  }
+
+  // ================================================================
+  // POST /session — Exchange a wallet signature for a session token
+  //
+  // Requires SuiSig auth. Returns { token, expires_at }.
+  // The client stores the token and uses `Bearer <token>` for
+  // subsequent requests (no further wallet signatures needed).
+  // ================================================================
+  router.post("/session", async (req: Request, res: Response) => {
+    // Session creation always requires a fresh wallet signature (SuiSig)
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith("SuiSig ")) {
-      res.status(401).json({ error: "Missing SuiSig authorization header" });
-      return null;
+      res.status(401).json({ error: "Session creation requires SuiSig authorization" });
+      return;
     }
 
-    const payload = authHeader.slice(7); // strip "SuiSig "
-    const dotIdx = payload.indexOf(".");
-    if (dotIdx === -1) {
-      res.status(401).json({ error: "Malformed SuiSig token" });
-      return null;
+    const address = await auth(req, res);
+    if (!address) return;
+
+    try {
+      const session = await createSession(pool, address);
+      res.json({ token: session.token, expires_at: session.expiresAt });
+    } catch (err) {
+      console.error("[locations] Failed to create session:", err);
+      res.status(500).json({ error: "Failed to create session" });
     }
-
-    const messageB64 = payload.slice(0, dotIdx);
-    const signature = payload.slice(dotIdx + 1);
-    const message = Buffer.from(messageB64, "base64");
-
-    const result = await verifyWalletAuth(message, signature);
-    if (!result.valid) {
-      res.status(401).json({ error: result.error ?? "Signature verification failed" });
-      return null;
-    }
-
-    return result.address;
-  }
+  });
 
   // ================================================================
   // POST /pod — Submit or update a signed location POD
   // ================================================================
   router.post("/pod", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const {
@@ -154,7 +159,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // GET /tribe/:tribeId — List all PODs for a tribe (or solo namespace)
   // ================================================================
   router.get("/tribe/:tribeId", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const tribeId = req.params.tribeId as string;
@@ -179,7 +184,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // GET /pod/:structureId — Fetch a single POD
   // ================================================================
   router.get("/pod/:structureId", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const structureId = req.params.structureId as string;
@@ -213,7 +218,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // is intended to be copied and shared with external applications.
   // ================================================================
   router.get("/pod/:structureId/proof", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const structureId = req.params.structureId as string;
@@ -278,7 +283,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // DELETE /pod/:structureId — Revoke a POD (owner only)
   // ================================================================
   router.delete("/pod/:structureId", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const structureId = req.params.structureId as string;
@@ -303,7 +308,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // the calling member has a wrapped copy. Does NOT return key material.
   // ================================================================
   router.get("/keys/:tribeId/status", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const tribeId = req.params.tribeId as string;
@@ -337,7 +342,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // GET /keys/:tribeId — Fetch the caller's wrapped TLK
   // ================================================================
   router.get("/keys/:tribeId", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const tribeId = req.params.tribeId as string;
@@ -371,7 +376,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // Generates a new TLK and wraps it to all provided member public keys.
   // ================================================================
   router.post("/keys/init", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { tribeId, memberPublicKeys } = req.body as {
@@ -418,7 +423,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // blob here. The server never sees the plaintext TLK.
   // ================================================================
   router.post("/keys/wrap", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { tribeId, newMemberAddress, wrappedKey } = req.body as {
@@ -469,7 +474,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // Existing PODs remain readable with old TLK; owners re-encrypt on next login.
   // ================================================================
   router.post("/keys/rotate", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { tribeId, memberPublicKeys } = req.body as {
@@ -513,7 +518,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // wrap the key for them.
   // ================================================================
   router.post("/keys/register", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { tribeId, x25519Pub } = req.body as {
@@ -548,7 +553,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // not yet have a wrapped TLK at the current version.
   // ================================================================
   router.get("/keys/pending/:tribeId", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const tribeId = req.params.tribeId as string;
@@ -577,7 +582,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // for every structure connected to that node (same location data).
   // ================================================================
   router.post("/network-node-pod", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const {
@@ -675,7 +680,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // any new structures, and removes stale derived PODs.
   // ================================================================
   router.post("/network-node-pod/refresh", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { networkNodeId, tribeId } = req.body;
@@ -754,7 +759,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // only to the caller. The synthetic tribeId is `solo:<address>`.
   // ================================================================
   router.post("/keys/solo-init", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { x25519Pub } = req.body as { x25519Pub: string };
@@ -801,7 +806,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // but the caller doesn't need to construct the synthetic tribeId.
   // ================================================================
   router.get("/solo", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const soloTribeId = buildSoloTribeId(address);

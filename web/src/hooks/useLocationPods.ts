@@ -8,7 +8,7 @@
  *   - Wallet signature authentication for all Location API calls
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useSignPersonalMessage } from "@mysten/dapp-kit";
 import { useIdentity } from "./useIdentity";
 import {
@@ -22,6 +22,7 @@ import {
   submitNetworkNodeLocationPod,
   refreshNetworkNodeLocationPod,
   isSoloTribeId,
+  createLocationSession,
   type LocationPodResponse,
 } from "../lib/api";
 import {
@@ -96,6 +97,57 @@ export interface UseLocationPodsReturn {
 }
 
 // ============================================================
+// Module-level session cache
+//
+// Survives component remounts (navigations). Also persisted in
+// sessionStorage so it survives React HMR in dev mode.
+// Cleared when the tab closes (sessionStorage is per-tab).
+// ============================================================
+
+const SESSION_STORAGE_KEY = "frontier-corm:locationSession";
+
+interface CachedSession {
+  header: string;   // "Bearer <token>"
+  expiresAt: number; // ms since epoch
+  address: string;   // wallet address this session belongs to
+}
+
+let sessionCache: CachedSession | null = null;
+
+// Hydrate from sessionStorage on module load
+try {
+  const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (stored) {
+    const parsed = JSON.parse(stored) as CachedSession;
+    if (parsed.expiresAt > Date.now()) {
+      sessionCache = parsed;
+    } else {
+      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    }
+  }
+} catch {
+  // sessionStorage may be unavailable
+}
+
+function cacheSession(session: CachedSession) {
+  sessionCache = session;
+  try {
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // Non-critical
+  }
+}
+
+function clearSessionCache() {
+  sessionCache = null;
+  try {
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch {
+    // Non-critical
+  }
+}
+
+// ============================================================
 // Hook
 // ============================================================
 
@@ -107,24 +159,39 @@ export function useLocationPods(): UseLocationPodsReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cache auth header briefly to avoid signing every single request
-  const authCacheRef = useRef<{ header: string; expiresAt: number } | null>(null);
-
   const getAuthHeader = useCallback(async (): Promise<string> => {
     if (!address) throw new Error("Wallet not connected");
 
-    // Reuse cached auth if still valid (2-minute window within the 5-minute server window)
+    // If we have a valid cached session for this address, reuse it
     const now = Date.now();
-    if (authCacheRef.current && authCacheRef.current.expiresAt > now) {
-      return authCacheRef.current.header;
+    if (
+      sessionCache &&
+      sessionCache.address === address &&
+      sessionCache.expiresAt > now + 60_000 // 1-min safety margin
+    ) {
+      return sessionCache.header;
     }
 
+    // Need a fresh session — sign a challenge and exchange for a token
     const challenge = buildAuthChallenge(address);
     const { signature } = await signPersonalMessage({ message: challenge });
-    const header = buildAuthHeader(challenge, signature);
+    const suiSigHeader = buildAuthHeader(challenge, signature);
 
-    authCacheRef.current = { header, expiresAt: now + 2 * 60 * 1000 };
-    return header;
+    try {
+      const { token, expires_at } = await createLocationSession(suiSigHeader);
+      const bearerHeader = `Bearer ${token}`;
+      cacheSession({
+        header: bearerHeader,
+        expiresAt: new Date(expires_at).getTime(),
+        address,
+      });
+      return bearerHeader;
+    } catch {
+      // Fallback: if session creation fails, use the SuiSig header directly
+      // (still valid for the server's 5-minute window)
+      clearSessionCache();
+      return suiSigHeader;
+    }
   }, [address, signPersonalMessage]);
 
   const fetchPods = useCallback(

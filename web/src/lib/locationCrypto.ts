@@ -328,10 +328,21 @@ export function ed25519PubToX25519(ed25519Pub: Uint8Array): Uint8Array {
 
 /**
  * Build an authentication challenge string for the Location API.
- * Format: "frontier-corm:<address>:<timestamp_ms>"
+ *
+ * The message is human-readable so users understand what they are signing
+ * when the wallet popup appears. The server parses the Address and Timestamp
+ * lines to verify freshness and identity.
  */
 export function buildAuthChallenge(address: string): Uint8Array {
-  const text = `frontier-corm:${address}:${Date.now()}`;
+  const ts = Date.now();
+  const text = [
+    "CORM Location Network \u2014 Identity Verification",
+    "",
+    "This signature proves you own this wallet.",
+    "No transaction will be submitted and no funds will be spent.",
+    `Address: ${address}`,
+    `Timestamp: ${ts}`,
+  ].join("\n");
   return new TextEncoder().encode(text);
 }
 

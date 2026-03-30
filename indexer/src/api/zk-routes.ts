@@ -12,7 +12,7 @@
 
 import { Router, type Request, type Response } from "express";
 import type pg from "pg";
-import { verifyWalletAuth } from "../location/crypto.js";
+import { authenticate } from "./auth.js";
 import {
   verifyFilterProof,
   buildFilterKey,
@@ -39,32 +39,9 @@ import {
 export function createZkRouter(pool: pg.Pool): Router {
   const router = Router();
 
-  // ---- Auth (same helper as location-routes) ----
-  async function authenticate(req: Request, res: Response): Promise<string | null> {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("SuiSig ")) {
-      res.status(401).json({ error: "Missing SuiSig authorization header" });
-      return null;
-    }
-
-    const payload = authHeader.slice(7);
-    const dotIdx = payload.indexOf(".");
-    if (dotIdx === -1) {
-      res.status(401).json({ error: "Malformed SuiSig token" });
-      return null;
-    }
-
-    const messageB64 = payload.slice(0, dotIdx);
-    const signature = payload.slice(dotIdx + 1);
-    const message = Buffer.from(messageB64, "base64");
-
-    const result = await verifyWalletAuth(message, signature);
-    if (!result.valid) {
-      res.status(401).json({ error: result.error ?? "Signature verification failed" });
-      return null;
-    }
-
-    return result.address;
+  // ---- Auth (shared helper — supports SuiSig and Bearer) ----
+  async function auth(req: Request, res: Response): Promise<string | null> {
+    return authenticate(req, res, pool);
   }
 
   // ================================================================
@@ -80,7 +57,7 @@ export function createZkRouter(pool: pg.Pool): Router {
   // game region/constellation, and stores a public location tag.
   // ================================================================
   router.post("/submit", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const {
@@ -292,7 +269,7 @@ export function createZkRouter(pool: pg.Pool): Router {
   // (all values are decimal-encoded biased coordinates)
   // ================================================================
   router.get("/region", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { tribeId, xMin, xMax, yMin, yMax, zMin, zMax } = req.query as Record<string, string>;
@@ -322,7 +299,7 @@ export function createZkRouter(pool: pg.Pool): Router {
   // Query params: tribeId, refX, refY, refZ, maxDistSq
   // ================================================================
   router.get("/proximity", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { tribeId, refX, refY, refZ, maxDistSq } = req.query as Record<string, string>;
@@ -352,7 +329,7 @@ export function createZkRouter(pool: pg.Pool): Router {
   // Query params: tribeId, structureIdA, structureIdB
   // ================================================================
   router.get("/mutual-proximity", async (req: Request, res: Response) => {
-    const address = await authenticate(req, res);
+    const address = await auth(req, res);
     if (!address) return;
 
     const { tribeId, structureIdA, structureIdB } = req.query as Record<string, string>;

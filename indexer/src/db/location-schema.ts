@@ -111,4 +111,20 @@ const LOCATION_SCHEMA_SQL = `
     ON structure_location_tags(tag_type, tag_id);
   CREATE INDEX IF NOT EXISTS idx_structure_tags_structure
     ON structure_location_tags(structure_id);
+
+  -- Session tokens for Location API authentication.
+  -- Tokens are opaque 32-byte hex strings; only the SHA-256 hash is stored.
+  -- Expired rows are cleaned up lazily during validation.
+  CREATE TABLE IF NOT EXISTS location_sessions (
+    id              BIGSERIAL PRIMARY KEY,
+    token_hash      TEXT NOT NULL UNIQUE,
+    address         TEXT NOT NULL,
+    expires_at      TIMESTAMPTZ NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_location_sessions_hash
+    ON location_sessions(token_hash);
+  CREATE INDEX IF NOT EXISTS idx_location_sessions_expires
+    ON location_sessions(expires_at);
 `;

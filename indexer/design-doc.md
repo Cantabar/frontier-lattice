@@ -39,7 +39,9 @@ A privacy-preserving location sharing system built into the indexer, providing e
   - `GET /mutual-proximity` — query for a verified mutual proximity proof between two structures
   - `GET /tags` — public (no auth) query for structure location tags (region/constellation membership)
 - **ZK Verifier** (`location/zk-verifier.ts`) — server-side Groth16 proof verification using snarkjs. Lazy-loads circuit verification keys from `circuits/artifacts/`. Supports region, proximity, and mutual proximity filter types. Gracefully rejects proofs when keys are unavailable.
-- **Location Crypto** (`location/crypto.ts`) — wallet signature verification, TLK generation (256-bit random), X25519 ECIES wrapping (ephemeral key + AES-256-GCM).
+- **Location Crypto** (`location/crypto.ts`) — wallet signature verification (Ed25519, Secp256k1/r1, zkLogin with JSON-RPC fallback), TLK generation (256-bit random), X25519 ECIES wrapping (ephemeral key + AES-256-GCM). Supports both legacy and human-readable challenge message formats.
+- **Session Management** (`location/session.ts`) — opaque session token lifecycle. Tokens are random 32-byte hex strings; only SHA-256 hashes are stored in Postgres. 1-hour TTL with lazy cleanup.
+- **Auth Helper** (`api/auth.ts`) — shared authentication for location-routes and zk-routes. Accepts `SuiSig` (wallet signature) and `Bearer` (session token) authorization schemes.
 - **Region Data** (`location/region-data.ts`) — server-side reference data for Eve Frontier regions and constellations with canonical bounding boxes. Used to validate ZK proof public signals against named regions.
 - **Sui RPC Helper** (`location/sui-rpc.ts`) — fetches `connected_assembly_ids` from Network Node objects for POD propagation.
 
@@ -100,7 +102,10 @@ All routes under `/api/v1`. Pagination via `?limit=50&offset=0&order=desc`.
 
 ### Shadow Location API
 
-Mounted under `/api/v1/locations`. All endpoints (except `/proofs/tags`) require wallet signature auth (`Authorization: SuiSig <message>.<signature>`). Solo mode endpoints use synthetic `solo:<address>` tribe IDs with owner-only access enforcement.
+Mounted under `/api/v1/locations`. All endpoints (except `/proofs/tags`) require authentication via either wallet signature (`Authorization: SuiSig <message>.<signature>`) or session token (`Authorization: Bearer <token>`). Solo mode endpoints use synthetic `solo:<address>` tribe IDs with owner-only access enforcement.
+
+**Session Management:**
+- `POST /session` — exchange a SuiSig auth for an opaque session token (1-hour TTL). Eliminates repeated wallet signature prompts.
 
 **POD Management:**
 - `POST /pod` — submit or update an encrypted location POD
@@ -145,6 +150,7 @@ Mounted under `/api/v1/locations/proofs`.
 - `member_public_keys` — X25519 public keys registered by members for TLK distribution
 - `filter_proofs` — verified Groth16 proofs (region/proximity/mutual proximity) per structure×tribe with filter key, public signals, proof JSON, and optional reference_structure_id for mutual proximity proofs
 - `location_tags` — public location tags (region/constellation membership) derived from verified ZK proofs
+- `location_sessions` — session tokens for Location API auth (token SHA-256 hash, address, expiry). Expired rows cleaned up lazily.
 
 ### Checkpoint Proof Verification
 
@@ -174,7 +180,8 @@ Each archived event includes proof metadata for independent verification:
 - Shadow Location Network with encrypted PODs, TLK/PLK key management (init/wrap/rotate/register), solo mode (Personal Location Key), and Network Node POD propagation
 - ZK proof verification and storage for region, proximity, and mutual proximity location filters (Groth16/snarkjs)
 - Public location tagging from verified ZK proofs (region/constellation membership)
-- Wallet signature authentication for location API endpoints
+- Wallet signature authentication with session token support (sign once, Bearer token for session)
+- zkLogin wallet support with JSON-RPC fallback for signature verification
 - Shareable POD proof bundle export (public attestation + ZK proofs + location tags, no encrypted data)
 
 ## Open Questions / Future Work
