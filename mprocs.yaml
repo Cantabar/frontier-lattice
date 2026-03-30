@@ -27,6 +27,26 @@ procs:
     shell: "bash scripts/deploy-world-contracts.sh"
     autostart: true
 
+  # ── Seed inventory (one-shot, optional — manually start when needed) ──────
+  seed-inventory:
+    shell: |
+      SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+      PROJECT_ROOT="$SCRIPT_DIR"
+      WORLD_DIR="$PROJECT_ROOT/../world-contracts"
+      echo "Waiting for world contracts deployment..."
+      until grep -q '^VITE_WORLD_PACKAGE_ID=0x' .env.localnet 2>/dev/null; do
+        sleep 3
+      done
+      echo "Requesting gas for item seeding..."
+      for i in $(seq 1 5); do sui client faucet 2>&1 || true; sleep 2; done
+      until sui client gas --json 2>/dev/null | jq -e 'length > 0' >/dev/null 2>&1; do
+        sleep 2
+      done
+      echo "=== Seeding all items into SSU ==="
+      (cd "$WORLD_DIR" && NODE_PATH="$WORLD_DIR/node_modules" npx tsx "$PROJECT_ROOT/scripts/seed-ores.ts")
+      echo "Inventory seeding complete."
+    autostart: false
+
   # ── Contract publish (one-shot, waits for world, then publishes frontier-corm) ──
   contracts-publish:
     shell: "bash scripts/publish-contracts-local.sh"
