@@ -162,7 +162,7 @@ for i in "${!PACKAGES[@]}"; do
     write_env_var "$vite_var" "$PACKAGE_ID" "$WEB_ENV_FILE"
   fi
 
-  # Write CORM_STATE_PACKAGE_ID alias (used by corm-brain config)
+  # Write CORM_STATE_PACKAGE_ID alias (used by continuity-engine config)
   if [ "$pkg" = "corm_state" ]; then
     write_env_var "CORM_STATE_PACKAGE_ID" "$PACKAGE_ID" "$ENV_FILE"
     echo "  CORM_STATE_PACKAGE_ID=$PACKAGE_ID"
@@ -233,7 +233,7 @@ if [ -n "$CORM_AUTH_PKG" ] && [ -n "$CORM_STATE_PKG" ]; then
     echo "  WARNING: Could not find CormAdminCap. Skipping CormConfig creation." >&2
   else
     # For localnet, use the publisher's own address as the brain address.
-    # The corm-brain service runs on the same keypair in local dev.
+    # The continuity-engine service runs on the same keypair in local dev.
     BRAIN_ADDRESS="$PUBLISHER_ADDR"
     echo "  CormAdminCap: $ADMIN_CAP_ID"
     echo "  Brain address: $BRAIN_ADDRESS"

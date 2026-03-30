@@ -276,7 +276,7 @@ if [ -n "$CORM_AUTH_PKG" ] && [ -n "$CORM_STATE_PKG" ]; then
     if [ -z "$BRAIN_ADDRESS" ]; then
       echo ""
       echo "A brain address is required to create CormConfig. This is the Sui address"
-      echo "of the corm-brain service keypair that will administer all corms."
+      echo "of the continuity-engine service keypair that will administer all corms."
       read -rp "Enter the brain address (0x...): " BRAIN_ADDRESS
     fi
     if [ -z "$BRAIN_ADDRESS" ]; then
