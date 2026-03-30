@@ -8,8 +8,10 @@
 import { useState } from "react";
 import styled from "styled-components";
 import { useQueryClient } from "@tanstack/react-query";
+import { useDisconnectWallet } from "@mysten/dapp-kit";
 import { config } from "../config";
 import { clearWorldTribeInfoCache } from "../hooks/useWorldTribeInfo";
+import { clearLocationSession } from "../hooks/useLocationPods";
 import { useNotifications } from "../hooks/useNotifications";
 
 // ---------------------------------------------------------------------------
@@ -139,6 +141,7 @@ function formatBytes(bytes: number): string {
 
 export function SettingsPage() {
   const queryClient = useQueryClient();
+  const { mutate: disconnectWallet } = useDisconnectWallet();
   const { push } = useNotifications();
   const [stats, setStats] = useState(tribeCacheStats);
   const [reloading, setReloading] = useState(false);
@@ -182,6 +185,45 @@ export function SettingsPage() {
         <ActionButton $busy={reloading} onClick={handleReloadTribes}>
           {reloading ? "Reloading…" : "Reload Tribe Data"}
         </ActionButton>
+      </Card>
+
+      <Card>
+        <CardTitle>Location Session</CardTitle>
+        <CardDescription>
+          The Location Network caches a session token after your first wallet
+          signature. If you're seeing authentication errors (e.g. "Invalid
+          signature"), clear the session and reconnect your wallet to force a
+          fresh zkLogin proof.
+        </CardDescription>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <ActionButton
+            onClick={() => {
+              clearLocationSession();
+              push({
+                level: "info",
+                title: "Session Cleared",
+                message: "Location session token removed. Next API call will sign a fresh challenge.",
+                source: "Settings",
+              });
+            }}
+          >
+            Clear Session
+          </ActionButton>
+          <ActionButton
+            onClick={() => {
+              clearLocationSession();
+              disconnectWallet();
+              push({
+                level: "info",
+                title: "Wallet Disconnected",
+                message: "Session cleared and wallet disconnected. Reconnect to re-authenticate with a fresh zkLogin proof.",
+                source: "Settings",
+              });
+            }}
+          >
+            Disconnect Wallet
+          </ActionButton>
+        </div>
       </Card>
 
       {/* ---- Config Overview ---- */}

@@ -147,6 +147,11 @@ function clearSessionCache() {
   }
 }
 
+/** Clear the cached location session. Exported for use in Settings. */
+export function clearLocationSession() {
+  clearSessionCache();
+}
+
 // ============================================================
 // Hook
 // ============================================================
