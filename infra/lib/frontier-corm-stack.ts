@@ -348,12 +348,16 @@ export class FrontierCormStack extends cdk.Stack {
       priority: 10,
     });
 
+    // Sticky sessions required: continuity-engine uses an in-memory session
+    // store (puzzle.SessionStore). Without stickiness, scaling desiredCount > 1
+    // would route requests to tasks that lack the player's session state.
     const continuityTg = httpsListener.addTargets("ContinuityTarget", {
       port: 3300,
       targets: [continuityService],
       healthCheck: { path: "/health", interval: cdk.Duration.seconds(30) },
       conditions: [elbv2.ListenerCondition.pathPatterns(["/api/continuity/*", "/phase0", "/phase0/*", "/puzzle", "/puzzle/*", "/phase2", "/phase2/*", "/stream", "/status", "/contracts", "/ssu/*"])],
       priority: 20,
+      stickinessCookieDuration: cdk.Duration.days(1),
     });
 
     // Default action

@@ -112,6 +112,7 @@ No application data — this service provisions infrastructure only. Database sc
 - S3 static frontend with CloudFront CDN and SPA routing
 - Custom domain (ef-corm.com) with Route 53 DNS + ACM TLS certificate
 - HTTPS on both CloudFront and ALB; HTTP redirects to HTTPS
+- ALB sticky sessions on continuity-engine target group (1-day TTL) — required because the service uses an in-memory session store
 - ECR container registry per service per environment
 - Secrets Manager for DB credentials and Sui RPC config
 - CloudWatch Logs with 2-week retention
