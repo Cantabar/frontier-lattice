@@ -123,6 +123,7 @@ All via Vite environment variables (`VITE_*`), resolved in `src/config.ts`:
 - `VITE_CORM_CONFIG_ID` — CormConfig shared object ID (for permissionless corm installation)
 
 Per-environment defaults are defined in `config.ts` and overridden by explicit `VITE_*` vars. Environment files: `.env.localnet`, `.env.utopia`, `.env.stillness`. Package IDs and shared object IDs are auto-populated by `scripts/publish-contracts.sh`; any package left at `0x0` will trigger an "Unconfigured Packages" warning on page load.
+**CormConfig and package identity:** The `CormConfig` shared object is typed to the `corm_state` package address that created it. If contracts are republished (new package IDs), the existing `CormConfig` becomes stale — the `install` function on the new package expects its own `CormConfig` type, causing a `TypeMismatch` error. After a republish, `CormConfig` must be recreated via `create_config` on the new package and `VITE_CORM_CONFIG_ID` updated. The publish script handles this automatically, but if it fails (for example, missing `CormAdminCap` or brain address), the config ID must be updated manually.
 
 **Stillness deployment status:** All contract package IDs are configured in `web/.env.stillness` and deployed to https://ef-corm.com via S3 + CloudFront.
 

@@ -176,12 +176,25 @@ EOF
 echo "Generated $PUB_FILE"
 
 # ── Clear stale package IDs ────────────────────────────────────────
+# Clear from both the root env file and the web env file. Without the
+# web env file cleanup, a stale VITE_CORM_CONFIG_ID (created under a
+# previous package deployment) survives a republish and causes
+# TypeMismatch errors at runtime.
+STALE_VARS=("${ENV_VARS[@]}" "${VITE_VARS[@]}" VITE_TRIBE_REGISTRY_ID VITE_CORM_CONFIG_ID VITE_METADATA_REGISTRY_ID)
 echo "Clearing stale contract IDs from $ENV_FILE..."
-for var in "${ENV_VARS[@]}" "${VITE_VARS[@]}" VITE_TRIBE_REGISTRY_ID VITE_CORM_CONFIG_ID; do
+for var in "${STALE_VARS[@]}"; do
   if grep -q "^${var}=" "$ENV_FILE" 2>/dev/null; then
     sed -i "s|^${var}=.*|${var}=|" "$ENV_FILE"
   fi
 done
+if [ -f "$WEB_ENV_FILE" ]; then
+  echo "Clearing stale contract IDs from $WEB_ENV_FILE..."
+  for var in "${STALE_VARS[@]}"; do
+    if grep -q "^${var}=" "$WEB_ENV_FILE" 2>/dev/null; then
+      sed -i "s|^${var}=.*|${var}=|" "$WEB_ENV_FILE"
+    fi
+  done
+fi
 
 # ── Publish each package ──────────────────────────────────────────
 for i in "${!PACKAGES[@]}"; do
