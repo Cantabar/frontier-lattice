@@ -77,6 +77,7 @@ deploy-infra: ## Deploy CDK stack for ENV (infra only)
 
 deploy-images: ## Build and push Docker images to ECR
 	$(eval INDEXER_ECR := $(call get_output,IndexerEcrUri))
+	$(eval CONTINUITY_ECR := $(call get_output,ContinuityEcrUri))
 	$(eval AWS_ACCOUNT := $(shell aws sts get-caller-identity --query Account --output text))
 	@echo "Logging in to ECR..."
 	aws ecr get-login-password --region $(AWS_REGION) | \
@@ -84,10 +85,15 @@ deploy-images: ## Build and push Docker images to ECR
 	@echo "Building and pushing indexer..."
 	docker build -t $(INDEXER_ECR):latest ./indexer
 	docker push $(INDEXER_ECR):latest
+	@echo "Building and pushing continuity-engine..."
+	docker build -t $(CONTINUITY_ECR):latest ./continuity-engine
+	docker push $(CONTINUITY_ECR):latest
 	@echo "Forcing ECS redeployment..."
 	aws ecs update-service --cluster fc-$(ENV)-cluster --service $(STACK_NAME)-IndexerServiceE6A6AFC3-* \
 		--force-new-deployment --region $(AWS_REGION) > /dev/null
-	@echo "Done. ECS indexer is redeploying."
+	aws ecs update-service --cluster fc-$(ENV)-cluster --service $(STACK_NAME)-ContinuityService* \
+		--force-new-deployment --region $(AWS_REGION) > /dev/null
+	@echo "Done. ECS indexer and continuity-engine are redeploying."
 
 # ── Frontend ───────────────────────────────────────────────────────
 
