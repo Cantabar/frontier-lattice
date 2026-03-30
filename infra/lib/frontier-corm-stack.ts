@@ -184,6 +184,22 @@ export class FrontierCormStack extends cdk.Stack {
     // ================================================================
     // CloudFront
     // ================================================================
+
+    // Sui RPC reverse-proxy: serves /sui-rpc on the same origin as the
+    // SPA so the browser treats it as same-origin (no CORS needed).
+    const suiFullnodeHost = suiRpcUrl.replace(/^https?:\/\//, "").replace(/:.*/, "");
+    const suiOrigin = new origins.HttpOrigin(suiFullnodeHost, {
+      protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
+    });
+
+    // CloudFront Function: rewrite /sui-rpc → / (Sui JSON-RPC lives at root)
+    const suiRpcRewrite = new cloudfront.Function(this, "SuiRpcRewrite", {
+      functionName: `${prefix}-sui-rpc-rewrite`,
+      code: cloudfront.FunctionCode.fromInline(
+        `function handler(event) { event.request.uri = '/'; return event.request; }`
+      ),
+    });
+
     const distribution = new cloudfront.Distribution(this, "CfDistribution", {
       domainNames: [siteDomain],
       certificate,
@@ -191,6 +207,22 @@ export class FrontierCormStack extends cdk.Stack {
         origin: origins.S3BucketOrigin.withOriginAccessControl(uiBucket),
         viewerProtocolPolicy:
           cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+      },
+      additionalBehaviors: {
+        "/sui-rpc": {
+          origin: suiOrigin,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+          functionAssociations: [
+            {
+              function: suiRpcRewrite,
+              eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
+            },
+          ],
+        },
       },
       defaultRootObject: "index.html",
       errorResponses: [

@@ -118,6 +118,7 @@ All via Vite environment variables (`VITE_*`), resolved in `src/config.ts`:
 - `VITE_WEB_UI_HOST` — public web UI host (for SSU dApp URLs)
 - `VITE_WORLD_API_URL` — Eve Frontier world API (tribe name backfill)
 - `VITE_PUZZLE_SERVICE_URL` — puzzle service URL (Continuity Engine iframe)
+- `VITE_SUI_RPC_URL` — Sui RPC proxy URL override (default: `/sui-rpc` for deployed envs, SDK default for local)
 - `VITE_CORM_STATE_ID` — CormState shared object ID
 - `VITE_CORM_CONFIG_ID` — CormConfig shared object ID (for permissionless corm installation)
 
@@ -130,6 +131,7 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
   - Build: `npm run build -- --mode utopia|stillness`
   - Deploy: `make deploy-frontend ENV=utopia|stillness` (S3 sync + CloudFront invalidation)
   - SPA routing: CloudFront 404 → `/index.html`
+  - Sui RPC proxy: CloudFront routes `/sui-rpc` → `fullnode.{net}.sui.io/` (same-origin, no CORS issues)
 
 ## Features
 

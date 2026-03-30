@@ -12,7 +12,7 @@ Internet
     ▼
 Route 53 (ef-corm.com)
     ├─ {env}.ef-corm.com ──► CloudFront ──► S3 (static frontend)
-    │   (stillness = apex ef-corm.com)
+    │   (stillness = apex ef-corm.com)  └─► /sui-rpc ──► fullnode.{net}.sui.io
     │
     └─ api.{env}.ef-corm.com ──► ALB (HTTPS :443)
                                     │
@@ -59,7 +59,7 @@ All resources are prefixed with `fc-{env}` (e.g. `fc-utopia`, `fc-stillness`). C
 - **Compute:** ECS Fargate (512 CPU / 1024 MB per task)
 - **Database:** RDS Postgres 16 (t4g.micro, gp3 20GB, single-AZ)
 - **Storage:** S3 (frontend static assets, block public access)
-- **CDN:** CloudFront (SPA routing via 404 → /index.html, custom domain + ACM cert)
+- **CDN:** CloudFront (SPA routing via 404 → /index.html, custom domain + ACM cert, Sui RPC reverse proxy)
 - **DNS:** Route 53 (A alias records for CloudFront + ALB)
 - **TLS:** ACM (ef-corm.com + *.ef-corm.com, DNS validation)
 - **Registry:** ECR (`fc-{env}-indexer`, `fc-{env}-continuity-engine`)
@@ -112,6 +112,7 @@ No application data — this service provisions infrastructure only. Database sc
 - ECS Fargate with 512 CPU / 1024 MB per task (indexer + continuity-engine)
 - RDS Postgres 16 (t4g.micro, gp3 20GB, single-AZ)
 - S3 static frontend with CloudFront CDN and SPA routing
+- Sui RPC reverse proxy via CloudFront (`/sui-rpc` → `fullnode.{net}.sui.io/`). Uses a CloudFront Function to rewrite the URI, `CachingDisabled` cache policy, and `AllViewerExceptHostHeader` origin request policy. Eliminates browser CORS errors by making Sui RPC calls same-origin with the SPA.
 - Custom domain (ef-corm.com) with Route 53 DNS + ACM TLS certificate
 - HTTPS on both CloudFront and ALB; HTTP redirects to HTTPS
 - ALB sticky sessions on continuity-engine target group (1-day TTL) — required because the service uses an in-memory session store

@@ -27,7 +27,7 @@ const queryClient = new QueryClient({
 const { networkConfig } = createNetworkConfig({
   localnet: { url: getFullnodeUrl("localnet") },
   devnet: { url: getFullnodeUrl("devnet") },
-  testnet: { url: getFullnodeUrl("testnet") },
+  testnet: { url: config.suiRpcUrl || getFullnodeUrl("testnet") },
 });
 
 createRoot(document.getElementById("root")!).render(

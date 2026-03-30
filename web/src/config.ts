@@ -28,6 +28,8 @@ interface EnvDefaults {
   worldApiUrl: string;
   indexerUrl: string;
   webUiHost: string;
+  /** When set, the SPA fetches Sui RPC via this same-origin path (CloudFront proxy). */
+  suiRpcUrl: string;
 }
 
 const envDefaults: Record<AppEnv, EnvDefaults> = {
@@ -36,18 +38,21 @@ const envDefaults: Record<AppEnv, EnvDefaults> = {
     worldApiUrl: "https://world-api-utopia.live.tech.evefrontier.com",
     indexerUrl: "/api/v1",
     webUiHost: "https://corm-utopia.evefrontier.com",
+    suiRpcUrl: "/sui-rpc",
   },
   stillness: {
     network: "testnet",
     worldApiUrl: "https://world-api-stillness.live.tech.evefrontier.com",
     indexerUrl: "/api/v1",
     webUiHost: "https://corm-stillness.evefrontier.com",
+    suiRpcUrl: "/sui-rpc",
   },
   local: {
     network: "localnet",
     worldApiUrl: "",
     indexerUrl: "/api/v1",
     webUiHost: "http://localhost:5173",
+    suiRpcUrl: "",
   },
 };
 
@@ -98,6 +103,9 @@ export const config = {
 
   /** Puzzle service URL (for Continuity Engine iframe) */
   puzzleServiceUrl: import.meta.env.VITE_PUZZLE_SERVICE_URL ?? "http://localhost:3300",
+
+  /** Sui RPC proxy URL (same-origin CloudFront proxy). Empty = use SDK default. */
+  suiRpcUrl: (import.meta.env.VITE_SUI_RPC_URL as string) ?? defaults.suiRpcUrl,
 
   /** CormState shared object ID (set after first corm creation) */
   cormStateId: import.meta.env.VITE_CORM_STATE_ID ?? "",
