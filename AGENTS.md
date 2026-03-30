@@ -14,3 +14,10 @@ Plans
 Documentation
  each service should have a design doc that explains what the service does
  the design-doc should contain a list of features that exist in the service
+Testing
+ Run all tests: `make test` from the repo root
+ Run Go tests only: `make test-go` (continuity-engine)
+ Run Move tests only: `make test-contracts` (all contract packages)
+ Services with tests: continuity-engine (Go), contracts (Sui Move), dev-tools (Sui Move PoC)
+ Services without tests: indexer, web, infra, static-data, training-data
+ Each service's design-doc.md contains a Testing section describing test layout and coverage

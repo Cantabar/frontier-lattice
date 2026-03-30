@@ -173,3 +173,26 @@ Only `types.json` and `groups.json` are copied from `fsd_built/` — the rest of
 - HTMX server-rendered UI with SSE log streaming
 - In-game SSU iframe embedding support (`/ssu/{entity_id}/` routes)
 - Cross-origin iframe cookie support (`SameSite=None; Secure` via `SECURE_COOKIES=true`)
+
+## Testing
+
+Run all tests: `go test ./...` from the `continuity-engine/` directory (or `make test-go` from the repo root).
+
+### Test layout
+
+- **`tests/`** — integration-style tests (external test package `tests`). 7 files covering cipher round-trips, puzzle generation, HTTP handler logic, contract generation, trait reduction, prompt processing, and trap movement.
+- **`internal/handlers/game_test.go`** — unit tests for puzzle decrypt handlers with real template rendering, OOB swap verification.
+- **`internal/reasoning/transitions_test.go`** — unit tests for deterministic transition message selection (determinism, corruption tolerance, in-character validation).
+
+### What's tested
+
+- Cipher encrypt/decrypt round-trips for all three tiers (Caesar, Variable, Position)
+- Noise and trap symbol encoding within cipher range
+- Tier selection based on solve count
+- Session lifecycle: click recording, phase transitions, decrypt tracking, word checking
+- HTTP handler responses: health endpoint, puzzle decrypt with OOB swaps, trap explosions
+- Puzzle generation: grid layout, target word embedding, address cell grouping
+- Contract generation from trait state and inventory
+- Deterministic trait reduction
+- Transition message determinism, corruption resilience, and in-character tone
+- Trap movement mechanics

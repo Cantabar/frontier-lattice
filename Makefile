@@ -28,7 +28,8 @@
         ecr-login deploy-indexer deploy-continuity \
         deploy-utopia deploy-stillness \
         publish-contracts publish-utopia publish-stillness \
-        build clean enrich-items seed-ores zk-build zk-clean help
+        build clean enrich-items seed-ores zk-build zk-clean \
+        test test-go test-contracts help
 
 SHELL := /bin/bash
 AWS_REGION ?= us-east-1
@@ -167,6 +168,20 @@ enrich-items: ## Enrich items.json with category/group/tier/tag data
 
 seed-ores: ## Seed ore items into SSU for Player A (requires world-contracts deployed)
 	cd ../world-contracts && NODE_PATH=$$PWD/node_modules npx tsx $(CURDIR)/scripts/seed-ores.ts
+
+# ── Testing ────────────────────────────────────────────────────────
+
+test: test-go test-contracts ## Run all tests
+
+test-go: ## Run continuity-engine Go tests
+	cd continuity-engine && go test ./...
+
+CONTRACT_PACKAGES := corm_auth corm_state tribe trustless_contracts witnessed_contracts assembly_metadata
+test-contracts: ## Run Sui Move contract tests (all packages)
+	@for pkg in $(CONTRACT_PACKAGES); do \
+		echo "Testing contracts/$$pkg..."; \
+		cd $(CURDIR)/contracts/$$pkg && sui move test || exit 1; \
+	done
 
 # ── Build / Clean ──────────────────────────────────────────────────
 

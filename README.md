@@ -124,6 +124,26 @@ make zk-build          Build Groth16 ZK circuit artifacts
 
 Run `make help` for the complete list.
 
+## Testing
+
+Run all tests:
+
+```bash
+make test              # Run everything (Go + Move)
+make test-go           # Continuity-engine Go tests only
+make test-contracts    # Sui Move contract tests only
+```
+
+**Services with tests:**
+
+| Service | Framework | Run | Coverage |
+|---------|-----------|-----|----------|
+| `continuity-engine/` | Go `testing` | `make test-go` | Ciphers, puzzle generation, HTTP handlers, contract generation, trait reduction, transitions, trap movement |
+| `contracts/` | Sui Move (`#[test]`) | `make test-contracts` | All 6 packages: corm_auth, corm_state, tribe, trustless_contracts, witnessed_contracts, assembly_metadata |
+| `dev-tools/` | Sui Move (`#[test]`) | `cd dev-tools/transfer_exploit_poc && sui move test` | Transfer exploit PoC security validation |
+
+**Services without tests:** `indexer/`, `web/`, `infra/`, `static-data/`, `training-data/`.
+
 ## Resources
 
 - [Eve Frontier Developer Docs](https://docs.evefrontier.com)

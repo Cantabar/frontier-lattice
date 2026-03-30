@@ -63,6 +63,11 @@ Mixed — each tool is self-contained:
 - Transfer exploit proof-of-concept for contract safety validation
 - World contract deployment tracker comparing on-chain state against GitHub repo
 
+## Testing
+
+- **transfer_exploit_poc** — `sources/exploit_test.move` validates security assumptions about Sui Transfer-to-Object. Run with `sui move test` from `dev-tools/transfer_exploit_poc/`. Proves that key+store items can be transferred/stolen but cannot be received at a target SSU without `&mut UID`, and that key-only items are fully protected.
+- Other dev tools do not have automated tests.
+
 ## Deployment
 
 None — all tools run locally. dev-wallet is loaded as an unpacked Chrome extension; Vite tools run via `npm run dev`; package-search runs as a CLI script.

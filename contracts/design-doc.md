@@ -133,6 +133,23 @@ Each contract package has a `Move.toml` with dependency addresses. Package IDs a
 - `admin_cleanup` — `CormAdminCap`-gated removal for automated cleanup when structures are unanchored.
 - Events: `MetadataRegistryCreatedEvent`, `MetadataCreatedEvent`, `MetadataUpdatedEvent`, `MetadataDeletedEvent`.
 
+## Testing
+
+Run all contract tests: `make test-contracts` from the repo root, or `sui move test` from any individual package directory.
+
+### Test layout
+
+Each package has a `tests/` directory with Move test files:
+
+- **corm_auth** — `tests/` (empty; auth is exercised by downstream packages)
+- **corm_state** — `corm_state_tests.move` (state install, phase progression, admin gates), `corm_coin_tests.move` (mint, burn, supply)
+- **tribe** — `tribe_tests.move` (create, self-join, add/remove members, leadership transfer)
+- **trustless_contracts** — `coin_for_coin_tests.move`, `coin_for_item_tests.move`, `item_for_coin_tests.move`, `multi_input_tests.move`, `transport_tests.move`, `test_helpers.move`
+- **witnessed_contracts** — `build_request_tests.move`, `test_helpers.move`
+- **assembly_metadata** — `assembly_metadata_tests.move`
+
+All tests use `#[test]` and `#[test_only]` attributes with `sui::test_scenario` for simulating multi-party transactions.
+
 ## Open Questions / Future Work
 
 - Migration from EVM to Sui is underway — some Eve Frontier resources may still reference EVM patterns
