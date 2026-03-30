@@ -3,7 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"math"
 )
 
@@ -31,7 +31,7 @@ func (c *Client) MintCORM(ctx context.Context, cormID, playerAddress string, amo
 		return fmt.Errorf("no signer configured")
 	}
 
-	log.Printf("chain: stub MintCORM %d base units (%.4f CORM) to %s (corm %s)",
-		amount, float64(amount)/float64(CormBaseUnit), playerAddress, cormID)
+	slog.Info(fmt.Sprintf("chain: stub MintCORM %d base units (%.4f CORM) to %s (corm %s)",
+		amount, float64(amount)/float64(CormBaseUnit), playerAddress, cormID))
 	return nil
 }

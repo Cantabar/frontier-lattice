@@ -2,7 +2,8 @@ package chain
 
 import (
 	"context"
-	"log"
+	"log/slog"
+	"fmt"
 )
 
 // InventoryItem represents an item in a player's SSU inventory.
@@ -22,6 +23,6 @@ func (c *Client) GetPlayerInventory(ctx context.Context, playerAddress string) (
 			{TypeID: "77540", TypeName: "Fuel Cell", Amount: 50},
 		}, nil
 	}
-	log.Printf("chain: stub GetPlayerInventory for %s", playerAddress)
+	slog.Info(fmt.Sprintf("chain: stub GetPlayerInventory for %s", playerAddress))
 	return nil, nil
 }

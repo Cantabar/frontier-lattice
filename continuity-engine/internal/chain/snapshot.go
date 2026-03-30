@@ -2,7 +2,8 @@ package chain
 
 import (
 	"context"
-	"log"
+	"log/slog"
+	"fmt"
 	"sync"
 	"time"
 )
@@ -38,7 +39,7 @@ func BuildSnapshot(ctx context.Context, client *Client, cormID, playerAddr, netw
 		defer wg.Done()
 		balance, err := client.GetCORMBalance(subCtx, cormID)
 		if err != nil {
-			log.Printf("snapshot: corm balance: %v", err)
+			slog.Info(fmt.Sprintf("snapshot: corm balance: %v", err))
 			return
 		}
 		mu.Lock()
@@ -52,7 +53,7 @@ func BuildSnapshot(ctx context.Context, client *Client, cormID, playerAddr, netw
 		defer wg.Done()
 		items, err := client.GetCormInventory(subCtx, cormID)
 		if err != nil {
-			log.Printf("snapshot: corm inventory: %v", err)
+			slog.Info(fmt.Sprintf("snapshot: corm inventory: %v", err))
 			return
 		}
 		mu.Lock()
@@ -66,7 +67,7 @@ func BuildSnapshot(ctx context.Context, client *Client, cormID, playerAddr, netw
 		defer wg.Done()
 		items, err := client.GetPlayerInventory(subCtx, playerAddr)
 		if err != nil {
-			log.Printf("snapshot: player inventory: %v", err)
+			slog.Info(fmt.Sprintf("snapshot: player inventory: %v", err))
 			return
 		}
 		mu.Lock()
@@ -80,7 +81,7 @@ func BuildSnapshot(ctx context.Context, client *Client, cormID, playerAddr, netw
 		defer wg.Done()
 		ssus, err := client.GetNodeSSUs(subCtx, networkNodeID)
 		if err != nil {
-			log.Printf("snapshot: node SSUs: %v", err)
+			slog.Info(fmt.Sprintf("snapshot: node SSUs: %v", err))
 			return
 		}
 		mu.Lock()
@@ -100,7 +101,7 @@ func (c *Client) GetCORMBalance(ctx context.Context, cormID string) (uint64, err
 	if c.seedMode {
 		return 10000, nil
 	}
-	log.Printf("chain: stub GetCORMBalance for corm %s", cormID)
+	slog.Info(fmt.Sprintf("chain: stub GetCORMBalance for corm %s", cormID))
 	return 0, nil
 }
 
@@ -114,7 +115,7 @@ func (c *Client) GetCormInventory(ctx context.Context, cormID string) ([]Invento
 			{TypeID: "77531", TypeName: "Coolant", Amount: 200},
 		}, nil
 	}
-	log.Printf("chain: stub GetCormInventory for corm %s", cormID)
+	slog.Info(fmt.Sprintf("chain: stub GetCormInventory for corm %s", cormID))
 	return nil, nil
 }
 
@@ -126,6 +127,6 @@ func (c *Client) GetNodeSSUs(ctx context.Context, networkNodeID string) ([]SSUIn
 			{ObjectID: "seed_ssu_" + networkNodeID, OwnerAddr: "0xseed"},
 		}, nil
 	}
-	log.Printf("chain: stub GetNodeSSUs for node %s", networkNodeID)
+	slog.Info(fmt.Sprintf("chain: stub GetNodeSSUs for node %s", networkNodeID))
 	return nil, nil
 }

@@ -2,7 +2,7 @@ package reasoning
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"math"
 	"time"
 
@@ -118,7 +118,7 @@ func ValidateParams(params *chain.ContractParams, snapshot chain.WorldSnapshot, 
 	// Deadline must be in the future
 	if params.DeadlineMs <= time.Now().UnixMilli() {
 		params.DeadlineMs = time.Now().Add(12 * time.Hour).UnixMilli()
-		log.Printf("resolver: corrected deadline to +12h")
+		slog.Info(fmt.Sprintf("resolver: corrected deadline to +12h"))
 	}
 
 	// CORM escrow must not exceed balance
@@ -127,7 +127,7 @@ func ValidateParams(params *chain.ContractParams, snapshot chain.WorldSnapshot, 
 			return fmt.Errorf("corm has no CORM balance")
 		}
 		params.CORMEscrowAmount = snapshot.CormCORMBalance
-		log.Printf("resolver: clamped escrow to CORM balance %d", params.CORMEscrowAmount)
+		slog.Info(fmt.Sprintf("resolver: clamped escrow to CORM balance %d", params.CORMEscrowAmount))
 	}
 
 	// Validate item type IDs exist
@@ -152,7 +152,7 @@ func ValidateParams(params *chain.ContractParams, snapshot chain.WorldSnapshot, 
 			if params.CORMEscrowAmount == 0 {
 				params.CORMEscrowAmount = qty // minimum 1 CORM per unit
 			}
-			log.Printf("resolver: adjusted escrow for divisibility: %d", params.CORMEscrowAmount)
+			slog.Info(fmt.Sprintf("resolver: adjusted escrow for divisibility: %d", params.CORMEscrowAmount))
 		}
 	}
 

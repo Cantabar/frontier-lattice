@@ -2,7 +2,8 @@ package chain
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -38,7 +39,7 @@ func NewRegistry(registryDir, valuesPath string) *Registry {
 	typesPath := filepath.Join(registryDir, "types.json")
 	typesData, err := os.ReadFile(typesPath)
 	if err != nil {
-		log.Printf("registry: failed to read %s: %v", typesPath, err)
+		slog.Info(fmt.Sprintf("registry: failed to read %s: %v", typesPath, err))
 		return r
 	}
 
@@ -50,7 +51,7 @@ func NewRegistry(registryDir, valuesPath string) *Registry {
 		Published int     `json:"published"`
 	}
 	if err := json.Unmarshal(typesData, &rawTypes); err != nil {
-		log.Printf("registry: failed to parse types.json: %v", err)
+		slog.Info(fmt.Sprintf("registry: failed to parse types.json: %v", err))
 		return r
 	}
 
@@ -58,7 +59,7 @@ func NewRegistry(registryDir, valuesPath string) *Registry {
 	groupsPath := filepath.Join(registryDir, "groups.json")
 	groupsData, err := os.ReadFile(groupsPath)
 	if err != nil {
-		log.Printf("registry: failed to read %s: %v", groupsPath, err)
+		slog.Info(fmt.Sprintf("registry: failed to read %s: %v", groupsPath, err))
 	}
 
 	type groupEntry struct {
@@ -74,21 +75,21 @@ func NewRegistry(registryDir, valuesPath string) *Registry {
 	if valuesPath != "" {
 		valuesData, err := os.ReadFile(valuesPath)
 		if err != nil {
-			log.Printf("registry: item values not available (%s): %v — all items will use floor value", valuesPath, err)
+			slog.Info(fmt.Sprintf("registry: item values not available (%s): %v — all items will use floor value", valuesPath, err))
 		} else {
 			var rawValues []struct {
 				TypeID   uint64   `json:"typeId"`
 				LUXValue *float64 `json:"luxValue"`
 			}
 			if err := json.Unmarshal(valuesData, &rawValues); err != nil {
-				log.Printf("registry: failed to parse item-values.json: %v", err)
+				slog.Info(fmt.Sprintf("registry: failed to parse item-values.json: %v", err))
 			} else {
 				for _, v := range rawValues {
 					if v.LUXValue != nil {
 						luxValues[v.TypeID] = *v.LUXValue
 					}
 				}
-				log.Printf("registry: loaded %d item valuations", len(luxValues))
+				slog.Info(fmt.Sprintf("registry: loaded %d item valuations", len(luxValues)))
 			}
 		}
 	}
@@ -118,7 +119,7 @@ func NewRegistry(registryDir, valuesPath string) *Registry {
 		r.items = append(r.items, item)
 	}
 
-	log.Printf("registry: loaded %d published items (%d with LUX values)", len(r.items), len(luxValues))
+	slog.Info(fmt.Sprintf("registry: loaded %d published items (%d with LUX values)", len(r.items), len(luxValues)))
 	return r
 }
 

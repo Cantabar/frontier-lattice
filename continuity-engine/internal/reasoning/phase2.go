@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -71,7 +71,7 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 	activeCount := countActiveSessionContracts(h.dispatcher, evt.SessionID)
 
 	if activeCount >= maxActiveContracts {
-		log.Printf("phase2: contract cap reached for corm %s (%d/%d)", cormID, activeCount, maxActiveContracts)
+		slog.Info(fmt.Sprintf("phase2: contract cap reached for corm %s (%d/%d)", cormID, activeCount, maxActiveContracts))
 		return
 	}
 
@@ -82,7 +82,7 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 
 	for activeCount < maxActiveContracts {
 		if err := generateOneContract(ctx, h, environment, cormID, traits, evt, snapshot, playerAddr); err != nil {
-			log.Printf("phase2: fill stopped after %d active: %v", activeCount, err)
+			slog.Info(fmt.Sprintf("phase2: fill stopped after %d active: %v", activeCount, err))
 			break
 		}
 		activeCount++
@@ -137,7 +137,7 @@ func generateOneContract(ctx context.Context, h *Handler, environment, cormID st
 		Payload:    responsePayload,
 	})
 
-	log.Printf("phase2: created %s contract %s for corm %s → %s", params.ContractType, contractID, cormID, playerAddr)
+	slog.Info(fmt.Sprintf("phase2: created %s contract %s for corm %s → %s", params.ContractType, contractID, cormID, playerAddr))
 	return nil
 }
 

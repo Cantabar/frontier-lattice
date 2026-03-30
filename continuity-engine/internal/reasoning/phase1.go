@@ -3,7 +3,8 @@ package reasoning
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
+	"fmt"
 	"math/rand"
 
 	"github.com/frontier-corm/continuity-engine/internal/types"
@@ -38,7 +39,7 @@ func handlePhase1Effects(ctx context.Context, h *Handler, environment, cormID st
 func dispatchStrugglingHint(ctx context.Context, h *Handler, environment, cormID string, sessionID string) {
 	recentEvents, err := h.db.RecentEvents(ctx, environment, cormID, 50)
 	if err != nil {
-		log.Printf("phase1: struggling hint: fetch events: %v", err)
+		slog.Info(fmt.Sprintf("phase1: struggling hint: fetch events: %v", err))
 		return
 	}
 
@@ -66,14 +67,14 @@ func dispatchStrugglingHint(ctx context.Context, h *Handler, environment, cormID
 			Cells:    []types.CellRef{cell},
 			HintType: "heatmap",
 		})
-		log.Printf("phase1: sent heatmap hint on cell (%d,%d) for struggling player", cell.Row, cell.Col)
+		slog.Info(fmt.Sprintf("phase1: sent heatmap hint on cell (%d,%d) for struggling player", cell.Row, cell.Col))
 	} else {
 		// No target-word cells decrypted yet — enable signal globally.
 		h.dispatcher.SendPayload(ctx, types.ActionHintToggle, sessionID, types.HintTogglePayload{
 			HintType: "signal",
 			Enabled:  true,
 		})
-		log.Printf("phase1: enabled signal hint globally for struggling player")
+		slog.Info(fmt.Sprintf("phase1: enabled signal hint globally for struggling player"))
 	}
 }
 

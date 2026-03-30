@@ -3,7 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 )
 
 // ContractParams holds parameters for creating a trustless contract on-chain.
@@ -40,19 +40,19 @@ func (c *Client) CreateContract(ctx context.Context, cormID string, params Contr
 
 	switch params.ContractType {
 	case "coin_for_item":
-		log.Printf("chain: stub CreateCoinForItem %s escrow=%d wanted_type=%d wanted_qty=%d player=%s",
-			contractID, params.CORMEscrowAmount, params.WantedTypeID, params.WantedQuantity, params.PlayerAddress)
+		slog.Info(fmt.Sprintf("chain: stub CreateCoinForItem %s escrow=%d wanted_type=%d wanted_qty=%d player=%s",
+			contractID, params.CORMEscrowAmount, params.WantedTypeID, params.WantedQuantity, params.PlayerAddress))
 	case "item_for_coin":
-		log.Printf("chain: stub CreateItemForCoin %s offered_type=%d offered_qty=%d wanted_corm=%d player=%s",
-			contractID, params.OfferedTypeID, params.OfferedQuantity, params.CORMWantedAmount, params.PlayerAddress)
+		slog.Info(fmt.Sprintf("chain: stub CreateItemForCoin %s offered_type=%d offered_qty=%d wanted_corm=%d player=%s",
+			contractID, params.OfferedTypeID, params.OfferedQuantity, params.CORMWantedAmount, params.PlayerAddress))
 	case "item_for_item":
-		log.Printf("chain: stub CreateItemForItem %s offered_type=%d offered_qty=%d wanted_type=%d wanted_qty=%d player=%s",
-			contractID, params.OfferedTypeID, params.OfferedQuantity, params.WantedTypeID, params.WantedQuantity, params.PlayerAddress)
+		slog.Info(fmt.Sprintf("chain: stub CreateItemForItem %s offered_type=%d offered_qty=%d wanted_type=%d wanted_qty=%d player=%s",
+			contractID, params.OfferedTypeID, params.OfferedQuantity, params.WantedTypeID, params.WantedQuantity, params.PlayerAddress))
 	case "corm_giveaway":
-		log.Printf("chain: stub CreateCORMGiveaway %s escrow=%d player=%s",
-			contractID, params.CORMEscrowAmount, params.PlayerAddress)
+		slog.Info(fmt.Sprintf("chain: stub CreateCORMGiveaway %s escrow=%d player=%s",
+			contractID, params.CORMEscrowAmount, params.PlayerAddress))
 	default:
-		log.Printf("chain: stub CreateContract %s type=%s player=%s", contractID, params.ContractType, params.PlayerAddress)
+		slog.Info(fmt.Sprintf("chain: stub CreateContract %s type=%s player=%s", contractID, params.ContractType, params.PlayerAddress))
 	}
 
 	return contractID, nil

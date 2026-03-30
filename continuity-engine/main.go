@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"embed"
-	"log"
+	"log/slog"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -31,8 +32,8 @@ var templateFS embed.FS
 var staticFS embed.FS
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Println("continuity-engine starting")
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	slog.Info("continuity-engine starting")
 
 	cfg := config.Load()
 
@@ -42,10 +43,10 @@ func main() {
 	// --- Database ---
 	database, err := db.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("database: %v", err)
+		slog.Error(fmt.Sprintf("database: %v", err)); os.Exit(1)
 	}
 	defer database.Close()
-	log.Println("database connected, migrations applied")
+	slog.Info("database connected, migrations applied")
 
 	// --- Per-environment chain clients ---
 	chainClients := make(map[string]*chain.Client, len(cfg.Environments))
@@ -55,7 +56,7 @@ func main() {
 			c.SetSeedMode(true)
 		}
 		chainClients[env.Name] = c
-		log.Printf("chain client initialized for environment %q", env.Name)
+		slog.Info(fmt.Sprintf("chain client initialized for environment %q", env.Name))
 	}
 
 	// --- Item Registry ---
@@ -120,24 +121,24 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		log.Printf("continuity-engine listening on :%s", cfg.Port)
+		slog.Info(fmt.Sprintf("continuity-engine listening on :%s", cfg.Port))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
+			slog.Error(fmt.Sprintf("server error: %v", err)); os.Exit(1)
 		}
 	}()
 
-	log.Println("continuity-engine running")
+	slog.Info("continuity-engine running")
 
 	// Wait for shutdown signal
 	<-ctx.Done()
-	log.Println("shutting down...")
+	slog.Info("shutting down...")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer shutdownCancel()
 	srv.Shutdown(shutdownCtx)
 
 	wg.Wait()
-	log.Println("continuity-engine stopped")
+	slog.Info("continuity-engine stopped")
 }
 
 // runEventProcessor reads events from the channel, debounces them into
@@ -216,45 +217,45 @@ func processBatch(
 	env := events[0].Environment
 
 	if _, ok := chainClients[env]; !ok {
-		log.Printf("no chain client for environment %q, dropping %d events", env, len(events))
+		slog.Info(fmt.Sprintf("no chain client for environment %q, dropping %d events", env, len(events)))
 		return
 	}
 
 	sessionID := events[0].SessionID
 	cormID, err := database.ResolveSessionCorm(ctx, env, sessionID)
 	if err != nil {
-		log.Printf("[%s] resolve session corm: %v", env, err)
+		slog.Info(fmt.Sprintf("[%s] resolve session corm: %v", env, err))
 		return
 	}
 
 	if cormID == "" {
 		cormID = uuid.New().String()
 		if err := database.LinkSessionCorm(ctx, env, sessionID, cormID); err != nil {
-			log.Printf("[%s] link session corm: %v", env, err)
+			slog.Info(fmt.Sprintf("[%s] link session corm: %v", env, err))
 		}
-		log.Printf("[%s] new corm %s for session %s", env, cormID, sessionID)
+		slog.Info(fmt.Sprintf("[%s] new corm %s for session %s", env, cormID, sessionID))
 	}
 
 	for _, evt := range events {
 		if evt.NetworkNodeID != "" {
 			existing, err := database.ResolveCormID(ctx, env, evt.NetworkNodeID)
 			if err != nil {
-				log.Printf("[%s] resolve network node: %v", env, err)
+				slog.Info(fmt.Sprintf("[%s] resolve network node: %v", env, err))
 			} else if existing == "" {
 				chainClient := chainClients[env]
 				if _, err := chainClient.CreateCormState(ctx, evt.NetworkNodeID); err != nil {
-					log.Printf("[%s] create corm state: %v", env, err)
+					slog.Info(fmt.Sprintf("[%s] create corm state: %v", env, err))
 				}
 				if err := database.LinkNetworkNode(ctx, env, evt.NetworkNodeID, cormID); err != nil {
-					log.Printf("[%s] link network node: %v", env, err)
+					slog.Info(fmt.Sprintf("[%s] link network node: %v", env, err))
 				}
-				log.Printf("[%s] linked node %s to corm %s", env, evt.NetworkNodeID, cormID)
+				slog.Info(fmt.Sprintf("[%s] linked node %s to corm %s", env, evt.NetworkNodeID, cormID))
 			}
 			break
 		}
 	}
 
 	if err := handler.ProcessEventBatch(ctx, env, cormID, events); err != nil {
-		log.Printf("[%s] process batch (%d events): %v", env, len(events), err)
+		slog.Info(fmt.Sprintf("[%s] process batch (%d events): %v", env, len(events), err))
 	}
 }

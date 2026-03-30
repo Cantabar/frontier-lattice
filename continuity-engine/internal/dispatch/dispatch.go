@@ -6,7 +6,8 @@ package dispatch
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
+	"fmt"
 
 	"github.com/frontier-corm/continuity-engine/internal/types"
 )
@@ -32,7 +33,7 @@ func (d *Dispatcher) EmitEvent(evt types.CormEvent) {
 	select {
 	case d.eventChan <- evt:
 	default:
-		log.Printf("dispatch: event channel full, dropping event for session %s", evt.SessionID)
+		slog.Info(fmt.Sprintf("dispatch: event channel full, dropping event for session %s", evt.SessionID))
 	}
 }
 
@@ -41,14 +42,14 @@ func (d *Dispatcher) EmitEvent(evt types.CormEvent) {
 func (d *Dispatcher) SendAction(ctx context.Context, action types.CormAction) {
 	target := d.sessions.Get(action.SessionID)
 	if target == nil {
-		log.Printf("dispatch: action for unknown session %s", action.SessionID)
+		slog.Info(fmt.Sprintf("dispatch: action for unknown session %s", action.SessionID))
 		return
 	}
 
 	select {
 	case target.GetActionChan() <- action:
 	default:
-		log.Printf("dispatch: action channel full for session %s, dropping", action.SessionID)
+		slog.Info(fmt.Sprintf("dispatch: action channel full for session %s, dropping", action.SessionID))
 	}
 }
 
@@ -56,7 +57,7 @@ func (d *Dispatcher) SendAction(ctx context.Context, action types.CormAction) {
 func (d *Dispatcher) SendPayload(ctx context.Context, actionType, sessionID string, payload interface{}) {
 	data, err := json.Marshal(payload)
 	if err != nil {
-		log.Printf("dispatch: marshal payload: %v", err)
+		slog.Info(fmt.Sprintf("dispatch: marshal payload: %v", err))
 		return
 	}
 

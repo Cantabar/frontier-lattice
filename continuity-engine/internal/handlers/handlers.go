@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"embed"
 	"html/template"
-	"log"
+	"log/slog"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -46,7 +47,7 @@ func (h *Handlers) SessionStore() *puzzle.SessionStore {
 func (h *Handlers) renderTemplate(w http.ResponseWriter, name string, data any) {
 	var buf bytes.Buffer
 	if err := h.templates.ExecuteTemplate(&buf, name, data); err != nil {
-		log.Printf("renderTemplate %s: %v", name, err)
+		slog.Info(fmt.Sprintf("renderTemplate %s: %v", name, err))
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -59,7 +60,7 @@ func (h *Handlers) renderTemplate(w http.ResponseWriter, name string, data any) 
 func (h *Handlers) renderPartial(w http.ResponseWriter, name string, data any) {
 	var buf bytes.Buffer
 	if err := h.templates.ExecuteTemplate(&buf, name, data); err != nil {
-		log.Printf("renderPartial %s: %v", name, err)
+		slog.Info(fmt.Sprintf("renderPartial %s: %v", name, err))
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}

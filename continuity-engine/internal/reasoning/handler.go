@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/frontier-corm/continuity-engine/internal/chain"
@@ -94,24 +94,24 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 	// Store all raw events
 	for _, evt := range events {
 		if _, err := h.db.InsertEvent(ctx, environment, cormID, evt); err != nil {
-			log.Printf("insert event: %v", err)
+			slog.Info(fmt.Sprintf("insert event: %v", err))
 		}
 	}
 
 	// Reduce traits immediately from the event batch.
 	memory.ReduceEvents(traits, events)
 	if err := h.db.UpsertTraits(ctx, environment, traits); err != nil {
-		log.Printf("upsert traits after reduction: %v", err)
+		slog.Info(fmt.Sprintf("upsert traits after reduction: %v", err))
 	}
 
 	// Detect phase transitions before running effects or the LLM.
 	transitioned := detectPhaseTransition(events, traits)
 	if transitioned {
 		if err := h.db.UpsertTraits(ctx, environment, traits); err != nil {
-			log.Printf("upsert traits after transition: %v", err)
+			slog.Info(fmt.Sprintf("upsert traits after transition: %v", err))
 		}
 		h.dispatcher.SendPayload(ctx, types.ActionStateSync, sessionID, h.buildStateSyncPayload(ctx, environment, cormID, traits))
-		log.Printf("corm %s transitioned to Phase %d", cormID, traits.Phase)
+		slog.Info(fmt.Sprintf("corm %s transitioned to Phase %d", cormID, traits.Phase))
 	}
 
 	// Deliver a transition message (deterministic, no LLM).
@@ -162,7 +162,7 @@ func (h *Handler) deliverTransitionResponse(ctx context.Context, environment, co
 
 	text := selectTransitionMessage(cormID, traits.Phase, traits)
 	if text == "" {
-		log.Printf("corm %s: no transition message for phase %d", cormID, traits.Phase)
+		slog.Info(fmt.Sprintf("corm %s: no transition message for phase %d", cormID, traits.Phase))
 		return
 	}
 
@@ -196,7 +196,7 @@ func (h *Handler) buildStateSyncPayload(ctx context.Context, environment, cormID
 	}
 	nodeID, err := h.db.ResolveNetworkNodeByCorm(ctx, environment, cormID)
 	if err != nil {
-		log.Printf("resolve network node for corm %s: %v", cormID, err)
+		slog.Info(fmt.Sprintf("resolve network node for corm %s: %v", cormID, err))
 	} else {
 		payload.NetworkNodeID = nodeID
 	}

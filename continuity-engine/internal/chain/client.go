@@ -6,7 +6,8 @@
 package chain
 
 import (
-	"log"
+	"log/slog"
+	"fmt"
 )
 
 // Client wraps SUI RPC access for reading and writing on-chain state.
@@ -22,9 +23,9 @@ func NewClient(rpcURL, packageID, privateKey string) *Client {
 	var signer *Signer
 	if privateKey != "" {
 		signer = NewSigner(privateKey)
-		log.Printf("chain: initialized signer for address %s", signer.Address())
+		slog.Info(fmt.Sprintf("chain: initialized signer for address %s", signer.Address()))
 	} else {
-		log.Println("chain: WARNING — no SUI_PRIVATE_KEY set, on-chain writes disabled")
+		slog.Info("chain: WARNING — no SUI_PRIVATE_KEY set, on-chain writes disabled")
 	}
 
 	return &Client{
@@ -38,7 +39,7 @@ func NewClient(rpcURL, packageID, privateKey string) *Client {
 func (c *Client) SetSeedMode(enabled bool) {
 	c.seedMode = enabled
 	if enabled {
-		log.Println("chain: seed mode ENABLED — stub methods return mock data")
+		slog.Info("chain: seed mode ENABLED — stub methods return mock data")
 	}
 }
 

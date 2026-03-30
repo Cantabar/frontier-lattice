@@ -3,7 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 )
 
 // CormStateOnChain represents the on-chain CormState object fields.
@@ -33,7 +33,7 @@ func (c *Client) CreateCormState(ctx context.Context, networkNodeID string) (str
 		prefix = prefix[:8]
 	}
 	cormID := fmt.Sprintf("corm_%s", prefix)
-	log.Printf("chain: stub CreateCormState for node %s → %s", networkNodeID, cormID)
+	slog.Info(fmt.Sprintf("chain: stub CreateCormState for node %s → %s", networkNodeID, cormID))
 	return cormID, nil
 }
 
@@ -41,7 +41,7 @@ func (c *Client) CreateCormState(ctx context.Context, networkNodeID string) (str
 // TODO: Implement via suiclient.GetObject + BCS decode.
 func (c *Client) GetCormState(ctx context.Context, cormID string) (*CormStateOnChain, error) {
 	// Stub: return nil (not found) — real impl reads from SUI RPC
-	log.Printf("chain: stub GetCormState for %s", cormID)
+	slog.Info(fmt.Sprintf("chain: stub GetCormState for %s", cormID))
 	return nil, nil
 }
 
@@ -52,6 +52,6 @@ func (c *Client) UpdateCormState(ctx context.Context, cormID string, phase int, 
 		return fmt.Errorf("no signer configured")
 	}
 
-	log.Printf("chain: stub UpdateCormState %s → phase=%d stab=%.0f corr=%.0f", cormID, phase, stability, corruption)
+	slog.Info(fmt.Sprintf("chain: stub UpdateCormState %s → phase=%d stab=%.0f corr=%.0f", cormID, phase, stability, corruption))
 	return nil
 }

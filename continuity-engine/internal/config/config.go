@@ -3,7 +3,8 @@ package config
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -86,24 +87,24 @@ func Load() Config {
 		}}
 	}
 
-	log.Printf("loaded %d environment(s): %s", len(cfg.Environments), envNames(cfg.Environments))
+	slog.Info(fmt.Sprintf("loaded %d environment(s): %s", len(cfg.Environments), envNames(cfg.Environments)))
 	return cfg
 }
 
 func loadEnvironments(path string) []EnvironmentConfig {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatalf("read environments config %s: %v", path, err)
+		slog.Error(fmt.Sprintf("read environments config %s: %v", path, err)); os.Exit(1)
 	}
 
 	var envs []EnvironmentConfig
 	if err := json.Unmarshal(data, &envs); err != nil {
-		log.Fatalf("parse environments config: %v", err)
+		slog.Error(fmt.Sprintf("parse environments config: %v", err)); os.Exit(1)
 	}
 
 	for i := range envs {
 		if envs[i].Name == "" {
-			log.Fatalf("environment at index %d has no name", i)
+			slog.Error(fmt.Sprintf("environment at index %d has no name", i)); os.Exit(1)
 		}
 		if envs[i].SUIPrivateKeyEnv != "" {
 			envs[i].SUIPrivateKey = os.Getenv(envs[i].SUIPrivateKeyEnv)
@@ -111,7 +112,8 @@ func loadEnvironments(path string) []EnvironmentConfig {
 	}
 
 	if len(envs) == 0 {
-		log.Fatal("environments config is empty")
+		slog.Error("environments config is empty")
+		os.Exit(1)
 	}
 
 	return envs
