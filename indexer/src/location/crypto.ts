@@ -217,11 +217,12 @@ export async function verifyWalletAuth(
 
 /**
  * Fallback 1: verify a zkLogin signature via a direct GraphQL call to the
- * Sui GraphQL endpoint with the correct schema fields.
+ * Sui GraphQL endpoint.
  *
- * The `@mysten/sui` SDK's built-in query requests `error` (singular) on
- * `ZkLoginVerifyResult`, but the current schema uses `errors` (plural).
- * This function bypasses the SDK and issues the query directly.
+ * The `@mysten/sui` SDK's built-in query references fields that don't
+ * exist on the current testnet schema. This function bypasses the SDK
+ * and issues the query directly, requesting only the `success` field
+ * (the only field present on the testnet `ZkLoginVerifyResult` type).
  *
  * Returns an AuthResult on success/failure, or `null` if the GraphQL
  * endpoint is unavailable so the caller can fall through to JSON-RPC.
@@ -235,11 +236,12 @@ async function verifyZkLoginViaGraphql(
     const graphqlUrl = DEFAULT_CONFIG.suiGraphqlUrl;
     const messageB64 = Buffer.from(message).toString("base64");
 
+    // The testnet ZkLoginVerifyResult only exposes `success`.
+    // Requesting any other field (error/errors) causes a schema error.
     const query = `
       query VerifyZkLogin($bytes: Base64!, $signature: Base64!, $intentScope: ZkLoginIntentScope!, $author: SuiAddress!) {
         verifyZkLoginSignature(bytes: $bytes, signature: $signature, intentScope: $intentScope, author: $author) {
           success
-          errors
         }
       }
     `;
@@ -262,7 +264,7 @@ async function verifyZkLoginViaGraphql(
 
     const json = (await res.json()) as {
       data?: {
-        verifyZkLoginSignature?: { success: boolean; errors: string[] };
+        verifyZkLoginSignature?: { success: boolean };
       };
       errors?: { message: string }[];
     };
@@ -273,12 +275,11 @@ async function verifyZkLoginViaGraphql(
     const result = json.data?.verifyZkLoginSignature;
     if (!result) return null;
 
-    if (result.success && result.errors.length === 0) {
+    if (result.success) {
       return { valid: true, address: expectedAddress };
     }
 
-    const errText = result.errors.join("; ") || "zkLogin verification failed";
-    return { valid: false, address: expectedAddress, error: errText };
+    return { valid: false, address: expectedAddress, error: "zkLogin verification failed" };
   } catch {
     return null; // Network error — let caller fall through to RPC
   }
@@ -300,6 +301,7 @@ async function verifyZkLoginViaRpc(
     const rpcUrl = DEFAULT_CONFIG.suiRpcUrl;
     const messageB64 = Buffer.from(message).toString("base64");
 
+    // Sui JSON-RPC uses positional array params
     const res = await fetch(rpcUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -307,12 +309,7 @@ async function verifyZkLoginViaRpc(
         jsonrpc: "2.0",
         id: 1,
         method: "sui_verifyZkLoginSignature",
-        params: {
-          bytes: messageB64,
-          signature,
-          intentScope: "PersonalMessage",
-          author: expectedAddress,
-        },
+        params: [messageB64, signature, "PersonalMessage", expectedAddress],
       }),
     });
 
