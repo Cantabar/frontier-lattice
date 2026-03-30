@@ -161,6 +161,16 @@ export class FrontierCormStack extends cdk.Stack {
       description: `Sui RPC endpoint (${suiNetwork})`,
     });
 
+    // Sui signer keypair — secret value must be populated manually after deploy.
+    // Expected JSON: { "SUI_PRIVATE_KEY": "<base64-encoded-ed25519-keypair>" }
+    const suiSignerSecret = new secretsmanager.Secret(this, "SuiSignerSecret", {
+      secretName: `${prefix}/sui-signer`,
+      description: "Sui Ed25519 keypair for continuity-engine on-chain writes",
+    });
+
+    const cormStatePackageId: string =
+      this.node.tryGetContext("cormStatePackageId") ?? "";
+
     // ================================================================
     // S3 — Frontend (static site)
     // ================================================================
@@ -303,10 +313,12 @@ export class FrontierCormStack extends cdk.Stack {
         DB_HOST: db.dbInstanceEndpointAddress,
         DB_PORT: db.dbInstanceEndpointPort,
         DB_NAME: "frontier_corm",
-        SEED_CHAIN_DATA: "true",
+        CORM_STATE_PACKAGE_ID: cormStatePackageId,
+        SEED_CHAIN_DATA: cormStatePackageId ? "false" : "true",
       },
       secrets: {
         SUI_RPC_URL: ecs.Secret.fromSecretsManager(suiSecret, "SUI_RPC_URL"),
+        SUI_PRIVATE_KEY: ecs.Secret.fromSecretsManager(suiSignerSecret, "SUI_PRIVATE_KEY"),
         DB_USERNAME: ecs.Secret.fromSecretsManager(dbCredentials, "username"),
         DB_PASSWORD: ecs.Secret.fromSecretsManager(dbCredentials, "password"),
       },
@@ -327,6 +339,7 @@ export class FrontierCormStack extends cdk.Stack {
 
     dbCredentials.grantRead(continuityTaskDef.taskRole);
     suiSecret.grantRead(continuityTaskDef.taskRole);
+    suiSignerSecret.grantRead(continuityTaskDef.taskRole);
 
     const continuityService = new ecs.FargateService(this, "ContinuityService", {
       cluster,

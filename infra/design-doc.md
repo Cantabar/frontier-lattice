@@ -26,7 +26,8 @@ Route 53 (ef-corm.com)
                                     │
                               Secrets Manager
                                 ├─ fc-{env}/db-credentials
-                                └─ fc-{env}/sui-rpc
+                                ├─ fc-{env}/sui-rpc
+                                └─ fc-{env}/sui-signer
 
 ACM Certificate: ef-corm.com + *.ef-corm.com (DNS-validated via Route 53)
 ```
@@ -62,7 +63,7 @@ All resources are prefixed with `fc-{env}` (e.g. `fc-utopia`, `fc-stillness`). C
 - **DNS:** Route 53 (A alias records for CloudFront + ALB)
 - **TLS:** ACM (ef-corm.com + *.ef-corm.com, DNS validation)
 - **Registry:** ECR (`fc-{env}-indexer`, `fc-{env}-continuity-engine`)
-- **Secrets:** Secrets Manager (DB credentials with auto-generated password, Sui RPC config)
+- **Secrets:** Secrets Manager (DB credentials with auto-generated password, Sui RPC config, Sui signer keypair)
 - **Logging:** CloudWatch Logs (`/ecs/fc-{env}`, 2-week retention)
 
 ## Configuration
@@ -71,6 +72,7 @@ All resources are prefixed with `fc-{env}` (e.g. `fc-utopia`, `fc-stillness`). C
 
 - `appEnv` — environment name: `utopia` (default) or `stillness`
 - `suiNetwork` — Sui network: `testnet` (default) or `mainnet`
+- `cormStatePackageId` — deployed corm_state Sui package ID (default empty; when set, disables `SEED_CHAIN_DATA`)
 
 ### Makefile Targets
 
