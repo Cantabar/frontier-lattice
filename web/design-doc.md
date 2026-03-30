@@ -134,6 +134,7 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
   - Deploy: `make deploy-frontend ENV=utopia|stillness` (S3 sync + CloudFront invalidation)
   - SPA routing: CloudFront 404 → `/index.html`
   - Sui RPC proxy: CloudFront routes `/sui-rpc` → `fullnode.{net}.sui.io/` (same-origin, no CORS issues)
+  - Indexer API proxy: CloudFront routes `/api/v1/*` → `api.{env}.ef-corm.com` (same-origin, no CORS issues)
 
 ## Features
 

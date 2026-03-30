@@ -195,6 +195,13 @@ export class FrontierCormStack extends cdk.Stack {
       protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
     });
 
+    // Indexer API reverse-proxy: serves /api/v1/* on the same origin as
+    // the SPA so the browser treats it as same-origin (no CORS needed).
+    // Uses the api.{env}.ef-corm.com domain so the ALB's ACM cert validates.
+    const albOrigin = new origins.HttpOrigin(apiDomain, {
+      protocolPolicy: cloudfront.OriginProtocolPolicy.HTTPS_ONLY,
+    });
+
     // CloudFront Function: rewrite /sui-rpc → / (Sui JSON-RPC lives at root)
     const suiRpcRewrite = new cloudfront.Function(this, "SuiRpcRewrite", {
       functionName: `${prefix}-sui-rpc-rewrite`,
@@ -225,6 +232,14 @@ export class FrontierCormStack extends cdk.Stack {
               eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
             },
           ],
+        },
+        "/api/v1/*": {
+          origin: albOrigin,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         },
       },
       defaultRootObject: "index.html",
