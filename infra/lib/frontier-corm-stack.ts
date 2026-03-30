@@ -31,6 +31,12 @@ export class FrontierCormStack extends cdk.Stack {
     };
     const suiRpcUrl = suiRpcUrls[suiNetwork] ?? suiRpcUrls.testnet;
 
+    const suiGraphqlUrls: Record<string, string> = {
+      testnet: "https://graphql.testnet.sui.io/graphql",
+      mainnet: "https://graphql.mainnet.sui.io/graphql",
+    };
+    const suiGraphqlUrl = suiGraphqlUrls[suiNetwork] ?? suiGraphqlUrls.testnet;
+
     // ================================================================
     // Domain — stillness gets apex, others get {env}.ef-corm.com
     // ================================================================
@@ -330,6 +336,7 @@ export class FrontierCormStack extends cdk.Stack {
         PACKAGE_TRIBE: tribePackageId,
         PACKAGE_TRUSTLESS_CONTRACTS: trustlessContractsPackageId,
         PACKAGE_ASSEMBLY_METADATA: assemblyMetadataPackageId,
+        SUI_GRAPHQL_URL: suiGraphqlUrl,
       },
       secrets: {
         SUI_RPC_URL: ecs.Secret.fromSecretsManager(suiSecret, "SUI_RPC_URL"),
