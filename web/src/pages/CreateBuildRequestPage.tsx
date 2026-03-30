@@ -277,7 +277,7 @@ const STRUCTURE_OPTIONS: StructureOption[] = Object.entries(ASSEMBLY_TYPES)
 
 export function CreateBuildRequestPage() {
   const navigate = useNavigate();
-  const { characterId, tribeCaps } = useIdentity();
+  const { characterId, inGameTribeId } = useIdentity();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
   const { refetch: refetchBuildRequests } = useActiveBuildRequests();
@@ -285,7 +285,7 @@ export function CreateBuildRequestPage() {
   const { structures: myStructures } = useMyStructures();
   const { locationIds } = useStructureLocationIds();
 
-  const posterTribeId = tribeCaps[0]?.inGameTribeId ?? null;
+  const posterTribeId = inGameTribeId ?? null;
 
   // Form state
   const [requestedTypeId, setRequestedTypeId] = useState("");
