@@ -41,7 +41,9 @@ func handlePhase2Effects(ctx context.Context, h *Handler, environment, cormID st
 	}
 }
 
-// attemptContractGeneration runs the two-stage contract generation pipeline.
+// attemptContractGeneration runs the deterministic contract generation pipeline.
+// Contract parameters are derived from corm traits and world state without an LLM call.
+// An optional async Nano call generates in-character narrative flavor text after creation.
 func attemptContractGeneration(ctx context.Context, h *Handler, environment, cormID string, sender *transport.ActionSender, traits *types.CormTraits, evt types.CormEvent) {
 	// Rate limit: skip if cooldown hasn't elapsed
 	contractCooldownMu.Lock()
@@ -64,58 +66,34 @@ func attemptContractGeneration(ctx context.Context, h *Handler, environment, cor
 		return
 	}
 
-	// Step 2: Retrieve episodic memories for contract context
-	memories, err := h.retriever.Recall(ctx, environment, cormID, evt, 5)
+	// Step 2: Generate contract intent deterministically (no LLM call)
+	intent, err := GenerateContractIntent(traits, snapshot, h.registry, playerAddr, nil)
 	if err != nil {
-		log.Printf("phase2: recall memories: %v", err)
-	}
-
-	// Step 3: Build contract prompt
-	prompt := llm.BuildContractPrompt(traits, memories, snapshot, h.registry)
-
-	// Step 4: Call Super (non-streaming — contract generation is not player-facing)
-	task := types.Task{
-		CormID:      cormID,
-		Phase:       2,
-		EventType:   evt.EventType,
-		Corruption:  traits.Corruption,
-		Environment: environment,
-	}
-
-	response, err := h.llm.CompleteSync(ctx, task, prompt, 0, llm.WithDisableReasoning())
-	if err != nil {
-		log.Printf("phase2: contract LLM call failed: %v", err)
+		log.Printf("phase2: generate intent failed: %v", err)
 		return
 	}
 
-	// Step 5: Parse JSON response into ContractIntent
-	var intent types.ContractIntent
-	if err := json.Unmarshal([]byte(response), &intent); err != nil {
-		log.Printf("phase2: failed to parse contract intent: %v (response: %s)", err, truncateStr(response, 200))
-		return
-	}
-
-	// Step 6: Resolve intent to exact parameters
-	params, err := ResolveIntent(intent, snapshot, h.registry, traits, h.pricing, playerAddr)
+	// Step 3: Resolve intent to exact parameters
+	params, err := ResolveIntent(*intent, snapshot, h.registry, traits, h.pricing, playerAddr)
 	if err != nil {
 		log.Printf("phase2: resolve intent failed: %v", err)
 		return
 	}
 
-	// Step 7: Validate
+	// Step 4: Validate
 	if err := ValidateParams(params, snapshot, h.registry); err != nil {
 		log.Printf("phase2: validation failed: %v", err)
 		return
 	}
 
-	// Step 8: Create contract on-chain (stub)
+	// Step 5: Create contract on-chain (stub)
 	contractID, err := h.chainClient.CreateContract(ctx, cormID, *params)
 	if err != nil {
 		log.Printf("phase2: create contract failed: %v", err)
 		return
 	}
 
-	// Step 9: Notify puzzle-service
+	// Step 6: Notify puzzle-service with generic narrative
 	sender.SendPayload(ctx, types.ActionContractCreated, evt.SessionID, types.ContractCreatedPayload{
 		ContractID:   contractID,
 		ContractType: params.ContractType,
@@ -124,7 +102,7 @@ func attemptContractGeneration(ctx context.Context, h *Handler, environment, cor
 		Deadline:     time.UnixMilli(params.DeadlineMs).Format(time.RFC3339),
 	})
 
-	// Step 10: Log for memory continuity
+	// Step 7: Log for memory continuity
 	responsePayload, _ := json.Marshal(map[string]string{
 		"text":          intent.Narrative,
 		"contract_id":   contractID,
@@ -138,6 +116,59 @@ func attemptContractGeneration(ctx context.Context, h *Handler, environment, cor
 	})
 
 	log.Printf("phase2: created %s contract %s for corm %s → %s", params.ContractType, contractID, cormID, playerAddr)
+
+	// Step 8: Fire-and-forget Nano narrative (replaces generic description)
+	go asyncNarrative(ctx, h, environment, contractID, params, traits, evt.SessionID, sender)
+}
+
+// narrativePrompt is a short system prompt for generating in-character contract directives.
+const narrativePrompt = `You are a corm — a digital entity embedded in a network node. Generate a terse, in-character directive (1-2 sentences) announcing a contract to a player. Do not break character. Do not reference being an AI. Output bare text only.`
+
+// asyncNarrative fires a non-blocking Nano LLM call to generate in-character
+// flavor text for a contract. If the call fails, the generic description stands.
+func asyncNarrative(ctx context.Context, h *Handler, environment, contractID string, params *chain.ContractParams, traits *types.CormTraits, sessionID string, sender *transport.ActionSender) {
+	narrCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+
+	userMsg := fmt.Sprintf("Contract type: %s.", params.ContractType)
+	if params.WantedQuantity > 0 {
+		userMsg += fmt.Sprintf(" Wanting %d units (type %d).", params.WantedQuantity, params.WantedTypeID)
+	}
+	if params.OfferedQuantity > 0 {
+		userMsg += fmt.Sprintf(" Offering %d units (type %d).", params.OfferedQuantity, params.OfferedTypeID)
+	}
+	if params.CORMEscrowAmount > 0 {
+		userMsg += fmt.Sprintf(" CORM escrow: %d.", params.CORMEscrowAmount)
+	}
+
+	prompt := []types.Message{
+		{Role: "system", Content: narrativePrompt},
+		{Role: "user", Content: userMsg},
+	}
+
+	// Use Nano (fast model) — not deep reasoning.
+	task := types.Task{
+		CormID:      traits.CormID,
+		Phase:       1, // Force Nano routing (Phase < 2 → fast model)
+		Environment: environment,
+	}
+
+	narrative, err := h.llm.CompleteSync(narrCtx, task, prompt, 60, llm.WithDisableReasoning())
+	if err != nil {
+		log.Printf("phase2: async narrative failed for %s: %v", contractID, err)
+		return
+	}
+
+	narrative = llm.SanitizeResponse(narrative)
+	if narrative == "" || !llm.IsValidResponse(narrative) {
+		return
+	}
+
+	// Push updated description to puzzle-service.
+	sender.SendPayload(narrCtx, types.ActionContractUpdated, sessionID, types.ContractCreatedPayload{
+		ContractID:  contractID,
+		Description: narrative,
+	})
 }
 
 func truncateStr(s string, max int) string {

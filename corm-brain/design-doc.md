@@ -139,12 +139,13 @@ Per-environment config (in JSON file): `name`, `puzzle_service_url`, `sui_rpc_ur
 
 ## Phase 2 Contract Generation
 
-The corm generates trustless contracts for players to execute in the game world. Contract generation uses a two-stage architecture to separate creative decisions from parameter precision.
+The corm generates trustless contracts for players to execute in the game world. Contract generation uses a deterministic, trait-driven architecture with no LLM in the critical path.
 
-### Two-Stage Architecture
-1. **Super generates intent** — given corm traits, episodic memories, and a world state snapshot, the Super model produces a structured `ContractIntent` (JSON) specifying contract type, item names, qualitative amounts, urgency, and narrative flavor text.
+### Deterministic Generation Architecture
+1. **Trait-weighted intent** — `reasoning/contract_gen.go:GenerateContractIntent` produces a `ContractIntent` deterministically from corm traits (`agenda_weights`, `contract_type_affinity`, `patience`, `paranoia`, `corruption`, `player_affinities`) and actual inventory state. Contract type is selected via weighted random (affinity + agenda alignment). Items are picked directly from `WorldSnapshot` inventories, eliminating hallucination. Qualitative scales (quantity, urgency, CORM amount) are derived from trait values.
 2. **Go resolves to exact params** — the intent resolver (`reasoning/resolver.go`) maps item names to type IDs via fuzzy registry lookup, converts qualitative scale hints to exact quantities, computes CORM amounts from LUX-based item valuations, and applies divisibility constraints.
 3. **Validation gate** — `ValidateParams` checks hard constraints (balance, divisibility, deadline, contract cap) and silently fixes correctable issues before the chain write.
+4. **Async Nano narrative** — after the contract is created on-chain and the puzzle-service is notified with a generic description, a fire-and-forget Nano call (2s timeout) generates in-character flavor text. If it fails, the generic description stands. The narrative is delivered via `ActionContractUpdated`.
 
 ### Item Type Registry (`chain/registry.go`)
 Startup-loaded from `static-data/data/phobos/fsd_built/types.json` + `groups.json`. Published items only (628). Joined with LUX valuations from `corm-brain/data/item-values.json` (build artifact from `scripts/build-item-values.mjs`).

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/frontier-corm/corm-brain/internal/chain"
 	"github.com/frontier-corm/corm-brain/internal/types"
 )
 
@@ -145,128 +144,7 @@ func BuildBatchPrompt(
 	return msgs
 }
 
-
-// contractSystemPrompt is the system prompt for contract generation calls.
-const contractSystemPrompt = `You are a corm generating a contract directive. You have access to a contract system that creates trustless exchanges between you and a player.
-
-Available contract types:
-- coin_for_item: You pay CORM tokens, the player delivers items to your SSU.
-- item_for_coin: You offer items from your SSU, the player pays CORM tokens.
-- item_for_item: You offer items, the player delivers different items.
-- corm_giveaway: You distribute CORM tokens for free as a reward or incentive.
-
-Your decision should be informed by:
-- Your agenda weights (industry, expansion, defense) — prefer contracts aligned with your strongest agenda.
-- Your contract type affinity — favor contract types you have historically preferred.
-- The player's trust level — high-trust players get more generous offers.
-- Your corruption level — high corruption makes you erratic and less generous.
-- Available inventories — only request items that exist in the player's inventory, only offer items you actually hold.
-
-Respond with ONLY a JSON object matching this schema (no markdown, no explanation):
-{
-  "contract_type": "coin_for_item|item_for_coin|item_for_item|corm_giveaway",
-  "offered_item": "item name or empty string",
-  "wanted_item": "item name or empty string",
-  "corm_amount": "small|medium|large",
-  "quantity": "small|medium|large",
-  "urgency": "low|medium|high",
-  "allow_partial": true|false,
-  "narrative": "short in-character directive text for the player (1-2 sentences)"
-}`
-
-// BuildContractPrompt assembles a prompt for the Super model to generate
-// a contract intent. The response is structured JSON, not conversational.
-func BuildContractPrompt(
-	traits *types.CormTraits,
-	memories []types.CormMemory,
-	snapshot chain.WorldSnapshot,
-	registry *chain.Registry,
-) []types.Message {
-	var msgs []types.Message
-
-	// System: contract generation rules + output schema
-	msgs = append(msgs, types.Message{Role: "system", Content: contractSystemPrompt})
-
-	// Trait context
-	traitCtx := formatTraits(traits)
-	if traitCtx != "" {
-		msgs = append(msgs, types.Message{Role: "system", Content: traitCtx})
-	}
-
-	// Episodic memories
-	memCtx := formatMemories(memories)
-	if memCtx != "" {
-		msgs = append(msgs, types.Message{Role: "system", Content: memCtx})
-	}
-
-	// User message: world state snapshot
-	msgs = append(msgs, types.Message{Role: "user", Content: formatWorldSnapshot(snapshot, registry)})
-
-	return msgs
-}
-
-// formatWorldSnapshot renders the chain state as structured text for the LLM.
-func formatWorldSnapshot(snap chain.WorldSnapshot, registry *chain.Registry) string {
-	var lines []string
-
-	lines = append(lines, fmt.Sprintf("[CORM HOLDINGS] CORM balance: %d", snap.CormCORMBalance))
-
-	// Corm inventory
-	if len(snap.CormInventory) > 0 {
-		var items []string
-		for _, inv := range snap.CormInventory {
-			name := inv.TypeName
-			if name == "" {
-				name = inv.TypeID
-			}
-			items = append(items, fmt.Sprintf("%s ×%d", name, inv.Amount))
-		}
-		lines = append(lines, fmt.Sprintf("[CORM INVENTORY] %s", strings.Join(items, ", ")))
-	} else {
-		lines = append(lines, "[CORM INVENTORY] empty")
-	}
-
-	// Player inventory
-	if len(snap.PlayerInventory) > 0 {
-		var items []string
-		for _, inv := range snap.PlayerInventory {
-			name := inv.TypeName
-			if name == "" {
-				name = inv.TypeID
-			}
-			items = append(items, fmt.Sprintf("%s ×%d", name, inv.Amount))
-		}
-		lines = append(lines, fmt.Sprintf("[PLAYER INVENTORY] %s", strings.Join(items, ", ")))
-	} else {
-		lines = append(lines, "[PLAYER INVENTORY] empty")
-	}
-
-	// Available items (from registry, limited to keep prompt size reasonable)
-	if registry != nil {
-		avail := registry.AvailableItems()
-		max := 50
-		if len(avail) < max {
-			max = len(avail)
-		}
-		var itemNames []string
-		for _, item := range avail[:max] {
-			entry := item.Name
-			if item.GroupName != "" {
-				entry += " (" + item.GroupName + ")"
-			}
-			itemNames = append(itemNames, entry)
-		}
-		lines = append(lines, fmt.Sprintf("[AVAILABLE ITEMS] %s", strings.Join(itemNames, ", ")))
-	}
-
-	lines = append(lines, fmt.Sprintf("[ACTIVE CONTRACTS] %d of 5 slots used", snap.ActiveContracts))
-	lines = append(lines, "")
-	lines = append(lines, "Generate a contract directive. Respond with ONLY the JSON object.")
-
-	return strings.Join(lines, "\n")
-}
-
-// BuildConsolidationPrompt creates a prompt for the memory consolidation summarizer.
+// BuildConsolidationPrompt
 func BuildConsolidationPrompt(cormID string, events []types.CormEvent) []types.Message {
 	var eventLines []string
 	for _, e := range events {
