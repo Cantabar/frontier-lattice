@@ -160,6 +160,39 @@ func (d *DB) ResolveCormPhase(ctx context.Context, environment, cormID string) i
 	return phase
 }
 
+// --- Player → Corm mapping ---
+
+// ResolveCormByPlayer returns the corm_id for a player address, or empty string if not found.
+func (d *DB) ResolveCormByPlayer(ctx context.Context, environment, playerAddress string) (string, error) {
+	if playerAddress == "" {
+		return "", nil
+	}
+	var cormID string
+	err := d.Pool.QueryRow(ctx,
+		"SELECT corm_id FROM corm_players WHERE environment = $1 AND player_address = $2",
+		environment, playerAddress,
+	).Scan(&cormID)
+	if err == pgx.ErrNoRows {
+		return "", nil
+	}
+	return cormID, err
+}
+
+// LinkPlayerCorm associates a player address with a corm. If the player is
+// already linked, the association is updated to the new corm.
+func (d *DB) LinkPlayerCorm(ctx context.Context, environment, playerAddress, cormID string) error {
+	if playerAddress == "" {
+		return nil
+	}
+	_, err := d.Pool.Exec(ctx,
+		`INSERT INTO corm_players (environment, player_address, corm_id, updated_at)
+		 VALUES ($1, $2, $3, now())
+		 ON CONFLICT (environment, player_address) DO UPDATE SET corm_id = $3, updated_at = now()`,
+		environment, playerAddress, cormID,
+	)
+	return err
+}
+
 // --- Events ---
 
 // InsertEvent appends a raw event and returns the assigned ID.

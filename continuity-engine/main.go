@@ -246,26 +246,67 @@ func processBatch(
 	}
 
 	sessionID := events[0].SessionID
+	playerAddr := events[0].PlayerAddress
+
+	// --- Three-tier corm resolution ---
+	// 1. Session → corm
 	cormID, err := database.ResolveSessionCorm(ctx, env, sessionID)
 	if err != nil {
 		slog.Info(fmt.Sprintf("[%s] resolve session corm: %v", env, err))
 		return
 	}
 
+	// 2. Network node → corm (if session lookup missed)
+	if cormID == "" {
+		for _, evt := range events {
+			if evt.NetworkNodeID != "" {
+				existing, err := database.ResolveCormID(ctx, env, evt.NetworkNodeID)
+				if err != nil {
+					slog.Info(fmt.Sprintf("[%s] resolve network node for corm: %v", env, err))
+				} else if existing != "" {
+					cormID = existing
+					slog.Info(fmt.Sprintf("[%s] resolved existing corm %s for session %s via node %s", env, cormID, sessionID, evt.NetworkNodeID))
+				}
+				break
+			}
+		}
+	}
+
+	// 3. Player address → corm (if both session and node lookups missed)
+	if cormID == "" && playerAddr != "" {
+		existing, err := database.ResolveCormByPlayer(ctx, env, playerAddr)
+		if err != nil {
+			slog.Info(fmt.Sprintf("[%s] resolve player corm: %v", env, err))
+		} else if existing != "" {
+			cormID = existing
+			slog.Info(fmt.Sprintf("[%s] resolved existing corm %s for session %s via player %s", env, cormID, sessionID, playerAddr))
+		}
+	}
+
+	// 4. Create new corm only if all resolution paths failed
 	if cormID == "" {
 		cormID = uuid.New().String()
-		if err := database.LinkSessionCorm(ctx, env, sessionID, cormID); err != nil {
-			slog.Info(fmt.Sprintf("[%s] link session corm: %v", env, err))
-		}
 		slog.Info(fmt.Sprintf("[%s] new corm %s for session %s", env, cormID, sessionID))
 	}
 
+	// Ensure session → corm link exists (covers tiers 2, 3, and 4)
+	if err := database.LinkSessionCorm(ctx, env, sessionID, cormID); err != nil {
+		slog.Info(fmt.Sprintf("[%s] link session corm: %v", env, err))
+	}
+
+	// Ensure player → corm link exists (covers all tiers)
+	if err := database.LinkPlayerCorm(ctx, env, playerAddr, cormID); err != nil {
+		slog.Info(fmt.Sprintf("[%s] link player corm: %v", env, err))
+	}
+
+	// --- Network node linking and chain state provisioning ---
 	for _, evt := range events {
 		if evt.NetworkNodeID != "" {
 			existing, err := database.ResolveCormID(ctx, env, evt.NetworkNodeID)
 			if err != nil {
 				slog.Info(fmt.Sprintf("[%s] resolve network node: %v", env, err))
 			} else if existing == "" {
+				// New node — create chain state and link to this corm
 				chainClient := chainClients[env]
 				chainStateID, err := chainClient.CreateCormState(ctx, evt.NetworkNodeID)
 				if err != nil {
@@ -280,12 +321,36 @@ func processBatch(
 					}
 				}
 				slog.Info(fmt.Sprintf("[%s] linked node %s to corm %s (chain_state=%s)", env, evt.NetworkNodeID, cormID, chainStateID))
-			} else {
-				// Backfill: node is linked but chain_state_id may be NULL
-				// (e.g. CreateCormState failed on the original attempt).
+			} else if existing != cormID {
+				// Node belongs to a different corm — the node's corm is
+				// authoritative (player may have been resolved via address
+				// to a stale corm). Re-link session and player to the
+				// node's corm.
+				slog.Info(fmt.Sprintf("[%s] corm mismatch: session resolved %s but node %s belongs to %s — switching", env, cormID, evt.NetworkNodeID, existing))
+				cormID = existing
+				database.LinkSessionCorm(ctx, env, sessionID, cormID)
+				database.LinkPlayerCorm(ctx, env, playerAddr, cormID)
+				// Fall through to backfill chain_state_id
 				existingChainID, _ := database.ResolveChainStateIDForNode(ctx, env, evt.NetworkNodeID)
-				// Bypass the backfill cooldown for Phase 2+ corms — they need
-				// chain state immediately for contract generation.
+				cormPhase := database.ResolveCormPhase(ctx, env, existing)
+				if existingChainID == "" && (cormPhase >= 2 || !backfillRecentlyFailed(evt.NetworkNodeID)) {
+					chainClient := chainClients[env]
+					chainStateID, err := chainClient.CreateCormState(ctx, evt.NetworkNodeID)
+					if err != nil {
+						recordBackfillFailure(evt.NetworkNodeID)
+						slog.Info(fmt.Sprintf("[%s] backfill create corm state for node %s: %v (suppressing retries for %s)", env, evt.NetworkNodeID, err, backfillCooldown))
+					} else if chainStateID != "" {
+						clearBackfillFailure(evt.NetworkNodeID)
+						if err := database.SetChainStateID(ctx, env, evt.NetworkNodeID, chainStateID); err != nil {
+							slog.Info(fmt.Sprintf("[%s] backfill set chain state ID: %v", env, err))
+						} else {
+							slog.Info(fmt.Sprintf("[%s] backfilled chain_state_id for node %s → %s", env, evt.NetworkNodeID, chainStateID))
+						}
+					}
+				}
+			} else {
+				// Same corm — backfill chain_state_id if needed
+				existingChainID, _ := database.ResolveChainStateIDForNode(ctx, env, evt.NetworkNodeID)
 				cormPhase := database.ResolveCormPhase(ctx, env, existing)
 				if existingChainID == "" && (cormPhase >= 2 || !backfillRecentlyFailed(evt.NetworkNodeID)) {
 					chainClient := chainClients[env]
@@ -380,6 +445,13 @@ func buildSessionSyncFn(database *db.DB, chainClients map[string]*chain.Client, 
 		// Link this session to the corm so processBatch finds it
 		if err := database.LinkSessionCorm(ctx, environment, sess.ID, cormID); err != nil {
 			slog.Info(fmt.Sprintf("session sync: link session %s to corm %s: %v", sess.ID, cormID, err))
+		}
+
+		// Record player → corm association for future session recovery
+		if sess.PlayerAddress != "" {
+			if err := database.LinkPlayerCorm(ctx, environment, sess.PlayerAddress, cormID); err != nil {
+				slog.Info(fmt.Sprintf("session sync: link player %s to corm %s: %v", sess.PlayerAddress, cormID, err))
+			}
 		}
 
 		slog.Info(fmt.Sprintf("session sync: restored corm %s (phase=%d stab=%.0f corr=%.0f) for node %s",

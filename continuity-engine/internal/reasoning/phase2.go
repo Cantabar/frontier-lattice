@@ -177,6 +177,13 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 			slog.Warn(fmt.Sprintf("phase2: cannot bootstrap CORM for corm %s (no on-chain state ID)", cormID))
 		}
 
+		// Bail out early if CORM balance is still zero after bootstrap attempt —
+		// goal-directed contracts require CORM escrow and will fail at validation.
+		if snapshot.CormCORMBalance == 0 {
+			sendEmptyStateFeedback(ctx, h, cormID, evt.SessionID, traits, snapshot)
+			return
+		}
+
 		slots := maxActiveContracts - activeCount
 		goals := ProgressiveGoals(traits)
 		intents := PlanAcquisitionContracts(goals, snapshot, h.recipeRegistry, traits, playerAddr, slots)
