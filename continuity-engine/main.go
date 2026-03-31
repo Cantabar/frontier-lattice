@@ -51,7 +51,15 @@ func main() {
 	// --- Per-environment chain clients ---
 	chainClients := make(map[string]*chain.Client, len(cfg.Environments))
 	for _, env := range cfg.Environments {
-		c := chain.NewClient(env.SUIRpcURL, env.CormStatePackageID, env.SUIPrivateKey)
+		c := chain.NewClient(chain.ClientConfig{
+			RpcURL:                      env.SUIRpcURL,
+			PackageID:                   env.CormStatePackageID,
+			TrustlessContractsPackageID: env.TrustlessContractsPackageID,
+			CormAuthPackageID:           env.CormAuthPackageID,
+			CormConfigObjectID:          env.CormConfigObjectID,
+			CoinAuthorityObjectID:       env.CoinAuthorityObjectID,
+			CormCharacterID:             env.CormCharacterID,
+		}, env.SUIPrivateKey)
 		if cfg.SeedChainData {
 			c.SetSeedMode(true)
 		}

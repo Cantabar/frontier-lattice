@@ -17,6 +17,15 @@ type EnvironmentConfig struct {
 	SUIPrivateKeyEnv   string `json:"sui_private_key_env"` // env var name holding the key
 	CormStatePackageID string `json:"corm_state_package_id"`
 
+	// Additional package IDs for on-chain contract calls.
+	TrustlessContractsPackageID string `json:"trustless_contracts_package_id"`
+	CormAuthPackageID           string `json:"corm_auth_package_id"`
+
+	// Shared object IDs required for on-chain operations.
+	CormConfigObjectID    string `json:"corm_config_object_id"`    // CormConfig shared object (for install)
+	CoinAuthorityObjectID string `json:"coin_authority_object_id"` // CoinAuthority shared object (for minting)
+	CormCharacterID       string `json:"corm_character_id"`        // Corm-brain's on-chain Character (for posting contracts)
+
 	// Resolved at load time from the env var referenced by SUIPrivateKeyEnv.
 	SUIPrivateKey string `json:"-"`
 }

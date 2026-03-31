@@ -2,10 +2,13 @@ package chain
 
 import (
 	"context"
-	"log/slog"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
+
+	"github.com/pattonkan/sui-go/sui"
+	"github.com/pattonkan/sui-go/suiclient"
 )
 
 // WorldSnapshot holds the pre-fetched game state needed for contract generation.
@@ -96,32 +99,56 @@ func BuildSnapshot(ctx context.Context, client *Client, cormID, playerAddr, netw
 // --- Bootstrap minting ---
 
 // MintBootstrapCORM mints a seed amount of CORM for a corm that has zero
-// balance, enabling it to create coin_for_item contracts. The minted amount
-// is returned so the caller can update the snapshot.
-// TODO: Implement via PTB calling corm_coin::mint with the corm's MintCap.
+// balance, enabling it to create coin_for_item contracts. Mints to the
+// brain's own address. The minted amount is returned so the caller can
+// update the snapshot.
 func (c *Client) MintBootstrapCORM(ctx context.Context, cormID string, amount uint64) (uint64, error) {
 	if c.seedMode {
 		slog.Info(fmt.Sprintf("chain: seed MintBootstrapCORM for corm %s amount=%d", cormID, amount))
 		return amount, nil
 	}
-	slog.Info(fmt.Sprintf("chain: stub MintBootstrapCORM for corm %s amount=%d", cormID, amount))
+	if !c.HasSigner() || c.cormStatePkg == nil || c.coinAuthorityObjID == nil {
+		slog.Info(fmt.Sprintf("chain: stub MintBootstrapCORM for corm %s amount=%d (missing config)", cormID, amount))
+		return amount, nil
+	}
+
+	// Mint to the brain's own address so it can use CORM for escrow
+	err := c.MintCORM(ctx, cormID, c.signer.AddressString(), amount)
+	if err != nil {
+		return 0, fmt.Errorf("bootstrap mint: %w", err)
+	}
+
+	slog.Info(fmt.Sprintf("chain: MintBootstrapCORM for corm %s amount=%d", cormID, amount))
 	return amount, nil
 }
 
-// --- Stub chain methods for snapshot data ---
+// --- Chain read methods for snapshot data ---
 
-// GetCORMBalance reads the corm's CORM token balance.
-// TODO: Implement via suiclient.GetBalance for Coin<CORM>.
+// GetCORMBalance reads the brain's CORM token balance from chain.
+// This is the total CORM held by the brain's signer address.
 func (c *Client) GetCORMBalance(ctx context.Context, cormID string) (uint64, error) {
 	if c.seedMode {
 		return 10000, nil
 	}
-	slog.Info(fmt.Sprintf("chain: stub GetCORMBalance for corm %s", cormID))
-	return 0, nil
+	if !c.HasSigner() || c.cormStatePkg == nil {
+		return 0, nil
+	}
+
+	coinType := sui.ObjectType(c.CORMCoinType())
+	resp, err := c.rpc.GetBalance(ctx, &suiclient.GetBalanceRequest{
+		Owner:    c.signer.Address(),
+		CoinType: coinType,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("get CORM balance: %w", err)
+	}
+
+	return resp.TotalBalance.Uint64(), nil
 }
 
 // GetCormInventory reads items held in the corm's SSU inventory.
-// TODO: Implement via suiclient.GetOwnedObjects + GetDynamicFields.
+// Currently returns seed data or nil — full implementation requires
+// indexer integration for SSU inventory reads.
 func (c *Client) GetCormInventory(ctx context.Context, cormID string) ([]InventoryItem, error) {
 	if c.seedMode {
 		return []InventoryItem{
@@ -130,18 +157,19 @@ func (c *Client) GetCormInventory(ctx context.Context, cormID string) ([]Invento
 			{TypeID: "77531", TypeName: "Coolant", Amount: 200},
 		}, nil
 	}
-	slog.Info(fmt.Sprintf("chain: stub GetCormInventory for corm %s", cormID))
+	// TODO: Query indexer or SSU dynamic fields for corm inventory
 	return nil, nil
 }
 
 // GetNodeSSUs returns SSUs belonging to a network node.
-// TODO: Implement via suiclient.GetOwnedObjects filtered by network node.
+// Currently returns seed data or nil — full implementation requires
+// indexer integration for network node → SSU mapping.
 func (c *Client) GetNodeSSUs(ctx context.Context, networkNodeID string) ([]SSUInfo, error) {
 	if c.seedMode {
 		return []SSUInfo{
 			{ObjectID: "seed_ssu_" + networkNodeID, OwnerAddr: "0xseed"},
 		}, nil
 	}
-	slog.Info(fmt.Sprintf("chain: stub GetNodeSSUs for node %s", networkNodeID))
+	// TODO: Query indexer for SSUs on this network node
 	return nil, nil
 }

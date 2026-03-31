@@ -2,8 +2,6 @@ package chain
 
 import (
 	"context"
-	"log/slog"
-	"fmt"
 )
 
 // InventoryItem represents an item in a player's SSU inventory.
@@ -14,7 +12,8 @@ type InventoryItem struct {
 }
 
 // GetPlayerInventory reads a player's SSU inventory items and balances.
-// TODO: Implement via suiclient.GetOwnedObjects + GetDynamicFields.
+// Currently returns seed data or nil — full implementation requires
+// indexer integration for SSU inventory reads.
 func (c *Client) GetPlayerInventory(ctx context.Context, playerAddress string) ([]InventoryItem, error) {
 	if c.seedMode {
 		return []InventoryItem{
@@ -23,6 +22,6 @@ func (c *Client) GetPlayerInventory(ctx context.Context, playerAddress string) (
 			{TypeID: "77540", TypeName: "Fuel Cell", Amount: 50},
 		}, nil
 	}
-	slog.Info(fmt.Sprintf("chain: stub GetPlayerInventory for %s", playerAddress))
+	// TODO: Query indexer for player SSU inventory
 	return nil, nil
 }

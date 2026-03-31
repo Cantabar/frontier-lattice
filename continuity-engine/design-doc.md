@@ -54,7 +54,7 @@ All communication is in-process via Go channels. No WebSocket, no HTTP relay.
 - **Puzzle Generator** (`internal/puzzle`) — creates dynamically-sized cipher grids with configurable difficulty.
 - **Reasoning Handler** (`internal/reasoning`) — processes event batches: runs trait reduction, detects phase transitions, delivers deterministic transition messages, and executes phase-specific effects (Phase 0 escalation, Phase 1 hints/difficulty, Phase 2 contract generation).
 - **Trait Reducer** (`internal/memory`) — deterministic trait mutations (stability, corruption, patience, paranoia, etc.) applied inline on every event batch.
-- **Chain Client** (`internal/chain`) — per-environment Sui RPC client for on-chain state writes.
+- **Chain Client** (`internal/chain`) — per-environment Sui RPC client for on-chain state writes. Uses `pattonkan/sui-go` for JSON-RPC, PTB building, Ed25519 signing, and BCS decoding. Implements real PTB transactions for CormState creation (`install`), state updates (`update_state`), CORM minting (`corm_coin::mint`), and `coin_for_item` contract creation. Falls back to stub logging when package/object IDs are not configured (graceful degradation for dev environments). Inventory and SSU reads remain seed-mode stubs pending indexer integration.
 
 ### Goroutines
 
@@ -90,8 +90,13 @@ All via environment variables:
 - `ENVIRONMENTS_CONFIG` — path to JSON file for multi-environment setup
 - `SEED_CHAIN_DATA` — stub chain data for dev (default: true)
 - `SUI_RPC_URL` — Sui RPC endpoint
-- `SUI_PRIVATE_KEY` — keypair for chain operations
+- `SUI_PRIVATE_KEY` — hex-encoded Ed25519 seed (32 bytes) for chain operations
 - `CORM_STATE_PACKAGE_ID` — deployed corm_state package ID
+- `TRUSTLESS_CONTRACTS_PACKAGE_ID` — deployed trustless_contracts package ID
+- `CORM_AUTH_PACKAGE_ID` — deployed corm_auth package ID
+- `CORM_CONFIG_OBJECT_ID` — shared CormConfig object ID (for corm install)
+- `COIN_AUTHORITY_OBJECT_ID` — shared CoinAuthority object ID (for CORM minting)
+- `CORM_CHARACTER_ID` — brain's on-chain Character object ID (for posting contracts)
 - `ITEM_REGISTRY_PATH`, `ITEM_VALUES_PATH` — item data paths
 - `CORM_PER_LUX`, `CORM_FLOOR_PER_UNIT` — pricing config
 - `CONTRACT_GENERATION_COOLDOWN_MS` — min time between contract generation per corm
