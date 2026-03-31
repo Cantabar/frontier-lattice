@@ -152,7 +152,7 @@ export class CleanupWorker {
       enqueued++;
     }
 
-    if
+    if (enqueued > 0) {
       log.info(`Enqueued ${enqueued} new cleanup job(s)`);
     }
   }

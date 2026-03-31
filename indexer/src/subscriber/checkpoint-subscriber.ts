@@ -113,7 +113,7 @@ export class CheckpointSubscriber {
       }
     }
 
-    for
+    for (const [name, { packageId, module }] of Object.entries(eventModuleMap)) {
       if (packageId) {
         filters.push(`${packageId}::${module}::${name}`);
       }
