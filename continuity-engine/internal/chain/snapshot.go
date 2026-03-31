@@ -16,6 +16,7 @@ import (
 // WorldSnapshot holds the pre-fetched game state needed for contract generation.
 type WorldSnapshot struct {
 	CormCORMBalance uint64          // corm's CORM token balance
+	CanMintInline   bool            // true if the chain client can mint CORM inline within a PTB
 	CormInventory   []InventoryItem // items in the corm's SSU
 	PlayerInventory []InventoryItem // items in the player's SSU
 	NodeSSUs        []SSUInfo       // SSUs on this network node
@@ -47,6 +48,7 @@ type AssemblyInfo struct {
 // failure (best-effort graceful degradation).
 func BuildSnapshot(ctx context.Context, client *Client, cormID, playerAddr, networkNodeID string) WorldSnapshot {
 	var snap WorldSnapshot
+	snap.CanMintInline = client.CanMintInline()
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 

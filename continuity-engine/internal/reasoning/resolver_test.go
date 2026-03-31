@@ -175,6 +175,51 @@ func TestResolveIntent_ExactQuantityItemForItem(t *testing.T) {
 	}
 }
 
+func TestValidateParams_ZeroBalanceCanMintInline(t *testing.T) {
+	registry := testRegistry(t)
+	params := &chain.ContractParams{
+		ContractType:    types.ContractCoinForItem,
+		CORMEscrowAmount: 500,
+		WantedTypeID:    77800,
+		WantedQuantity:  10,
+		DeadlineMs:      9999999999999,
+	}
+	snapshot := chain.WorldSnapshot{
+		CormCORMBalance: 0,
+		CanMintInline:   true,
+		ActiveContracts: 0,
+	}
+
+	if err := ValidateParams(params, snapshot, registry); err != nil {
+		t.Errorf("expected no error with CanMintInline=true and zero balance, got: %v", err)
+	}
+	// Escrow should remain at the original computed amount (not clamped to 0).
+	if params.CORMEscrowAmount != 500 {
+		t.Errorf("expected escrow=500 (unclamped), got %d", params.CORMEscrowAmount)
+	}
+}
+
+func TestValidateParams_ZeroBalanceNoMintInline(t *testing.T) {
+	registry := testRegistry(t)
+	params := &chain.ContractParams{
+		ContractType:    types.ContractCoinForItem,
+		CORMEscrowAmount: 500,
+		WantedTypeID:    77800,
+		WantedQuantity:  10,
+		DeadlineMs:      9999999999999,
+	}
+	snapshot := chain.WorldSnapshot{
+		CormCORMBalance: 0,
+		CanMintInline:   false,
+		ActiveContracts: 0,
+	}
+
+	err := ValidateParams(params, snapshot, registry)
+	if err == nil {
+		t.Error("expected error with CanMintInline=false and zero balance")
+	}
+}
+
 // Ensure the error message for unknown items hasn't regressed.
 func TestResolveIntent_UnknownItem(t *testing.T) {
 	registry := testRegistry(t)

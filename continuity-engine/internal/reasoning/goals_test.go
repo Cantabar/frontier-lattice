@@ -89,6 +89,31 @@ func TestPlanAcquisitionContracts_NilRecipes(t *testing.T) {
 	}
 }
 
+func TestPlanAcquisitionContracts_ZeroBalanceCanMintInline(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goals := DefaultGoals()
+	// Zero CORM balance but CanMintInline = true — acquisition should still work.
+	snapshot := chain.WorldSnapshot{
+		CormCORMBalance: 0,
+		CanMintInline:   true,
+		CormInventory:   nil,
+		PlayerInventory: nil,
+	}
+	traits := &types.CormTraits{
+		PlayerAffinities: map[string]float64{"0xplayer": 0.3},
+	}
+
+	intents := PlanAcquisitionContracts(goals, snapshot, recipes, traits, "0xplayer", 5)
+	if len(intents) == 0 {
+		t.Fatal("expected acquisition intents with CanMintInline=true and zero balance")
+	}
+	for i, intent := range intents {
+		if intent.ContractType != types.ContractCoinForItem {
+			t.Errorf("intent[%d]: expected coin_for_item, got %s", i, intent.ContractType)
+		}
+	}
+}
+
 func TestPlanAcquisitionContracts_NarrativeReferencesGoal(t *testing.T) {
 	recipes := chain.NewRecipeRegistry()
 	goals := DefaultGoals()

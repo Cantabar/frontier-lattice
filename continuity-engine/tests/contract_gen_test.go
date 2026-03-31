@@ -104,6 +104,49 @@ func TestGenerateContractIntent_CORMBalanceOnlyReturnsError(t *testing.T) {
 	}
 }
 
+func TestGenerateContractIntent_ZeroBalanceWithMintInline(t *testing.T) {
+	traits := testTraits()
+	// Zero CORM balance but CanMintInline = true + player inventory available.
+	// coin_for_item should be feasible because the PTB will mint CORM inline.
+	snapshot := chain.WorldSnapshot{
+		CormCORMBalance: 0,
+		CanMintInline:   true,
+		CormInventory:   nil,
+		PlayerInventory: []chain.InventoryItem{
+			{TypeID: "77525", TypeName: "Refined Crystal", Amount: 150},
+		},
+	}
+	rng := seedRNG(42)
+
+	intent, err := reasoning.GenerateContractIntent(traits, snapshot, nil, "0xplayer1", rng)
+	if err != nil {
+		t.Fatalf("expected success with CanMintInline=true, got: %v", err)
+	}
+	if intent.ContractType != types.ContractCoinForItem {
+		t.Errorf("expected coin_for_item (only feasible type), got %s", intent.ContractType)
+	}
+}
+
+func TestGenerateContractIntent_ZeroBalanceWithoutMintInline(t *testing.T) {
+	traits := testTraits()
+	// Zero CORM balance, CanMintInline = false, no corm inventory.
+	// Only player inventory exists but coin_for_item requires CORM → infeasible.
+	snapshot := chain.WorldSnapshot{
+		CormCORMBalance: 0,
+		CanMintInline:   false,
+		CormInventory:   nil,
+		PlayerInventory: []chain.InventoryItem{
+			{TypeID: "77525", TypeName: "Refined Crystal", Amount: 150},
+		},
+	}
+	rng := seedRNG(42)
+
+	_, err := reasoning.GenerateContractIntent(traits, snapshot, nil, "0xplayer1", rng)
+	if err == nil {
+		t.Error("expected error with zero balance and CanMintInline=false")
+	}
+}
+
 func TestGenerateContractIntent_ItemsFromActualInventory(t *testing.T) {
 	traits := testTraits()
 	snapshot := testSnapshot()

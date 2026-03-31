@@ -172,8 +172,9 @@ func ValidateParams(params *chain.ContractParams, snapshot chain.WorldSnapshot, 
 		slog.Info(fmt.Sprintf("resolver: corrected deadline to +12h"))
 	}
 
-	// CORM escrow must not exceed balance
-	if params.CORMEscrowAmount > snapshot.CormCORMBalance {
+	// CORM escrow must not exceed balance — skip when inline minting is
+	// available because the PTB will mint the exact amount needed.
+	if !snapshot.CanMintInline && params.CORMEscrowAmount > snapshot.CormCORMBalance {
 		if snapshot.CormCORMBalance == 0 {
 			return fmt.Errorf("corm has no CORM balance")
 		}

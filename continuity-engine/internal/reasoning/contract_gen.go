@@ -131,7 +131,7 @@ func pickContractType(traits *types.CormTraits, snapshot chain.WorldSnapshot, rn
 		// Feasibility check: suppress types that can't be fulfilled.
 		switch ct {
 		case types.ContractCoinForItem:
-			if snapshot.CormCORMBalance == 0 {
+			if snapshot.CormCORMBalance == 0 && !snapshot.CanMintInline {
 				w = 0
 			}
 			if len(snapshot.PlayerInventory) == 0 {
