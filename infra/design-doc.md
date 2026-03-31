@@ -13,7 +13,8 @@ Internet
 Route 53 (ef-corm.com)
     ├─ {env}.ef-corm.com ──► CloudFront ──► S3 (static frontend)
     │   (stillness = apex ef-corm.com)  ├─► /sui-rpc ──► fullnode.{net}.sui.io
-    │                                   └─► /api/v1/* ──► ALB (api.{env}.ef-corm.com)
+    │                                   ├─► /api/v1/* ──► ALB (api.{env}.ef-corm.com)
+    │                                   └─► /zk/* ──► ALB (ZK circuit artifacts, cached)
     │
     ├─ api.{env}.ef-corm.com ──► ALB (HTTPS :443)
     │                               │
@@ -64,7 +65,7 @@ All resources are prefixed with `fc-{env}` (e.g. `fc-utopia`, `fc-stillness`). C
 - **Compute:** ECS Fargate (512 CPU / 1024 MB per task)
 - **Database:** RDS Postgres 16 (t4g.micro, gp3 20GB, single-AZ)
 - **Storage:** S3 (frontend static assets, block public access)
-- **CDN:** CloudFront (SPA routing via 404 → /index.html, custom domain + ACM cert, Sui RPC reverse proxy, indexer API reverse proxy)
+- **CDN:** CloudFront (SPA routing via 404 → /index.html, custom domain + ACM cert, Sui RPC reverse proxy, indexer API reverse proxy, ZK artifact reverse proxy)
 - **DNS:** Route 53 (A alias records for CloudFront + ALB)
 - **TLS:** ACM (ef-corm.com + *.ef-corm.com, DNS validation)
 - **Registry:** ECR (`fc-{env}-indexer`, `fc-{env}-continuity-engine`)
@@ -129,6 +130,7 @@ No application data — this service provisions infrastructure only. Database sc
 - S3 static frontend with CloudFront CDN and SPA routing
 - Sui RPC reverse proxy via CloudFront (`/sui-rpc` → `fullnode.{net}.sui.io/`). Uses a CloudFront Function to rewrite the URI, `CachingDisabled` cache policy, and `AllViewerExceptHostHeader` origin request policy. Eliminates browser CORS errors by making Sui RPC calls same-origin with the SPA.
 - Indexer API reverse proxy via CloudFront (`/api/v1/*` → `api.{env}.ef-corm.com`). Proxies SPA indexer calls to the ALB using the environment's API subdomain (HTTPS, ALB cert validates against `*.ef-corm.com`). Same-origin with the SPA, no CORS needed.
+- ZK circuit artifact reverse proxy via CloudFront (`/zk/*` → ALB → indexer). Serves WASM and zkey files for browser-side Groth16 proof generation. Uses `CachingOptimized` cache policy (respects Express `max-age: 7d`). Same-origin with the SPA, no CORS needed. ALB rule at priority 11 routes `/zk/*` to the indexer target group.
 - Custom domain (ef-corm.com) with Route 53 DNS + ACM TLS certificate
 - HTTPS on both CloudFront and ALB; HTTP redirects to HTTPS
 - ALB sticky sessions on continuity-engine target group (1-day TTL) — required because the service uses an in-memory session store

@@ -293,6 +293,14 @@ export class FrontierCormStack extends cdk.Stack {
           originRequestPolicy:
             cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         },
+        "/zk/*": {
+          origin: albOrigin,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+          cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+          originRequestPolicy:
+            cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
       },
       defaultRootObject: "index.html",
       errorResponses: [
@@ -488,6 +496,12 @@ export class FrontierCormStack extends cdk.Stack {
       healthCheck: { path: "/health", interval: cdk.Duration.seconds(30) },
       conditions: [elbv2.ListenerCondition.pathPatterns(["/api/v1/*", "/api/v1", "/health"])],
       priority: 10,
+    });
+
+    httpsListener.addTargetGroups("ZkAssetsRule", {
+      targetGroups: [indexerTg],
+      conditions: [elbv2.ListenerCondition.pathPatterns(["/zk/*"])],
+      priority: 11,
     });
 
     // Sticky sessions required: continuity-engine uses an in-memory session
