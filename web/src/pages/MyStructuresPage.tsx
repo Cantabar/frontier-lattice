@@ -154,6 +154,10 @@ const StructureCard = styled.div<{ $clickable?: boolean; $expanded?: boolean }>`
     border-color: ${({ $clickable, theme }) =>
       $clickable ? theme.colors.primary.main : theme.colors.surface.borderHover};
   }
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.lg}px) {
+    flex-wrap: wrap;
+  }
 `;
 
 const StructureIcon = styled.img`
@@ -176,6 +180,10 @@ const StructureIconPlaceholder = styled.div`
 const StructureInfo = styled.div`
   flex: 0 1 250px;
   min-width: 0;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.lg}px) {
+    flex: 1 1 0%;
+  }
 `;
 
 const StructureName = styled.div`
@@ -198,6 +206,11 @@ const TagsLeft = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.spacing.md};
   flex-shrink: 0;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.lg}px) {
+    flex-basis: 100%;
+    padding-left: calc(40px + ${({ theme }) => theme.spacing.md});
+  }
 `;
 
 const TagsRight = styled.div`
@@ -206,6 +219,12 @@ const TagsRight = styled.div`
   gap: ${({ theme }) => theme.spacing.sm};
   flex-shrink: 0;
   margin-left: auto;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.lg}px) {
+    flex-basis: 100%;
+    padding-left: calc(40px + ${({ theme }) => theme.spacing.md});
+    margin-left: 0;
+  }
 `;
 
 const TypeBadge = styled.span`
@@ -222,6 +241,10 @@ const TypeBadge = styled.span`
   text-overflow: ellipsis;
   white-space: nowrap;
   flex-shrink: 0;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.lg}px) {
+    width: auto;
+  }
 `;
 
 const StatusDot = styled.span<{ $status: AssemblyStatus }>`
@@ -253,6 +276,10 @@ const StatusLabel = styled.span`
   white-space: nowrap;
   width: 100px;
   flex-shrink: 0;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.lg}px) {
+    width: auto;
+  }
 `;
 
 const EnergyIndicator = styled.span<{ $connected: boolean }>`
@@ -261,6 +288,10 @@ const EnergyIndicator = styled.span<{ $connected: boolean }>`
     $connected ? theme.colors.success : theme.colors.text.muted};
   width: 110px;
   flex-shrink: 0;
+
+  @media (max-width: ${({ theme }) => theme.breakpoints.lg}px) {
+    width: auto;
+  }
 `;
 
 const LocationBadge = styled(Link)`

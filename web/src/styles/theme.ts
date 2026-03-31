@@ -82,6 +82,8 @@ export const theme = {
     sm: 768,
     /** Between sm and md: sidebar icons only; above md: fully expanded */
     md: 1024,
+    /** Below lg: structure rows wrap to two lines */
+    lg: 1200,
   },
   sidebar: {
     expandedWidth: 200,

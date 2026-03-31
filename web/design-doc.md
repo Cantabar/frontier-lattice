@@ -173,6 +173,7 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 - Location badge deep-linking: the "📍 Location" badge on structure rows and network node headers links to `/locations?structure=<id>`, scrolling to and briefly highlighting the matching POD row on the Locations page
 - Structures → Locations navigation: structure rows and network node group headers without a registered location show a "+ Location" link to `/locations`, enabling the player to navigate directly to the Locations page to unlock the TLK and register locations
 - Build request (witnessed) contracts: create, list, and detail views for `BuildRequestContract` from the `witnessed_contracts` package. Poster escrows a bounty for building a specific structure type; the CORM witness service auto-fulfills when a matching anchor event is detected. Supports CormAuth requirement, character/tribe access control, and proximity gating. Integrated into the unified contracts list with a "Build Request" type filter.
+- Tablet responsiveness: structure rows (`StructureCard`) and network node group headers (`CardHeader`) use `flex-wrap` below the `lg` (1200px) breakpoint so tags and actions flow onto a second line instead of overlapping. Fixed-width badges (`TypeBadge`, `StatusLabel`, `EnergyIndicator`) switch to `width: auto` at this breakpoint.
 
 ### CustomSelect (CEF/OSR Compatibility)
 
