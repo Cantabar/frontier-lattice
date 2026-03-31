@@ -11,6 +11,7 @@ Plans
  Preface all plan names created in this project with [frontier-corm][service-name]
  Planning should always reference the design doc for each service.
  Plans should always include a step to update the design doc for each service. The design doc should live at the root of the service. For example, the puzzle service should have a design doc at ./puzzle-service/design-doc.md
+ Plans on ./contracts should strongly prefer upgrades over full publishes. Notify the user when a publish is absolutely required to accomplish the plan.
 Documentation
  each service should have a design doc that explains what the service does
  the design-doc should contain a list of features that exist in the service
