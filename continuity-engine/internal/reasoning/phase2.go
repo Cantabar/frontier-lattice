@@ -237,16 +237,12 @@ func attemptAcquisitionFill(ctx context.Context, h *Handler, environment, cormID
 		intents := PlanAcquisitionContracts(goals, snapshot, h.recipeRegistry, traits, player.Address, slots)
 
 		if len(intents) > 0 {
-			for _, intent := range intents {
-				if activeCount >= maxActiveContracts {
-					break
-				}
-				if err := createContractFromIntent(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, player, &intent); err != nil {
-					slog.Info(fmt.Sprintf("phase2: goal-directed contract failed: %v", err))
-					break
-				}
-				activeCount++
+			intentPtrs := make([]*types.ContractIntent, len(intents))
+			for i := range intents {
+				intentPtrs[i] = &intents[i]
 			}
+			created := createContractsFromIntents(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, player, intentPtrs)
+			activeCount += created
 			if activeCount == 0 {
 				sendEmptyStateFeedback(ctx, h, cormID, evt.SessionID, traits, snapshot)
 			}
@@ -304,42 +300,33 @@ func attemptDistributionFill(ctx context.Context, h *Handler, environment, cormI
 		return
 	}
 
-	for _, intent := range intents {
-		if activeCount >= maxActiveContracts {
-			break
-		}
-		if err := createContractFromIntent(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, player, &intent); err != nil {
-			slog.Info(fmt.Sprintf("phase2: distribution contract failed: %v", err))
-			break
-		}
-		activeCount++
+	intentPtrs := make([]*types.ContractIntent, len(intents))
+	for i := range intents {
+		intentPtrs[i] = &intents[i]
 	}
+	createContractsFromIntents(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, player, intentPtrs)
 }
 
 // attemptStandardFill tries standard contract generation with optional
 // reserved-material filtering. Returns true if generation failed (no viable contracts).
 func attemptStandardFill(ctx context.Context, h *Handler, environment, cormID, chainStateID string, traits *types.CormTraits, evt types.CormEvent, snapshot chain.WorldSnapshot, player PlayerIdentity, activeCount int, reserved map[uint64]uint64) bool {
-	failed := false
-	for activeCount < maxActiveContracts {
-		if err := generateOneContract(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, player, reserved); err != nil {
-			slog.Info(fmt.Sprintf("phase2: standard fill stopped after %d active: %v", activeCount, err))
-			failed = true
+	// Collect intents up to slot limit.
+	var intents []*types.ContractIntent
+	for activeCount+len(intents) < maxActiveContracts {
+		intent, err := GenerateContractIntent(traits, snapshot, h.registry, player.Address, nil, reserved)
+		if err != nil {
+			slog.Info(fmt.Sprintf("phase2: standard fill stopped after %d intents: %v", len(intents), err))
 			break
 		}
-		activeCount++
-	}
-	return failed
-}
-
-// generateOneContract runs the deterministic contract generation pipeline once.
-// Returns nil on success or an error if generation should stop.
-func generateOneContract(ctx context.Context, h *Handler, environment, cormID, chainStateID string, traits *types.CormTraits, evt types.CormEvent, snapshot chain.WorldSnapshot, player PlayerIdentity, reserved map[uint64]uint64) error {
-	intent, err := GenerateContractIntent(traits, snapshot, h.registry, player.Address, nil, reserved)
-	if err != nil {
-		return fmt.Errorf("generate intent: %w", err)
+		intents = append(intents, intent)
 	}
 
-	return createContractFromIntent(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, player, intent)
+	if len(intents) == 0 {
+		return true
+	}
+
+	created := createContractsFromIntents(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, player, intents)
+	return created == 0
 }
 
 // createContractFromIntent resolves, validates, and creates a contract from
@@ -397,6 +384,114 @@ func createContractFromIntent(ctx context.Context, h *Handler, environment, corm
 
 	slog.Info(fmt.Sprintf("phase2: created %s contract %s for corm %s → %s", params.ContractType, contractID, cormID, player.Address))
 	return nil
+}
+
+// createContractsFromIntents resolves, validates, and batch-creates multiple
+// contracts from intents using a single PTB. Returns the number of contracts
+// successfully created. Intents that fail resolve/validate are excluded from
+// the batch (not fatal). Falls back to single-contract creation if only one
+// valid intent remains.
+func createContractsFromIntents(
+	ctx context.Context,
+	h *Handler,
+	environment, cormID, chainStateID string,
+	traits *types.CormTraits,
+	evt types.CormEvent,
+	snapshot chain.WorldSnapshot,
+	player PlayerIdentity,
+	intents []*types.ContractIntent,
+) int {
+	if len(intents) == 0 {
+		return 0
+	}
+
+	// Resolve and validate each intent, collecting valid params.
+	type resolvedIntent struct {
+		params *chain.ContractParams
+		intent *types.ContractIntent
+	}
+	var valid []resolvedIntent
+	for _, intent := range intents {
+		if intent.ContractType == types.ContractBuildSSU {
+			continue
+		}
+		params, err := ResolveIntent(*intent, snapshot, h.registry, traits, h.pricing, player)
+		if err != nil {
+			slog.Info(fmt.Sprintf("phase2: batch resolve failed: %v", err))
+			continue
+		}
+		if err := ValidateParams(params, snapshot, h.registry); err != nil {
+			slog.Info(fmt.Sprintf("phase2: batch validate failed: %v", err))
+			continue
+		}
+		valid = append(valid, resolvedIntent{params: params, intent: intent})
+	}
+
+	if len(valid) == 0 {
+		return 0
+	}
+
+	// Single intent: use the existing single-contract path.
+	if len(valid) == 1 {
+		if err := createContractFromIntent(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, player, valid[0].intent); err != nil {
+			slog.Info(fmt.Sprintf("phase2: single contract fallback failed: %v", err))
+			return 0
+		}
+		return 1
+	}
+
+	// Build params slice for batch creation.
+	chainID := chainStateID
+	if chainID == "" {
+		chainID = cormID
+	}
+	paramsList := make([]chain.ContractParams, len(valid))
+	for i, v := range valid {
+		paramsList[i] = *v.params
+	}
+
+	contractIDs, err := h.chainClient.CreateContracts(ctx, chainID, paramsList)
+	if err != nil {
+		slog.Info(fmt.Sprintf("phase2: batch contract creation failed for corm %s: %v", cormID, err))
+		return 0
+	}
+
+	// Dispatch SSE notifications and log for each created contract.
+	created := 0
+	for i, contractID := range contractIDs {
+		if contractID == "" {
+			continue
+		}
+		v := valid[i]
+
+		h.dispatcher.SendPayload(ctx, types.ActionContractCreated, evt.SessionID, types.ContractCreatedPayload{
+			ContractID:   contractID,
+			ContractType: v.params.ContractType,
+			Description:  v.intent.Narrative,
+			Reward:       fmt.Sprintf("%d CORM", v.params.CORMEscrowAmount),
+			Deadline:     time.UnixMilli(v.params.DeadlineMs).Format(time.RFC3339),
+		})
+
+		responsePayload, _ := json.Marshal(map[string]string{
+			"text":          v.intent.Narrative,
+			"contract_id":   contractID,
+			"contract_type": v.params.ContractType,
+		})
+		h.db.InsertResponse(ctx, environment, &types.CormResponse{
+			CormID:     cormID,
+			SessionID:  evt.SessionID,
+			ActionType: types.ActionContractCreated,
+			Payload:    responsePayload,
+		})
+
+		slog.Info(fmt.Sprintf("phase2: created %s contract %s for corm %s → %s", v.params.ContractType, contractID, cormID, player.Address))
+		created++
+	}
+
+	if created > 0 {
+		slog.Info(fmt.Sprintf("phase2: batch created %d/%d contracts for corm %s", created, len(valid), cormID))
+	}
+	return created
 }
 
 // sendEmptyStateFeedback delivers an in-character log message to the player

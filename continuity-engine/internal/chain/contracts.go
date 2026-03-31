@@ -148,6 +148,330 @@ func extractCreatedContract(resp *suiclient.SuiTransactionBlockResponse, typeSub
 	return ""
 }
 
+// --- Batch Contract Creation ---
+
+// CreateContracts creates multiple trustless contracts in a single PTB.
+// This minimizes RPC round-trips and gas costs by batching all create calls
+// into one Sui transaction. Returns a contract ID for each params entry
+// (positionally matched). If only one params is provided, delegates to the
+// single-contract path for zero behavioral change.
+func (c *Client) CreateContracts(ctx context.Context, cormID string, paramsList []ContractParams) ([]string, error) {
+	if len(paramsList) == 0 {
+		return nil, nil
+	}
+	if len(paramsList) == 1 {
+		id, err := c.CreateContract(ctx, cormID, paramsList[0])
+		if err != nil {
+			return nil, err
+		}
+		return []string{id}, nil
+	}
+
+	if !c.HasSigner() {
+		return nil, fmt.Errorf("no signer configured")
+	}
+
+	// Fall back to stubs if required config is missing.
+	if c.trustlessContractsPkg == nil || c.cormStatePkg == nil || c.cormCharacterID == nil {
+		return c.createContractsStub(cormID, paramsList)
+	}
+
+	// Classify contracts by type.
+	needsItemCap := false
+	var totalEscrow uint64
+	escrowAmounts := make([]uint64, 0) // per-coin-based contract
+	escrowIndices := make([]int, 0)    // original index in paramsList
+	itemIndices := make([]int, 0)      // original indices for item-based contracts
+	for i, p := range paramsList {
+		switch p.ContractType {
+		case "coin_for_item":
+			escrowAmounts = append(escrowAmounts, p.CORMEscrowAmount)
+			escrowIndices = append(escrowIndices, i)
+			totalEscrow += p.CORMEscrowAmount
+		case "coin_for_coin":
+			escrowAmounts = append(escrowAmounts, p.CORMEscrowAmount)
+			escrowIndices = append(escrowIndices, i)
+			totalEscrow += p.CORMEscrowAmount
+		case "item_for_coin", "item_for_item":
+			if !c.CanCreateItemContracts() {
+				return nil, fmt.Errorf("item contracts not configured")
+			}
+			needsItemCap = true
+			itemIndices = append(itemIndices, i)
+		}
+	}
+
+	// --- Resolve shared objects once ---
+	ptb := suiptb.NewTransactionDataTransactionBuilder()
+
+	charData, err := c.getSharedObjectRef(ctx, c.cormCharacterID)
+	if err != nil {
+		return nil, fmt.Errorf("get Character ref: %w", err)
+	}
+	// Mutable character needed if any item-based contracts exist.
+	charArg := ptb.MustObj(suiptb.ObjectArg{SharedObject: charData.SharedObjectArg(needsItemCap)})
+	clkArg := clockArg(ptb)
+
+	// --- CORM coin split (all escrow amounts at once) ---
+	escrowArgs := make(map[int]suiptb.Argument) // paramsList index → split coin arg
+	if len(escrowAmounts) > 0 {
+		cormCoinRef, err := c.findOwnedCoin(ctx, c.CORMCoinType(), totalEscrow)
+		if err != nil {
+			return nil, fmt.Errorf("find CORM coin for batch escrow: %w", err)
+		}
+		coinArg := ptb.MustObj(suiptb.ObjectArg{ImmOrOwnedObject: cormCoinRef})
+
+		amountArgs := make([]suiptb.Argument, len(escrowAmounts))
+		for i, amt := range escrowAmounts {
+			amountArgs[i] = ptb.MustPure(amt)
+		}
+		splitResult := ptb.Command(suiptb.Command{
+			SplitCoins: &suiptb.ProgrammableSplitCoins{
+				Coin:    coinArg,
+				Amounts: amountArgs,
+			},
+		})
+		splitCmdIdx := *splitResult.Result
+		for i, origIdx := range escrowIndices {
+			escrowArgs[origIdx] = suiptb.Argument{
+				NestedResult: &suiptb.NestedResult{Cmd: splitCmdIdx, Result: uint16(i)},
+			}
+		}
+	}
+
+	// --- Item withdrawals (single borrow/return cycle) ---
+	itemArgs := make(map[int]suiptb.Argument) // paramsList index → withdrawn item arg
+	var ssuArg suiptb.Argument
+
+	if needsItemCap && len(itemIndices) > 0 {
+		// All item contracts use the same source SSU (guaranteed by resolver).
+		firstItemParams := paramsList[itemIndices[0]]
+		sourceSSU, err := sui.ObjectIdFromHex(firstItemParams.SourceSSUID)
+		if err != nil {
+			return nil, fmt.Errorf("invalid source SSU: %w", err)
+		}
+
+		ownerCapRef, err := c.findOwnerCapForSSU(ctx, sourceSSU)
+		if err != nil {
+			return nil, fmt.Errorf("find OwnerCap for SSU %s: %w", firstItemParams.SourceSSUID, err)
+		}
+
+		ssuData, err := c.getSharedObjectRef(ctx, sourceSSU)
+		if err != nil {
+			return nil, fmt.Errorf("get SSU ref: %w", err)
+		}
+		ssuArg = ptb.MustObj(suiptb.ObjectArg{SharedObject: ssuData.SharedObjectArg(true)})
+
+		// Step 1: borrow_owner_cap (once)
+		ownerCapReceivingArg := ptb.MustObj(suiptb.ObjectArg{Receiving: ownerCapRef})
+		storageUnitTypeTag := c.storageUnitTypeTag()
+		borrowResult := ptb.Command(suiptb.Command{
+			MoveCall: &suiptb.ProgrammableMoveCall{
+				Package:       c.worldPkg,
+				Module:        "character",
+				Function:      "borrow_owner_cap",
+				TypeArguments: []sui.TypeTag{storageUnitTypeTag},
+				Arguments:     []suiptb.Argument{charArg, ownerCapReceivingArg},
+			},
+		})
+		borrowCmdIdx := *borrowResult.Result
+		ownerCapArg := suiptb.Argument{NestedResult: &suiptb.NestedResult{Cmd: borrowCmdIdx, Result: 0}}
+		receiptArg := suiptb.Argument{NestedResult: &suiptb.NestedResult{Cmd: borrowCmdIdx, Result: 1}}
+
+		// Step 2: withdraw_by_owner for each item contract
+		for _, idx := range itemIndices {
+			p := paramsList[idx]
+			withdrawResult := ptb.Command(suiptb.Command{
+				MoveCall: &suiptb.ProgrammableMoveCall{
+					Package:       c.worldPkg,
+					Module:        "storage_unit",
+					Function:      "withdraw_by_owner",
+					TypeArguments: []sui.TypeTag{},
+					Arguments: []suiptb.Argument{
+						ssuArg,
+						charArg,
+						ownerCapArg,
+						ptb.MustPure(p.OfferedTypeID),
+						ptb.MustPure(p.OfferedQuantity),
+					},
+				},
+			})
+			itemArgs[idx] = withdrawResult
+		}
+
+		// Step 3: return_owner_cap (once, after all withdrawals)
+		ptb.Command(suiptb.Command{
+			MoveCall: &suiptb.ProgrammableMoveCall{
+				Package:       c.worldPkg,
+				Module:        "character",
+				Function:      "return_owner_cap",
+				TypeArguments: []sui.TypeTag{storageUnitTypeTag},
+				Arguments:     []suiptb.Argument{charArg, ownerCapArg, receiptArg},
+			},
+		})
+	}
+
+	// --- Create calls (one per contract, in paramsList order) ---
+	// Track type substrings in order for extractCreatedContracts.
+	typeSubstrings := make([]string, len(paramsList))
+
+	for i, p := range paramsList {
+		switch p.ContractType {
+		case "coin_for_item":
+			destSSU, err := sui.ObjectIdFromHex(p.DestinationSSUID)
+			if err != nil {
+				return nil, fmt.Errorf("invalid destination SSU for contract %d: %w", i, err)
+			}
+			ptb.ProgrammableMoveCall(
+				c.trustlessContractsPkg,
+				"coin_for_item",
+				"create",
+				[]sui.TypeTag{c.cormCoinTypeTag()},
+				[]suiptb.Argument{
+					charArg,
+					escrowArgs[i],
+					ptb.MustPure(p.WantedTypeID),
+					ptb.MustPure(p.WantedQuantity),
+					ptb.MustPure(destSSU),
+					ptb.MustPure(p.AllowPartial),
+					ptb.MustPure(false),
+					ptb.MustPure(uint64(p.DeadlineMs)),
+					allowedCharsArg(ptb, p.PlayerCharacterID),
+					allowedTribesArg(ptb, p.AllowedTribes),
+					clkArg,
+				},
+			)
+			typeSubstrings[i] = "coin_for_item::CoinForItemContract"
+
+		case "coin_for_coin":
+			cormTag := c.cormCoinTypeTag()
+			ptb.ProgrammableMoveCall(
+				c.trustlessContractsPkg,
+				"coin_for_coin",
+				"create",
+				[]sui.TypeTag{cormTag, cormTag},
+				[]suiptb.Argument{
+					charArg,
+					escrowArgs[i],
+					ptb.MustPure(p.CORMWantedAmount),
+					ptb.MustPure(p.AllowPartial),
+					ptb.MustPure(uint64(p.DeadlineMs)),
+					allowedCharsArg(ptb, p.PlayerCharacterID),
+					allowedTribesArg(ptb, p.AllowedTribes),
+					clkArg,
+				},
+			)
+			typeSubstrings[i] = "coin_for_coin::CoinForCoinContract"
+
+		case "item_for_coin":
+			ptb.ProgrammableMoveCall(
+				c.trustlessContractsPkg,
+				"item_for_coin",
+				"create",
+				[]sui.TypeTag{c.cormCoinTypeTag()},
+				[]suiptb.Argument{
+					charArg,
+					ssuArg,
+					itemArgs[i],
+					ptb.MustPure(p.CORMWantedAmount),
+					ptb.MustPure(p.AllowPartial),
+					ptb.MustPure(uint64(p.DeadlineMs)),
+					allowedCharsArg(ptb, p.PlayerCharacterID),
+					allowedTribesArg(ptb, p.AllowedTribes),
+					clkArg,
+				},
+			)
+			typeSubstrings[i] = "item_for_coin::ItemForCoinContract"
+
+		case "item_for_item":
+			destSSU, err := sui.ObjectIdFromHex(p.DestinationSSUID)
+			if err != nil {
+				return nil, fmt.Errorf("invalid destination SSU for contract %d: %w", i, err)
+			}
+			// Resolve destination SSU shared object for item_for_item if different from source.
+			// The ssuArg already covers the source SSU for create calls.
+			ptb.ProgrammableMoveCall(
+				c.trustlessContractsPkg,
+				"item_for_item",
+				"create",
+				[]sui.TypeTag{},
+				[]suiptb.Argument{
+					charArg,
+					ssuArg,
+					itemArgs[i],
+					ptb.MustPure(p.WantedTypeID),
+					ptb.MustPure(p.WantedQuantity),
+					ptb.MustPure(destSSU),
+					ptb.MustPure(p.AllowPartial),
+					ptb.MustPure(false),
+					ptb.MustPure(uint64(p.DeadlineMs)),
+					allowedCharsArg(ptb, p.PlayerCharacterID),
+					allowedTribesArg(ptb, p.AllowedTribes),
+					clkArg,
+				},
+			)
+			typeSubstrings[i] = "item_for_item::ItemForItemContract"
+		}
+	}
+
+	// --- Execute single transaction ---
+	resp, err := c.signAndExecute(ctx, ptb)
+	if err != nil {
+		return nil, fmt.Errorf("execute batch contract create: %w", err)
+	}
+
+	// --- Extract created contract IDs ---
+	contractIDs := extractCreatedContracts(resp, typeSubstrings)
+
+	for i, id := range contractIDs {
+		if id == "" {
+			slog.Warn(fmt.Sprintf("chain: batch contract %d (%s) not found in tx effects", i, paramsList[i].ContractType))
+		}
+	}
+
+	slog.Info(fmt.Sprintf("chain: CreateContracts batch of %d in single PTB for corm %s", len(paramsList), cormID))
+	return contractIDs, nil
+}
+
+// createContractsStub returns stub contract IDs for each params entry.
+func (c *Client) createContractsStub(cormID string, paramsList []ContractParams) ([]string, error) {
+	ids := make([]string, len(paramsList))
+	for i, p := range paramsList {
+		id, err := c.createContractStub(cormID, p)
+		if err != nil {
+			return nil, err
+		}
+		ids[i] = id
+	}
+	return ids, nil
+}
+
+// extractCreatedContracts finds multiple contract object IDs from a single
+// transaction's ObjectChanges. Each typeSubstring corresponds to one expected
+// contract. Returns IDs positionally matched: contractIDs[i] is the ID for
+// typeSubstrings[i]. Uses first-match-first-consume to handle multiple
+// contracts of the same type.
+func extractCreatedContracts(resp *suiclient.SuiTransactionBlockResponse, typeSubstrings []string) []string {
+	ids := make([]string, len(typeSubstrings))
+	used := make(map[int]bool) // tracks which ObjectChanges have been consumed
+
+	for i, sub := range typeSubstrings {
+		for j, change := range resp.ObjectChanges {
+			if used[j] {
+				continue
+			}
+			if change.Data.Created != nil {
+				if containsStr(string(change.Data.Created.ObjectType), sub) {
+					ids[i] = change.Data.Created.ObjectId.String()
+					used[j] = true
+					break
+				}
+			}
+		}
+	}
+	return ids
+}
+
 // --- CoinForItem ---
 
 // createCoinForItem creates a CoinForItem<CORM_COIN> contract on-chain.
