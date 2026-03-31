@@ -99,7 +99,9 @@ func main() {
 		Phase2BindNode:   h.Phase2BindNode,
 		Stream:           h.Stream,
 		Status:           h.Status,
-		ContractsPage:    h.ContractsPage,
+		ContractsPage:        h.ContractsPage,
+		DebugFillContracts:   h.DebugFillContracts,
+		DebugPhase2:          h.DebugPhase2,
 	}
 	mux := server.NewRouter(gh, sessionStore, staticFS, cfg.SecureCookies)
 

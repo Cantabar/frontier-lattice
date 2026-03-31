@@ -19,9 +19,24 @@ var (
 	contractCooldowns  = make(map[string]time.Time) // cormID → last generation attempt
 )
 
+// ClearContractCooldown removes the per-corm cooldown entry so the next
+// attemptContractFill call proceeds immediately. Used by debug commands.
+func ClearContractCooldown(cormID string) {
+	contractCooldownMu.Lock()
+	delete(contractCooldowns, cormID)
+	contractCooldownMu.Unlock()
+}
+
 // handlePhase2Effects handles side effects for Phase 2 (contracts).
 func handlePhase2Effects(ctx context.Context, h *Handler, environment, cormID string, traits *types.CormTraits, evt types.CormEvent) {
 	switch evt.EventType {
+	case types.EventDebugFillContracts:
+		// Debug: bypass cooldown and force contract fill.
+		ClearContractCooldown(cormID)
+		if h.registry != nil && h.chainClient != nil {
+			attemptContractFill(ctx, h, environment, cormID, traits, evt)
+		}
+
 	case types.EventContractComplete:
 		// Sync updated state
 		h.dispatcher.SendPayload(ctx, types.ActionStateSync, evt.SessionID, h.buildStateSyncPayload(ctx, environment, cormID, traits))

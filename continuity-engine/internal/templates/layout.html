@@ -140,6 +140,8 @@
             logLine('[SYS] available commands:', 'boot-line--sys');
             logLine('  submit <word>   submit a decrypted word', 'boot-line--sys');
             logLine('  next            load the next puzzle (after a correct solve)', 'boot-line--sys');
+            logLine('  contracts       fill contract slots up to 5 (debug)', 'boot-line--sys');
+            logLine('  phase2          jump to Phase 2 contracts screen (debug)', 'boot-line--sys');
             logLine('  help            show this message', 'boot-line--sys');
         }
 
@@ -174,6 +176,16 @@
                     target: '#corm-log',
                     swap: 'beforeend',
                     values: { word: 'next' }
+                });
+            } else if (command === 'contracts') {
+                htmx.ajax('POST', '/debug/fill-contracts', {
+                    target: '#corm-log',
+                    swap: 'beforeend'
+                });
+            } else if (command === 'phase2') {
+                htmx.ajax('POST', '/debug/phase2', {
+                    target: '#corm-log',
+                    swap: 'beforeend'
                 });
             } else {
                 logLine('unknown command. type \'help\' for available commands', 'boot-line--sys');

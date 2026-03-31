@@ -174,6 +174,9 @@ Only `types.json` and `groups.json` are copied from `fsd_built/` — the rest of
 - In-game SSU iframe embedding support (`/ssu/{entity_id}/` routes)
 - Phase-aware root routing: `GET /` redirects to the correct phase handler (`/phase0`, `/puzzle`, or `/phase2`) based on session state, preserving query parameters for cookie-loss resilience
 - Cross-origin iframe cookie support (`SameSite=None; Secure` via `SECURE_COOKIES=true`)
+- Debug terminal commands for development troubleshooting:
+  - `contracts` — force-generate AI contracts up to the 5-slot cap (bypasses cooldown)
+  - `phase2` — skip to Phase 2 contracts dashboard (forces phase transition if needed)
 
 ## Testing
 

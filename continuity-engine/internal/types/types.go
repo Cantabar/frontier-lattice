@@ -33,7 +33,8 @@ const (
 	EventPurge            = "purge"
 	EventPhaseTransition  = "phase_transition"
 	EventNodeBind         = "node_bind"
-	EventPhase2Load       = "phase2_load"
+	EventPhase2Load            = "phase2_load"
+	EventDebugFillContracts    = "debug_fill_contracts"
 )
 
 // Significance returns a priority score for the event type.
