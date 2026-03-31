@@ -182,7 +182,7 @@ Each archived event includes proof metadata for independent verification:
 - ZK proof verification and storage for region, proximity, and mutual proximity location filters (Groth16/snarkjs)
 - Public location tagging from verified ZK proofs (region/constellation membership)
 - Wallet signature authentication with session token support (sign once, Bearer token for session)
-- zkLogin wallet support with four-tier verification: SDK → local ephemeral Ed25519 verification → direct GraphQL → JSON-RPC fallback. Local verification parses the zkLogin signature, confirms address derivation from iss+addressSeed, and verifies the ephemeral Ed25519 signature against the BCS+intent+Blake2b digest. Does not verify the Groth16 ZK proof (acceptable for Location API auth, not financial transactions).
+- zkLogin wallet support with scheme pre-detection and four-tier verification. Signatures are parsed upfront via `parseSerializedSignature` to detect the scheme; zkLogin signatures bypass the SDK's remote `verifyPersonalMessageSignature` (which relies on a Sui GraphQL call that often fails with schema mismatches) and route directly to: local ephemeral Ed25519 verification → direct GraphQL → JSON-RPC fallback. Local verification parses the zkLogin signature, confirms address derivation from iss+addressSeed, and verifies the ephemeral Ed25519 signature against the BCS+intent+Blake2b digest. Does not verify the Groth16 ZK proof (acceptable for Location API auth, not financial transactions). A defensive catch block also handles undetected zkLogin errors ("Cannot parse", "ZkLoginVerifyResult").
 - Shareable POD proof bundle export (public attestation + ZK proofs + location tags, no encrypted data)
 
 ## Open Questions / Future Work

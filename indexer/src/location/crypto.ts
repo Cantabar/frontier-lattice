@@ -169,11 +169,29 @@ export async function verifyWalletAuth(
       return { valid: false, address: claimedAddress, error: "Challenge expired" };
     }
 
-    // Verify the signature using the Sui SDK.
-    // For standard Ed25519/Secp signatures this is local-only.
-    // For zkLogin signatures the SDK makes a GraphQL call which may fail
-    // if the SDK's query is out of sync with the Sui GraphQL schema.
-    // In that case we fall back to the JSON-RPC endpoint.
+    // ---- Pre-detect zkLogin signatures ----
+    // Parse the serialized signature to determine the scheme BEFORE
+    // calling verifyPersonalMessageSignature. The SDK's built-in
+    // zkLogin verification makes a GraphQL call to the Sui node which
+    // often fails with errors ("Cannot parse signature",
+    // "ZkLoginVerifyResult" schema mismatch, etc.) that bypass the
+    // fallback chain. By detecting zkLogin upfront we route directly
+    // to the local verification path that works reliably.
+    try {
+      const parsedSig = parseSerializedSignature(signature);
+      if (parsedSig.signatureScheme === "ZkLogin") {
+        return await verifyZkLoginWithFallbacks(
+          message,
+          signature,
+          claimedAddress,
+        );
+      }
+    } catch {
+      // parseSerializedSignature failed — fall through to the SDK
+      // which may still be able to handle the signature format.
+    }
+
+    // ---- Standard signature verification (Ed25519, Secp256k1/r1, etc.) ----
     try {
       const publicKey = await verifyPersonalMessageSignature(message, signature, {
         address: claimedAddress,
@@ -186,35 +204,21 @@ export async function verifyWalletAuth(
 
       return { valid: true, address: claimedAddress };
     } catch (sdkErr) {
-      // Check if this is a zkLogin-related failure.
-      // The SDK's built-in GraphQL query for zkLogin verification has
-      // schema mismatches with the Sui testnet, and the public Sui node
-      // may not support Eve Vault's FusionAuth-based zkLogin signatures.
-      // Fall back to local ephemeral signature verification.
+      // Defensive: catch zkLogin errors that slipped past the pre-detection
+      // (e.g. if parseSerializedSignature couldn't identify the scheme).
       const errMsg = sdkErr instanceof Error ? sdkErr.message : String(sdkErr);
-      if (errMsg.includes("ZkLoginVerifyResult") || errMsg.includes("ZkLogin")) {
-        // 1. Local verification: parse zkLogin sig, verify ephemeral Ed25519
-        //    sig, and confirm address derivation. Does not require Sui node.
-        const localResult = verifyZkLoginLocally(message, signature, claimedAddress);
-        if (localResult !== null) return localResult;
-
-        // 2. Try direct GraphQL with the correct schema fields
-        const gqlResult = await verifyZkLoginViaGraphql(
+      if (
+        errMsg.includes("ZkLoginVerifyResult") ||
+        errMsg.includes("ZkLogin") ||
+        errMsg.includes("Cannot parse")
+      ) {
+        return await verifyZkLoginWithFallbacks(
           message,
           signature,
           claimedAddress,
         );
-        if (gqlResult !== null) return gqlResult;
-
-        // 3. Try JSON-RPC fallback
-        const rpcResult = await verifyZkLoginViaRpc(
-          message,
-          signature,
-          claimedAddress,
-        );
-        if (rpcResult !== null) return rpcResult;
       }
-      // Not a zkLogin issue or all fallbacks unavailable — propagate
+      // Not a zkLogin issue — propagate
       throw sdkErr;
     }
   } catch (err) {
@@ -224,6 +228,50 @@ export async function verifyWalletAuth(
       error: err instanceof Error ? err.message : "Verification failed",
     };
   }
+}
+
+/**
+ * Verify a zkLogin signature using the local → GraphQL → RPC fallback chain.
+ *
+ * 1. Local: parse zkLogin sig, verify ephemeral Ed25519 sig, confirm address
+ *    derivation. Does not require a Sui node.
+ * 2. GraphQL: direct `verifyZkLoginSignature` query with correct schema fields.
+ * 3. JSON-RPC: `sui_verifyZkLoginSignature` method.
+ *
+ * Returns a definitive AuthResult. If all fallbacks are exhausted without a
+ * result, returns a generic failure.
+ */
+async function verifyZkLoginWithFallbacks(
+  message: Uint8Array,
+  signature: string,
+  claimedAddress: string,
+): Promise<AuthResult> {
+  // 1. Local verification (no network required)
+  const localResult = verifyZkLoginLocally(message, signature, claimedAddress);
+  if (localResult !== null) return localResult;
+
+  // 2. Direct GraphQL with the correct schema fields
+  const gqlResult = await verifyZkLoginViaGraphql(
+    message,
+    signature,
+    claimedAddress,
+  );
+  if (gqlResult !== null) return gqlResult;
+
+  // 3. JSON-RPC fallback
+  const rpcResult = await verifyZkLoginViaRpc(
+    message,
+    signature,
+    claimedAddress,
+  );
+  if (rpcResult !== null) return rpcResult;
+
+  // All fallbacks exhausted
+  return {
+    valid: false,
+    address: claimedAddress,
+    error: "zkLogin verification failed — all verification methods exhausted",
+  };
 }
 
 /**
