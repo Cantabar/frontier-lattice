@@ -1,5 +1,5 @@
 # Build context: repo root (docker build -f continuity-engine/Dockerfile .)
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /build
 COPY continuity-engine/go.mod continuity-engine/go.sum ./
