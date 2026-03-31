@@ -7,6 +7,7 @@ import {
   FileText,
   Cpu,
   MapPin,
+  ShieldCheck,
   Activity,
   Bell,
   Settings,
@@ -268,6 +269,7 @@ export function Sidebar({ mode, toggle }: SidebarProps) {
   ];
 
   const systemEntries: NavEntry[] = [
+    { to: "/verify", label: "Verify Proof", icon: ShieldCheck },
     { to: "/events", label: "Event Explorer", icon: Activity },
     {
       to: "/notifications",

@@ -369,6 +369,93 @@ export function createZkRouter(pool: pg.Pool): Router {
   });
 
   // ================================================================
+  // POST /verify — Public (no auth) cryptographic proof verification
+  //
+  // Accepts either a single proof or a full PodProofBundle (detected by
+  // the presence of a `zk_proofs` array). Returns verification results
+  // without storing anything in the database.
+  //
+  // Single proof body: { filterType, publicSignals, proof }
+  // Bundle body:       { zk_proofs: [{ filter_type, public_signals, proof_json }], ... }
+  // ================================================================
+  router.post("/verify", async (req: Request, res: Response) => {
+    const body = req.body as Record<string, unknown>;
+
+    try {
+      // Detect bundle format (has zk_proofs array)
+      if (Array.isArray(body.zk_proofs)) {
+        const proofs = body.zk_proofs as {
+          filter_type: string;
+          public_signals: string[];
+          proof_json: Record<string, unknown>;
+        }[];
+
+        if (proofs.length === 0) {
+          res.status(400).json({ error: "zk_proofs array is empty" });
+          return;
+        }
+
+        const results = await Promise.all(
+          proofs.map(async (p) => {
+            const ft = p.filter_type as "region" | "proximity" | "mutual_proximity";
+            if (ft !== "region" && ft !== "proximity" && ft !== "mutual_proximity") {
+              return { filter_type: p.filter_type, valid: false, error: "Unknown filter type" };
+            }
+            const result = await verifyFilterProof(ft, p.public_signals, p.proof_json);
+            return { filter_type: p.filter_type, valid: result.valid, error: result.error };
+          }),
+        );
+
+        const allValid = results.every((r) => r.valid);
+        res.json({
+          format: "bundle",
+          valid: allValid,
+          proof_count: results.length,
+          results,
+          ...(body.structure_id ? { structure_id: body.structure_id } : {}),
+          ...(body.location_hash ? { location_hash: body.location_hash } : {}),
+        });
+        return;
+      }
+
+      // Single proof format
+      const { filterType, publicSignals, proof } = body as {
+        filterType: string;
+        publicSignals: string[];
+        proof: Record<string, unknown>;
+      };
+
+      if (!filterType || !publicSignals?.length || !proof) {
+        res.status(400).json({
+          error: "Provide { filterType, publicSignals, proof } or a PodProofBundle with zk_proofs[]",
+        });
+        return;
+      }
+
+      if (filterType !== "region" && filterType !== "proximity" && filterType !== "mutual_proximity") {
+        res.status(400).json({ error: "filterType must be 'region', 'proximity', or 'mutual_proximity'" });
+        return;
+      }
+
+      const result = await verifyFilterProof(
+        filterType as "region" | "proximity" | "mutual_proximity",
+        publicSignals,
+        proof,
+      );
+
+      res.json({
+        format: "single",
+        valid: result.valid,
+        filter_type: filterType,
+        error: result.error,
+      });
+    } catch (err) {
+      log.error({ err }, "Failed to verify proof");
+      res.status(500).json({ error: "Proof verification failed" });
+    }
+  });
+
+  // ================================================================
   // GET /tags — Public (no auth) query for structure location tags
   //
   // Query params (pick one):

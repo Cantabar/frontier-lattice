@@ -467,6 +467,38 @@ export function getZkMutualProximityResult(
 
 function enc(v: string) { return encodeURIComponent(v); }
 
+// ---- Public ZK Proof Verification (no auth) ----
+
+export interface VerifyProofResult {
+  format: "single" | "bundle";
+  valid: boolean;
+  filter_type?: string;
+  error?: string;
+  proof_count?: number;
+  results?: { filter_type: string; valid: boolean; error?: string }[];
+  structure_id?: string;
+  location_hash?: string;
+}
+
+/** Verify a ZK proof or proof bundle without authentication. */
+export async function verifyZkProof(
+  body:
+    | { filterType: string; publicSignals: string[]; proof: Record<string, unknown> }
+    | PodProofBundle,
+): Promise<VerifyProofResult> {
+  const res = await fetch(`${base}/locations/proofs/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const error = new Error(`Indexer ${res.status}: ${await res.text()}`);
+    notifyError(error, "/locations/proofs/verify");
+    throw error;
+  }
+  return res.json();
+}
+
 // ---- Public Location Tags (no auth) ----
 
 export interface LocationTagResult {

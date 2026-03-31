@@ -136,6 +136,7 @@ Mounted under `/api/v1/locations/proofs`.
 - `GET /proximity` — query PODs with verified proximity-filter proofs
 - `GET /mutual-proximity` — query for a verified mutual proximity proof between two structures
 - `GET /tags` — public (no auth) query for structure location tags
+- `POST /verify` — public (no auth) cryptographic verification of a ZK proof without storing. Accepts a single proof (`{ filterType, publicSignals, proof }`) or a full `PodProofBundle` (detected by `zk_proofs` array). Returns per-proof pass/fail results.
 
 ## Data Model
 

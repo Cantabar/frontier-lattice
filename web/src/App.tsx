@@ -24,6 +24,7 @@ import { NotificationsPage } from "./pages/NotificationsPage";
 import { StructuresRedirect, MyStructuresPage } from "./pages/MyStructuresPage";
 import { LocationsPage } from "./pages/LocationsPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { VerifyProofPage } from "./pages/VerifyProofPage";
 import { ContinuityEngine } from "./continuity-engine/ContinuityEngine";
 import { ToastContainer } from "./components/shared/Toast";
 import { LoadingSpinner } from "./components/shared/LoadingSpinner";
@@ -108,6 +109,7 @@ export default function App() {
               <Route path="/structures" element={<StructuresRedirect />} />
               <Route path="/structures/:characterId" element={<MyStructuresPage />} />
               <Route path="/locations" element={<LocationsPage />} />
+              <Route path="/verify" element={<VerifyProofPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Routes>

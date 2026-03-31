@@ -87,6 +87,7 @@ Client-side privacy-preserving location sharing with ZK proof generation. The se
 - `/structures` → redirects to `/structures/:characterId`
 - `/structures/:characterId` — Player's structures
 - `/locations` — Shadow Location Network (TLK management, encrypted PODs, ZK proof generation)
+- `/verify` — Verify Proof (public, no wallet required — paste a ZK proof JSON or exported proof bundle to independently verify it)
 - `/notifications` — Notification history
 - `/settings` — App settings
 - `/dapp/ssu/:ssuId` — SSU Delivery dApp (lightweight, no sidebar/header)
@@ -182,6 +183,7 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 - Structures → Locations navigation: structure rows and network node group headers without a registered location show a "+ Location" link to `/locations`, enabling the player to navigate directly to the Locations page to unlock the TLK and register locations
 - Build request (witnessed) contracts: create, list, and detail views for `BuildRequestContract` from the `witnessed_contracts` package. Poster escrows a bounty for building a specific structure type; the CORM witness service auto-fulfills when a matching anchor event is detected. Supports CormAuth requirement, character/tribe access control, and proximity gating. Integrated into the unified contracts list with a "Build Request" type filter.
 - Tablet responsiveness: structure rows (`StructureCard`) and network node group headers (`CardHeader`) use `flex-wrap` below the `lg` (1200px) breakpoint so tags and actions flow onto a second line instead of overlapping. Fixed-width badges (`TypeBadge`, `StatusLabel`, `EnergyIndicator`) switch to `width: auto` at this breakpoint.
+- Verify Proof page (`pages/VerifyProofPage`): public page for independent ZK proof verification. Accepts pasted JSON in three formats — full `PodProofBundle` (from Copy Proof), single proof with camelCase keys (`{ filterType, publicSignals, proof }`), or snake_case keys (`{ filter_type, public_signals, proof_json }`). Calls the unauthenticated `POST /locations/proofs/verify` indexer endpoint and displays per-proof pass/fail results with attestation metadata for bundles. No wallet connection required.
 
 ### CustomSelect (CEF/OSR Compatibility)
 
