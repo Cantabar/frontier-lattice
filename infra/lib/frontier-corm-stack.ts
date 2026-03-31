@@ -196,6 +196,8 @@ export class FrontierCormStack extends cdk.Stack {
 
     const cormStatePackageId: string =
       this.node.tryGetContext("cormStatePackageId") ?? "";
+    const cormStateOriginalId: string =
+      this.node.tryGetContext("cormStateOriginalId") ?? "";
 
     // Package IDs for the indexer event subscriber. Read from CDK context
     // so they stay in sync with the publish-contracts.sh output.
@@ -431,6 +433,7 @@ export class FrontierCormStack extends cdk.Stack {
         DB_PORT: db.dbInstanceEndpointPort,
         DB_NAME: "frontier_corm",
         CORM_STATE_PACKAGE_ID: cormStatePackageId,
+        CORM_STATE_ORIGINAL_ID: cormStateOriginalId,
         TRUSTLESS_CONTRACTS_PACKAGE_ID: trustlessContractsPackageId,
         CORM_AUTH_PACKAGE_ID: cormAuthPackageId,
         CORM_CONFIG_OBJECT_ID: cormConfigObjectId,

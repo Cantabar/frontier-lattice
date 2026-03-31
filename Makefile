@@ -87,9 +87,11 @@ deploy-infra: ## Deploy CDK stack for ENV (infra only)
 	$(eval CORM_CFG_OBJ := $(shell grep '^CORM_CONFIG_OBJECT_ID=' .env.$(ENV) 2>/dev/null | cut -d= -f2))
 	$(eval COIN_AUTH_OBJ := $(shell grep '^COIN_AUTHORITY_OBJECT_ID=' .env.$(ENV) 2>/dev/null | cut -d= -f2))
 	$(eval CORM_CHAR := $(shell grep '^CORM_CHARACTER_ID=' .env.$(ENV) 2>/dev/null | cut -d= -f2))
+	$(eval CORM_STATE_ORIG := $(shell grep '^VITE_CORM_STATE_ORIGINAL_ID=' .env.$(ENV) 2>/dev/null | cut -d= -f2))
 	cd infra && npx cdk deploy $(STACK_NAME) --require-approval never \
 		-c appEnv=$(ENV) -c suiNetwork=testnet \
 		-c cormStatePackageId=$(CORM_STATE_PKG) \
+		-c cormStateOriginalId=$(CORM_STATE_ORIG) \
 		-c tribePackageId=$(TRIBE_PKG) \
 		-c trustlessContractsPackageId=$(TC_PKG) \
 		-c cormAuthPackageId=$(CA_PKG) \
