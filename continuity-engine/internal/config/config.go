@@ -15,7 +15,8 @@ type EnvironmentConfig struct {
 	Name               string `json:"name"`
 	SUIRpcURL          string `json:"sui_rpc_url"`
 	SUIPrivateKeyEnv   string `json:"sui_private_key_env"` // env var name holding the key
-	CormStatePackageID string `json:"corm_state_package_id"`
+	CormStatePackageID  string `json:"corm_state_package_id"`
+	CormStateOriginalID string `json:"corm_state_original_id"` // original-id for type matching after upgrades
 
 	// Additional package IDs for on-chain contract calls.
 	TrustlessContractsPackageID  string `json:"trustless_contracts_package_id"`
@@ -104,6 +105,7 @@ func Load() Config {
 			SUIRpcURL:                   envOrDefault("SUI_RPC_URL", "http://127.0.0.1:9000"),
 			SUIPrivateKey:               os.Getenv("SUI_PRIVATE_KEY"),
 			CormStatePackageID:          os.Getenv("CORM_STATE_PACKAGE_ID"),
+			CormStateOriginalID:         os.Getenv("CORM_STATE_ORIGINAL_ID"),
 			TrustlessContractsPackageID: os.Getenv("TRUSTLESS_CONTRACTS_PACKAGE_ID"),
 			CormAuthPackageID:            os.Getenv("CORM_AUTH_PACKAGE_ID"),
 			WorldPackageID:               os.Getenv("WORLD_PACKAGE_ID"),

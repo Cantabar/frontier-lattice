@@ -21,7 +21,13 @@ var SuiClockObjectID = sui.MustObjectIdFromHex("0x000000000000000000000000000000
 // ClientConfig holds on-chain object/package IDs for a single environment.
 type ClientConfig struct {
 	RpcURL    string
-	PackageID string // corm_state package
+	PackageID string // corm_state package (published-at — for MoveCall targets)
+
+	// OriginalID is the corm_state package's original-id (set at first publish).
+	// On Sui, struct types (MintCap, CORM_COIN, etc.) are permanently anchored
+	// to the original-id, even after upgrades. If empty, falls back to PackageID
+	// (correct for v1 packages that have never been upgraded).
+	OriginalID string
 
 	TrustlessContractsPackageID  string
 	CormAuthPackageID            string
@@ -43,7 +49,8 @@ type Client struct {
 	registry *Registry
 
 	// Package IDs (parsed at init)
-	cormStatePkg            *sui.PackageId
+	cormStatePkg            *sui.PackageId // published-at (for MoveCall targets)
+	cormStateOriginalPkg    *sui.PackageId // original-id (for type matching); nil → use cormStatePkg
 	trustlessContractsPkg   *sui.PackageId
 	cormAuthPkg             *sui.PackageId
 	worldPkg                *sui.PackageId
@@ -70,6 +77,7 @@ func NewClient(cfg ClientConfig, privateKey string) *Client {
 
 	// Parse package IDs (optional — may be empty during early dev)
 	c.cormStatePkg = mustParseObjectIdOrNil(cfg.PackageID)
+	c.cormStateOriginalPkg = mustParseObjectIdOrNil(cfg.OriginalID)
 	c.trustlessContractsPkg = mustParseObjectIdOrNil(cfg.TrustlessContractsPackageID)
 	c.cormAuthPkg = mustParseObjectIdOrNil(cfg.CormAuthPackageID)
 	c.worldPkg = mustParseObjectIdOrNil(cfg.WorldPackageID)
@@ -152,13 +160,27 @@ func (c *Client) CanCreateBuildRequests() bool {
 	return c.signer != nil && c.witnessedContractsPkg != nil && c.cormStatePkg != nil && c.cormCharacterID != nil
 }
 
+// cormStateTypePkg returns the package address to use for type matching
+// (StructTag filters, TypeTag arguments, coin type strings). After a
+// package upgrade, struct types are anchored to the original-id, not
+// published-at. Falls back to cormStatePkg if no original-id is configured
+// (correct for v1 packages that have never been upgraded).
+func (c *Client) cormStateTypePkg() *sui.PackageId {
+	if c.cormStateOriginalPkg != nil {
+		return c.cormStateOriginalPkg
+	}
+	return c.cormStatePkg
+}
+
 // CORMCoinType returns the fully-qualified coin type string for CORM_COIN.
+// Uses original-id for type matching (struct types are anchored at first publish).
 // e.g. "0xabc123::corm_coin::CORM_COIN"
 func (c *Client) CORMCoinType() string {
-	if c.cormStatePkg == nil {
+	typePkg := c.cormStateTypePkg()
+	if typePkg == nil {
 		return ""
 	}
-	return fmt.Sprintf("%s::corm_coin::CORM_COIN", c.cormStatePkg.String())
+	return fmt.Sprintf("%s::corm_coin::CORM_COIN", typePkg.String())
 }
 
 // VerifyBrainAddress reads the on-chain CormConfig shared object and compares

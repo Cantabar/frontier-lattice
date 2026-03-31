@@ -65,10 +65,12 @@ func (c *Client) CreateContract(ctx context.Context, cormID string, params Contr
 // --- Shared PTB helpers ---
 
 // cormCoinTypeTag returns the TypeTag for the CORM_COIN generic parameter.
+// Uses original-id — struct types are anchored at first publish, not published-at.
 func (c *Client) cormCoinTypeTag() sui.TypeTag {
+	typePkg := c.cormStateTypePkg()
 	return sui.TypeTag{
 		Struct: &sui.StructTag{
-			Address:    sui.MustAddressFromHex(c.cormStatePkg.String()),
+			Address:    sui.MustAddressFromHex(typePkg.String()),
 			Module:     "corm_coin",
 			Name:       "CORM_COIN",
 			TypeParams: []sui.TypeTag{},

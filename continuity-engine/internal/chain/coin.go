@@ -163,8 +163,10 @@ func (c *Client) findMintCap(ctx context.Context, cormStateID *sui.ObjectId) (*s
 	}
 	c.mintCapMu.RUnlock()
 
+	// Use original-id for type matching — struct types are anchored at first publish.
+	typePkg := c.cormStateTypePkg()
 	mintCapStructTag := &sui.StructTag{
-		Address: sui.MustAddressFromHex(c.cormStatePkg.String()),
+		Address: sui.MustAddressFromHex(typePkg.String()),
 		Module:  "corm_coin",
 		Name:    "MintCap",
 	}

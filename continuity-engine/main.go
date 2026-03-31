@@ -51,9 +51,10 @@ func main() {
 	// --- Per-environment chain clients ---
 	chainClients := make(map[string]*chain.Client, len(cfg.Environments))
 	for _, env := range cfg.Environments {
-		c := chain.NewClient(chain.ClientConfig{
+			c := chain.NewClient(chain.ClientConfig{
 			RpcURL:                       env.SUIRpcURL,
 			PackageID:                    env.CormStatePackageID,
+			OriginalID:                   env.CormStateOriginalID,
 			TrustlessContractsPackageID:  env.TrustlessContractsPackageID,
 			CormAuthPackageID:            env.CormAuthPackageID,
 			WorldPackageID:               env.WorldPackageID,

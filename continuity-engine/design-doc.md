@@ -93,7 +93,8 @@ All via environment variables:
 - `SEED_CHAIN_DATA` — stub chain data for dev (default: true)
 - `SUI_RPC_URL` — Sui RPC endpoint
 - `SUI_PRIVATE_KEY` — Ed25519 private key for chain operations. Accepts bech32 `suiprivkey1...` format (as exported by `sui keytool export`) or hex-encoded 32-byte seed (with or without `0x` prefix). Stored in Secrets Manager (`fc-{env}/sui-signer`).
-- `CORM_STATE_PACKAGE_ID` — deployed corm_state package ID
+- `CORM_STATE_PACKAGE_ID` — deployed corm_state package ID (`published-at` — for MoveCall targets)
+- `CORM_STATE_ORIGINAL_ID` — corm_state package original-id (for struct type matching). Required after any package upgrade; if omitted, falls back to `CORM_STATE_PACKAGE_ID` (correct only for v1 packages). Read from `Published.toml` `original-id` field.
 - `TRUSTLESS_CONTRACTS_PACKAGE_ID` — deployed trustless_contracts package ID
 - `CORM_AUTH_PACKAGE_ID` — deployed corm_auth package ID
 - `WORLD_PACKAGE_ID` — deployed Eve Frontier world contracts package ID (for `character`, `storage_unit`, `inventory` modules); required for item-based contracts (`item_for_coin`, `item_for_item`)
@@ -236,7 +237,9 @@ CORM minting requires a `MintCap` object owned by the brain's signer address. Mi
 
 **MintCap cache:** `findMintCap` caches results per corm (keyed by `CormState` object ID). The MintCap ↔ CormState relationship is 1:1 and immutable, so cached refs are reused across mint calls. Cache entries are evicted via `InvalidateMintCapCache` if a transaction using the cached ref fails (stale object version).
 
-**Recovery:** If the brain_address is wrong, fix it via `corm_state::set_brain_address` using the `CormAdminCap`, or update `SUI_PRIVATE_KEY` to match the existing brain_address.
+**Upgrades and type matching:** After a Sui package upgrade, `CORM_STATE_PACKAGE_ID` points at `published-at` (used for MoveCall targets), but struct types (`MintCap`, `CORM_COIN`) remain anchored to the package's `original-id`. The chain client therefore accepts `CORM_STATE_ORIGINAL_ID` and uses it for StructTag filters and coin type strings. If this is misconfigured after an upgrade, `findMintCap` will scan zero objects even though the MintCap exists at the correct address.
+
+**Recovery:** If the brain_address is wrong, fix it via `corm_state::set_brain_address` using the `CormAdminCap`, or update `SUI_PRIVATE_KEY` to match the existing brain_address. If the package has been upgraded, make sure `CORM_STATE_ORIGINAL_ID` is set to the original-id while `CORM_STATE_PACKAGE_ID` remains the latest published-at.
 
 ## Responsive Layout
 
