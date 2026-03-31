@@ -18,6 +18,8 @@ import { TlkStatusBanner } from "../components/locations/TlkStatusBanner";
 import { RegisterNetworkNodeLocationModal } from "../components/locations/RegisterNetworkNodeLocationModal";
 import { PodProofModal } from "../components/locations/PodProofModal";
 import { MutualProximityProofModal } from "../components/locations/MutualProximityProofModal";
+import { RegionProofModal } from "../components/locations/RegionProofModal";
+import { ProximityProofModal } from "../components/locations/ProximityProofModal";
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
 import { PrimaryButton, SecondaryButton, DangerButton } from "../components/shared/Button";
@@ -278,7 +280,9 @@ export function LocationsPage() {
   const { structures } = useMyStructures();
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [showProximityModal, setShowProximityModal] = useState(false);
+  const [showMutualProximityModal, setShowMutualProximityModal] = useState(false);
+  const [showRegionProofModal, setShowRegionProofModal] = useState(false);
+  const [showProximityProofModal, setShowProximityProofModal] = useState(false);
   const [proofStructureId, setProofStructureId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [refreshingNodeId, setRefreshingNodeId] = useState<string | null>(null);
@@ -511,10 +515,22 @@ export function LocationsPage() {
             {podsLoading ? "Loading…" : "Refresh"}
           </SecondaryButton>
           <SecondaryButton
-            onClick={() => setShowProximityModal(true)}
-            disabled={!tlk.tlkBytes || pods.length < 2}
+            onClick={() => setShowRegionProofModal(true)}
+            disabled={!tlk.tlkBytes || pods.length < 1}
+          >
+            Prove Region
+          </SecondaryButton>
+          <SecondaryButton
+            onClick={() => setShowProximityProofModal(true)}
+            disabled={!tlk.tlkBytes || pods.length < 1}
           >
             Prove Proximity
+          </SecondaryButton>
+          <SecondaryButton
+            onClick={() => setShowMutualProximityModal(true)}
+            disabled={!tlk.tlkBytes || pods.length < 2}
+          >
+            Prove Mutual Proximity
           </SecondaryButton>
           <PrimaryButton
             onClick={() => setShowRegisterModal(true)}
@@ -792,12 +808,32 @@ export function LocationsPage() {
         />
       )}
 
+      {/* Region proof modal */}
+      {showRegionProofModal && tribeId && (
+        <RegionProofModal
+          tribeId={tribeId}
+          pods={pods}
+          onClose={() => setShowRegionProofModal(false)}
+          onSuccess={handleRefresh}
+        />
+      )}
+
+      {/* Proximity proof modal */}
+      {showProximityProofModal && tribeId && (
+        <ProximityProofModal
+          tribeId={tribeId}
+          pods={pods}
+          onClose={() => setShowProximityProofModal(false)}
+          onSuccess={handleRefresh}
+        />
+      )}
+
       {/* Mutual proximity proof modal */}
-      {showProximityModal && tribeId && (
+      {showMutualProximityModal && tribeId && (
         <MutualProximityProofModal
           tribeId={tribeId}
           pods={pods}
-          onClose={() => setShowProximityModal(false)}
+          onClose={() => setShowMutualProximityModal(false)}
           onSuccess={handleRefresh}
         />
       )}
