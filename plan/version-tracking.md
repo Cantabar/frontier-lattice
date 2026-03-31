@@ -21,7 +21,7 @@ accessible to V2 code.
 
 ## Versioning Scheme
 
-### Long-lived shared objects (tribe)
+### Long-lived shared objects — struct-field pattern (tribe)
 
 `TribeRegistry` and `Tribe` are shared objects that persist for the lifetime of
 the application. They carry a `version: u64` field and every **mutating** public
@@ -37,6 +37,32 @@ When a new package version changes the expected schema:
 
 View functions are **never** version-gated — they remain readable regardless of
 migration state.
+
+### Long-lived shared objects — dynamic-field pattern (corm_auth, corm_state, corm_coin)
+
+These packages were published without `version` struct fields. Since SUI
+forbids adding fields to existing structs on compatible upgrades, version is
+tracked via a `VersionKey` dynamic field on each shared object's UID.
+
+**Pattern:**
+
+- A `VersionKey` struct (`has copy, drop, store {}`) is the dynamic-field key.
+- `CURRENT_VERSION: u64` constant per module.
+- `assert_version(obj)` reads the dynamic field, defaulting to 1 if absent
+  (backwards-compatible with pre-upgrade objects that don't have the field).
+- `migrate_*(obj, admin_cap)` stamps the field if absent, or bumps it from
+  `< CURRENT_VERSION` to `CURRENT_VERSION`. Aborts with `EAlreadyMigrated`
+  if already at the current version.
+- All mutating public functions call `assert_version()` first.
+- View functions are ungated.
+- Newly created objects stamp the dynamic field at creation time.
+
+**Affected shared objects:**
+
+- `corm_auth::WitnessRegistry` — `migrate_registry()`
+- `corm_state::CormState` — `migrate_state()`
+- `corm_state::CormConfig` — `migrate_config()`
+- `corm_coin::CoinAuthority` — `migrate_authority()`
 
 ### Ephemeral contract objects (trustless_contracts)
 
@@ -80,10 +106,14 @@ These are transferred to the publisher address at init time.
 ### Deployment steps
 
 1. `sui move build` and `sui move test` locally.
-2. `sui client upgrade` against testnet.
+2. `sui client upgrade` against testnet (or `make upgrade-contracts ENV=<env>`).
 3. Call migration functions using the admin cap:
    - `tribe::migrate_registry(&mut registry, &admin_cap)`
    - `tribe::migrate_tribe(&mut tribe, &admin_cap)` (for each tribe)
+   - `corm_auth::migrate_registry(&mut witness_registry, &admin_cap)`
+   - `corm_state::migrate_config(&mut config, &admin_cap)`
+   - `corm_state::migrate_state(&mut state, &admin_cap)` (for each CormState)
+   - `corm_coin::migrate_authority(&mut authority, &admin_cap)`
 4. Verify operations resume correctly.
 
 ### Rollback
