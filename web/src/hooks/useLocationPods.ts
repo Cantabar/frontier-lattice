@@ -117,6 +117,11 @@ interface CachedSession {
 
 let sessionCache: CachedSession | null = null;
 
+// Deduplication guard: when a signing flow is in progress, concurrent
+// callers of getAuthHeader() piggyback on this promise instead of
+// triggering a second wallet signature prompt.
+let pendingAuthPromise: Promise<string> | null = null;
+
 // Hydrate from sessionStorage on module load
 try {
   const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
@@ -180,30 +185,45 @@ export function useLocationPods(): UseLocationPodsReturn {
       return sessionCache.header;
     }
 
+    // If another call is already signing, piggyback on that promise
+    // instead of prompting the wallet a second time.
+    if (pendingAuthPromise) {
+      return pendingAuthPromise;
+    }
+
     // Build a TxSig auth header via signTransaction.
     // Every Sui wallet (including Eve Vault) supports signTransaction.
-    const challenge = buildAuthChallenge(address);
-    const tx = new Transaction();
-    const [coin] = tx.splitCoins(tx.gas, [0]);
-    tx.transferObjects([coin], address);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { bytes: txBytes, signature: txSig } = await signTransaction({ transaction: tx as any });
-    const rawAuthHeader = buildTxAuthHeader(challenge, txBytes, txSig);
+    const doAuth = async (): Promise<string> => {
+      const challenge = buildAuthChallenge(address);
+      const tx = new Transaction();
+      const [coin] = tx.splitCoins(tx.gas, [0]);
+      tx.transferObjects([coin], address);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { bytes: txBytes, signature: txSig } = await signTransaction({ transaction: tx as any });
+      const rawAuthHeader = buildTxAuthHeader(challenge, txBytes, txSig);
 
+      try {
+        const { token, expires_at } = await createLocationSession(rawAuthHeader);
+        const bearerHeader = `Bearer ${token}`;
+        cacheSession({
+          header: bearerHeader,
+          expiresAt: new Date(expires_at).getTime(),
+          address,
+        });
+        return bearerHeader;
+      } catch {
+        // Fallback: if session creation fails, use the raw auth header directly
+        // (still valid for the server's 5-minute window)
+        clearSessionCache();
+        return rawAuthHeader;
+      }
+    };
+
+    pendingAuthPromise = doAuth();
     try {
-      const { token, expires_at } = await createLocationSession(rawAuthHeader);
-      const bearerHeader = `Bearer ${token}`;
-      cacheSession({
-        header: bearerHeader,
-        expiresAt: new Date(expires_at).getTime(),
-        address,
-      });
-      return bearerHeader;
-    } catch {
-      // Fallback: if session creation fails, use the raw auth header directly
-      // (still valid for the server's 5-minute window)
-      clearSessionCache();
-      return rawAuthHeader;
+      return await pendingAuthPromise;
+    } finally {
+      pendingAuthPromise = null;
     }
   }, [address, signTransaction]);
 
