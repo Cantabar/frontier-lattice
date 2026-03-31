@@ -62,6 +62,9 @@ func main() {
 	// --- Item Registry ---
 	registry := chain.NewRegistry(cfg.ItemRegistryPath, cfg.ItemValuesPath)
 
+	// --- Recipe Registry (goal-directed contract generation) ---
+	recipeRegistry := chain.NewRecipeRegistry()
+
 	// --- Session store + Dispatcher ---
 	sessionStore := puzzle.NewSessionStore()
 	adapter := &puzzle.SessionStoreAdapter{Store: sessionStore}
@@ -77,6 +80,7 @@ func main() {
 
 	handler := reasoning.NewHandler(database, dispatcher, reasoning.HandlerConfig{
 		Registry:         registry,
+		RecipeRegistry:   recipeRegistry,
 		ChainClient:      defaultChainClient,
 		Pricing:          reasoning.PricingConfig{CORMPerLUX: cfg.CORMPerLUX, CORMFloorPerUnit: cfg.CORMFloorPerUnit},
 		ContractCooldown: cfg.ContractGenerationCooldown,

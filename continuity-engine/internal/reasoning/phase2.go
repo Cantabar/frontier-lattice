@@ -68,8 +68,13 @@ func handlePhase2Effects(ctx context.Context, h *Handler, environment, cormID st
 // maxActiveContracts is the per-corm contract slot cap.
 const maxActiveContracts = 5
 
+// bootstrapCORMAmount is the seed CORM minted when a corm has zero balance
+// and needs to create acquisition contracts.
+const bootstrapCORMAmount uint64 = 1000
+
 // attemptContractFill generates contracts until all slots are filled or
-// generation fails. The per-corm cooldown gates the entire fill operation.
+// generation fails. When standard generation fails (empty inventories), it
+// falls back to goal-directed acquisition contracts and sends player feedback.
 func attemptContractFill(ctx context.Context, h *Handler, environment, cormID string, traits *types.CormTraits, evt types.CormEvent) {
 	// Rate limit: skip if cooldown hasn't elapsed
 	contractCooldownMu.Lock()
@@ -95,12 +100,54 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 	networkNodeID := evt.NetworkNodeID
 	snapshot := chain.BuildSnapshot(ctx, h.chainClient, cormID, playerAddr, networkNodeID)
 
+	// Try standard contract generation first.
+	standardFailed := false
 	for activeCount < maxActiveContracts {
 		if err := generateOneContract(ctx, h, environment, cormID, traits, evt, snapshot, playerAddr); err != nil {
-			slog.Info(fmt.Sprintf("phase2: fill stopped after %d active: %v", activeCount, err))
+			slog.Info(fmt.Sprintf("phase2: standard fill stopped after %d active: %v", activeCount, err))
+			standardFailed = true
 			break
 		}
 		activeCount++
+	}
+
+	// If standard generation failed and we have open slots, try goal-directed
+	// acquisition contracts.
+	if standardFailed && activeCount < maxActiveContracts && h.recipeRegistry != nil {
+		// Bootstrap CORM if the corm has zero balance.
+		if snapshot.CormCORMBalance == 0 {
+			minted, err := h.chainClient.MintBootstrapCORM(ctx, cormID, bootstrapCORMAmount)
+			if err != nil {
+				slog.Info(fmt.Sprintf("phase2: bootstrap CORM mint failed for %s: %v", cormID, err))
+			} else {
+				snapshot.CormCORMBalance = minted
+				slog.Info(fmt.Sprintf("phase2: minted %d bootstrap CORM for corm %s", minted, cormID))
+			}
+		}
+
+		slots := maxActiveContracts - activeCount
+		goals := DefaultGoals()
+		intents := PlanAcquisitionContracts(goals, snapshot, h.recipeRegistry, traits, playerAddr, slots)
+
+		if len(intents) > 0 {
+			for _, intent := range intents {
+				if activeCount >= maxActiveContracts {
+					break
+				}
+				if err := createContractFromIntent(ctx, h, environment, cormID, traits, evt, snapshot, playerAddr, &intent); err != nil {
+					slog.Info(fmt.Sprintf("phase2: goal-directed contract failed: %v", err))
+					break
+				}
+				activeCount++
+			}
+		} else {
+			// Safety net: no goal-directed contracts possible either.
+			// Send feedback to the player.
+			sendEmptyStateFeedback(ctx, h, cormID, evt.SessionID, traits)
+		}
+	} else if standardFailed && activeCount == 0 && h.recipeRegistry == nil {
+		// No recipe registry available — send generic feedback.
+		sendEmptyStateFeedback(ctx, h, cormID, evt.SessionID, traits)
 	}
 }
 
@@ -113,6 +160,12 @@ func generateOneContract(ctx context.Context, h *Handler, environment, cormID st
 		return fmt.Errorf("generate intent: %w", err)
 	}
 
+	return createContractFromIntent(ctx, h, environment, cormID, traits, evt, snapshot, playerAddr, intent)
+}
+
+// createContractFromIntent resolves, validates, and creates a contract from
+// an intent. Shared by both standard and goal-directed generation.
+func createContractFromIntent(ctx context.Context, h *Handler, environment, cormID string, traits *types.CormTraits, evt types.CormEvent, snapshot chain.WorldSnapshot, playerAddr string, intent *types.ContractIntent) error {
 	// Resolve intent to exact parameters
 	params, err := ResolveIntent(*intent, snapshot, h.registry, traits, h.pricing, playerAddr)
 	if err != nil {
@@ -154,6 +207,28 @@ func generateOneContract(ctx context.Context, h *Handler, environment, cormID st
 
 	slog.Info(fmt.Sprintf("phase2: created %s contract %s for corm %s → %s", params.ContractType, contractID, cormID, playerAddr))
 	return nil
+}
+
+// sendEmptyStateFeedback delivers an in-character log message to the player
+// explaining that no contracts could be generated and what materials to gather.
+func sendEmptyStateFeedback(ctx context.Context, h *Handler, cormID, sessionID string, traits *types.CormTraits) {
+	goals := DefaultGoals()
+	text := EmptyStateMessage(goals, h.recipeRegistry, traits.Corruption)
+
+	entryID := fmt.Sprintf("corm_%s_empty_%d", safePrefix(cormID, 8), time.Now().UnixMilli())
+
+	h.dispatcher.SendPayload(ctx, types.ActionLogStreamStart, sessionID, types.LogStreamStartPayload{
+		EntryID: entryID,
+	})
+	h.dispatcher.SendPayload(ctx, types.ActionLogStreamDelta, sessionID, types.LogStreamDeltaPayload{
+		EntryID: entryID,
+		Text:    text,
+	})
+	h.dispatcher.SendPayload(ctx, types.ActionLogStreamEnd, sessionID, types.LogStreamEndPayload{
+		EntryID: entryID,
+	})
+
+	slog.Info(fmt.Sprintf("phase2: sent empty-state feedback for corm %s", cormID))
 }
 
 // countActiveSessionContracts queries the dispatcher's session lookup for

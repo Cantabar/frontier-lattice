@@ -93,6 +93,21 @@ func BuildSnapshot(ctx context.Context, client *Client, cormID, playerAddr, netw
 	return snap
 }
 
+// --- Bootstrap minting ---
+
+// MintBootstrapCORM mints a seed amount of CORM for a corm that has zero
+// balance, enabling it to create coin_for_item contracts. The minted amount
+// is returned so the caller can update the snapshot.
+// TODO: Implement via PTB calling corm_coin::mint with the corm's MintCap.
+func (c *Client) MintBootstrapCORM(ctx context.Context, cormID string, amount uint64) (uint64, error) {
+	if c.seedMode {
+		slog.Info(fmt.Sprintf("chain: seed MintBootstrapCORM for corm %s amount=%d", cormID, amount))
+		return amount, nil
+	}
+	slog.Info(fmt.Sprintf("chain: stub MintBootstrapCORM for corm %s amount=%d", cormID, amount))
+	return amount, nil
+}
+
 // --- Stub chain methods for snapshot data ---
 
 // GetCORMBalance reads the corm's CORM token balance.

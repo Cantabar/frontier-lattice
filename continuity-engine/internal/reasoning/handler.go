@@ -26,6 +26,7 @@ func NewHandler(database *db.DB, dispatcher *dispatch.Dispatcher, opts ...Handle
 	if len(opts) > 0 {
 		cfg := opts[0]
 		h.registry = cfg.Registry
+		h.recipeRegistry = cfg.RecipeRegistry
 		h.chainClient = cfg.ChainClient
 		h.pricing = cfg.Pricing
 		if cfg.ContractCooldown > 0 {
@@ -42,6 +43,7 @@ type Handler struct {
 
 	// Phase 2: contract generation
 	registry         *chain.Registry
+	recipeRegistry   *chain.RecipeRegistry
 	chainClient      *chain.Client
 	pricing          PricingConfig
 	contractCooldown time.Duration
@@ -50,6 +52,7 @@ type Handler struct {
 // HandlerConfig holds optional configuration for the reasoning handler.
 type HandlerConfig struct {
 	Registry         *chain.Registry
+	RecipeRegistry   *chain.RecipeRegistry
 	ChainClient      *chain.Client
 	Pricing          PricingConfig
 	ContractCooldown time.Duration

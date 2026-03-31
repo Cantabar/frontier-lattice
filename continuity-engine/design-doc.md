@@ -168,6 +168,10 @@ Only `types.json` and `groups.json` are copied from `fsd_built/` — the rest of
 - Contract address discovery with group-reveal and auto-complete
 - Four AI-controlled hint systems: heatmap, vectors, decode, signal
 - Deterministic Phase 2 contract generation from traits + inventory state with automatic slot fill-up (up to 5 active contracts per corm, triggered on page load, node bind, and contract completion/failure; rate-limited by `CONTRACT_GENERATION_COOLDOWN_MS`)
+- Goal-directed contract generation: when standard generation fails (empty inventories/zero CORM), the corm falls back to a recipe-driven goal planner that generates `coin_for_item` acquisition contracts for raw materials needed to build target ships (Reflex, then Reiver)
+- Recipe registry (`internal/chain/recipes.go`): hardcoded dependency trees for Reflex and Reiver, with recursive flattening to raw ore requirements (Feldspar Crystals, Silica Grains, Iron-Rich Nodules, Palladium, Fossilized Exotronics)
+- Bootstrap CORM minting: when the corm has zero CORM balance, a seed amount (1000 CORM) is minted to fund acquisition contracts
+- Empty-state player feedback: when no contracts can be generated, the corm sends an in-character log message directing the player to gather specific raw materials (corruption-scaled: coherent at low corruption, garbled at high)
 - On-chain state writes (phase transitions, stability/corruption updates)
 - Multi-environment support via per-environment chain clients
 - HTMX server-rendered UI with SSE log streaming
@@ -187,6 +191,8 @@ Run all tests: `go test ./...` from the `continuity-engine/` directory (or `make
 - **`tests/`** — integration-style tests (external test package `tests`). 7 files covering cipher round-trips, puzzle generation, HTTP handler logic, contract generation, trait reduction, prompt processing, and trap movement.
 - **`internal/handlers/game_test.go`** — unit tests for puzzle decrypt handlers with real template rendering, OOB swap verification.
 - **`internal/reasoning/transitions_test.go`** — unit tests for deterministic transition message selection (determinism, corruption tolerance, in-character validation).
+- **`internal/chain/recipes_test.go`** — unit tests for recipe registry flattening (Reflex/Reiver raw material resolution, unknown items, raw material detection).
+- **`internal/reasoning/goals_test.go`** — unit tests for goal planner (acquisition contract generation from empty inventory, partial inventory subtraction, slot limits, empty-state messages at varying corruption levels).
 
 ### What's tested
 
@@ -197,6 +203,8 @@ Run all tests: `go test ./...` from the `continuity-engine/` directory (or `make
 - HTTP handler responses: health endpoint, puzzle decrypt with OOB swaps, trap explosions
 - Puzzle generation: grid layout, target word embedding, address cell grouping
 - Contract generation from trait state and inventory
+- Goal-directed contract generation from recipe registry (empty inventory fallback, material priority ordering)
+- Recipe registry flattening (Reflex/Reiver dependency trees to raw ores)
 - Deterministic trait reduction
 - Transition message determinism, corruption resilience, and in-character tone
 - Trap movement mechanics
