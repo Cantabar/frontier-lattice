@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math"
 	"time"
 
 	"github.com/frontier-corm/continuity-engine/internal/chain"
@@ -101,6 +102,10 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 		}
 	}
 
+	// Snapshot stability/corruption before reduction for threshold-based chain sync.
+	prevStability := traits.Stability
+	prevCorruption := traits.Corruption
+
 	// Reduce traits immediately from the event batch.
 	memory.ReduceEvents(traits, events)
 	if err := h.db.UpsertTraits(ctx, environment, traits); err != nil {
@@ -115,6 +120,12 @@ func (h *Handler) ProcessEventBatch(ctx context.Context, environment, cormID str
 		}
 		h.dispatcher.SendPayload(ctx, types.ActionStateSync, sessionID, h.buildStateSyncPayload(ctx, environment, cormID, traits))
 		slog.Info(fmt.Sprintf("corm %s transitioned to Phase %d", cormID, traits.Phase))
+
+		// Phase transitions always sync to chain.
+		h.syncChainState(ctx, environment, cormID, traits)
+	} else if shouldSyncMeters(prevStability, prevCorruption, traits.Stability, traits.Corruption) {
+		// Sync on significant stability/corruption changes (delta ≥ 5 or threshold crossing).
+		h.syncChainState(ctx, environment, cormID, traits)
 	}
 
 	// Deliver a transition message (deterministic, no LLM).
@@ -215,6 +226,50 @@ func (h *Handler) buildStateSyncPayload(ctx context.Context, environment, cormID
 		payload.NetworkNodeID = nodeID
 	}
 	return payload
+}
+
+// syncChainState writes the current phase/stability/corruption to the on-chain
+// CormState shared object. Best-effort: errors are logged but do not fail the
+// event batch. Postgres remains the authoritative store.
+func (h *Handler) syncChainState(ctx context.Context, environment, cormID string, traits *types.CormTraits) {
+	if h.chainClient == nil || !h.chainClient.CanUpdateCormState() {
+		return
+	}
+
+	chainStateID, err := h.db.ResolveChainStateID(ctx, environment, cormID)
+	if err != nil {
+		slog.Warn(fmt.Sprintf("syncChainState: resolve chain state ID for corm %s: %v", cormID, err))
+		return
+	}
+	if chainStateID == "" {
+		return // no on-chain state yet (stub mode or pre-install)
+	}
+
+	if err := h.chainClient.UpdateCormState(ctx, chainStateID, traits.Phase, traits.Stability, traits.Corruption); err != nil {
+		slog.Warn(fmt.Sprintf("syncChainState: update failed for corm %s: %v", cormID, err))
+	}
+}
+
+// shouldSyncMeters returns true if stability or corruption changed enough to
+// warrant an on-chain write: absolute delta ≥ 5 or a threshold boundary
+// crossing (0, 25, 50, 75, 100).
+func shouldSyncMeters(prevStab, prevCorr, newStab, newCorr float64) bool {
+	if math.Abs(newStab-prevStab) >= 5 || math.Abs(newCorr-prevCorr) >= 5 {
+		return true
+	}
+	return crossesThreshold(prevStab, newStab) || crossesThreshold(prevCorr, newCorr)
+}
+
+// crossesThreshold returns true if old and new straddle any of 0, 25, 50, 75, 100.
+func crossesThreshold(old, new float64) bool {
+	for _, t := range []float64{0, 25, 50, 75, 100} {
+		if (old < t && new >= t) || (old >= t && new < t) {
+			if old != new { // only if actually changed
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // safePrefix returns the first n characters of s, or s itself if shorter.

@@ -97,6 +97,12 @@ func (c *Client) CanCreateContracts() bool {
 	return c.signer != nil && c.trustlessContractsPkg != nil && c.cormStatePkg != nil && c.cormCharacterID != nil
 }
 
+// CanUpdateCormState returns true if the client has the config needed to
+// update on-chain CormState: a signer and the corm_state package ID.
+func (c *Client) CanUpdateCormState() bool {
+	return c.signer != nil && c.cormStatePkg != nil
+}
+
 // CanMintCORM returns true if the client has the config needed to mint CORM:
 // a signer, the corm state package, and the coin authority object.
 func (c *Client) CanMintCORM() bool {
