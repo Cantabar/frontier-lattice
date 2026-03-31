@@ -87,10 +87,6 @@ func handlePhase2Effects(ctx context.Context, h *Handler, environment, cormID st
 // maxActiveContracts is the per-corm contract slot cap.
 const maxActiveContracts = 5
 
-// bootstrapCORMAmount is the seed CORM minted when a corm has zero balance
-// and needs to create acquisition contracts.
-const bootstrapCORMAmount uint64 = 1000
-
 // attemptContractFill generates contracts until all slots are filled or
 // generation fails. The fill strategy depends on the goal lifecycle phase:
 //   - acquiring: standard generation (goal-protected) + goal-directed acquisition
@@ -214,32 +210,9 @@ func attemptAcquisitionFill(ctx context.Context, h *Handler, environment, cormID
 			return
 		}
 
-		// Bootstrap CORM if needed.
-		if snapshot.CormCORMBalance == 0 && chainStateID != "" {
-			minted, err := h.chainClient.MintBootstrapCORM(ctx, chainStateID, bootstrapCORMAmount)
-			if err != nil {
-				slog.Info(fmt.Sprintf("phase2: bootstrap CORM mint failed for %s: %v", cormID, err))
-			} else if minted == 0 {
-				slog.Warn(fmt.Sprintf("phase2: bootstrap CORM mint returned 0 for %s (config incomplete)", cormID))
-			} else {
-				snapshot.CormCORMBalance = minted
-				slog.Info(fmt.Sprintf("phase2: minted %d bootstrap CORM for corm %s", minted, cormID))
-				verifiedBalance, _ := h.chainClient.GetCORMBalance(ctx, chainStateID)
-				if verifiedBalance == 0 {
-					slog.Info(fmt.Sprintf("phase2: minted CORM not yet visible for %s, deferring contract creation", cormID))
-					ClearContractCooldown(cormID)
-					sendEmptyStateFeedback(ctx, h, cormID, evt.SessionID, traits, snapshot)
-					return
-				}
-			}
-		} else if snapshot.CormCORMBalance == 0 {
-			slog.Warn(fmt.Sprintf("phase2: cannot bootstrap CORM for corm %s (no on-chain state ID)", cormID))
-		}
-
-		if snapshot.CormCORMBalance == 0 {
-			sendEmptyStateFeedback(ctx, h, cormID, evt.SessionID, traits, snapshot)
-			return
-		}
+		// CORM is minted on-demand inline within each contract PTB, so no
+		// bootstrap step is needed. The splitCORMCoin helper falls back to
+		// mintCORMCoinArg when the brain has no coins with sufficient balance.
 
 		slots := maxActiveContracts - activeCount
 		intents := PlanAcquisitionContracts(goals, snapshot, h.recipeRegistry, traits, player.Address, slots)
@@ -574,21 +547,14 @@ func emitBuildSSUContract(ctx context.Context, h *Handler, environment, cormID, 
 
 	// --- On-chain path: create a witnessed build_request contract ---
 	if h.chainClient != nil && h.chainClient.CanCreateBuildRequests() && h.ssuTypeID > 0 {
-		// Bootstrap CORM if needed (same pattern as goal-directed contracts).
+		// CORM is minted on-demand inline within the PTB when the brain has
+		// insufficient balance, so no bootstrap step is needed.
 		bounty := h.buildRequestBounty
 		if bounty == 0 {
 			bounty = 500 // sensible default
 		}
-		if snapshot.CormCORMBalance < bounty && chainStateID != "" {
-			minted, err := h.chainClient.MintBootstrapCORM(ctx, chainStateID, bootstrapCORMAmount)
-			if err != nil {
-				slog.Info(fmt.Sprintf("phase2: build_ssu bootstrap CORM failed for %s: %v", cormID, err))
-			} else if minted > 0 {
-				snapshot.CormCORMBalance = minted
-			}
-		}
 
-		if snapshot.CormCORMBalance >= bounty {
+		{
 			deadlineMs := time.Now().Add(7 * 24 * time.Hour).UnixMilli()
 
 			var allowedTribes []uint32
@@ -601,6 +567,7 @@ func emitBuildSSUContract(ctx context.Context, h *Handler, environment, cormID, 
 				RequireCormAuth:   true,
 				BountyAmount:      bounty,
 				DeadlineMs:        deadlineMs,
+				CormStateID:       chainStateID,
 				PlayerCharacterID: evt.PlayerCharacterID,
 				AllowedTribes:     allowedTribes,
 			})
@@ -634,11 +601,9 @@ func emitBuildSSUContract(ctx context.Context, h *Handler, environment, cormID, 
 				buildSSUActive[cormID] = contractID
 				buildSSUMu.Unlock()
 
-				slog.Info(fmt.Sprintf("phase2: created on-chain build_request %s for corm %s (SSU type %d)", contractID, cormID, h.ssuTypeID))
+			slog.Info(fmt.Sprintf("phase2: created on-chain build_request %s for corm %s (SSU type %d)", contractID, cormID, h.ssuTypeID))
 				return
 			}
-		} else {
-			slog.Info(fmt.Sprintf("phase2: insufficient CORM for build_ssu bounty (have %d, need %d) for corm %s", snapshot.CormCORMBalance, bounty, cormID))
 		}
 	}
 

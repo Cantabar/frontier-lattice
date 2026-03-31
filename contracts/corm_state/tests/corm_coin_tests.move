@@ -221,3 +221,127 @@ fun test_mint_wrong_corm_state() {
 
     scenario.end();
 }
+
+#[test]
+fun test_mint_coin_returns_value() {
+    let mut scenario = ts::begin(ADMIN);
+
+    {
+        corm_coin::init_for_testing(scenario.ctx());
+    };
+
+    scenario.next_tx(ADMIN);
+    {
+        let admin_cap = corm_auth::create_admin_cap_for_testing(scenario.ctx());
+        let network_node_id = object::id_from_address(@0x1234);
+        let mint_cap = corm_state::create(&admin_cap, network_node_id, scenario.ctx());
+        transfer::public_transfer(mint_cap, ADMIN);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+    };
+
+    // mint_coin should return a coin with the correct value
+    scenario.next_tx(ADMIN);
+    {
+        let mut authority = scenario.take_shared<CoinAuthority>();
+        let mut mint_cap = scenario.take_from_sender<MintCap>();
+        let state = scenario.take_shared<corm_state::CormState>();
+        let corm_state_id = object::id(&state);
+
+        let coin = corm_coin::mint_coin(
+            &mut authority,
+            &mut mint_cap,
+            corm_state_id,
+            500_000,  // 50 CORM
+            scenario.ctx(),
+        );
+
+        assert!(coin.value() == 500_000);
+        assert!(corm_coin::mint_cap_total_minted(&mint_cap) == 500_000);
+        assert!(corm_coin::total_supply(&authority) == 500_000);
+
+        // Transfer the coin so it doesn't get dropped
+        transfer::public_transfer(coin, ADMIN);
+
+        ts::return_shared(authority);
+        ts::return_shared(state);
+        scenario.return_to_sender(mint_cap);
+    };
+
+    scenario.end();
+}
+
+#[test]
+fun test_mint_coin_accumulates_total_minted() {
+    let mut scenario = ts::begin(ADMIN);
+
+    {
+        corm_coin::init_for_testing(scenario.ctx());
+    };
+
+    scenario.next_tx(ADMIN);
+    {
+        let admin_cap = corm_auth::create_admin_cap_for_testing(scenario.ctx());
+        let network_node_id = object::id_from_address(@0x1234);
+        let mint_cap = corm_state::create(&admin_cap, network_node_id, scenario.ctx());
+        transfer::public_transfer(mint_cap, ADMIN);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+    };
+
+    // Mix mint and mint_coin — total_minted should accumulate across both
+    scenario.next_tx(ADMIN);
+    {
+        let mut authority = scenario.take_shared<CoinAuthority>();
+        let mut mint_cap = scenario.take_from_sender<MintCap>();
+        let state = scenario.take_shared<corm_state::CormState>();
+        let corm_state_id = object::id(&state);
+
+        corm_coin::mint(&mut authority, &mut mint_cap, corm_state_id, 300_000, PLAYER, scenario.ctx());
+        let coin = corm_coin::mint_coin(&mut authority, &mut mint_cap, corm_state_id, 200_000, scenario.ctx());
+
+        assert!(corm_coin::mint_cap_total_minted(&mint_cap) == 500_000);
+        assert!(corm_coin::total_supply(&authority) == 500_000);
+
+        transfer::public_transfer(coin, ADMIN);
+
+        ts::return_shared(authority);
+        ts::return_shared(state);
+        scenario.return_to_sender(mint_cap);
+    };
+
+    scenario.end();
+}
+
+#[test]
+#[expected_failure(abort_code = 0)] // ECormStateMismatch
+fun test_mint_coin_wrong_corm_state() {
+    let mut scenario = ts::begin(ADMIN);
+
+    {
+        corm_coin::init_for_testing(scenario.ctx());
+    };
+
+    scenario.next_tx(ADMIN);
+    {
+        let admin_cap = corm_auth::create_admin_cap_for_testing(scenario.ctx());
+        let network_node_id = object::id_from_address(@0x1234);
+        let mint_cap = corm_state::create(&admin_cap, network_node_id, scenario.ctx());
+        transfer::public_transfer(mint_cap, ADMIN);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+    };
+
+    scenario.next_tx(ADMIN);
+    {
+        let mut authority = scenario.take_shared<CoinAuthority>();
+        let mut mint_cap = scenario.take_from_sender<MintCap>();
+        let wrong_id = object::id_from_address(@0xDEAD);
+
+        // This should abort with ECormStateMismatch
+        let coin = corm_coin::mint_coin(&mut authority, &mut mint_cap, wrong_id, 100_000, scenario.ctx());
+        transfer::public_transfer(coin, ADMIN);
+
+        ts::return_shared(authority);
+        scenario.return_to_sender(mint_cap);
+    };
+
+    scenario.end();
+}

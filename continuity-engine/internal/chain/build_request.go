@@ -18,6 +18,7 @@ type BuildRequestParams struct {
 	RequireCormAuth bool   // require CormAuth extension on the structure
 	BountyAmount    uint64 // CORM amount to escrow as bounty
 	DeadlineMs      int64  // Unix timestamp in milliseconds
+	CormStateID     string // on-chain CormState object ID (for inline minting fallback)
 
 	// Access control (same pattern as trustless contracts)
 	PlayerCharacterID string   // restrict to this Character ID (empty = unrestricted)
@@ -55,7 +56,7 @@ func (c *Client) CreateBuildRequest(ctx context.Context, params BuildRequestPara
 	posterAddrArg := ptb.MustPure(c.signer.Address())
 
 	// Split CORM coin for bounty escrow.
-	bountyArg, err := c.splitCORMCoin(ctx, ptb, params.BountyAmount)
+	bountyArg, err := c.splitCORMCoin(ctx, ptb, params.CormStateID, params.BountyAmount)
 	if err != nil {
 		return "", fmt.Errorf("split CORM for bounty: %w", err)
 	}

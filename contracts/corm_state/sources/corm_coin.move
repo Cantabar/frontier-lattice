@@ -124,6 +124,32 @@ public fun mint(
     transfer::public_transfer(minted, recipient);
 }
 
+/// Mint CORM tokens and return the coin directly, for use as a PTB
+/// intermediate result (e.g. passed to `SplitCoins` or contract escrow).
+/// Same authorization as `mint` but does not transfer — the caller is
+/// responsible for consuming or transferring the returned coin.
+public fun mint_coin(
+    authority: &mut CoinAuthority,
+    mint_cap: &mut MintCap,
+    corm_state_id: ID,
+    amount: u64,
+    ctx: &mut TxContext,
+): coin::Coin<CORM_COIN> {
+    assert!(mint_cap.corm_state_id == corm_state_id, ECormStateMismatch);
+
+    let minted = coin::mint(&mut authority.treasury_cap, amount, ctx);
+    mint_cap.total_minted = mint_cap.total_minted + amount;
+
+    event::emit(CormCoinMintedEvent {
+        corm_state_id,
+        recipient: ctx.sender(),
+        amount,
+        total_minted: mint_cap.total_minted,
+    });
+
+    minted
+}
+
 /// Burn CORM tokens. Any holder may burn their own coins (permissionless
 /// token sink). Emits `CormCoinBurnedEvent` with the post-burn total supply.
 public fun burn(

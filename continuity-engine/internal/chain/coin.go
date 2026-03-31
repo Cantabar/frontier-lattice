@@ -94,6 +94,61 @@ func (c *Client) MintCORM(ctx context.Context, cormID, playerAddress string, amo
 	return nil
 }
 
+// mintCORMCoinArg adds a corm_coin::mint_coin MoveCall to the given PTB and
+// returns the resulting Argument (a Coin<CORM_COIN>). This enables composable
+// minting within a single PTB — the returned coin can be passed directly to
+// SplitCoins or contract create calls without a separate transaction.
+func (c *Client) mintCORMCoinArg(ctx context.Context, ptb *suiptb.ProgrammableTransactionBuilder, cormStateID string, amount uint64) (suiptb.Argument, error) {
+	if c.cormStatePkg == nil || c.coinAuthorityObjID == nil {
+		return suiptb.Argument{}, fmt.Errorf("mint config missing (pkg=%t authority=%t)", c.cormStatePkg != nil, c.coinAuthorityObjID != nil)
+	}
+
+	cormObjID, err := sui.ObjectIdFromHex(cormStateID)
+	if err != nil {
+		return suiptb.Argument{}, fmt.Errorf("invalid corm state ID: %w", err)
+	}
+
+	mintCapRef, err := c.findMintCap(ctx, cormObjID)
+	if err != nil {
+		return suiptb.Argument{}, fmt.Errorf("find MintCap: %w", err)
+	}
+
+	authorityRef, err := c.getSharedObjectRef(ctx, c.coinAuthorityObjID)
+	if err != nil {
+		return suiptb.Argument{}, fmt.Errorf("get CoinAuthority ref: %w", err)
+	}
+
+	authorityArg := ptb.MustObj(suiptb.ObjectArg{
+		SharedObject: authorityRef.SharedObjectArg(true),
+	})
+	mintCapArg := ptb.MustObj(suiptb.ObjectArg{
+		ImmOrOwnedObject: mintCapRef,
+	})
+	cormStateIDArg := ptb.MustPure(cormObjID)
+	amountArg := ptb.MustPure(amount)
+
+	// corm_coin::mint_coin(authority, mint_cap, corm_state_id, amount) -> Coin<CORM_COIN>
+	result := ptb.Command(suiptb.Command{
+		MoveCall: &suiptb.ProgrammableMoveCall{
+			Package:       c.cormStatePkg,
+			Module:        "corm_coin",
+			Function:      "mint_coin",
+			TypeArguments: []sui.TypeTag{},
+			Arguments:     []suiptb.Argument{authorityArg, mintCapArg, cormStateIDArg, amountArg},
+		},
+	})
+
+	slog.Info(fmt.Sprintf("chain: mintCORMCoinArg %d base units inline in PTB for corm %s", amount, cormStateID))
+	return result, nil
+}
+
+// CanMintInline returns true if the client has the config needed to mint
+// CORM inline within a PTB (corm_coin::mint_coin). Requires the corm_state
+// package and coin authority object.
+func (c *Client) CanMintInline() bool {
+	return c.HasSigner() && c.cormStatePkg != nil && c.coinAuthorityObjID != nil
+}
+
 // findMintCap looks up the MintCap owned by the brain for a given CormState.
 func (c *Client) findMintCap(ctx context.Context, cormStateID *sui.ObjectId) (*sui.ObjectRef, error) {
 	mintCapType := fmt.Sprintf("%s::corm_coin::MintCap", c.cormStatePkg.String())

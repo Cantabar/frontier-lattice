@@ -101,20 +101,26 @@ func clockArg(ptb *suiptb.ProgrammableTransactionBuilder) suiptb.Argument {
 }
 
 // splitCORMCoin finds a CORM coin and splits the requested amount in the PTB.
-// Returns the split-off coin argument.
-func (c *Client) splitCORMCoin(ctx context.Context, ptb *suiptb.ProgrammableTransactionBuilder, amount uint64) (suiptb.Argument, error) {
+// If no owned coin with sufficient balance exists, mints the exact amount
+// inline via corm_coin::mint_coin and returns it directly (no split needed).
+// Returns the coin argument ready for use as escrow.
+func (c *Client) splitCORMCoin(ctx context.Context, ptb *suiptb.ProgrammableTransactionBuilder, cormID string, amount uint64) (suiptb.Argument, error) {
 	cormCoinRef, err := c.findOwnedCoin(ctx, c.CORMCoinType(), amount)
-	if err != nil {
-		return suiptb.Argument{}, fmt.Errorf("find CORM coin for escrow: %w", err)
+	if err == nil {
+		// Found an existing coin with sufficient balance — split from it.
+		coinArg := ptb.MustObj(suiptb.ObjectArg{ImmOrOwnedObject: cormCoinRef})
+		amountArg := ptb.MustPure(amount)
+		return ptb.Command(suiptb.Command{
+			SplitCoins: &suiptb.ProgrammableSplitCoins{
+				Coin:    coinArg,
+				Amounts: []suiptb.Argument{amountArg},
+			},
+		}), nil
 	}
-	coinArg := ptb.MustObj(suiptb.ObjectArg{ImmOrOwnedObject: cormCoinRef})
-	amountArg := ptb.MustPure(amount)
-	return ptb.Command(suiptb.Command{
-		SplitCoins: &suiptb.ProgrammableSplitCoins{
-			Coin:    coinArg,
-			Amounts: []suiptb.Argument{amountArg},
-		},
-	}), nil
+
+	// No sufficient coin — mint the exact amount inline in this PTB.
+	slog.Info(fmt.Sprintf("chain: no CORM coin >= %d, minting inline for corm %s", amount, cormID))
+	return c.mintCORMCoinArg(ctx, ptb, cormID, amount)
 }
 
 // allowedCharsArg builds the allowed_characters vector<ID> PTB argument.
@@ -216,11 +222,19 @@ func (c *Client) CreateContracts(ctx context.Context, cormID string, paramsList 
 	// --- CORM coin split (all escrow amounts at once) ---
 	escrowArgs := make(map[int]suiptb.Argument) // paramsList index → split coin arg
 	if len(escrowAmounts) > 0 {
+		// Try to find an existing coin, fall back to minting inline.
+		var coinArg suiptb.Argument
 		cormCoinRef, err := c.findOwnedCoin(ctx, c.CORMCoinType(), totalEscrow)
-		if err != nil {
-			return nil, fmt.Errorf("find CORM coin for batch escrow: %w", err)
+		if err == nil {
+			coinArg = ptb.MustObj(suiptb.ObjectArg{ImmOrOwnedObject: cormCoinRef})
+		} else {
+			slog.Info(fmt.Sprintf("chain: no CORM coin >= %d for batch, minting inline for corm %s", totalEscrow, cormID))
+			mintedCoin, mintErr := c.mintCORMCoinArg(ctx, ptb, cormID, totalEscrow)
+			if mintErr != nil {
+				return nil, fmt.Errorf("mint CORM for batch escrow: %w", mintErr)
+			}
+			coinArg = mintedCoin
 		}
-		coinArg := ptb.MustObj(suiptb.ObjectArg{ImmOrOwnedObject: cormCoinRef})
 
 		amountArgs := make([]suiptb.Argument, len(escrowAmounts))
 		for i, amt := range escrowAmounts {
@@ -492,7 +506,7 @@ func (c *Client) createCoinForItem(ctx context.Context, cormID string, params Co
 	}
 
 	// Split escrow CORM
-	escrowArg, err := c.splitCORMCoin(ctx, ptb, params.CORMEscrowAmount)
+	escrowArg, err := c.splitCORMCoin(ctx, ptb, cormID, params.CORMEscrowAmount)
 	if err != nil {
 		return "", err
 	}
@@ -545,7 +559,7 @@ func (c *Client) createCoinForCoin(ctx context.Context, cormID string, params Co
 	}
 
 	// Split escrow CORM
-	escrowArg, err := c.splitCORMCoin(ctx, ptb, params.CORMEscrowAmount)
+	escrowArg, err := c.splitCORMCoin(ctx, ptb, cormID, params.CORMEscrowAmount)
 	if err != nil {
 		return "", err
 	}
