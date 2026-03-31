@@ -233,12 +233,22 @@
         var SIDEBAR_KEY = 'analysis-sidebar-collapsed';
         var PANEL_KEY = 'analysis-panels-collapsed';
 
+        function isTablet() {
+            return window.innerWidth >= 769 && window.innerWidth <= 1100;
+        }
+
         function applyCollapseState() {
             var sidebar = document.getElementById('cipher-analysis');
             if (!sidebar) return;
 
-            // Sidebar-level
-            if (sessionStorage.getItem(SIDEBAR_KEY) === '1') {
+            // Sidebar-level: on tablet, default to collapsed if user hasn't
+            // explicitly set a preference yet.
+            var stored = sessionStorage.getItem(SIDEBAR_KEY);
+            if (stored === null && isTablet()) {
+                sessionStorage.setItem(SIDEBAR_KEY, '1');
+                stored = '1';
+            }
+            if (stored === '1') {
                 sidebar.classList.add('right-sidebar--collapsed');
             } else {
                 sidebar.classList.remove('right-sidebar--collapsed');

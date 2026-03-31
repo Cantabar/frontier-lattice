@@ -1420,7 +1420,62 @@ body {
     50% { box-shadow: 0 0 16px rgba(0, 255, 65, 0.7), 0 0 30px rgba(0, 255, 65, 0.2); background: rgba(0, 255, 65, 0.25); }
 }
 
-/* === Responsive === */
+/* === Responsive — Tablet (769px–1100px) === */
+@media (min-width: 769px) and (max-width: 1100px) {
+    /* Narrower contracts sidebar to reclaim grid space */
+    .contracts-sidebar {
+        flex: 0 0 140px;
+        padding: 6px;
+    }
+    .contract-item-addr {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .contract-list-header {
+        font-size: 0.55rem;
+    }
+    .contract-item {
+        padding: 4px 6px;
+    }
+    .contract-item-type { font-size: 0.5rem; }
+    .contract-item-addr { font-size: 0.55rem; }
+    .contract-item-status { font-size: 0.45rem; }
+
+    /* Analysis sidebar: default collapsed via JS, keep collapse affordance visible */
+    .right-sidebar {
+        flex: 0 0 240px;
+    }
+
+    /* Grid cells: ensure usable touch targets */
+    .cell {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    /* Reduce terminal bar to give grid more vertical room */
+    .terminal-bar {
+        min-height: 90px;
+        max-height: 25vh;
+    }
+
+    /* Slightly reduce puzzle-main padding */
+    .puzzle-main {
+        padding: 6px 6px 14px;
+    }
+
+    /* Compact target-found overlay for smaller viewports */
+    .target-found-address {
+        font-size: 1.2rem;
+        letter-spacing: 0.15em;
+        padding: 8px 16px;
+    }
+    .target-found-overlay {
+        padding: 24px 16px;
+    }
+}
+
+/* === Responsive — Mobile (≤768px) === */
 @media (max-width: 768px) {
     .app-layout-top {
         flex-direction: column;
@@ -1466,6 +1521,57 @@ body {
     }
     .terminal-bar {
         max-height: 40vh;
+    }
+
+    /* Contracts sidebar: compact horizontal strip */
+    .contracts-sidebar {
+        flex: 0 0 auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 4px 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+    .contract-list {
+        flex-direction: row;
+        gap: 6px;
+        flex-wrap: nowrap;
+    }
+    .contract-list-header {
+        display: none;
+    }
+    .contract-item {
+        flex: 0 0 auto;
+        padding: 4px 8px;
+        min-width: 0;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+    }
+    .contract-item-type {
+        font-size: 0.5rem;
+        white-space: nowrap;
+    }
+    .contract-item-addr {
+        display: none;
+    }
+    .contract-item-status {
+        font-size: 0.45rem;
+        white-space: nowrap;
+    }
+    .contract-list-progress {
+        display: none;
+    }
+
+    /* Grid cells: minimum touch target */
+    .cell {
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+    /* Reduce puzzle-main padding */
+    .puzzle-main {
+        padding: 4px 4px 12px;
     }
 }
 

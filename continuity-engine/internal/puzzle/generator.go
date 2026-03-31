@@ -20,8 +20,9 @@ type DifficultyConfig struct {
 const AddressLength = 12
 
 // MinCellPx is the minimum cell size in pixels used when computing grid
-// dimensions from the client viewport.
-const MinCellPx = 32
+// dimensions from the client viewport. Sized for comfortable touch targets
+// on tablet screens.
+const MinCellPx = 38
 
 // GridDimensionsForViewport computes the grid rows and columns that fit
 // within the given pixel dimensions while keeping each cell at least
@@ -31,7 +32,7 @@ func GridDimensionsForViewport(availWidth, availHeight int) (rows, cols int) {
 	if availWidth <= 0 || availHeight <= 0 {
 		return 0, 0
 	}
-	cols = clamp(availWidth/MinCellPx, 14, 30)
+	cols = clamp(availWidth/MinCellPx, 10, 30)
 	rows = clamp(availHeight/MinCellPx, 6, 30)
 	return rows, cols
 }

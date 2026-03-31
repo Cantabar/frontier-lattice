@@ -203,6 +203,18 @@ If `CanCreateContracts()` returns false (WARN log: `"chain client not fully conf
 2. `CORM_STATE_PACKAGE_ID`, `TRUSTLESS_CONTRACTS_PACKAGE_ID`, `CORM_CHARACTER_ID` are set in the ECS task definition (run `make deploy-infra ENV={env}` to sync from `.env.{env}`)
 3. The on-chain Character object exists (`sui client object <CORM_CHARACTER_ID>`)
 
+## Responsive Layout
+
+Three CSS breakpoints handle different screen sizes:
+
+- **Desktop (>1100px):** Full three-column layout — contracts sidebar (200px), puzzle grid (flex), analysis sidebar (280px) — plus terminal bar below.
+- **Tablet (769px–1100px):** Contracts sidebar narrows to 140px with truncated text. Analysis sidebar defaults to collapsed (user can expand via toggle). Grid cells enforce 40px minimum touch targets. Terminal bar capped at 25vh. Server-side grid generation uses `MinCellPx=38` and allows as few as 10 columns to produce fewer, larger cells.
+- **Mobile (≤768px):** Vertical stack. Contracts sidebar converts to a compact horizontal scrollable strip (type + status only, address hidden). Analysis sidebar stacks below with horizontal toggle bar. Grid cells enforce 36px minimum. Terminal bar capped at 40vh.
+
+The analysis sidebar collapse state is persisted in `sessionStorage`. On tablet viewports, the JS init script defaults to collapsed if no user preference has been saved.
+
+Grid sizing is viewport-adaptive: client JS measures the available space in `.puzzle-main` and passes `cw`/`ch` to the server, which computes grid dimensions via `GridDimensionsForViewport()` (min 10 cols, max 30 cols, min 6 rows, max 30 rows).
+
 ## Testing
 
 Run all tests: `go test ./...` from the `continuity-engine/` directory (or `make test-go` from the repo root).
