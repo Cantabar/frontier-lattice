@@ -15,6 +15,7 @@ import { useZkLocationFilter } from "../../hooks/useZkLocationFilter";
 import type { DecryptedPod } from "../../hooks/useLocationPods";
 import { truncateAddress } from "../../lib/format";
 import { solarSystemName } from "../../lib/solarSystems";
+import { CustomSelect } from "../shared/CustomSelect";
 
 // ============================================================
 // Styled primitives
@@ -30,20 +31,8 @@ const Label = styled.label`
   letter-spacing: 0.04em;
 `;
 
-const Select = styled.select`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 14px;
+const SelectWrapper = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
 `;
 
 const Input = styled.input`
@@ -192,38 +181,38 @@ export function MutualProximityProofModal({
       {step === "select" && (
         <>
           <Label>Structure A</Label>
-          <Select
-            value={structureIdA}
-            onChange={(e) => setStructureIdA(e.target.value)}
-          >
-            <option value="">Select a structure…</option>
-            {pods.map((pod) => (
-              <option
-                key={pod.structureId}
-                value={pod.structureId}
-                disabled={pod.structureId === structureIdB}
-              >
-                {podLabel(pod)}
-              </option>
-            ))}
-          </Select>
+          <SelectWrapper>
+            <CustomSelect
+              value={structureIdA}
+              onChange={setStructureIdA}
+              placeholder="Select a structure…"
+              options={[
+                { value: "", label: "Select a structure…" },
+                ...pods.map((pod) => ({
+                  value: pod.structureId,
+                  label: podLabel(pod),
+                  disabled: pod.structureId === structureIdB,
+                })),
+              ]}
+            />
+          </SelectWrapper>
 
           <Label>Structure B</Label>
-          <Select
-            value={structureIdB}
-            onChange={(e) => setStructureIdB(e.target.value)}
-          >
-            <option value="">Select a structure…</option>
-            {pods.map((pod) => (
-              <option
-                key={pod.structureId}
-                value={pod.structureId}
-                disabled={pod.structureId === structureIdA}
-              >
-                {podLabel(pod)}
-              </option>
-            ))}
-          </Select>
+          <SelectWrapper>
+            <CustomSelect
+              value={structureIdB}
+              onChange={setStructureIdB}
+              placeholder="Select a structure…"
+              options={[
+                { value: "", label: "Select a structure…" },
+                ...pods.map((pod) => ({
+                  value: pod.structureId,
+                  label: podLabel(pod),
+                  disabled: pod.structureId === structureIdA,
+                })),
+              ]}
+            />
+          </SelectWrapper>
 
           <Label>Max Distance (ly)</Label>
           <Input

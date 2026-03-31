@@ -3,6 +3,7 @@ import styled from "styled-components";
 import type { BlueprintEntry } from "../../hooks/useBlueprints";
 import { useItems } from "../../hooks/useItems";
 import { BlueprintDetailModal } from "./BlueprintDetailModal";
+import { CustomSelect } from "../shared/CustomSelect";
 
 // ── Tier color map (matches theme.colors.tier) ─────────────────
 
@@ -165,19 +166,6 @@ const TierChip = styled(Chip)<{ $tierColor?: string }>`
     !$active && $tierColor ? `color: ${$tierColor};` : ""}
 `;
 
-const GroupSelect = styled.select`
-  padding: 4px 8px;
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  background: ${({ theme }) => theme.colors.surface.bg};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 12px;
-  cursor: pointer;
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
-`;
 
 const Search = styled.input`
   flex: 1;
@@ -690,21 +678,22 @@ export function BlueprintBrowser({ blueprints, onResolve }: Props) {
         {groupBy === "category" && facilityNames.length > 1 && (
           <FilterGroup>
             <FilterLabel>Facility</FilterLabel>
-            <GroupSelect
+            <CustomSelect
               value={activeFacility ?? ""}
-              onChange={(e) => setActiveFacility(e.target.value || null)}
-            >
-              <option value="">All Facilities</option>
-              {familyOrder.map((family) => (
-                <optgroup key={family} label={family}>
-                  {facilityByFamily.get(family)!.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </GroupSelect>
+              onChange={(v) => setActiveFacility(v || null)}
+              compact
+              fullWidth={false}
+              optgroups={[
+                { label: "", options: [{ value: "", label: "All Facilities" }] },
+                ...familyOrder.map((family) => ({
+                  label: family,
+                  options: facilityByFamily.get(family)!.map((name) => ({
+                    value: name,
+                    label: name,
+                  })),
+                })),
+              ]}
+            />
           </FilterGroup>
         )}
 
@@ -712,19 +701,16 @@ export function BlueprintBrowser({ blueprints, onResolve }: Props) {
         {activeTab && groups.length > 1 && (
           <FilterGroup>
             <FilterLabel>Group</FilterLabel>
-            <GroupSelect
+            <CustomSelect
               value={activeGroup ?? ""}
-              onChange={(e) => setActiveGroup(e.target.value || null)}
-            >
-              <option value="">
-                All {groupBy === "category" ? activeTab : "Categories"}
-              </option>
-              {groups.sort().map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </GroupSelect>
+              onChange={(v) => setActiveGroup(v || null)}
+              compact
+              fullWidth={false}
+              options={[
+                { value: "", label: `All ${groupBy === "category" ? activeTab : "Categories"}` },
+                ...groups.sort().map((g) => ({ value: g, label: g })),
+              ]}
+            />
           </FilterGroup>
         )}
       </FilterPanel>

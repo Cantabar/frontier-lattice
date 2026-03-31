@@ -13,6 +13,7 @@ import { useInitializeTribe } from "../hooks/useInitializeTribe";
 import { useInstallCorm } from "../hooks/useInstallCorm";
 import { useCormState } from "../continuity-engine/useCormState";
 import { truncateAddress } from "../lib/format";
+import { CustomSelect } from "../components/shared/CustomSelect";
 
 const PHASE_LABELS: Record<number, string> = {
   0: "Dormant",
@@ -246,20 +247,8 @@ const InitButton = styled.button`
   }
 `;
 
-const NodeSelect = styled.select`
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 13px;
-  width: 100%;
+const NodeSelectWrapper = styled.div`
   margin-top: ${({ theme }) => theme.spacing.sm};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
 `;
 
 export function Dashboard() {
@@ -378,24 +367,18 @@ export function Dashboard() {
       <OverviewGrid>
         <OverviewCard style={{ maxWidth: 320 }}>
           <CardLabel>Install Corm</CardLabel>
-          <NodeSelect
-            value={selectedNodeId}
-            onChange={(e) => setSelectedNodeId(e.target.value)}
-            disabled={isInstalling || networkNodes.length === 0}
-          >
-            {networkNodes.length === 0 ? (
-              <option value="">No Network Nodes found</option>
-            ) : (
-              <>
-                <option value="">Select a Network Node…</option>
-                {networkNodes.map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.name || "Unnamed Node"} ({truncateAddress(node.id)})
-                  </option>
-                ))}
-              </>
-            )}
-          </NodeSelect>
+          <NodeSelectWrapper>
+            <CustomSelect
+              value={selectedNodeId}
+              onChange={setSelectedNodeId}
+              disabled={isInstalling || networkNodes.length === 0}
+              placeholder={networkNodes.length === 0 ? "No Network Nodes found" : "Select a Network Node…"}
+              options={networkNodes.map((node) => ({
+                value: node.id,
+                label: `${node.name || "Unnamed Node"} (${truncateAddress(node.id)})`,
+              }))}
+            />
+          </NodeSelectWrapper>
           <span
             ref={installBtnRef}
             style={{ display: "inline-block", width: "100%" }}

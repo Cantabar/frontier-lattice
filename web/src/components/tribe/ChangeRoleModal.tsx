@@ -4,6 +4,7 @@ import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Modal } from "../shared/Modal";
 import { buildChangeRole } from "../../lib/sui";
 import { CopyableId } from "../shared/CopyableId";
+import { CustomSelect } from "../shared/CustomSelect";
 import { PrimaryButton } from "../shared/Button";
 import type { Role } from "../../lib/types";
 
@@ -33,20 +34,8 @@ const Input = styled.input`
   }
 `;
 
-const Select = styled.select`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 14px;
+const SelectWrapper = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
 `;
 
 const SubmitButton = styled(PrimaryButton)`
@@ -112,11 +101,13 @@ export function ChangeRoleModal({ tribeId, capId, characterId, currentRole, onCl
       </Warning>
 
       <Label>New Role</Label>
-      <Select value={newRole} onChange={(e) => setNewRole(e.target.value as Role)}>
-        {availableRoles.map((r) => (
-          <option key={r} value={r}>{r}</option>
-        ))}
-      </Select>
+      <SelectWrapper>
+        <CustomSelect
+          value={newRole}
+          onChange={(v) => setNewRole(v as Role)}
+          options={availableRoles.map((r) => ({ value: r, label: r }))}
+        />
+      </SelectWrapper>
 
       <Label>Member Wallet Address</Label>
       <Input

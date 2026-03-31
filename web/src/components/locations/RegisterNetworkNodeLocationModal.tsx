@@ -19,6 +19,7 @@ import { useMyStructures } from "../../hooks/useStructures";
 import { useNetworkNodes } from "../../hooks/useNetworkNodes";
 import { useLocationPods } from "../../hooks/useLocationPods";
 import { truncateAddress } from "../../lib/format";
+import { CustomSelect } from "../shared/CustomSelect";
 import { solarSystemName } from "../../lib/solarSystems";
 import type { SolarSystemEntry } from "../../lib/solarSystems";
 import { regionName, constellationName } from "../../lib/regions";
@@ -38,20 +39,8 @@ const Label = styled.label`
   letter-spacing: 0.04em;
 `;
 
-const Select = styled.select`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 14px;
+const SelectWrapper = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
 `;
 
 const CoordToggle = styled.button`
@@ -236,34 +225,29 @@ export function RegisterNetworkNodeLocationModal({
         <>
           {/* Network Node picker */}
           <Label>Network Node</Label>
-          {isLoadingNodes ? (
-            <Select disabled>
-              <option>Loading…</option>
-            </Select>
-          ) : networkNodeData.size === 0 ? (
-            <>
-              <Select disabled>
-                <option>No Network Nodes found</option>
-              </Select>
-              <Hint>
-                You need to own at least one Network Node structure to register a location.
-              </Hint>
-            </>
-          ) : (
-            <Select
+          <SelectWrapper>
+            <CustomSelect
               value={networkNodeId}
-              onChange={(e) => setNetworkNodeId(e.target.value)}
-            >
-              <option value="">Select a Network Node…</option>
-              {Array.from(networkNodeData.entries()).map(([id, nodeData]) => (
-                <option key={id} value={id}>
-                  {nodeData.name || "Network Node"} — {truncateAddress(id, 8, 6)}
-                  {nodeData.connectedAssemblyCount > 0
-                    ? ` (${nodeData.connectedAssemblyCount} connected)`
-                    : ""}
-                </option>
-              ))}
-            </Select>
+              onChange={setNetworkNodeId}
+              disabled={isLoadingNodes || networkNodeData.size === 0}
+              placeholder={
+                isLoadingNodes ? "Loading…"
+                  : networkNodeData.size === 0 ? "No Network Nodes found"
+                  : "Select a Network Node…"
+              }
+              options={[
+                { value: "", label: "Select a Network Node…" },
+                ...Array.from(networkNodeData.entries()).map(([id, nodeData]) => ({
+                  value: id,
+                  label: `${nodeData.name || "Network Node"} — ${truncateAddress(id, 8, 6)}${nodeData.connectedAssemblyCount > 0 ? ` (${nodeData.connectedAssemblyCount} connected)` : ""}`,
+                })),
+              ]}
+            />
+          </SelectWrapper>
+          {!isLoadingNodes && networkNodeData.size === 0 && (
+            <Hint>
+              You need to own at least one Network Node structure to register a location.
+            </Hint>
           )}
 
           {networkNodeId && (

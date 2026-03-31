@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useCoinTypes } from "../../hooks/useCoinTypes";
 import { parseCoinSymbol, parseCoinModule } from "../../lib/coinUtils";
 import { config } from "../../config";
+import { CustomSelect } from "./CustomSelect";
 
 const Wrapper = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
@@ -18,20 +19,6 @@ const Label = styled.label`
   margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
-const Select = styled.select`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 14px;
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
-`;
 
 const Input = styled.input`
   width: 100%;
@@ -70,8 +57,7 @@ export function CoinTypeSelector({ value, onChange, label = "Treasury Coin Type"
   // Check if the current value matches a discovered coin type
   const isKnown = coinTypes.some((c) => c.coinType === value);
 
-  function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const selected = e.target.value;
+  function handleSelectChange(selected: string) {
     if (selected === CUSTOM_VALUE) {
       setIsCustom(true);
       onChange("");
@@ -84,20 +70,20 @@ export function CoinTypeSelector({ value, onChange, label = "Treasury Coin Type"
   return (
     <Wrapper>
       <Label>{label}</Label>
-      <Select
+      <CustomSelect
         value={isCustom ? CUSTOM_VALUE : isKnown ? value : CUSTOM_VALUE}
         onChange={handleSelectChange}
-      >
-        {coinTypes.map((c) => {
-          const isCormDefault = config.cormCoinType && c.coinType === config.cormCoinType;
-          return (
-            <option key={c.coinType} value={c.coinType}>
-              {parseCoinSymbol(c.coinType)} ({parseCoinModule(c.coinType)}){isCormDefault ? " — default" : ""}
-            </option>
-          );
-        })}
-        <option value={CUSTOM_VALUE}>Custom coin type…</option>
-      </Select>
+        options={[
+          ...coinTypes.map((c) => {
+            const isCormDefault = config.cormCoinType && c.coinType === config.cormCoinType;
+            return {
+              value: c.coinType,
+              label: `${parseCoinSymbol(c.coinType)} (${parseCoinModule(c.coinType)})${isCormDefault ? " — default" : ""}`,
+            };
+          }),
+          { value: CUSTOM_VALUE, label: "Custom coin type…" },
+        ]}
+      />
       {(isCustom || (!isKnown && value)) && (
         <>
           <Input

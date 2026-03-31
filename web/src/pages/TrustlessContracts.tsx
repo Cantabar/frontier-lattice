@@ -12,6 +12,7 @@ import { ContractFilterPanel } from "../components/contracts/ContractFilterPanel
 import { LoadingSpinner } from "../components/shared/LoadingSpinner";
 import { EmptyState } from "../components/shared/EmptyState";
 import { PrimaryButton, SecondaryButton } from "../components/shared/Button";
+import { CustomSelect } from "../components/shared/CustomSelect";
 
 const Page = styled.div``;
 
@@ -49,26 +50,9 @@ const Tab = styled.button<{ $active: boolean }>`
   cursor: pointer;
 `;
 
-const SelectControl = styled.select`
-  background: ${({ theme }) => theme.colors.surface.raised};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
-  font-size: 13px;
-  font-weight: 600;
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
-`;
-
-const TypeSelect = styled(SelectControl)`
+const TypeSelectWrapper = styled.div`
   margin-left: auto;
 `;
-
-const SortSelect = styled(SelectControl)``;
 
 const Grid = styled.div`
   display: flex;
@@ -121,28 +105,36 @@ export function TrustlessContracts() {
             {t === "all" ? "All" : t === "InProgress" ? "In Progress" : t}
           </Tab>
         ))}
-        <TypeSelect
-          value={filters.typeFilter}
-          onChange={(e) => filters.setTypeFilter(e.target.value as Parameters<typeof filters.setTypeFilter>[0])}
-        >
-          <option value="all">All Types</option>
-          <option value="CoinForCoin">Coin → Coin</option>
-          <option value="CoinForItem">Coin → Item</option>
-          <option value="ItemForCoin">Item → Coin</option>
-          <option value="ItemForItem">Item → Item</option>
-          <option value="Transport">Transport</option>
-          <option value="BuildRequest">Build Request</option>
-        </TypeSelect>
-        <SortSelect
+        <TypeSelectWrapper>
+          <CustomSelect
+            value={filters.typeFilter}
+            onChange={(v) => filters.setTypeFilter(v as Parameters<typeof filters.setTypeFilter>[0])}
+            compact
+            fullWidth={false}
+            options={[
+              { value: "all", label: "All Types" },
+              { value: "CoinForCoin", label: "Coin → Coin" },
+              { value: "CoinForItem", label: "Coin → Item" },
+              { value: "ItemForCoin", label: "Item → Coin" },
+              { value: "ItemForItem", label: "Item → Item" },
+              { value: "Transport", label: "Transport" },
+              { value: "BuildRequest", label: "Build Request" },
+            ]}
+          />
+        </TypeSelectWrapper>
+        <CustomSelect
           value={filters.sortKey}
-          onChange={(e) => filters.setSortKey(e.target.value as SortKey)}
-        >
-          <option value="newest">Newest</option>
-          <option value="deadline-asc">Deadline: Soonest</option>
-          <option value="deadline-desc">Deadline: Latest</option>
-          <option value="reward-high">Reward: High → Low</option>
-          <option value="reward-low">Reward: Low → High</option>
-        </SortSelect>
+          onChange={(v) => filters.setSortKey(v as SortKey)}
+          compact
+          fullWidth={false}
+          options={[
+            { value: "newest", label: "Newest" },
+            { value: "deadline-asc", label: "Deadline: Soonest" },
+            { value: "deadline-desc", label: "Deadline: Latest" },
+            { value: "reward-high", label: "Reward: High → Low" },
+            { value: "reward-low", label: "Reward: Low → High" },
+          ]}
+        />
       </FilterRow>
 
       <ContractFilterPanel

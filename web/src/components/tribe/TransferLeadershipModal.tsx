@@ -5,6 +5,7 @@ import { Modal } from "../shared/Modal";
 import { buildTransferLeadership } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
 import { truncateAddress } from "../../lib/format";
+import { CustomSelect } from "../shared/CustomSelect";
 import { DangerButton } from "../shared/Button";
 import type { TribeMember } from "../../lib/types";
 
@@ -18,20 +19,8 @@ const Label = styled.label`
   margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
-const Select = styled.select`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 14px;
+const SelectWrapper = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
 `;
 
 const Input = styled.input`
@@ -115,13 +104,16 @@ export function TransferLeadershipModal({
       </Warning>
 
       <Label>New Leader</Label>
-      <Select value={selectedCharId} onChange={(e) => setSelectedCharId(e.target.value)}>
-        {candidates.map((m) => (
-          <option key={m.characterId} value={m.characterId}>
-            {truncateAddress(m.characterId)} ({m.role})
-          </option>
-        ))}
-      </Select>
+      <SelectWrapper>
+        <CustomSelect
+          value={selectedCharId}
+          onChange={setSelectedCharId}
+          options={candidates.map((m) => ({
+            value: m.characterId,
+            label: `${truncateAddress(m.characterId)} (${m.role})`,
+          }))}
+        />
+      </SelectWrapper>
 
       <Label>New Leader&apos;s Wallet Address</Label>
       <Input

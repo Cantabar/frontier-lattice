@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import styled from "styled-components";
 import { useParams, Navigate, Link } from "react-router-dom";
+import { CustomSelect } from "../components/shared/CustomSelect";
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { useStructures } from "../hooks/useStructures";
 import { useNetworkNodes } from "../hooks/useNetworkNodes";
@@ -123,20 +124,8 @@ const Tab = styled.button<{ $active: boolean }>`
   cursor: pointer;
 `;
 
-const StatusSelect = styled.select`
-  background: ${({ theme }) => theme.colors.surface.raised};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
-  font-size: 13px;
-  font-weight: 600;
+const StatusSelectWrapper = styled.div`
   margin-left: auto;
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
 `;
 
 const Grid = styled.div`
@@ -614,16 +603,21 @@ export function MyStructuresPage() {
             {t === "all" ? "All Types" : t}
           </Tab>
         ))}
-        <StatusSelect
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as AssemblyStatus | "all")}
-        >
-          <option value="all">All Statuses</option>
-          <option value="Online">Online</option>
-          <option value="Offline">Offline</option>
-          <option value="Anchored">Anchored</option>
-          <option value="Unanchoring">Unanchoring</option>
-        </StatusSelect>
+        <StatusSelectWrapper>
+          <CustomSelect
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as AssemblyStatus | "all")}
+            compact
+            fullWidth={false}
+            options={[
+              { value: "all", label: "All Statuses" },
+              { value: "Online", label: "Online" },
+              { value: "Offline", label: "Offline" },
+              { value: "Anchored", label: "Anchored" },
+              { value: "Unanchoring", label: "Unanchoring" },
+            ]}
+          />
+        </StatusSelectWrapper>
         <Tab $active={groupByNode} onClick={() => setGroupByNode((v) => !v)}>
           {groupByNode ? "⊞ Grouped" : "☰ Flat"}
         </Tab>

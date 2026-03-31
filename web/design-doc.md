@@ -174,6 +174,10 @@ Per-environment defaults are defined in `config.ts` and overridden by explicit `
 - Structures → Locations navigation: structure rows and network node group headers without a registered location show a "+ Location" link to `/locations`, enabling the player to navigate directly to the Locations page to unlock the TLK and register locations
 - Build request (witnessed) contracts: create, list, and detail views for `BuildRequestContract` from the `witnessed_contracts` package. Poster escrows a bounty for building a specific structure type; the CORM witness service auto-fulfills when a matching anchor event is detected. Supports CormAuth requirement, character/tribe access control, and proximity gating. Integrated into the unified contracts list with a "Build Request" type filter.
 
+### CustomSelect (CEF/OSR Compatibility)
+
+All dropdown selects use a custom `CustomSelect` component (`components/shared/CustomSelect.tsx`) instead of native `<select>` elements. EVE Frontier's in-game browser uses CEF in off-screen rendering (OSR) mode, where native `<select>` popups are rendered in a separate buffer (`PET_POPUP`) that the game engine fails to composite. The custom component renders a portal-based `<ul>` dropdown anchored to the trigger via `getBoundingClientRect`, keeping everything in the main DOM layer. Supports flat options, grouped options (optgroups), keyboard navigation, outside-click dismiss, and compact/full-width variants.
+
 ## Open Questions / Future Work
 
 - Offline-capable PWA for mobile access

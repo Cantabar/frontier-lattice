@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import styled from "styled-components";
 import { useItems, type ItemEntry } from "../../hooks/useItems";
 import { PortalTooltip } from "./PortalTooltip";
+import { CustomSelect } from "./CustomSelect";
 
 // ── Tier color map (matches theme.colors.tier) ─────────────────
 
@@ -109,16 +110,6 @@ const Tab = styled.button<{ $active: boolean }>`
 
 // ── Group selector ─────────────────────────────────────────────
 
-const GroupSelect = styled.select`
-  padding: 4px 8px;
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  background: ${({ theme }) => theme.colors.surface.bg};
-  color: ${({ theme }) => theme.colors.text.secondary};
-  font-size: 12px;
-  cursor: pointer;
-  &:focus { outline: none; border-color: ${({ theme }) => theme.colors.primary.main}; }
-`;
 
 // ── Filter controls row ────────────────────────────────────────
 
@@ -493,15 +484,16 @@ export function ItemPickerModal({ onSelect, onClose }: Props) {
         {/* Filters row: group dropdown + search + chips */}
         <FiltersRow>
           {activeCategory && groups.length > 1 && (
-            <GroupSelect
+            <CustomSelect
               value={activeGroup ?? ""}
-              onChange={(e) => setActiveGroup(e.target.value || null)}
-            >
-              <option value="">All {activeCategory}</option>
-              {groups.sort().map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
-            </GroupSelect>
+              onChange={(v) => setActiveGroup(v || null)}
+              compact
+              fullWidth={false}
+              options={[
+                { value: "", label: `All ${activeCategory}` },
+                ...groups.sort().map((g) => ({ value: g, label: g })),
+              ]}
+            />
           )}
 
           <Search

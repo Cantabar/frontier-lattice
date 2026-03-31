@@ -15,6 +15,7 @@ import { CharacterPickerField } from "../components/shared/CharacterPickerField"
 import { TribePickerField } from "../components/shared/TribePickerField";
 import { PrimaryButton, SecondaryButton } from "../components/shared/Button";
 import { truncateAddress } from "../lib/format";
+import { CustomSelect } from "../components/shared/CustomSelect";
 
 // ---------------------------------------------------------------------------
 // Layout
@@ -111,20 +112,8 @@ const Input = styled.input`
   }
 `;
 
-const Select = styled.select`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 14px;
+const SelectWrapper = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
 `;
 
 const Row = styled.div`
@@ -381,17 +370,20 @@ export function CreateBuildRequestPage() {
           <Section>
             <SectionTitle>Structure</SectionTitle>
             <Label>Requested Structure Type</Label>
-            <Select
-              value={requestedTypeId}
-              onChange={(e) => setRequestedTypeId(e.target.value)}
-            >
-              <option value="">Select a structure type…</option>
-              {STRUCTURE_OPTIONS.map((opt) => (
-                <option key={opt.typeId} value={opt.typeId}>
-                  {opt.label} ({opt.group})
-                </option>
-              ))}
-            </Select>
+            <SelectWrapper>
+              <CustomSelect
+                value={requestedTypeId}
+                onChange={setRequestedTypeId}
+                placeholder="Select a structure type…"
+                options={[
+                  { value: "", label: "Select a structure type…" },
+                  ...STRUCTURE_OPTIONS.map((opt) => ({
+                    value: String(opt.typeId),
+                    label: `${opt.label} (${opt.group})`,
+                  })),
+                ]}
+              />
+            </SelectWrapper>
             {submitted && !requestedTypeId && <FieldError>Required</FieldError>}
             <Hint>
               The witness service will automatically fulfill this contract when someone anchors a
@@ -486,17 +478,20 @@ export function CreateBuildRequestPage() {
                 )}
 
                 <Label>Reference Structure</Label>
-                <Select
-                  value={referenceStructureId}
-                  onChange={(e) => setReferenceStructureId(e.target.value)}
-                >
-                  <option value="">Select a structure…</option>
-                  {myStructures.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name || ASSEMBLY_TYPES[s.typeId]?.label || `Structure`} ({truncateAddress(s.id, 8, 6)})
-                    </option>
-                  ))}
-                </Select>
+                <SelectWrapper>
+                  <CustomSelect
+                    value={referenceStructureId}
+                    onChange={setReferenceStructureId}
+                    placeholder="Select a structure…"
+                    options={[
+                      { value: "", label: "Select a structure…" },
+                      ...myStructures.map((s) => ({
+                        value: s.id,
+                        label: `${s.name || ASSEMBLY_TYPES[s.typeId]?.label || "Structure"} (${truncateAddress(s.id, 8, 6)})`,
+                      })),
+                    ]}
+                  />
+                </SelectWrapper>
                 {submitted && proximityEnabled && !referenceStructureId && (
                   <FieldError>Select a reference structure</FieldError>
                 )}

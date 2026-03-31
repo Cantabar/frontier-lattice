@@ -25,6 +25,7 @@ import { PrimaryButton } from "../shared/Button";
 import { CoinTypeSelector } from "../shared/CoinTypeSelector";
 import { toBaseUnits, fromBaseUnits } from "../../lib/coinUtils";
 import { useCoinDecimals, defaultCoinType } from "../../hooks/useCoinDecimals";
+import { CustomSelect } from "../shared/CustomSelect";
 
 // ---------------------------------------------------------------------------
 // Creation-phase steps (shared stepper)
@@ -61,20 +62,8 @@ const Input = styled.input`
   }
 `;
 
-const Select = styled.select`
-  width: 100%;
-  background: ${({ theme }) => theme.colors.surface.bg};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.sm};
-  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
-  color: ${({ theme }) => theme.colors.text.primary};
-  font-size: 14px;
+const SelectWrapper = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing.md};
-
-  &:focus {
-    outline: none;
-    border-color: ${({ theme }) => theme.colors.primary.main};
-  }
 `;
 
 const Row = styled.div`
@@ -624,11 +613,16 @@ export function CreateContractModal({ onClose, onCreated }: Props) {
   return (
     <Modal title="Create Trustless Contract" onClose={onClose} disableClose={isBusy}>
       <Label>Contract Type</Label>
-      <Select value={variant} onChange={(e) => setVariant(e.target.value as TrustlessContractVariant)}>
-        {(Object.keys(VARIANT_DESCRIPTIONS) as TrustlessContractVariant[]).map((v) => (
-          <option key={v} value={v}>{v.replace(/([A-Z])/g, " $1").trim()}</option>
-        ))}
-      </Select>
+      <SelectWrapper>
+        <CustomSelect
+          value={variant}
+          onChange={(v) => setVariant(v as TrustlessContractVariant)}
+          options={(Object.keys(VARIANT_DESCRIPTIONS) as TrustlessContractVariant[]).map((v) => ({
+            value: v,
+            label: v.replace(/([A-Z])/g, " $1").trim(),
+          }))}
+        />
+      </SelectWrapper>
       <Hint>{VARIANT_DESCRIPTIONS[variant]}</Hint>
 
       {/* Coin type selector — shown for all variants that involve coins */}
