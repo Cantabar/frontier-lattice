@@ -140,6 +140,16 @@ func writeSSEAction(w http.ResponseWriter, flusher http.Flusher, action types.Co
 		})
 		writeSSE(w, "corm-contract", buf.String())
 
+	case types.ActionContractStatus:
+		var p types.ContractStatusPayload
+		json.Unmarshal(action.Payload, &p)
+		// OOB-swap the contracts panel placeholder with the status message.
+		var buf strings.Builder
+		h.templates.ExecuteTemplate(&buf, "phase2-empty-status.html", map[string]string{
+			"Message": p.Message,
+		})
+		writeSSE(w, "corm-contract-status", buf.String())
+
 	case types.ActionContractUpdated:
 		var p types.ContractUpdatedPayload
 		json.Unmarshal(action.Payload, &p)

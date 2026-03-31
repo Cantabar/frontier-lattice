@@ -176,7 +176,7 @@ Only `types.json` and `groups.json` are copied from `fsd_built/` — the rest of
 - Goal-directed contract generation: when standard generation fails (empty inventories/zero CORM), the corm falls back to a recipe-driven goal planner that generates `coin_for_item` acquisition contracts for raw materials needed to build target ships (Reflex, then Reiver)
 - Recipe registry (`internal/chain/recipes.go`): hardcoded dependency trees for Reflex and Reiver, with recursive flattening to raw ore requirements (Feldspar Crystals, Silica Grains, Iron-Rich Nodules, Palladium, Fossilized Exotronics)
 - Bootstrap CORM minting: when the corm has zero CORM balance, a seed amount (1000 CORM) is minted to fund acquisition contracts
-- Empty-state player feedback: when no contracts can be generated, the corm sends an in-character log message directing the player to gather specific raw materials (corruption-scaled: coherent at low corruption, garbled at high)
+- Empty-state player feedback: when no contracts can be generated (including when goal-directed intents are generated but all fail at creation), the corm sends an in-character log message directing the player to gather specific raw materials (corruption-scaled: coherent at low corruption, garbled at high). A `contract_status` SSE event (`ActionContractStatus`) also updates the contracts panel placeholder with the same message, so feedback is visible even if the player isn't watching the log stream
 - On-chain state writes (phase transitions, stability/corruption updates)
 - Multi-environment support via per-environment chain clients
 - HTMX server-rendered UI with SSE log streaming
@@ -198,6 +198,7 @@ Run all tests: `go test ./...` from the `continuity-engine/` directory (or `make
 - **`internal/reasoning/transitions_test.go`** — unit tests for deterministic transition message selection (determinism, corruption tolerance, in-character validation).
 - **`internal/chain/recipes_test.go`** — unit tests for recipe registry flattening (Reflex/Reiver raw material resolution, unknown items, raw material detection).
 - **`internal/reasoning/goals_test.go`** — unit tests for goal planner (acquisition contract generation from empty inventory, partial inventory subtraction, slot limits, empty-state messages at varying corruption levels).
+- **`internal/reasoning/phase2_test.go`** — unit tests for `sendEmptyStateFeedback` (verifies log stream + `contract_status` dispatch at low and high corruption).
 
 ### What's tested
 
@@ -213,3 +214,4 @@ Run all tests: `go test ./...` from the `continuity-engine/` directory (or `make
 - Deterministic trait reduction
 - Transition message determinism, corruption resilience, and in-character tone
 - Trap movement mechanics
+- Empty-state feedback dispatch (log stream + contract_status panel update)

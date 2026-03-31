@@ -140,6 +140,10 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 				}
 				activeCount++
 			}
+			// All intents failed — still send feedback.
+			if activeCount == 0 {
+				sendEmptyStateFeedback(ctx, h, cormID, evt.SessionID, traits)
+			}
 		} else {
 			// Safety net: no goal-directed contracts possible either.
 			// Send feedback to the player.
@@ -211,6 +215,7 @@ func createContractFromIntent(ctx context.Context, h *Handler, environment, corm
 
 // sendEmptyStateFeedback delivers an in-character log message to the player
 // explaining that no contracts could be generated and what materials to gather.
+// It also updates the contracts panel placeholder with the same message.
 func sendEmptyStateFeedback(ctx context.Context, h *Handler, cormID, sessionID string, traits *types.CormTraits) {
 	goals := DefaultGoals()
 	text := EmptyStateMessage(goals, h.recipeRegistry, traits.Corruption)
@@ -226,6 +231,13 @@ func sendEmptyStateFeedback(ctx context.Context, h *Handler, cormID, sessionID s
 	})
 	h.dispatcher.SendPayload(ctx, types.ActionLogStreamEnd, sessionID, types.LogStreamEndPayload{
 		EntryID: entryID,
+	})
+
+	// Update the contracts panel placeholder so the player sees the status
+	// even without watching the log stream.
+	h.dispatcher.SendPayload(ctx, types.ActionContractStatus, sessionID, types.ContractStatusPayload{
+		Status:  "empty",
+		Message: text,
 	})
 
 	slog.Info(fmt.Sprintf("phase2: sent empty-state feedback for corm %s", cormID))

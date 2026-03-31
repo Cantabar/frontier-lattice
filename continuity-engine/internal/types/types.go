@@ -158,6 +158,7 @@ const (
 	ActionStateSync       = "state_sync"
 	ActionContractCreated = "contract_created"
 	ActionContractUpdated = "contract_updated"
+	ActionContractStatus  = "contract_status"
 	ActionHintToggle      = "hint_toggle"
 	ActionHintCell        = "hint_cell"
 	ActionGuideCell       = "guide_cell"
@@ -283,6 +284,13 @@ type LogPayload struct {
 type ContractUpdatedPayload struct {
 	ContractID string `json:"contract_id"`
 	Status     string `json:"status"` // "completed", "expired", "cancelled"
+}
+
+// ContractStatusPayload carries a contract generation status update for the
+// contracts panel (e.g. when no contracts can be generated).
+type ContractStatusPayload struct {
+	Status  string `json:"status"`  // "empty", "error"
+	Message string `json:"message"` // in-character explanation
 }
 
 // --- Session Dispatch Interfaces ---
