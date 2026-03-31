@@ -12,11 +12,20 @@ module corm_state::corm_coin;
 
 use sui::{
     coin::{Self, TreasuryCap},
+    dynamic_field as df,
     event,
 };
 
+// === Version ===
+const CURRENT_VERSION: u64 = 1;
+
 // === Errors ===
 const ECormStateMismatch: u64 = 0;
+const EVersionMismatch: u64 = 1;
+const EAlreadyMigrated: u64 = 2;
+
+/// Dynamic-field key for version tracking on shared objects.
+public struct VersionKey has copy, drop, store {}
 
 // === One-time witness ===
 
@@ -77,10 +86,12 @@ fun init(witness: CORM_COIN, ctx: &mut TxContext) {
 
     transfer::public_freeze_object(metadata);
 
-    transfer::share_object(CoinAuthority {
+    let mut authority = CoinAuthority {
         id: object::new(ctx),
         treasury_cap,
-    });
+    };
+    df::add(&mut authority.id, VersionKey {}, CURRENT_VERSION);
+    transfer::share_object(authority);
 }
 
 // === Package-visible helpers ===
@@ -109,6 +120,7 @@ public fun mint(
     recipient: address,
     ctx: &mut TxContext,
 ) {
+    assert_authority_version(authority);
     assert!(mint_cap.corm_state_id == corm_state_id, ECormStateMismatch);
 
     let minted = coin::mint(&mut authority.treasury_cap, amount, ctx);
@@ -135,6 +147,7 @@ public fun mint_coin(
     amount: u64,
     ctx: &mut TxContext,
 ): coin::Coin<CORM_COIN> {
+    assert_authority_version(authority);
     assert!(mint_cap.corm_state_id == corm_state_id, ECormStateMismatch);
 
     let minted = coin::mint(&mut authority.treasury_cap, amount, ctx);
@@ -157,6 +170,7 @@ public fun burn(
     coin: coin::Coin<CORM_COIN>,
     ctx: &TxContext,
 ) {
+    assert_authority_version(authority);
     let amount = coin.value();
     coin::burn(&mut authority.treasury_cap, coin);
     let new_total_supply = coin::total_supply(&authority.treasury_cap);
@@ -176,6 +190,37 @@ public fun total_supply(authority: &CoinAuthority): u64 {
 
 public fun mint_cap_corm_state_id(cap: &MintCap): ID { cap.corm_state_id }
 public fun mint_cap_total_minted(cap: &MintCap): u64 { cap.total_minted }
+
+// === Migration ===
+
+/// Migrate CoinAuthority to the current version. Requires CormAdminCap
+/// from the corm_auth package.
+public fun migrate_authority(
+    authority: &mut CoinAuthority,
+    _admin_cap: &corm_auth::corm_auth::CormAdminCap,
+) {
+    if (df::exists_(&authority.id, VersionKey {})) {
+        let v: &mut u64 = df::borrow_mut(&mut authority.id, VersionKey {});
+        assert!(*v < CURRENT_VERSION, EAlreadyMigrated);
+        *v = CURRENT_VERSION;
+    } else {
+        df::add(&mut authority.id, VersionKey {}, CURRENT_VERSION);
+    };
+}
+
+// === Version view & helpers ===
+
+public fun authority_version(authority: &CoinAuthority): u64 {
+    if (df::exists_(&authority.id, VersionKey {})) {
+        *df::borrow(&authority.id, VersionKey {})
+    } else {
+        1
+    }
+}
+
+fun assert_authority_version(authority: &CoinAuthority) {
+    assert!(authority_version(authority) == CURRENT_VERSION, EVersionMismatch);
+}
 
 // === Test-only helpers ===
 

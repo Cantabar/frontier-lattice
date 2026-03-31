@@ -345,3 +345,44 @@ fun test_mint_coin_wrong_corm_state() {
 
     scenario.end();
 }
+
+#[test]
+fun test_authority_version_tracking() {
+    let mut scenario = ts::begin(ADMIN);
+
+    {
+        corm_coin::init_for_testing(scenario.ctx());
+    };
+
+    // Verify CoinAuthority has version 1 after init
+    scenario.next_tx(ADMIN);
+    {
+        let authority = scenario.take_shared<CoinAuthority>();
+        assert!(corm_coin::authority_version(&authority) == 1);
+        ts::return_shared(authority);
+    };
+
+    scenario.end();
+}
+
+#[test]
+#[expected_failure(abort_code = 2)] // EAlreadyMigrated
+fun test_migrate_authority_already_at_version() {
+    let mut scenario = ts::begin(ADMIN);
+
+    {
+        corm_coin::init_for_testing(scenario.ctx());
+    };
+
+    // Trying to migrate when already at current version should fail
+    scenario.next_tx(ADMIN);
+    {
+        let mut authority = scenario.take_shared<CoinAuthority>();
+        let admin_cap = corm_auth::create_admin_cap_for_testing(scenario.ctx());
+        corm_coin::migrate_authority(&mut authority, &admin_cap);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+        ts::return_shared(authority);
+    };
+
+    scenario.end();
+}

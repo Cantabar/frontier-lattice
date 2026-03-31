@@ -319,3 +319,92 @@ fun test_transfer_admin() {
     };
     scenario.end();
 }
+
+#[test]
+fun test_state_version_tracking() {
+    let mut scenario = ts::begin(ADMIN);
+    {
+        let ctx = scenario.ctx();
+        let admin_cap = corm_auth::create_admin_cap_for_testing(ctx);
+        let network_node_id = object::id_from_address(@0x1234);
+        let mint_cap = corm_state::create(&admin_cap, network_node_id, ctx);
+        transfer::public_transfer(mint_cap, ADMIN);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+    };
+
+    // Verify newly created objects have version 1
+    scenario.next_tx(ADMIN);
+    {
+        let state = scenario.take_shared<corm_state::CormState>();
+        assert!(corm_state::state_version(&state) == 1);
+        ts::return_shared(state);
+    };
+    scenario.end();
+}
+
+#[test]
+fun test_config_version_tracking() {
+    let mut scenario = ts::begin(ADMIN);
+    {
+        let ctx = scenario.ctx();
+        let admin_cap = corm_auth::create_admin_cap_for_testing(ctx);
+        corm_state::create_config(&admin_cap, BRAIN, ctx);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+    };
+
+    // Verify CormConfig has version 1
+    scenario.next_tx(ADMIN);
+    {
+        let config = scenario.take_shared<corm_state::CormConfig>();
+        assert!(corm_state::config_version(&config) == 1);
+        ts::return_shared(config);
+    };
+    scenario.end();
+}
+
+#[test]
+#[expected_failure(abort_code = 4)] // EAlreadyMigrated
+fun test_migrate_state_already_at_version() {
+    let mut scenario = ts::begin(ADMIN);
+    {
+        let ctx = scenario.ctx();
+        let admin_cap = corm_auth::create_admin_cap_for_testing(ctx);
+        let network_node_id = object::id_from_address(@0x1234);
+        let mint_cap = corm_state::create(&admin_cap, network_node_id, ctx);
+        transfer::public_transfer(mint_cap, ADMIN);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+    };
+
+    // Trying to migrate when already at current version should fail
+    scenario.next_tx(ADMIN);
+    {
+        let mut state = scenario.take_shared<corm_state::CormState>();
+        let admin_cap = corm_auth::create_admin_cap_for_testing(scenario.ctx());
+        corm_state::migrate_state(&mut state, &admin_cap);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+        ts::return_shared(state);
+    };
+    scenario.end();
+}
+
+#[test]
+#[expected_failure(abort_code = 4)] // EAlreadyMigrated
+fun test_migrate_config_already_at_version() {
+    let mut scenario = ts::begin(ADMIN);
+    {
+        let ctx = scenario.ctx();
+        let admin_cap = corm_auth::create_admin_cap_for_testing(ctx);
+        corm_state::create_config(&admin_cap, BRAIN, ctx);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+    };
+
+    scenario.next_tx(ADMIN);
+    {
+        let mut config = scenario.take_shared<corm_state::CormConfig>();
+        let admin_cap = corm_auth::create_admin_cap_for_testing(scenario.ctx());
+        corm_state::migrate_config(&mut config, &admin_cap);
+        corm_auth::destroy_admin_cap_for_testing(admin_cap);
+        ts::return_shared(config);
+    };
+    scenario.end();
+}

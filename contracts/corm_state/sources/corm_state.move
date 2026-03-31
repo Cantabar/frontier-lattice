@@ -7,13 +7,22 @@
 module corm_state::corm_state;
 
 use sui::event;
+use sui::dynamic_field as df;
 use corm_auth::corm_auth::CormAdminCap;
 use corm_state::corm_coin::{Self, MintCap};
+
+// === Version ===
+const CURRENT_VERSION: u64 = 1;
 
 // === Errors ===
 const ENotAdmin: u64 = 0;
 const EPhaseRegression: u64 = 1;
 const EMeterOutOfRange: u64 = 2;
+const EVersionMismatch: u64 = 3;
+const EAlreadyMigrated: u64 = 4;
+
+/// Dynamic-field key for version tracking on shared objects.
+public struct VersionKey has copy, drop, store {}
 
 // === Structs ===
 
@@ -66,10 +75,12 @@ public fun create_config(
     brain_address: address,
     ctx: &mut TxContext,
 ) {
-    transfer::share_object(CormConfig {
+    let mut config = CormConfig {
         id: object::new(ctx),
         brain_address,
-    });
+    };
+    df::add(&mut config.id, VersionKey {}, CURRENT_VERSION);
+    transfer::share_object(config);
 }
 
 /// Update the brain address stored in `CormConfig`. Admin-only.
@@ -78,6 +89,7 @@ public fun set_brain_address(
     _admin_cap: &CormAdminCap,
     new_brain_address: address,
 ) {
+    assert_config_version(config);
     config.brain_address = new_brain_address;
 }
 
@@ -92,7 +104,7 @@ public fun install(
     network_node_id: ID,
     ctx: &mut TxContext,
 ) {
-    let state = CormState {
+    let mut state = CormState {
         id: object::new(ctx),
         network_node_id,
         phase: 0,
@@ -100,6 +112,7 @@ public fun install(
         corruption: 0,
         admin: config.brain_address,
     };
+    df::add(&mut state.id, VersionKey {}, CURRENT_VERSION);
 
     let state_id = object::id(&state);
 
@@ -125,7 +138,7 @@ public fun create(
     network_node_id: ID,
     ctx: &mut TxContext,
 ): MintCap {
-    let state = CormState {
+    let mut state = CormState {
         id: object::new(ctx),
         network_node_id,
         phase: 0,
@@ -133,6 +146,7 @@ public fun create(
         corruption: 0,
         admin: ctx.sender(),
     };
+    df::add(&mut state.id, VersionKey {}, CURRENT_VERSION);
 
     let state_id = object::id(&state);
 
@@ -160,6 +174,7 @@ public fun update_state(
     new_corruption: u64,
     ctx: &TxContext,
 ) {
+    assert_state_version(state);
     assert!(ctx.sender() == state.admin, ENotAdmin);
     assert!(new_phase >= state.phase, EPhaseRegression);
     assert!(new_stability <= 100, EMeterOutOfRange);
@@ -189,6 +204,7 @@ public fun reset_state(
     new_corruption: u64,
     ctx: &TxContext,
 ) {
+    assert_state_version(state);
     assert!(ctx.sender() == state.admin, ENotAdmin);
     assert!(new_stability <= 100, EMeterOutOfRange);
     assert!(new_corruption <= 100, EMeterOutOfRange);
@@ -211,6 +227,7 @@ public fun transfer_admin(
     new_admin: address,
     ctx: &TxContext,
 ) {
+    assert_state_version(state);
     assert!(ctx.sender() == state.admin, ENotAdmin);
     state.admin = new_admin;
 }
@@ -224,6 +241,64 @@ public fun corruption(state: &CormState): u64 { state.corruption }
 public fun admin(state: &CormState): address { state.admin }
 public fun brain_address(config: &CormConfig): address { config.brain_address }
 
+// === Migration ===
+
+/// Migrate CormConfig to the current version. Admin-gated.
+public fun migrate_config(
+    config: &mut CormConfig,
+    _admin_cap: &CormAdminCap,
+) {
+    if (df::exists_(&config.id, VersionKey {})) {
+        let v: &mut u64 = df::borrow_mut(&mut config.id, VersionKey {});
+        assert!(*v < CURRENT_VERSION, EAlreadyMigrated);
+        *v = CURRENT_VERSION;
+    } else {
+        df::add(&mut config.id, VersionKey {}, CURRENT_VERSION);
+    };
+}
+
+/// Migrate CormState to the current version. Admin-gated.
+public fun migrate_state(
+    state: &mut CormState,
+    _admin_cap: &CormAdminCap,
+) {
+    if (df::exists_(&state.id, VersionKey {})) {
+        let v: &mut u64 = df::borrow_mut(&mut state.id, VersionKey {});
+        assert!(*v < CURRENT_VERSION, EAlreadyMigrated);
+        *v = CURRENT_VERSION;
+    } else {
+        df::add(&mut state.id, VersionKey {}, CURRENT_VERSION);
+    };
+}
+
+// === Version view functions ===
+
+public fun config_version(config: &CormConfig): u64 {
+    if (df::exists_(&config.id, VersionKey {})) {
+        *df::borrow(&config.id, VersionKey {})
+    } else {
+        1
+    }
+}
+
+public fun state_version(state: &CormState): u64 {
+    if (df::exists_(&state.id, VersionKey {})) {
+        *df::borrow(&state.id, VersionKey {})
+    } else {
+        1
+    }
+}
+
+// === Private version helpers ===
+
+fun assert_config_version(config: &CormConfig) {
+    assert!(config_version(config) == CURRENT_VERSION, EVersionMismatch);
+}
+
+fun assert_state_version(state: &CormState) {
+    assert!(state_version(state) == CURRENT_VERSION, EVersionMismatch);
+}
+
 // === Test-only helpers ===
 
 #[test_only]
@@ -231,10 +306,12 @@ public fun create_config_for_testing(
     brain_address: address,
     ctx: &mut TxContext,
 ): CormConfig {
-    CormConfig {
+    let mut config = CormConfig {
         id: object::new(ctx),
         brain_address,
-    }
+    };
+    df::add(&mut config.id, VersionKey {}, CURRENT_VERSION);
+    config
 }
 
 #[test_only]
