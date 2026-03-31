@@ -13,6 +13,8 @@ import { config } from "../config";
 import { clearWorldTribeInfoCache } from "../hooks/useWorldTribeInfo";
 import { clearLocationSession } from "../hooks/useLocationPods";
 import { useNotifications } from "../hooks/useNotifications";
+import { useInstalledCorms, type InstalledCorm } from "../hooks/useInstalledCorms";
+import { resetCormPhase } from "../continuity-engine/resetCormPhase";
 
 // ---------------------------------------------------------------------------
 // Styled components
@@ -114,6 +116,23 @@ const ConfigValue = styled.span`
   word-break: break-all;
 `;
 
+const DangerButton = styled(ActionButton)`
+  background: ${({ theme }) => theme.colors.surface.raised};
+  border-color: ${({ theme }) => theme.colors.text.muted};
+  color: ${({ theme }) => theme.colors.text.secondary};
+
+  &:hover {
+    background: #d32f2f;
+    border-color: #d32f2f;
+    color: #fff;
+  }
+`;
+
+const MutedText = styled.div`
+  font-size: 13px;
+  color: ${({ theme }) => theme.colors.text.muted};
+`;
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -145,6 +164,8 @@ export function SettingsPage() {
   const { push } = useNotifications();
   const [stats, setStats] = useState(tribeCacheStats);
   const [reloading, setReloading] = useState(false);
+  const { installedCorms, isLoading: cormsLoading } = useInstalledCorms();
+  const [resettingCorm, setResettingCorm] = useState<string | null>(null);
 
   async function handleReloadTribes() {
     setReloading(true);
@@ -225,6 +246,80 @@ export function SettingsPage() {
           </ActionButton>
         </div>
       </Card>
+
+      {/* ---- Corm Management ---- */}
+      <SectionHeading>Corm Management</SectionHeading>
+
+      {cormsLoading ? (
+        <Card>
+          <MutedText>Loading installed corms…</MutedText>
+        </Card>
+      ) : installedCorms.length === 0 ? (
+        <Card>
+          <MutedText>No corms installed.</MutedText>
+        </Card>
+      ) : (
+        installedCorms.map((corm: InstalledCorm) => (
+          <Card key={corm.cormStateId}>
+            <CardTitle>{corm.nodeName}</CardTitle>
+            <StatRow>
+              <Stat>
+                <strong>Phase {corm.phase}</strong>
+              </Stat>
+              <Stat>
+                <strong>{corm.stability}</strong>stability
+              </Stat>
+              <Stat>
+                <strong>{corm.corruption}</strong>corruption
+              </Stat>
+            </StatRow>
+            <ConfigGrid>
+              <ConfigLabel>State ID</ConfigLabel>
+              <ConfigValue>{corm.cormStateId.slice(0, 18)}…</ConfigValue>
+              <ConfigLabel>Node ID</ConfigLabel>
+              <ConfigValue>{corm.networkNodeId.slice(0, 18)}…</ConfigValue>
+            </ConfigGrid>
+            <div style={{ marginTop: "12px" }}>
+              <DangerButton
+                $busy={resettingCorm === corm.networkNodeId}
+                onClick={async () => {
+                  if (
+                    !window.confirm(
+                      `Reset corm on "${corm.nodeName}" to Phase 0? This will clear stability and corruption.`,
+                    )
+                  )
+                    return;
+                  setResettingCorm(corm.networkNodeId);
+                  try {
+                    const result = await resetCormPhase(corm.networkNodeId, 0);
+                    push({
+                      level: "success",
+                      title: "Corm Reset",
+                      message: `Phase reset to ${result.phase}. Chain: ${result.chain}.`,
+                      source: "Settings",
+                    });
+                    queryClient.invalidateQueries({ queryKey: ["queryEvents"] });
+                    queryClient.invalidateQueries({ queryKey: ["getObject"] });
+                  } catch (err) {
+                    push({
+                      level: "error",
+                      title: "Reset Failed",
+                      message: err instanceof Error ? err.message : "Unknown error",
+                      source: "Settings",
+                    });
+                  } finally {
+                    setResettingCorm(null);
+                  }
+                }}
+              >
+                {resettingCorm === corm.networkNodeId
+                  ? "Resetting…"
+                  : "Reset to Phase 0"}
+              </DangerButton>
+            </div>
+          </Card>
+        ))
+      )}
 
       {/* ---- Config Overview ---- */}
       <SectionHeading>Environment</SectionHeading>
