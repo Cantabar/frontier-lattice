@@ -87,10 +87,10 @@ export const config = {
   /** CORM coin type. When set, this becomes the preferred default for contracts. */
   cormCoinType: import.meta.env.VITE_CORM_COIN_TYPE ?? "",
 
-  /** Coin type for escrow/treasury (EVE token on testnet, or test coin on localnet) */
+  /** Fallback coin type for escrow/treasury when CORM is not configured. */
   coinType: import.meta.env.VITE_COIN_TYPE ?? "0x2::sui::SUI",
 
-  /** Fill coin type (CF phantom param). Defaults to coinType for CE=CF=SUI common case. */
+  /** Fallback fill coin type (CF phantom param) when CORM is not configured. */
   fillCoinType: import.meta.env.VITE_FILL_COIN_TYPE ?? import.meta.env.VITE_COIN_TYPE ?? "0x2::sui::SUI",
 
   /** Event indexer base URL */

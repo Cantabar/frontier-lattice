@@ -28,7 +28,8 @@ import { BulkItemEditor } from "../components/contracts/BulkItemEditor";
 import { BatchProgressPanel, type BatchState, type BatchStatus } from "../components/contracts/BatchProgressPanel";
 import { PrimaryButton, SecondaryButton } from "../components/shared/Button";
 import { toBaseUnits, fromBaseUnits } from "../lib/coinUtils";
-import { useEscrowCoinDecimals, useFillCoinDecimals } from "../hooks/useCoinDecimals";
+import { useCoinDecimals, defaultCoinType } from "../hooks/useCoinDecimals";
+import { CoinTypeSelector } from "../components/shared/CoinTypeSelector";
 import type { BulkItemRow } from "../lib/bulkItemForCoin";
 import { hasAnyError, rowsToPayloads, chunkPayloads } from "../lib/bulkItemForCoin";
 import { useItems } from "../hooks/useItems";
@@ -437,8 +438,11 @@ export function CreateContractPage() {
   const suiClient = useSuiClient();
   const { structures, refetch: refetchStructures } = useMyStructures();
   const { refetch: refetchContracts } = useActiveContracts();
-  const { decimals: ceDecimals, symbol: ceSymbol } = useEscrowCoinDecimals();
-  const { decimals: cfDecimals, symbol: cfSymbol } = useFillCoinDecimals();
+  // User-selectable coin type for this contract (defaults to CORM if configured, else SUI)
+  const [selectedCoinType, setSelectedCoinType] = useState(defaultCoinType);
+  const { decimals: ceDecimals, symbol: ceSymbol } = useCoinDecimals(selectedCoinType);
+  // For now, fill coin type matches the escrow coin type
+  const { decimals: cfDecimals, symbol: cfSymbol } = useCoinDecimals(selectedCoinType);
 
   const getOwnerCapId = useCallback(
     (ssuId: string) => structures.find((s) => s.id === ssuId)?.ownerCapId ?? "",
@@ -798,6 +802,7 @@ export function CreateContractPage() {
             deadlineMs,
             allowedCharacters: chars,
             allowedTribes: tribes,
+            coinType: selectedCoinType,
           });
           break;
         case "CoinForItem":
@@ -812,6 +817,7 @@ export function CreateContractPage() {
             deadlineMs,
             allowedCharacters: chars,
             allowedTribes: tribes,
+            coinType: selectedCoinType,
           });
           break;
         case "ItemForCoin": {
@@ -827,6 +833,7 @@ export function CreateContractPage() {
             deadlineMs,
             allowedCharacters: chars,
             allowedTribes: tribes,
+            coinType: selectedCoinType,
           });
           break;
         }
@@ -864,6 +871,7 @@ export function CreateContractPage() {
             deadlineMs,
             allowedCharacters: chars,
             allowedTribes: tribes,
+            coinType: selectedCoinType,
           });
           break;
         }
@@ -941,6 +949,7 @@ export function CreateContractPage() {
           deadlineMs,
           allowedCharacters,
           allowedTribes,
+          coinType: selectedCoinType,
         });
 
         // Sign
@@ -1105,6 +1114,17 @@ export function CreateContractPage() {
           </SelectWrapper>
           <Hint>{VARIANT_DESCRIPTIONS[variant]}</Hint>
         </Section>
+
+        {/* Coin type selector — shown for all variants that involve coins */}
+        {variant !== "ItemForItem" && (
+          <Section>
+            <CoinTypeSelector
+              value={selectedCoinType}
+              onChange={setSelectedCoinType}
+              label="Coin Type"
+            />
+          </Section>
+        )}
 
         <Separator />
 

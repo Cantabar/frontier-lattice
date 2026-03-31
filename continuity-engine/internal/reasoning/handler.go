@@ -166,16 +166,6 @@ func detectPhaseTransition(events []types.CormEvent, traits *types.CormTraits) b
 		}
 	}
 
-	// Internal 1→2 transition: stability reached 100 during Phase 1.
-	if traits.Phase == 1 && traits.Stability >= 100 {
-		for _, e := range events {
-			if e.EventType == types.EventWordSubmit {
-				traits.Phase = 2
-				return true
-			}
-		}
-	}
-
 	return false
 }
 

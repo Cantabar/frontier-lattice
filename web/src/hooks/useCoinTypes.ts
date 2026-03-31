@@ -18,7 +18,7 @@ export interface CoinTypeEntry {
 
 /**
  * Returns the list of distinct coin types the connected wallet owns.
- * Always includes "0x2::sui::SUI" as the first entry.
+ * CORM is listed first (when configured), then SUI, then discovered coins.
  */
 export function useCoinTypes() {
   const account = useCurrentAccount();

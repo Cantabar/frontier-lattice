@@ -116,8 +116,8 @@ All via Vite environment variables (`VITE_*`), resolved in `src/config.ts`:
 - `VITE_TRIBE_REGISTRY_ID` — TribeRegistry shared object ID
 - `VITE_METADATA_REGISTRY_ID` — MetadataRegistry shared object ID (assembly_metadata)
 - `VITE_ENERGY_CONFIG_ID` — energy config shared object ID
-- `VITE_CORM_COIN_TYPE` — CORM coin type string
-- `VITE_COIN_TYPE` — default coin type for escrow/treasury (default: `0x2::sui::SUI`)
+- `VITE_CORM_COIN_TYPE` — CORM coin type string (primary coin for contracts; derived from deployed `corm_state` package address as `<PKG>::corm_coin::CORM_COIN`)
+- `VITE_COIN_TYPE` — fallback coin type for escrow/treasury when CORM is not configured (default: `0x2::sui::SUI`)
 - `VITE_INDEXER_URL` — indexer API base URL (default: `/api/v1`)
 - `VITE_WEB_UI_HOST` — public web UI host used to compose on-chain SSU dApp URLs (defaults: `https://ef-corm.com` for stillness, `https://utopia.ef-corm.com` for utopia)
 - `VITE_WORLD_API_URL` — Eve Frontier world API (tribe name backfill)

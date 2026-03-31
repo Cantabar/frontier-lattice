@@ -615,6 +615,7 @@ export function buildCreateItemForCoinBatch(params: {
   deadlineMs: number;
   allowedCharacters: string[];
   allowedTribes: number[];
+  coinType?: string;
 }): Transaction {
   const tx = new Transaction();
   const pkg = worldPkg();
@@ -655,7 +656,7 @@ export function buildCreateItemForCoinBatch(params: {
 
     tx.moveCall({
       target: tcTarget("item_for_coin", "create"),
-      typeArguments: tcModuleTypes("item_for_coin"),
+      typeArguments: tcModuleTypes("item_for_coin", params.coinType),
       arguments: [
         tx.object(params.characterId),
         tx.object(params.sourceSsuId),

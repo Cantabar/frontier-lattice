@@ -25,8 +25,9 @@ func ReduceEvents(traits *types.CormTraits, events []types.CormEvent) {
 		case types.EventClick, types.EventDecrypt:
 			reduceInteraction(traits, evt)
 		case types.EventPhaseTransition:
-			// Phase transitions are driven by stability reaching 100;
-			// the actual phase update comes from on-chain sync.
+			// Phase 1→2 is driven by unlocking all contracts in the puzzle
+			// minigame; the actual phase update comes from the puzzle-service
+			// emitting a phase_transition event.
 		}
 	}
 
