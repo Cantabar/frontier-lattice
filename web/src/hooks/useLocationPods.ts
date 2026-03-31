@@ -9,7 +9,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { useSignPersonalMessage, useSignTransaction } from "@mysten/dapp-kit";
+import { useSignTransaction } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 import { useIdentity } from "./useIdentity";
 import {
@@ -28,7 +28,6 @@ import {
 } from "../lib/api";
 import {
   buildAuthChallenge,
-  buildAuthHeader,
   buildTxAuthHeader,
   computeLocationHash,
   generateSalt,
@@ -160,7 +159,6 @@ export function clearLocationSession() {
 
 export function useLocationPods(): UseLocationPodsReturn {
   const { address } = useIdentity();
-  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
   const { mutateAsync: signTransaction } = useSignTransaction();
 
   const [pods, setPods] = useState<DecryptedPod[]>([]);
@@ -180,25 +178,15 @@ export function useLocationPods(): UseLocationPodsReturn {
       return sessionCache.header;
     }
 
-    // Need a fresh auth header — try signPersonalMessage first, fall back to signTransaction.
-    // EveVault (and potentially other wallets) may not implement signPersonalMessage correctly,
-    // but every Sui wallet must support signTransaction.
+    // Build a TxSig auth header via signTransaction.
+    // Every Sui wallet (including Eve Vault) supports signTransaction.
     const challenge = buildAuthChallenge(address);
-    let rawAuthHeader: string;
-
-    try {
-      // Primary: SuiSig via signPersonalMessage
-      const { signature } = await signPersonalMessage({ message: challenge });
-      rawAuthHeader = buildAuthHeader(challenge, signature);
-    } catch {
-      // Fallback: TxSig via signTransaction (universally supported)
-      const tx = new Transaction();
-      const [coin] = tx.splitCoins(tx.gas, [0]);
-      tx.transferObjects([coin], address);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { bytes: txBytes, signature: txSig } = await signTransaction({ transaction: tx as any });
-      rawAuthHeader = buildTxAuthHeader(challenge, txBytes, txSig);
-    }
+    const tx = new Transaction();
+    const [coin] = tx.splitCoins(tx.gas, [0]);
+    tx.transferObjects([coin], address);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { bytes: txBytes, signature: txSig } = await signTransaction({ transaction: tx as any });
+    const rawAuthHeader = buildTxAuthHeader(challenge, txBytes, txSig);
 
     try {
       const { token, expires_at } = await createLocationSession(rawAuthHeader);
@@ -215,7 +203,7 @@ export function useLocationPods(): UseLocationPodsReturn {
       clearSessionCache();
       return rawAuthHeader;
     }
-  }, [address, signPersonalMessage, signTransaction]);
+  }, [address, signTransaction]);
 
   const fetchPods = useCallback(
     async (tribeId: string, tlkBytes: Uint8Array) => {
@@ -291,26 +279,14 @@ export function useLocationPods(): UseLocationPodsReturn {
           params.tlkBytes,
         );
 
-        // 3. Sign the full POD payload with wallet
-        const podBytes = new TextEncoder().encode(
-          JSON.stringify({
-            structureId: params.structureId,
-            ownerAddress: address,
-            tribeId: params.tribeId,
-            locationHash,
-            timestamp: Date.now(),
-          }),
-        );
-        const { signature } = await signPersonalMessage({ message: podBytes });
-
-        // 4. Submit to server
+        // 3. Submit to server (auth header proves identity; no separate POD signature needed)
         await submitLocationPod(authHeader, {
           structureId: params.structureId,
           tribeId: params.tribeId,
           locationHash,
           encryptedBlob: bytesToBase64(ciphertext),
           nonce: bytesToBase64(nonce),
-          signature,
+          signature: "",
           podVersion: 1,
           tlkVersion: params.tlkVersion,
         });
@@ -320,7 +296,7 @@ export function useLocationPods(): UseLocationPodsReturn {
         throw err;
       }
     },
-    [address, getAuthHeader, signPersonalMessage],
+    [address, getAuthHeader],
   );
 
   const submitNetworkNodePod = useCallback(
@@ -351,26 +327,14 @@ export function useLocationPods(): UseLocationPodsReturn {
           params.tlkBytes,
         );
 
-        // 3. Sign the POD payload with wallet
-        const podBytes = new TextEncoder().encode(
-          JSON.stringify({
-            networkNodeId: params.networkNodeId,
-            ownerAddress: address,
-            tribeId: params.tribeId,
-            locationHash,
-            timestamp: Date.now(),
-          }),
-        );
-        const { signature } = await signPersonalMessage({ message: podBytes });
-
-        // 4. Submit to server
+        // 3. Submit to server (auth header proves identity; no separate POD signature needed)
         const result = await submitNetworkNodeLocationPod(authHeader, {
           networkNodeId: params.networkNodeId,
           tribeId: params.tribeId,
           locationHash,
           encryptedBlob: bytesToBase64(ciphertext),
           nonce: bytesToBase64(nonce),
-          signature,
+          signature: "",
           podVersion: 1,
           tlkVersion: params.tlkVersion,
         });
@@ -382,7 +346,7 @@ export function useLocationPods(): UseLocationPodsReturn {
         throw err;
       }
     },
-    [address, getAuthHeader, signPersonalMessage],
+    [address, getAuthHeader],
   );
 
   const refreshNetworkNodePod = useCallback(

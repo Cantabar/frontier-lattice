@@ -8,7 +8,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import styled, { keyframes } from "styled-components";
 import { useSearchParams } from "react-router-dom";
-import { useCurrentAccount, useSignPersonalMessage } from "@mysten/dapp-kit";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useIdentity } from "../hooks/useIdentity";
 import { useLocationPods, type DecryptedPod } from "../hooks/useLocationPods";
 import { useTlkStatus } from "../hooks/useTlkStatus";
@@ -28,8 +28,7 @@ import { ASSEMBLY_TYPES } from "../lib/types";
 import { registerPublicKey, buildSoloTribeId } from "../lib/api";
 import {
   bytesToBase64,
-  getKeygenMessageBytes,
-  deriveX25519Keypair,
+  getOrCreateX25519Keypair,
   unwrapTlk,
 } from "../lib/locationCrypto";
 
@@ -225,7 +224,6 @@ export function LocationsPage() {
   const highlightStructureId = searchParams.get("structure");
   const scrolledRef = useRef(false);
   const { tribeCaps, address } = useIdentity();
-  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
   const rawTribeId = tribeCaps[0]?.tribeId ?? null;
   const isOfficer =
     tribeCaps[0]?.role === "Leader" || tribeCaps[0]?.role === "Officer";
@@ -346,14 +344,12 @@ export function LocationsPage() {
   }
 
   /**
-   * Sign the deterministic keygen message and derive an X25519 keypair.
-   * Shared by both init and unlock flows.
+   * Get or create a persistent X25519 keypair for the connected wallet.
+   * Stored in IndexedDB — no wallet signature required.
    */
-  async function deriveX25519() {
-    const { signature } = await signPersonalMessage({
-      message: getKeygenMessageBytes(),
-    });
-    return deriveX25519Keypair(signature);
+  async function getX25519Keypair() {
+    if (!address) throw new Error("Wallet not connected");
+    return getOrCreateX25519Keypair(address);
   }
 
   async function handleInitializeTlk() {
@@ -361,8 +357,8 @@ export function LocationsPage() {
     setUnlockLoading(true);
     setUnlockError(null);
     try {
-      // 1. Derive X25519 keypair from wallet signature
-      const { x25519Pub, x25519Priv } = await deriveX25519();
+      // 1. Get or create X25519 keypair (persisted in IndexedDB)
+      const { x25519Pub, x25519Priv } = await getX25519Keypair();
 
       if (isSoloMode) {
         // Solo flow: initialize PLK via dedicated endpoint
@@ -395,8 +391,8 @@ export function LocationsPage() {
     setUnlockLoading(true);
     setUnlockError(null);
     try {
-      // 1. Derive X25519 keypair from wallet signature
-      const { x25519Pub, x25519Priv } = await deriveX25519();
+      // 1. Get or create X25519 keypair (persisted in IndexedDB)
+      const { x25519Pub, x25519Priv } = await getX25519Keypair();
 
       // 2. Register derived public key (idempotent upsert)
       const authHeader = await getAuthHeader();

@@ -1,22 +1,19 @@
 /**
  * Shared authentication helper for Location API routes.
  *
- * Supports three auth schemes:
- *   - `SuiSig <base64_message>.<base64_signature>` — wallet personal-message signature
+ * Supports two auth schemes:
  *   - `TxSig <base64_challenge>.<base64_tx_bytes>.<base64_signature>` — wallet transaction signature
  *   - `Bearer <token>` — session token (obtained via POST /session)
  *
- * TxSig exists as a fallback for wallets (e.g. EveVault) whose
- * signPersonalMessage implementation is broken or unavailable.
- * Every Sui wallet must support signTransaction, making TxSig
- * universally compatible.
+ * TxSig uses signTransaction which every Sui wallet supports,
+ * including Eve Vault. This avoids reliance on signPersonalMessage.
  *
  * Both location-routes and zk-routes import this instead of duplicating the logic.
  */
 
 import type { Request, Response } from "express";
 import type pg from "pg";
-import { verifyWalletAuth, verifyTxAuth } from "../location/crypto.js";
+import { verifyTxAuth } from "../location/crypto.js";
 import { validateSession } from "../location/session.js";
 
 /**
@@ -54,28 +51,6 @@ export async function authenticate(
     return address;
   }
 
-  // ---- SuiSig (wallet signature) ----
-  if (authHeader.startsWith("SuiSig ")) {
-    const payload = authHeader.slice(7); // strip "SuiSig "
-    const dotIdx = payload.indexOf(".");
-    if (dotIdx === -1) {
-      res.status(401).json({ error: "Malformed SuiSig token" });
-      return null;
-    }
-
-    const messageB64 = payload.slice(0, dotIdx);
-    const signature = payload.slice(dotIdx + 1);
-    const message = Buffer.from(messageB64, "base64");
-
-    const result = await verifyWalletAuth(message, signature);
-    if (!result.valid) {
-      res.status(401).json({ error: result.error ?? "Signature verification failed" });
-      return null;
-    }
-
-    return result.address;
-  }
-
   // ---- TxSig (transaction signature) ----
   if (authHeader.startsWith("TxSig ")) {
     const payload = authHeader.slice(6); // strip "TxSig "
@@ -98,6 +73,6 @@ export async function authenticate(
     return result.address;
   }
 
-  res.status(401).json({ error: "Unsupported authorization scheme — use SuiSig, TxSig, or Bearer" });
+  res.status(401).json({ error: "Unsupported authorization scheme — use TxSig or Bearer" });
   return null;
 }

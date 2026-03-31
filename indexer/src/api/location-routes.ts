@@ -79,7 +79,7 @@ export function createLocationRouter(pool: pg.Pool): Router {
   const router = Router();
 
   // ================================================================
-  // Shared auth helper — accepts both SuiSig and Bearer (session token)
+  // Shared auth helper — accepts TxSig and Bearer (session token)
   // ================================================================
   async function auth(req: Request, res: Response): Promise<string | null> {
     return authenticate(req, res, pool);
@@ -88,15 +88,15 @@ export function createLocationRouter(pool: pg.Pool): Router {
   // ================================================================
   // POST /session — Exchange a wallet signature for a session token
   //
-  // Requires SuiSig auth. Returns { token, expires_at }.
+  // Requires TxSig auth. Returns { token, expires_at }.
   // The client stores the token and uses `Bearer <token>` for
   // subsequent requests (no further wallet signatures needed).
   // ================================================================
   router.post("/session", async (req: Request, res: Response) => {
-    // Session creation always requires a fresh wallet signature (SuiSig)
+    // Session creation requires a fresh wallet signature (TxSig)
     const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("SuiSig ")) {
-      res.status(401).json({ error: "Session creation requires SuiSig authorization" });
+    if (!authHeader?.startsWith("TxSig ")) {
+      res.status(401).json({ error: "Session creation requires TxSig authorization" });
       return;
     }
 

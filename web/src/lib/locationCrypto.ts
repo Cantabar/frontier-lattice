@@ -142,40 +142,79 @@ export async function decryptLocation(
 }
 
 // ============================================================
-// Signature-Derived X25519 Keypair
+// Browser-Persisted X25519 Keypair
 //
-// Standard SUI wallets only expose signPersonalMessage — never
-// the raw Ed25519 private key.  To derive a stable X25519 keypair
-// that any wallet can reproduce:
-//   1. Sign a fixed deterministic message via signPersonalMessage.
-//   2. SHA-256 the full SUI signature blob → 32-byte seed.
-//   3. Use the seed as an X25519 private key.
+// A random X25519 keypair is generated per wallet address and
+// persisted in IndexedDB.  This replaces the previous approach
+// of deriving the keypair from a signPersonalMessage signature,
+// which is incompatible with Eve Vault (broken signPersonalMessage).
 //
-// Ed25519 signatures are deterministic (RFC 8032), so the same
-// wallet always produces the same derived X25519 keypair.
+// Trade-off: clearing browser data requires re-registering a
+// public key and having the TLK re-wrapped by a tribe member.
 // ============================================================
 
-/** The fixed message signed by the wallet to derive the X25519 keypair. */
-export const X25519_KEYGEN_MESSAGE = "frontier-corm:x25519-keygen:v1";
+const IDB_NAME = "frontier-corm-x25519-keys";
+const IDB_STORE = "keys";
+const IDB_VERSION = 1;
 
-/** Encode the keygen message as bytes for signPersonalMessage. */
-export function getKeygenMessageBytes(): Uint8Array {
-  return new TextEncoder().encode(X25519_KEYGEN_MESSAGE);
+function openKeypairDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) {
+        db.createObjectStore(IDB_STORE, { keyPath: "address" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 }
 
 /**
- * Derive an X25519 keypair from a wallet signature.
+ * Get or create a persistent X25519 keypair for a wallet address.
  *
- * @param signatureB64  The base64-encoded SUI signature returned by signPersonalMessage
- * @returns  X25519 public and private keys (32 bytes each)
+ * On first call for a given address, generates a random keypair and
+ * stores it in IndexedDB.  Subsequent calls return the same keypair.
  */
-export async function deriveX25519Keypair(
-  signatureB64: string,
+export async function getOrCreateX25519Keypair(
+  address: string,
 ): Promise<{ x25519Pub: Uint8Array; x25519Priv: Uint8Array }> {
-  const sigBytes = base64ToBytes(signatureB64);
-  const hash = await crypto.subtle.digest("SHA-256", sigBytes as Uint8Array<ArrayBuffer>);
-  const x25519Priv = new Uint8Array(hash);
+  const db = await openKeypairDb();
+
+  // Try to load existing keypair
+  const existing = await new Promise<{ pub: Uint8Array; priv: Uint8Array } | undefined>(
+    (resolve, reject) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const store = tx.objectStore(IDB_STORE);
+      const req = store.get(address);
+      req.onsuccess = () => {
+        const row = req.result as { address: string; pub: Uint8Array; priv: Uint8Array } | undefined;
+        resolve(row ? { pub: new Uint8Array(row.pub), priv: new Uint8Array(row.priv) } : undefined);
+      };
+      req.onerror = () => reject(req.error);
+    },
+  );
+
+  if (existing) {
+    db.close();
+    return { x25519Pub: existing.pub, x25519Priv: existing.priv };
+  }
+
+  // Generate a new random keypair
+  const x25519Priv = x25519.utils.randomPrivateKey();
   const x25519Pub = x25519.getPublicKey(x25519Priv);
+
+  // Persist
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    const store = tx.objectStore(IDB_STORE);
+    store.put({ address, pub: Array.from(x25519Pub), priv: Array.from(x25519Priv) });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+
+  db.close();
   return { x25519Pub, x25519Priv };
 }
 
@@ -208,7 +247,7 @@ async function deriveWrappingKey(sharedSecret: Uint8Array): Promise<Uint8Array> 
  * Unwrap a TLK blob using the caller's X25519 private key.
  *
  * @param wrappedKeyB64    Base64-encoded wrapped key from the server
- * @param x25519PrivateKey  32-byte X25519 private key (e.g. from deriveX25519Keypair)
+ * @param x25519PrivateKey  32-byte X25519 private key (e.g. from getOrCreateX25519Keypair)
  * @returns  The raw 32-byte AES-256 TLK
  */
 export async function unwrapTlk(
@@ -347,21 +386,10 @@ export function buildAuthChallenge(address: string): Uint8Array {
 }
 
 /**
- * Build the SuiSig Authorization header value from a signed challenge.
- */
-export function buildAuthHeader(
-  challengeBytes: Uint8Array,
-  signature: string,
-): string {
-  const messageB64 = bytesToBase64(challengeBytes);
-  return `SuiSig ${messageB64}.${signature}`;
-}
-
-/**
  * Build the TxSig Authorization header from a challenge + signed transaction.
  *
- * Used as a fallback when signPersonalMessage is unavailable or broken.
- * The transaction signature proves wallet ownership; the challenge
+ * The transaction signature proves wallet ownership (every Sui wallet
+ * supports signTransaction, including Eve Vault); the challenge
  * provides freshness (timestamp) and address binding.
  */
 export function buildTxAuthHeader(

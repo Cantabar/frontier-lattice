@@ -500,7 +500,7 @@ export function getStructuresByLocationTag(
 
 // ---- Session Token Auth ----
 
-/** Exchange a SuiSig auth header for a long-lived session token. */
+/** Exchange a TxSig auth header for a long-lived session token. */
 export function createLocationSession(authHeader: string) {
   return authedPost<{ token: string; expires_at: string }>(
     "/locations/session",

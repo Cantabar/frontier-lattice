@@ -42,7 +42,7 @@ import {
 export function createZkRouter(pool: pg.Pool): Router {
   const router = Router();
 
-  // ---- Auth (shared helper — supports SuiSig and Bearer) ----
+  // ---- Auth (shared helper — supports TxSig and Bearer) ----
   async function auth(req: Request, res: Response): Promise<string | null> {
     return authenticate(req, res, pool);
   }
