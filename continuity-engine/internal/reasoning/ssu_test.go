@@ -139,6 +139,14 @@ func TestGenericNarrative_BuildSSU(t *testing.T) {
 	}
 }
 
+func TestGenericNarrative_BuildRequest(t *testing.T) {
+	intent := &types.ContractIntent{ContractType: types.ContractBuildRequest}
+	text := genericNarrative(intent)
+	if !strings.Contains(text, "storage") {
+		t.Errorf("expected build_request to use same SSU narrative, got: %s", text)
+	}
+}
+
 // --- buildSSUContractID determinism ---
 
 func TestBuildSSUContractID_Deterministic(t *testing.T) {
@@ -149,5 +157,43 @@ func TestBuildSSUContractID_Deterministic(t *testing.T) {
 	}
 	if !strings.HasPrefix(id1, "build_ssu_") {
 		t.Errorf("expected 'build_ssu_' prefix, got: %s", id1)
+	}
+}
+
+// --- buildSSUActive map uses string values ---
+
+func TestBuildSSUActive_StringMap(t *testing.T) {
+	// Verify that the buildSSUActive map stores contract IDs as strings.
+	buildSSUMu.Lock()
+	defer buildSSUMu.Unlock()
+
+	// Set an active build_ssu with a contract ID.
+	testCorm := "test-corm-map-check"
+	buildSSUActive[testCorm] = "0xcontract123"
+
+	if buildSSUActive[testCorm] == "" {
+		t.Error("expected non-empty contract ID")
+	}
+	if buildSSUActive[testCorm] != "0xcontract123" {
+		t.Errorf("expected '0xcontract123', got: %s", buildSSUActive[testCorm])
+	}
+
+	// Non-existent corm returns empty string (falsy).
+	if buildSSUActive["nonexistent"] != "" {
+		t.Error("expected empty string for nonexistent corm")
+	}
+
+	// Clean up.
+	delete(buildSSUActive, testCorm)
+}
+
+// --- ContractBuildRequest type validation ---
+
+func TestContractBuildRequest_ValidType(t *testing.T) {
+	if !types.ValidContractTypes[types.ContractBuildRequest] {
+		t.Error("expected build_request to be a valid contract type")
+	}
+	if types.ContractBuildRequest != "build_request" {
+		t.Errorf("expected 'build_request', got: %s", types.ContractBuildRequest)
 	}
 }

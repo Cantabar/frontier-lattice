@@ -30,6 +30,8 @@ func NewHandler(database *db.DB, dispatcher *dispatch.Dispatcher, opts ...Handle
 		h.recipeRegistry = cfg.RecipeRegistry
 		h.chainClient = cfg.ChainClient
 		h.pricing = cfg.Pricing
+		h.buildRequestBounty = cfg.BuildRequestBounty
+		h.ssuTypeID = cfg.SSUTypeID
 		if cfg.ContractCooldown > 0 {
 			h.contractCooldown = cfg.ContractCooldown
 		}
@@ -43,20 +45,24 @@ type Handler struct {
 	dispatcher *dispatch.Dispatcher
 
 	// Phase 2: contract generation
-	registry         *chain.Registry
-	recipeRegistry   *chain.RecipeRegistry
-	chainClient      *chain.Client
-	pricing          PricingConfig
-	contractCooldown time.Duration
+	registry           *chain.Registry
+	recipeRegistry     *chain.RecipeRegistry
+	chainClient        *chain.Client
+	pricing            PricingConfig
+	contractCooldown   time.Duration
+	buildRequestBounty uint64 // CORM amount escrowed for build_request contracts
+	ssuTypeID          uint64 // in-game type ID for Storage Unit structures
 }
 
 // HandlerConfig holds optional configuration for the reasoning handler.
 type HandlerConfig struct {
-	Registry         *chain.Registry
-	RecipeRegistry   *chain.RecipeRegistry
-	ChainClient      *chain.Client
-	Pricing          PricingConfig
-	ContractCooldown time.Duration
+	Registry           *chain.Registry
+	RecipeRegistry     *chain.RecipeRegistry
+	ChainClient        *chain.Client
+	Pricing            PricingConfig
+	ContractCooldown   time.Duration
+	BuildRequestBounty uint64
+	SSUTypeID          uint64
 }
 
 // ProcessEvent handles a single event for a resolved corm.

@@ -87,6 +87,8 @@ All contract types emit creation, fill, completion, cancellation, and expiration
 - `witness_utils` — shared attestation verification: unpacks and verifies Ed25519 signatures, checks attestation fields (contract ID, structure type, builder, CormAuth status).
 - Events: `BuildRequestCreatedEvent`, `BuildRequestFulfilledEvent`, `BuildRequestCancelledEvent`, `BuildRequestExpiredEvent`.
 
+**continuity-engine integration:** The continuity-engine creates `BuildRequestContract<CORM_COIN>` objects directly via `chain.CreateBuildRequest()` when a corm's network node has no SSU. The corm-brain escrows a CORM bounty targeting the SSU structure type ID with `require_corm_auth = true`. The indexer's witness service detects the anchored structure + CormAuth extension and submits a `fulfill` transaction. Falls back to a UI-only `build_ssu` directive when `WITNESSED_CONTRACTS_PACKAGE_ID` is not configured.
+
 ## Tech Stack
 
 - **Language:** Sui Move

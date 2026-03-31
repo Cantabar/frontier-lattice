@@ -52,14 +52,16 @@ func main() {
 	chainClients := make(map[string]*chain.Client, len(cfg.Environments))
 	for _, env := range cfg.Environments {
 		c := chain.NewClient(chain.ClientConfig{
-			RpcURL:                      env.SUIRpcURL,
-			PackageID:                   env.CormStatePackageID,
-			TrustlessContractsPackageID: env.TrustlessContractsPackageID,
-			CormAuthPackageID:           env.CormAuthPackageID,
-			WorldPackageID:              env.WorldPackageID,
-			CormConfigObjectID:          env.CormConfigObjectID,
-			CoinAuthorityObjectID:       env.CoinAuthorityObjectID,
-			CormCharacterID:             env.CormCharacterID,
+			RpcURL:                       env.SUIRpcURL,
+			PackageID:                    env.CormStatePackageID,
+			TrustlessContractsPackageID:  env.TrustlessContractsPackageID,
+			CormAuthPackageID:            env.CormAuthPackageID,
+			WorldPackageID:               env.WorldPackageID,
+			WitnessedContractsPackageID:  env.WitnessedContractsPackageID,
+			CormConfigObjectID:           env.CormConfigObjectID,
+			CoinAuthorityObjectID:        env.CoinAuthorityObjectID,
+			WitnessRegistryObjectID:      env.WitnessRegistryObjectID,
+			CormCharacterID:              env.CormCharacterID,
 		}, env.SUIPrivateKey)
 		if cfg.SeedChainData {
 			c.SetSeedMode(true)
@@ -88,11 +90,13 @@ func main() {
 	}
 
 	handler := reasoning.NewHandler(database, dispatcher, reasoning.HandlerConfig{
-		Registry:         registry,
-		RecipeRegistry:   recipeRegistry,
-		ChainClient:      defaultChainClient,
-		Pricing:          reasoning.PricingConfig{CORMPerLUX: cfg.CORMPerLUX, CORMFloorPerUnit: cfg.CORMFloorPerUnit},
-		ContractCooldown: cfg.ContractGenerationCooldown,
+		Registry:            registry,
+		RecipeRegistry:      recipeRegistry,
+		ChainClient:         defaultChainClient,
+		Pricing:             reasoning.PricingConfig{CORMPerLUX: cfg.CORMPerLUX, CORMFloorPerUnit: cfg.CORMFloorPerUnit},
+		ContractCooldown:    cfg.ContractGenerationCooldown,
+		BuildRequestBounty:  cfg.BuildRequestBounty,
+		SSUTypeID:           cfg.SSUTypeID,
 	})
 
 	// --- HTTP handlers + router ---

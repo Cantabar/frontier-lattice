@@ -20,11 +20,12 @@ var (
 )
 
 // buildSSUTracking records whether a build_ssu directive is currently active
-// for a corm. This prevents emitting duplicate build directives and enables
-// auto-completion when an SSU appears on the network node.
+// for a corm. The value is the on-chain contract ID (or a deterministic
+// placeholder ID for UI-only directives). This prevents emitting duplicate
+// build directives and enables auto-completion when an SSU appears.
 var (
 	buildSSUMu     sync.Mutex
-	buildSSUActive = make(map[string]bool) // cormID → has active build_ssu
+	buildSSUActive = make(map[string]string) // cormID → contract ID ("" means no active directive)
 )
 
 // buildSSUContractID returns the deterministic contract ID used for
@@ -155,11 +156,11 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 	// --- SSU gate: block all contract generation if no storage unit exists ---
 	if !HasValidSSU(snapshot) {
 		buildSSUMu.Lock()
-		alreadyActive := buildSSUActive[cormID]
+		alreadyActive := buildSSUActive[cormID] != ""
 		buildSSUMu.Unlock()
 
 		if !alreadyActive {
-			emitBuildSSUDirective(ctx, h, environment, cormID, evt.SessionID)
+			emitBuildSSUContract(ctx, h, environment, cormID, chainStateID, evt, snapshot)
 		}
 		return
 	}
@@ -555,24 +556,104 @@ func truncateStr(s string, max int) string {
 	return s[:max] + "..."
 }
 
-// --- Build SSU directive helpers ---
+// --- Build SSU contract helpers ---
+
+// emitBuildSSUContract creates an on-chain witnessed BuildRequestContract for
+// an SSU when the chain client is fully configured, falling back to a UI-only
+// directive when it is not.
+func emitBuildSSUContract(ctx context.Context, h *Handler, environment, cormID, chainStateID string, evt types.CormEvent, snapshot chain.WorldSnapshot) {
+	sessionID := evt.SessionID
+	narrative := BuildSSUNarrative()
+
+	// --- On-chain path: create a witnessed build_request contract ---
+	if h.chainClient != nil && h.chainClient.CanCreateBuildRequests() && h.ssuTypeID > 0 {
+		// Bootstrap CORM if needed (same pattern as goal-directed contracts).
+		bounty := h.buildRequestBounty
+		if bounty == 0 {
+			bounty = 500 // sensible default
+		}
+		if snapshot.CormCORMBalance < bounty && chainStateID != "" {
+			minted, err := h.chainClient.MintBootstrapCORM(ctx, chainStateID, bootstrapCORMAmount)
+			if err != nil {
+				slog.Info(fmt.Sprintf("phase2: build_ssu bootstrap CORM failed for %s: %v", cormID, err))
+			} else if minted > 0 {
+				snapshot.CormCORMBalance = minted
+			}
+		}
+
+		if snapshot.CormCORMBalance >= bounty {
+			deadlineMs := time.Now().Add(7 * 24 * time.Hour).UnixMilli()
+
+			var allowedTribes []uint32
+			if evt.PlayerTribeID > 0 {
+				allowedTribes = []uint32{evt.PlayerTribeID}
+			}
+
+			contractID, err := h.chainClient.CreateBuildRequest(ctx, chain.BuildRequestParams{
+				RequestedTypeID:   h.ssuTypeID,
+				RequireCormAuth:   true,
+				BountyAmount:      bounty,
+				DeadlineMs:        deadlineMs,
+				PlayerCharacterID: evt.PlayerCharacterID,
+				AllowedTribes:     allowedTribes,
+			})
+			if err != nil {
+				slog.Warn(fmt.Sprintf("phase2: on-chain build_ssu failed for corm %s, falling back to UI-only: %v", cormID, err))
+			} else {
+				// On-chain contract created — notify the player session.
+				h.dispatcher.SendPayload(ctx, types.ActionContractCreated, sessionID, types.ContractCreatedPayload{
+					ContractID:   contractID,
+					ContractType: types.ContractBuildRequest,
+					Description:  narrative,
+					Reward:       fmt.Sprintf("%d CORM", bounty),
+					Deadline:     time.UnixMilli(deadlineMs).Format(time.RFC3339),
+				})
+
+				responsePayload, _ := json.Marshal(map[string]string{
+					"text":          narrative,
+					"contract_id":   contractID,
+					"contract_type": types.ContractBuildRequest,
+				})
+				h.db.InsertResponse(ctx, environment, &types.CormResponse{
+					CormID:     cormID,
+					SessionID:  sessionID,
+					ActionType: types.ActionContractCreated,
+					Payload:    responsePayload,
+				})
+
+				announce(ctx, h, cormID, sessionID, "> "+narrative)
+
+				buildSSUMu.Lock()
+				buildSSUActive[cormID] = contractID
+				buildSSUMu.Unlock()
+
+				slog.Info(fmt.Sprintf("phase2: created on-chain build_request %s for corm %s (SSU type %d)", contractID, cormID, h.ssuTypeID))
+				return
+			}
+		} else {
+			slog.Info(fmt.Sprintf("phase2: insufficient CORM for build_ssu bounty (have %d, need %d) for corm %s", snapshot.CormCORMBalance, bounty, cormID))
+		}
+	}
+
+	// --- Fallback: UI-only directive (legacy behavior) ---
+	emitBuildSSUDirective(ctx, h, environment, cormID, sessionID)
+}
 
 // emitBuildSSUDirective sends a UI-only "build_ssu" contract card to the
-// player's session and marks the corm as having an active build directive.
+// player's session. Used as a fallback when on-chain build_request creation
+// is not possible (missing config, insufficient CORM, etc.).
 func emitBuildSSUDirective(ctx context.Context, h *Handler, environment, cormID, sessionID string) {
 	contractID := buildSSUContractID(cormID)
 	narrative := BuildSSUNarrative()
 
-	// Notify the player session.
 	h.dispatcher.SendPayload(ctx, types.ActionContractCreated, sessionID, types.ContractCreatedPayload{
 		ContractID:   contractID,
 		ContractType: types.ContractBuildSSU,
 		Description:  narrative,
 		Reward:       "trade access",
-		Deadline:     "", // no deadline — persistent until fulfilled
+		Deadline:     "",
 	})
 
-	// Log for memory continuity.
 	responsePayload, _ := json.Marshal(map[string]string{
 		"text":          narrative,
 		"contract_id":   contractID,
@@ -585,33 +666,33 @@ func emitBuildSSUDirective(ctx context.Context, h *Handler, environment, cormID,
 		Payload:    responsePayload,
 	})
 
-	// Also send as a log stream so the player sees the directive in the corm log.
 	announce(ctx, h, cormID, sessionID, "> "+narrative)
 
 	buildSSUMu.Lock()
-	buildSSUActive[cormID] = true
+	buildSSUActive[cormID] = contractID
 	buildSSUMu.Unlock()
 
 	slog.Info(fmt.Sprintf("phase2: emitted build_ssu directive %s for corm %s", contractID, cormID))
 }
 
 // completeBuildSSUIfActive checks whether a build_ssu directive is active
-// for the corm and, if so, marks it completed and announces the detection.
+// for the corm and, if so, marks the UI card as completed and announces
+// the detection. For on-chain build_request contracts, the actual fulfillment
+// is handled by the indexer's witness service independently; this is a
+// cosmetic UI update.
 func completeBuildSSUIfActive(ctx context.Context, h *Handler, cormID, sessionID string) {
 	buildSSUMu.Lock()
-	active := buildSSUActive[cormID]
-	if active {
+	contractID := buildSSUActive[cormID]
+	if contractID != "" {
 		delete(buildSSUActive, cormID)
 	}
 	buildSSUMu.Unlock()
 
-	if !active {
+	if contractID == "" {
 		return
 	}
 
-	contractID := buildSSUContractID(cormID)
-
-	// Mark the build_ssu contract as completed in the player's session.
+	// Mark the contract as completed in the player's session UI.
 	h.dispatcher.SendPayload(ctx, types.ActionContractUpdated, sessionID, types.ContractUpdatedPayload{
 		ContractID: contractID,
 		Status:     "completed",

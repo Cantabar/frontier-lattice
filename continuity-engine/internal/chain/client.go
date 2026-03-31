@@ -20,12 +20,14 @@ type ClientConfig struct {
 	RpcURL    string
 	PackageID string // corm_state package
 
-	TrustlessContractsPackageID string
-	CormAuthPackageID           string
-	WorldPackageID              string // Eve Frontier world contracts (character, storage_unit, inventory)
-	CormConfigObjectID          string // shared CormConfig
-	CoinAuthorityObjectID       string // shared CoinAuthority
-	CormCharacterID             string // brain's on-chain Character (shared object)
+	TrustlessContractsPackageID  string
+	CormAuthPackageID            string
+	WorldPackageID               string // Eve Frontier world contracts (character, storage_unit, inventory)
+	WitnessedContractsPackageID  string // witnessed_contracts package (build_request)
+	CormConfigObjectID           string // shared CormConfig
+	CoinAuthorityObjectID        string // shared CoinAuthority
+	WitnessRegistryObjectID      string // shared WitnessRegistry (for witnessed contract creates)
+	CormCharacterID              string // brain's on-chain Character (shared object)
 }
 
 // Client wraps SUI RPC access for reading and writing on-chain state.
@@ -35,15 +37,17 @@ type Client struct {
 	seedMode  bool // when true, stub methods return mock data
 
 	// Package IDs (parsed at init)
-	cormStatePkg           *sui.PackageId
-	trustlessContractsPkg  *sui.PackageId
-	cormAuthPkg            *sui.PackageId
-	worldPkg               *sui.PackageId
+	cormStatePkg            *sui.PackageId
+	trustlessContractsPkg   *sui.PackageId
+	cormAuthPkg             *sui.PackageId
+	worldPkg                *sui.PackageId
+	witnessedContractsPkg   *sui.PackageId
 
 	// Shared object IDs (parsed at init)
-	cormConfigObjID        *sui.ObjectId
-	coinAuthorityObjID     *sui.ObjectId
-	cormCharacterID        *sui.ObjectId
+	cormConfigObjID         *sui.ObjectId
+	coinAuthorityObjID      *sui.ObjectId
+	cormCharacterID         *sui.ObjectId
+	witnessRegistryObjID    *sui.ObjectId
 }
 
 // NewClient creates a SUI chain client.
@@ -57,11 +61,13 @@ func NewClient(cfg ClientConfig, privateKey string) *Client {
 	c.trustlessContractsPkg = mustParseObjectIdOrNil(cfg.TrustlessContractsPackageID)
 	c.cormAuthPkg = mustParseObjectIdOrNil(cfg.CormAuthPackageID)
 	c.worldPkg = mustParseObjectIdOrNil(cfg.WorldPackageID)
+	c.witnessedContractsPkg = mustParseObjectIdOrNil(cfg.WitnessedContractsPackageID)
 
 	// Parse shared object IDs
 	c.cormConfigObjID = mustParseObjectIdOrNil(cfg.CormConfigObjectID)
 	c.coinAuthorityObjID = mustParseObjectIdOrNil(cfg.CoinAuthorityObjectID)
 	c.cormCharacterID = mustParseObjectIdOrNil(cfg.CormCharacterID)
+	c.witnessRegistryObjID = mustParseObjectIdOrNil(cfg.WitnessRegistryObjectID)
 
 	// Initialize signer
 	if privateKey != "" {
@@ -117,6 +123,14 @@ func (c *Client) CanUpdateCormState() bool {
 // a signer, the corm state package, and the coin authority object.
 func (c *Client) CanMintCORM() bool {
 	return c.signer != nil && c.cormStatePkg != nil && c.coinAuthorityObjID != nil
+}
+
+// CanCreateBuildRequests returns true if the client has all the config needed
+// to create on-chain build_request witnessed contracts: a signer, the
+// witnessed_contracts package, the corm_state package (for CORM coin type),
+// and the character ID.
+func (c *Client) CanCreateBuildRequests() bool {
+	return c.signer != nil && c.witnessedContractsPkg != nil && c.cormStatePkg != nil && c.cormCharacterID != nil
 }
 
 // CORMCoinType returns the fully-qualified coin type string for CORM_COIN.

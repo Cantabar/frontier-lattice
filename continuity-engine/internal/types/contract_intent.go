@@ -16,16 +16,18 @@ type ContractIntent struct {
 
 // Contract type constants.
 const (
-	ContractCoinForItem = "coin_for_item"
-	ContractItemForCoin = "item_for_coin"
-	ContractItemForItem = "item_for_item"
-	ContractBuildSSU    = "build_ssu"
+	ContractCoinForItem  = "coin_for_item"
+	ContractItemForCoin  = "item_for_coin"
+	ContractItemForItem  = "item_for_item"
+	ContractBuildSSU     = "build_ssu"      // legacy UI-only directive (fallback)
+	ContractBuildRequest = "build_request"  // on-chain witnessed contract
 )
 
 // Valid contract types for Phase 2.
 var ValidContractTypes = map[string]bool{
-	ContractCoinForItem: true,
-	ContractItemForCoin: true,
-	ContractItemForItem: true,
-	ContractBuildSSU:    true,
+	ContractCoinForItem:  true,
+	ContractItemForCoin:  true,
+	ContractItemForItem:  true,
+	ContractBuildSSU:     true,
+	ContractBuildRequest: true,
 }

@@ -275,7 +275,7 @@ func genericNarrative(intent *types.ContractIntent) string {
 		return fmt.Sprintf("offering: %s. cost: CORM. claim at node.", intent.OfferedItem)
 	case types.ContractItemForItem:
 		return fmt.Sprintf("exchange: %s for %s. quantities specified.", intent.OfferedItem, intent.WantedItem)
-	case types.ContractBuildSSU:
+	case types.ContractBuildSSU, types.ContractBuildRequest:
 		return BuildSSUNarrative()
 	default:
 		return "contract available."

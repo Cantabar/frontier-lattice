@@ -18,13 +18,15 @@ type EnvironmentConfig struct {
 	CormStatePackageID string `json:"corm_state_package_id"`
 
 	// Additional package IDs for on-chain contract calls.
-	TrustlessContractsPackageID string `json:"trustless_contracts_package_id"`
-	CormAuthPackageID           string `json:"corm_auth_package_id"`
-	WorldPackageID              string `json:"world_package_id"` // Eve Frontier world contracts (character, storage_unit, inventory)
+	TrustlessContractsPackageID  string `json:"trustless_contracts_package_id"`
+	CormAuthPackageID            string `json:"corm_auth_package_id"`
+	WorldPackageID               string `json:"world_package_id"`               // Eve Frontier world contracts (character, storage_unit, inventory)
+	WitnessedContractsPackageID  string `json:"witnessed_contracts_package_id"` // witnessed_contracts package (build_request)
 
 	// Shared object IDs required for on-chain operations.
 	CormConfigObjectID    string `json:"corm_config_object_id"`    // CormConfig shared object (for install)
 	CoinAuthorityObjectID string `json:"coin_authority_object_id"` // CoinAuthority shared object (for minting)
+	WitnessRegistryObjectID string `json:"witness_registry_object_id"` // WitnessRegistry shared object (for witnessed contracts)
 	CormCharacterID       string `json:"corm_character_id"`        // Corm-brain's on-chain Character (for posting contracts)
 
 	// Resolved at load time from the env var referenced by SUIPrivateKeyEnv.
@@ -58,6 +60,12 @@ type Config struct {
 	// Contract generation cooldown (min time between generation attempts per corm)
 	ContractGenerationCooldown time.Duration
 
+	// Build request bounty (CORM amount escrowed for build_request witnessed contracts)
+	BuildRequestBounty uint64
+
+	// SSU type ID for build_request contracts targeting Storage Unit structures
+	SSUTypeID uint64
+
 	// Seed chain data: when true, stub chain methods return hardcoded mock data
 	// instead of zeros. Enables contract generation before real SUI integration.
 	SeedChainData bool
@@ -81,6 +89,8 @@ func Load() Config {
 		CORMPerLUX:                 envFloat("CORM_PER_LUX", 1.0),
 		CORMFloorPerUnit:           uint64(envInt("CORM_FLOOR_PER_UNIT", 10)),
 		ContractGenerationCooldown: envDurationMs("CONTRACT_GENERATION_COOLDOWN_MS", 30000),
+		BuildRequestBounty:         uint64(envInt("BUILD_REQUEST_BOUNTY", 500)),
+		SSUTypeID:                  uint64(envInt("SSU_TYPE_ID", 84556)),
 		SeedChainData:              envBool("SEED_CHAIN_DATA", true),
 		DatabaseURL:                envOrDefault("DATABASE_URL", "postgresql://corm:corm@localhost:5432/frontier_corm"),
 	}
@@ -95,11 +105,13 @@ func Load() Config {
 			SUIPrivateKey:               os.Getenv("SUI_PRIVATE_KEY"),
 			CormStatePackageID:          os.Getenv("CORM_STATE_PACKAGE_ID"),
 			TrustlessContractsPackageID: os.Getenv("TRUSTLESS_CONTRACTS_PACKAGE_ID"),
-			CormAuthPackageID:           os.Getenv("CORM_AUTH_PACKAGE_ID"),
-			WorldPackageID:              os.Getenv("WORLD_PACKAGE_ID"),
-			CormConfigObjectID:          os.Getenv("CORM_CONFIG_OBJECT_ID"),
-			CoinAuthorityObjectID:       os.Getenv("COIN_AUTHORITY_OBJECT_ID"),
-			CormCharacterID:             os.Getenv("CORM_CHARACTER_ID"),
+			CormAuthPackageID:            os.Getenv("CORM_AUTH_PACKAGE_ID"),
+			WorldPackageID:               os.Getenv("WORLD_PACKAGE_ID"),
+			WitnessedContractsPackageID:  os.Getenv("WITNESSED_CONTRACTS_PACKAGE_ID"),
+			CormConfigObjectID:           os.Getenv("CORM_CONFIG_OBJECT_ID"),
+			CoinAuthorityObjectID:        os.Getenv("COIN_AUTHORITY_OBJECT_ID"),
+			WitnessRegistryObjectID:      os.Getenv("WITNESS_REGISTRY_OBJECT_ID"),
+			CormCharacterID:              os.Getenv("CORM_CHARACTER_ID"),
 		}}
 	}
 
