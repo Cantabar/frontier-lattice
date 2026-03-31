@@ -344,6 +344,10 @@ for i in "${!PACKAGES[@]}"; do
   fi
 
   if [ "$pkg" = "corm_state" ]; then
+    write_env_var "VITE_CORM_COIN_TYPE" "${PACKAGE_ID}::corm_coin::CORM_COIN" "$ENV_FILE"
+    if [ -f "$WEB_ENV_FILE" ]; then
+      write_env_var "VITE_CORM_COIN_TYPE" "${PACKAGE_ID}::corm_coin::CORM_COIN" "$WEB_ENV_FILE"
+    fi
     echo "  Querying CoinAuthority shared object ID..."
 
     # Try extracting from fresh publish result first

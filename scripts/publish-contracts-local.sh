@@ -165,6 +165,10 @@ for i in "${!PACKAGES[@]}"; do
   # Write CORM_STATE_PACKAGE_ID alias (used by continuity-engine config)
   if [ "$pkg" = "corm_state" ]; then
     write_env_var "CORM_STATE_PACKAGE_ID" "$PACKAGE_ID" "$ENV_FILE"
+    write_env_var "VITE_CORM_COIN_TYPE" "${PACKAGE_ID}::corm_coin::CORM_COIN" "$ENV_FILE"
+    if [ -f "$WEB_ENV_FILE" ]; then
+      write_env_var "VITE_CORM_COIN_TYPE" "${PACKAGE_ID}::corm_coin::CORM_COIN" "$WEB_ENV_FILE"
+    fi
     echo "  CORM_STATE_PACKAGE_ID=$PACKAGE_ID"
   fi
 

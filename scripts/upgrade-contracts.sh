@@ -217,6 +217,10 @@ for pkg in "${PACKAGES[@]}"; do
   # corm_state aliases
   if [ "$pkg" = "corm_state" ]; then
     write_env_var "CORM_STATE_PACKAGE_ID" "$NEW_PACKAGE_ID" "$ENV_FILE"
+    write_env_var "VITE_CORM_COIN_TYPE" "${NEW_PACKAGE_ID}::corm_coin::CORM_COIN" "$ENV_FILE"
+    if [ -f "$WEB_ENV_FILE" ]; then
+      write_env_var "VITE_CORM_COIN_TYPE" "${NEW_PACKAGE_ID}::corm_coin::CORM_COIN" "$WEB_ENV_FILE"
+    fi
   fi
   if [ "$pkg" = "witnessed_contracts" ]; then
     write_env_var "WITNESSED_CONTRACTS_PACKAGE_ID" "$NEW_PACKAGE_ID" "$ENV_FILE"
