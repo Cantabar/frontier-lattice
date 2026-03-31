@@ -98,7 +98,10 @@ func findTrapCell(t *testing.T, grid *puzzle.Grid) (int, int, int) {
 
 func TestPuzzleDecryptAddressRevealUsesOOBSwapsForNonClickedCells(t *testing.T) {
 	sess := puzzle.NewSession("0xtest", "browser")
-	pz, err := puzzle.Generate(0, nil, 0, 0, "")
+	// Generate with zero traps so trap-movement OOB swaps don't
+	// pollute the cell count (the default 40 traps make this flaky).
+	noTraps := &puzzle.DifficultyMod{TrapDelta: -40}
+	pz, err := puzzle.Generate(0, noTraps, 0, 0, "")
 	if err != nil {
 		t.Fatalf("puzzle generation failed: %v", err)
 	}
