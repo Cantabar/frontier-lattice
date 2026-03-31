@@ -240,6 +240,30 @@ type GuideCellPayload struct {
 
 // --- Per-Corm State ---
 
+// GoalPhase constants for the goal lifecycle state machine.
+const (
+	GoalPhaseAcquiring    = "acquiring"
+	GoalPhaseDistributing = "distributing"
+	GoalPhaseVerifying    = "verifying"
+)
+
+// GoalState holds the persistent goal lifecycle state for a corm.
+// Stored as a single JSONB column in corm_traits.
+type GoalState struct {
+	GoalPhase              string            `json:"goal_phase,omitempty"`              // acquiring, distributing, verifying
+	DistributedMaterials   map[uint64]uint64 `json:"distributed_materials,omitempty"`   // typeID → qty already given out
+	FrigateGoalTypeID      uint64            `json:"frigate_goal_type_id,omitempty"`
+	CompletedGoals         []uint64          `json:"completed_goals,omitempty"`
+}
+
+// EffectiveGoalPhase returns the goal phase, defaulting to "acquiring".
+func (g *GoalState) EffectiveGoalPhase() string {
+	if g.GoalPhase == "" {
+		return GoalPhaseAcquiring
+	}
+	return g.GoalPhase
+}
+
 // CormTraits holds the learned state for a single corm (Layer 2).
 type CormTraits struct {
 	CormID                   string             `json:"corm_id"`
@@ -253,9 +277,12 @@ type CormTraits struct {
 	Volatility               float64            `json:"volatility"`
 	PlayerAffinities         map[string]float64 `json:"player_affinities"`
 	ConsolidationCheckpoint  int64              `json:"consolidation_checkpoint"`
+	Goals                    GoalState          `json:"goals"`
+	UpdatedAt                time.Time          `json:"updated_at"`
+
+	// Deprecated: use Goals.FrigateGoalTypeID and Goals.CompletedGoals.
 	FrigateGoalTypeID        uint64             `json:"frigate_goal_type_id,omitempty"`
 	CompletedGoals           []uint64           `json:"completed_goals,omitempty"`
-	UpdatedAt                time.Time          `json:"updated_at"`
 }
 
 // AgendaWeights holds the corm's current agenda distribution.

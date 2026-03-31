@@ -1,6 +1,7 @@
 package reasoning
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -172,8 +173,10 @@ func TestProgressiveGoals_AllGoals(t *testing.T) {
 
 func TestProgressiveGoals_FilterCompleted(t *testing.T) {
 	traits := &types.CormTraits{
-		CormID:         "test-corm-2",
-		CompletedGoals: []uint64{87847, 87848}, // Reflex + Reiver done
+		CormID: "test-corm-2",
+		Goals: types.GoalState{
+			CompletedGoals: []uint64{87847, 87848}, // Reflex + Reiver done
+		},
 	}
 	goals := ProgressiveGoals(traits)
 
@@ -280,5 +283,232 @@ func TestEmptyStateMessage_MissingInfrastructure(t *testing.T) {
 	}
 	if !strings.Contains(msg, "MAUL") {
 		t.Errorf("expected MAUL in message, got: %s", msg)
+	}
+}
+
+// --- Goal lifecycle tests ---
+
+func TestIsGoalFullyAcquired_NotAcquired(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goal := CormGoal{TargetTypeID: 87847, TargetName: "Reflex"}
+
+	// Empty inventory — not acquired.
+	if IsGoalFullyAcquired(goal, recipes, nil) {
+		t.Error("empty inventory should not satisfy goal")
+	}
+}
+
+func TestIsGoalFullyAcquired_FullyAcquired(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goal := CormGoal{TargetTypeID: 87847, TargetName: "Reflex"}
+
+	// Get what's needed and provide plenty of each.
+	needed := recipes.MaterialsNeeded(87847, 1)
+	var inv []chain.InventoryItem
+	for _, mat := range needed {
+		inv = append(inv, chain.InventoryItem{
+			TypeID:   fmt.Sprintf("%d", mat.TypeID),
+			TypeName: mat.Name,
+			Amount:   uint64(mat.Quantity * 2), // Plenty.
+		})
+	}
+
+	if !IsGoalFullyAcquired(goal, recipes, inv) {
+		t.Error("full inventory should satisfy goal")
+	}
+}
+
+func TestIsGoalFullyAcquired_PartialInventory(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goal := CormGoal{TargetTypeID: 87847, TargetName: "Reflex"}
+
+	// Only one material.
+	inv := []chain.InventoryItem{
+		{TypeID: "77800", TypeName: "Feldspar Crystals", Amount: 999999},
+	}
+
+	if IsGoalFullyAcquired(goal, recipes, inv) {
+		t.Error("partial inventory should not satisfy goal")
+	}
+}
+
+func TestReservedMaterials_ReservesCorrectly(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goals := []CormGoal{{TargetTypeID: 87847, TargetName: "Reflex", Priority: 0}}
+
+	needed := recipes.MaterialsNeeded(87847, 1)
+	var inv []chain.InventoryItem
+	for _, mat := range needed {
+		// Provide exactly what's needed.
+		inv = append(inv, chain.InventoryItem{
+			TypeID: fmt.Sprintf("%d", mat.TypeID),
+			Amount: uint64(mat.Quantity),
+		})
+	}
+
+	reserved := ReservedMaterials(goals, recipes, inv)
+
+	if len(reserved) == 0 {
+		t.Fatal("expected non-empty reserved map")
+	}
+
+	// Each needed material should be fully reserved.
+	for _, mat := range needed {
+		res := reserved[mat.TypeID]
+		if res != uint64(mat.Quantity) {
+			t.Errorf("material %d: expected reserved %d, got %d", mat.TypeID, mat.Quantity, res)
+		}
+	}
+}
+
+func TestReservedMaterials_CapsAtInventory(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goals := []CormGoal{{TargetTypeID: 87847, TargetName: "Reflex", Priority: 0}}
+
+	// Only 5 Feldspar Crystals — less than needed.
+	inv := []chain.InventoryItem{
+		{TypeID: "77800", TypeName: "Feldspar Crystals", Amount: 5},
+	}
+
+	reserved := ReservedMaterials(goals, recipes, inv)
+
+	if reserved[77800] != 5 {
+		t.Errorf("expected reserved 5 (capped at inventory), got %d", reserved[77800])
+	}
+}
+
+func TestPlanDistributionContracts_GeneratesIntents(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goal := CormGoal{TargetTypeID: 87847, TargetName: "Reflex"}
+
+	needed := recipes.MaterialsNeeded(87847, 1)
+	var inv []chain.InventoryItem
+	for _, mat := range needed {
+		inv = append(inv, chain.InventoryItem{
+			TypeID:   fmt.Sprintf("%d", mat.TypeID),
+			TypeName: mat.Name,
+			Amount:   uint64(mat.Quantity),
+		})
+	}
+
+	snapshot := chain.WorldSnapshot{CormInventory: inv}
+	traits := &types.CormTraits{Goals: types.GoalState{}}
+
+	intents := PlanDistributionContracts(goal, snapshot, recipes, traits, "0xplayer", 5)
+
+	if len(intents) == 0 {
+		t.Fatal("expected distribution intents")
+	}
+
+	for _, intent := range intents {
+		if intent.ContractType != types.ContractItemForCoin {
+			t.Errorf("expected item_for_coin, got %s", intent.ContractType)
+		}
+		if intent.OfferedItem == "" {
+			t.Error("missing offered item")
+		}
+		if !strings.Contains(intent.Narrative, "Reflex") {
+			t.Errorf("narrative should reference Reflex, got: %s", intent.Narrative)
+		}
+	}
+}
+
+func TestPlanDistributionContracts_SkipsDistributed(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goal := CormGoal{TargetTypeID: 87847, TargetName: "Reflex"}
+
+	needed := recipes.MaterialsNeeded(87847, 1)
+
+	// Provide inventory and mark everything as already distributed.
+	var inv []chain.InventoryItem
+	distributed := make(map[uint64]uint64)
+	for _, mat := range needed {
+		inv = append(inv, chain.InventoryItem{
+			TypeID: fmt.Sprintf("%d", mat.TypeID),
+			Amount: uint64(mat.Quantity),
+		})
+		distributed[mat.TypeID] = uint64(mat.Quantity)
+	}
+
+	snapshot := chain.WorldSnapshot{CormInventory: inv}
+	traits := &types.CormTraits{Goals: types.GoalState{DistributedMaterials: distributed}}
+
+	intents := PlanDistributionContracts(goal, snapshot, recipes, traits, "0xplayer", 5)
+
+	if len(intents) != 0 {
+		t.Errorf("expected no intents when all materials distributed, got %d", len(intents))
+	}
+}
+
+func TestIsFullyDistributed(t *testing.T) {
+	recipes := chain.NewRecipeRegistry()
+	goal := CormGoal{TargetTypeID: 87847, TargetName: "Reflex"}
+
+	needed := recipes.MaterialsNeeded(87847, 1)
+
+	// Not distributed.
+	if IsFullyDistributed(goal, recipes, nil) {
+		t.Error("nil distributed should not be fully distributed")
+	}
+
+	// Fully distributed.
+	distributed := make(map[uint64]uint64)
+	for _, mat := range needed {
+		distributed[mat.TypeID] = uint64(mat.Quantity)
+	}
+	if !IsFullyDistributed(goal, recipes, distributed) {
+		t.Error("expected fully distributed")
+	}
+}
+
+func TestGoalAnnouncements(t *testing.T) {
+	acq := GoalAcquiredAnnouncement("Reflex")
+	if !strings.Contains(acq, "Reflex") || !strings.Contains(acq, "distribution") {
+		t.Errorf("unexpected acquired announcement: %s", acq)
+	}
+
+	dist := GoalDistributedAnnouncement("Reflex")
+	if !strings.Contains(dist, "Reflex") || !strings.Contains(dist, "assembly") {
+		t.Errorf("unexpected distributed announcement: %s", dist)
+	}
+
+	comp := GoalCompletedAnnouncement("Reflex")
+	if !strings.Contains(comp, "Reflex") || !strings.Contains(comp, "confirmed") {
+		t.Errorf("unexpected completed announcement: %s", comp)
+	}
+}
+
+func TestGoalState_EffectivePhase(t *testing.T) {
+	g := types.GoalState{}
+	if g.EffectiveGoalPhase() != types.GoalPhaseAcquiring {
+		t.Error("empty GoalPhase should default to acquiring")
+	}
+
+	g.GoalPhase = types.GoalPhaseDistributing
+	if g.EffectiveGoalPhase() != types.GoalPhaseDistributing {
+		t.Error("should return distributing")
+	}
+}
+
+func TestProgressiveGoals_UsesGoalState(t *testing.T) {
+	// Verify that ProgressiveGoals reads from Goals.CompletedGoals.
+	traits := &types.CormTraits{
+		CormID: "test-corm-goals",
+		Goals: types.GoalState{
+			CompletedGoals: []uint64{87847}, // Reflex done
+		},
+	}
+	goals := ProgressiveGoals(traits)
+
+	// Should not include Reflex.
+	for _, g := range goals {
+		if g.TargetTypeID == 87847 {
+			t.Error("Reflex should be filtered out via Goals.CompletedGoals")
+		}
+	}
+
+	// FrigateGoalTypeID should be persisted in Goals.
+	if traits.Goals.FrigateGoalTypeID == 0 {
+		t.Error("FrigateGoalTypeID should be set in Goals")
 	}
 }

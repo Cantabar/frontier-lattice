@@ -22,7 +22,12 @@ func GenerateContractIntent(
 	registry *chain.Registry,
 	playerAddr string,
 	rng *rand.Rand,
+	reserved ...map[uint64]uint64,
 ) (*types.ContractIntent, error) {
+	var reservedMap map[uint64]uint64
+	if len(reserved) > 0 {
+		reservedMap = reserved[0]
+	}
 	if rng == nil {
 		rng = newCormRNG(traits.CormID)
 	}
@@ -53,7 +58,7 @@ func GenerateContractIntent(
 
 	case types.ContractItemForCoin:
 		// Corm offers items, wants CORM from the player.
-		item, err := pickItem(snapshot.CormInventory, registry, rng)
+		item, err := pickItem(filterReserved(snapshot.CormInventory, reservedMap), registry, rng)
 		if err != nil {
 			return nil, fmt.Errorf("item_for_coin: no viable corm items: %w", err)
 		}
@@ -61,7 +66,7 @@ func GenerateContractIntent(
 
 	case types.ContractItemForItem:
 		// Corm offers items, wants different items.
-		offered, err := pickItem(snapshot.CormInventory, registry, rng)
+		offered, err := pickItem(filterReserved(snapshot.CormInventory, reservedMap), registry, rng)
 		if err != nil {
 			return nil, fmt.Errorf("item_for_item: no viable corm items: %w", err)
 		}
@@ -296,6 +301,27 @@ func genericNarrative(intent *types.ContractIntent) string {
 }
 
 // --- RNG ---
+
+// filterReserved returns a copy of the inventory with reserved quantities subtracted.
+// Items whose available quantity drops to zero are excluded entirely.
+func filterReserved(inventory []chain.InventoryItem, reserved map[uint64]uint64) []chain.InventoryItem {
+	if len(reserved) == 0 {
+		return inventory
+	}
+	var filtered []chain.InventoryItem
+	for _, item := range inventory {
+		var typeID uint64
+		fmt.Sscanf(item.TypeID, "%d", &typeID)
+		res := reserved[typeID]
+		if item.Amount <= res {
+			continue // Fully reserved.
+		}
+		copy := item
+		copy.Amount -= res
+		filtered = append(filtered, copy)
+	}
+	return filtered
+}
 
 // newCormRNG creates a seeded RNG from a corm ID + current time.
 // Deterministic per corm within a given second (for test reproducibility),

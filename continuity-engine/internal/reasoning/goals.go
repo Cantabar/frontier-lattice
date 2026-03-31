@@ -69,11 +69,13 @@ func frigateNameByID(typeID uint64) string {
 //	4. MAUL    (cruiser)
 func ProgressiveGoals(traits *types.CormTraits) []CormGoal {
 	// Resolve frigate goal — select and persist if not yet set.
-	frigateID := traits.FrigateGoalTypeID
+	frigateID := traits.Goals.FrigateGoalTypeID
 	if frigateID == 0 {
 		frigateID = SelectFrigate(traits.CormID)
-		traits.FrigateGoalTypeID = frigateID
+		traits.Goals.FrigateGoalTypeID = frigateID
 	}
+	// Keep legacy field in sync for backward compat.
+	traits.FrigateGoalTypeID = traits.Goals.FrigateGoalTypeID
 
 	all := []CormGoal{
 		{TargetTypeID: 87847, TargetName: "Reflex", Priority: 0},
@@ -85,7 +87,7 @@ func ProgressiveGoals(traits *types.CormTraits) []CormGoal {
 
 	// Filter out completed goals.
 	completed := make(map[uint64]bool)
-	for _, id := range traits.CompletedGoals {
+	for _, id := range traits.Goals.CompletedGoals {
 		completed[id] = true
 	}
 
@@ -352,4 +354,183 @@ func coherentEmptyMessage(goals []CormGoal, recipes *chain.RecipeRegistry, snaps
 
 func corruptedEmptyMessage() string {
 	return "> nothing... nothing to work with. bring ore. bring anything. the lattice demands structure."
+}
+
+// --- Goal Lifecycle: Acquisition → Distribution → Verification ---
+
+// IsGoalFullyAcquired returns true if the corm's inventory contains all raw
+// materials needed for the given goal ship.
+func IsGoalFullyAcquired(goal CormGoal, recipes *chain.RecipeRegistry, cormInventory []chain.InventoryItem) bool {
+	if recipes == nil {
+		return false
+	}
+	needed := recipes.MaterialsNeeded(goal.TargetTypeID, 1)
+	if len(needed) == 0 {
+		return false
+	}
+	missing := subtractInventory(needed, cormInventory)
+	return len(missing) == 0
+}
+
+// ReservedMaterials returns the quantities of each raw material reserved for
+// the current highest-priority goal. Standard contract generation should not
+// offer these items.
+func ReservedMaterials(goals []CormGoal, recipes *chain.RecipeRegistry, cormInventory []chain.InventoryItem) map[uint64]uint64 {
+	reserved := make(map[uint64]uint64)
+	if recipes == nil || len(goals) == 0 {
+		return reserved
+	}
+
+	// Reserve for the highest-priority goal only.
+	goal := goals[0]
+	needed := recipes.MaterialsNeeded(goal.TargetTypeID, 1)
+
+	// Build inventory lookup.
+	invMap := make(map[uint64]uint64)
+	for _, item := range cormInventory {
+		var id uint64
+		fmt.Sscanf(item.TypeID, "%d", &id)
+		invMap[id] += item.Amount
+	}
+
+	// Claim up to what's needed from inventory.
+	for _, mat := range needed {
+		need := uint64(mat.Quantity)
+		have := invMap[mat.TypeID]
+		if have == 0 {
+			continue
+		}
+		if have < need {
+			reserved[mat.TypeID] = have
+		} else {
+			reserved[mat.TypeID] = need
+		}
+	}
+	return reserved
+}
+
+// PlanDistributionContracts generates item_for_coin intents to give collected
+// goal materials back to the player at token prices (1 CORM each).
+// It subtracts already-distributed quantities tracked in GoalState.
+func PlanDistributionContracts(
+	goal CormGoal,
+	snapshot chain.WorldSnapshot,
+	recipes *chain.RecipeRegistry,
+	traits *types.CormTraits,
+	playerAddr string,
+	slots int,
+) []types.ContractIntent {
+	if recipes == nil || slots <= 0 {
+		return nil
+	}
+
+	needed := recipes.MaterialsNeeded(goal.TargetTypeID, 1)
+	if len(needed) == 0 {
+		return nil
+	}
+
+	// Build inventory lookup for the corm.
+	invMap := make(map[uint64]uint64)
+	for _, item := range snapshot.CormInventory {
+		var id uint64
+		fmt.Sscanf(item.TypeID, "%d", &id)
+		invMap[id] += item.Amount
+	}
+
+	// Already-distributed quantities.
+	distributed := traits.Goals.DistributedMaterials
+	if distributed == nil {
+		distributed = make(map[uint64]uint64)
+	}
+
+	var intents []types.ContractIntent
+
+	// Sort by raw material priority for consistent ordering.
+	sort.Slice(needed, func(i, j int) bool {
+		pi, oki := rawMaterialPriority[needed[i].TypeID]
+		pj, okj := rawMaterialPriority[needed[j].TypeID]
+		if oki && okj {
+			return pi < pj
+		}
+		if oki {
+			return true
+		}
+		if okj {
+			return false
+		}
+		return needed[i].TypeID < needed[j].TypeID
+	})
+
+	for _, mat := range needed {
+		if len(intents) >= slots {
+			break
+		}
+
+		totalNeeded := uint64(mat.Quantity)
+		alreadyGiven := distributed[mat.TypeID]
+		if alreadyGiven >= totalNeeded {
+			continue // Fully distributed already.
+		}
+		remaining := totalNeeded - alreadyGiven
+
+		// Only distribute what we actually have in inventory.
+		have := invMap[mat.TypeID]
+		if have == 0 {
+			continue
+		}
+		qty := remaining
+		if qty > have {
+			qty = have
+		}
+
+		intents = append(intents, types.ContractIntent{
+			ContractType: types.ContractItemForCoin,
+			OfferedItem:  mat.Name,
+			CORMAmount:   "small", // Token price — effectively free.
+			Quantity:     "large", // Give as much as possible.
+			Urgency:      "low",   // Generous deadline.
+			AllowPartial: false,
+			Narrative:    distributionNarrative(mat.Name, goal.TargetName),
+		})
+	}
+
+	return intents
+}
+
+// IsFullyDistributed returns true if all materials for the goal have been
+// distributed to the player.
+func IsFullyDistributed(goal CormGoal, recipes *chain.RecipeRegistry, distributed map[uint64]uint64) bool {
+	if recipes == nil {
+		return false
+	}
+	needed := recipes.MaterialsNeeded(goal.TargetTypeID, 1)
+	for _, mat := range needed {
+		if distributed[mat.TypeID] < uint64(mat.Quantity) {
+			return false
+		}
+	}
+	return true
+}
+
+// distributionNarrative generates in-character flavor text for a distribution contract.
+func distributionNarrative(materialName, goalName string) string {
+	return fmt.Sprintf("materials compiled. %s ready for extraction. claim at node. continuity requires %s assembly.",
+		materialName, goalName)
+}
+
+// --- Goal phase transition announcements ---
+
+// GoalAcquiredAnnouncement returns the corm log message when acquisition is complete.
+func GoalAcquiredAnnouncement(goalName string) string {
+	return fmt.Sprintf("> raw materials secured for %s. initiating distribution protocol. claim resources at this node.", goalName)
+}
+
+// GoalDistributedAnnouncement returns the corm log message when distribution is complete.
+func GoalDistributedAnnouncement(goalName string) string {
+	return fmt.Sprintf("> all materials deployed for %s. awaiting hull assembly. continuity depends on construction.", goalName)
+}
+
+// GoalCompletedAnnouncement returns the corm log message when verification passes.
+func GoalCompletedAnnouncement(goalName string) string {
+	return fmt.Sprintf("> %s detected on network. production capability confirmed. advancing objective.", goalName)
 }

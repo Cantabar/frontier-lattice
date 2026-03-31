@@ -213,16 +213,18 @@ func (d *DB) InsertEvent(ctx context.Context, environment, cormID string, evt ty
 // GetTraits returns the learned traits for a corm, or nil if not found.
 func (d *DB) GetTraits(ctx context.Context, environment, cormID string) (*types.CormTraits, error) {
 	t := &types.CormTraits{CormID: cormID}
-	var agendaJSON, affinityJSON, playerJSON []byte
+	var agendaJSON, affinityJSON, playerJSON, goalJSON []byte
 	err := d.Pool.QueryRow(ctx,
 		`SELECT phase, stability, corruption, agenda_weights, contract_type_affinity,
-		        patience, paranoia, volatility, player_affinities, consolidation_checkpoint, updated_at
+		        patience, paranoia, volatility, player_affinities, consolidation_checkpoint,
+		        COALESCE(goal_state, '{}'), updated_at
 		 FROM corm_traits WHERE environment = $1 AND corm_id = $2`, environment, cormID,
 	).Scan(
 		&t.Phase, &t.Stability, &t.Corruption,
 		&agendaJSON, &affinityJSON,
 		&t.Patience, &t.Paranoia, &t.Volatility,
-		&playerJSON, &t.ConsolidationCheckpoint, &t.UpdatedAt,
+		&playerJSON, &t.ConsolidationCheckpoint,
+		&goalJSON, &t.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -234,6 +236,15 @@ func (d *DB) GetTraits(ctx context.Context, environment, cormID string) (*types.
 	json.Unmarshal(agendaJSON, &t.AgendaWeights)
 	json.Unmarshal(affinityJSON, &t.ContractTypeAffinity)
 	json.Unmarshal(playerJSON, &t.PlayerAffinities)
+	json.Unmarshal(goalJSON, &t.Goals)
+
+	// Migrate legacy fields into GoalState.
+	if t.Goals.FrigateGoalTypeID == 0 && t.FrigateGoalTypeID != 0 {
+		t.Goals.FrigateGoalTypeID = t.FrigateGoalTypeID
+	}
+	if len(t.Goals.CompletedGoals) == 0 && len(t.CompletedGoals) > 0 {
+		t.Goals.CompletedGoals = t.CompletedGoals
+	}
 
 	return t, nil
 }
@@ -243,20 +254,22 @@ func (d *DB) UpsertTraits(ctx context.Context, environment string, t *types.Corm
 	agendaJSON, _ := json.Marshal(t.AgendaWeights)
 	affinityJSON, _ := json.Marshal(t.ContractTypeAffinity)
 	playerJSON, _ := json.Marshal(t.PlayerAffinities)
+	goalJSON, _ := json.Marshal(t.Goals)
 
 	_, err := d.Pool.Exec(ctx,
 		`INSERT INTO corm_traits (environment, corm_id, phase, stability, corruption, agenda_weights,
 		  contract_type_affinity, patience, paranoia, volatility, player_affinities,
-		  consolidation_checkpoint, updated_at)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now())
+		  consolidation_checkpoint, goal_state, updated_at)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now())
 		 ON CONFLICT (environment, corm_id) DO UPDATE SET
 		  phase=$3, stability=$4, corruption=$5, agenda_weights=$6,
 		  contract_type_affinity=$7, patience=$8, paranoia=$9, volatility=$10,
-		  player_affinities=$11, consolidation_checkpoint=$12, updated_at=now()`,
+		  player_affinities=$11, consolidation_checkpoint=$12, goal_state=$13, updated_at=now()`,
 		environment, t.CormID, t.Phase, t.Stability, t.Corruption,
 		agendaJSON, affinityJSON,
 		t.Patience, t.Paranoia, t.Volatility,
 		playerJSON, t.ConsolidationCheckpoint,
+		goalJSON,
 	)
 	return err
 }
