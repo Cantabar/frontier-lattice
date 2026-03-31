@@ -58,6 +58,48 @@ func (d *DB) LinkNetworkNode(ctx context.Context, environment, networkNodeID, co
 	return err
 }
 
+// SetChainStateID stores the on-chain CormState object ID for a network node.
+func (d *DB) SetChainStateID(ctx context.Context, environment, networkNodeID, chainStateID string) error {
+	_, err := d.Pool.Exec(ctx,
+		"UPDATE corm_network_nodes SET chain_state_id = $1 WHERE environment = $2 AND network_node_id = $3",
+		chainStateID, environment, networkNodeID,
+	)
+	return err
+}
+
+// ResolveChainStateID returns the on-chain CormState object ID for a corm's
+// primary network node. Falls back to the oldest node if no is_primary row
+// exists. Returns empty string if no chain_state_id has been stored.
+func (d *DB) ResolveChainStateID(ctx context.Context, environment, cormID string) (string, error) {
+	var chainID *string
+	err := d.Pool.QueryRow(ctx,
+		`SELECT chain_state_id FROM corm_network_nodes
+		 WHERE environment = $1 AND corm_id = $2 AND is_primary = true
+		 LIMIT 1`,
+		environment, cormID,
+	).Scan(&chainID)
+	if err == pgx.ErrNoRows {
+		// Fallback: oldest node by linked_at
+		err = d.Pool.QueryRow(ctx,
+			`SELECT chain_state_id FROM corm_network_nodes
+			 WHERE environment = $1 AND corm_id = $2
+			 ORDER BY linked_at ASC
+			 LIMIT 1`,
+			environment, cormID,
+		).Scan(&chainID)
+		if err == pgx.ErrNoRows {
+			return "", nil
+		}
+	}
+	if err != nil {
+		return "", err
+	}
+	if chainID == nil {
+		return "", nil
+	}
+	return *chainID, nil
+}
+
 // ResolveNetworkNodeByCorm returns the primary network node ID for a corm.
 // Falls back to the oldest node by linked_at if no is_primary row exists.
 func (d *DB) ResolveNetworkNodeByCorm(ctx context.Context, environment, cormID string) (string, error) {

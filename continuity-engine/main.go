@@ -258,13 +258,19 @@ func processBatch(
 				slog.Info(fmt.Sprintf("[%s] resolve network node: %v", env, err))
 			} else if existing == "" {
 				chainClient := chainClients[env]
-				if _, err := chainClient.CreateCormState(ctx, evt.NetworkNodeID); err != nil {
+				chainStateID, err := chainClient.CreateCormState(ctx, evt.NetworkNodeID)
+				if err != nil {
 					slog.Info(fmt.Sprintf("[%s] create corm state: %v", env, err))
 				}
 				if err := database.LinkNetworkNode(ctx, env, evt.NetworkNodeID, cormID); err != nil {
 					slog.Info(fmt.Sprintf("[%s] link network node: %v", env, err))
 				}
-				slog.Info(fmt.Sprintf("[%s] linked node %s to corm %s", env, evt.NetworkNodeID, cormID))
+				if chainStateID != "" {
+					if err := database.SetChainStateID(ctx, env, evt.NetworkNodeID, chainStateID); err != nil {
+						slog.Info(fmt.Sprintf("[%s] set chain state ID: %v", env, err))
+					}
+				}
+				slog.Info(fmt.Sprintf("[%s] linked node %s to corm %s (chain_state=%s)", env, evt.NetworkNodeID, cormID, chainStateID))
 			}
 			break
 		}

@@ -86,6 +86,13 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 	contractCooldowns[cormID] = time.Now()
 	contractCooldownMu.Unlock()
 
+	// Resolve the on-chain CormState object ID for chain method calls.
+	// The internal cormID is a UUID; chain methods need a Sui hex object ID.
+	chainStateID, err := h.db.ResolveChainStateID(ctx, environment, cormID)
+	if err != nil {
+		slog.Info(fmt.Sprintf("phase2: resolve chain state ID for corm %s: %v", cormID, err))
+	}
+
 	// Count active contracts from the session to enforce the cap,
 	// since WorldSnapshot.ActiveContracts is not yet populated from chain.
 	activeCount := countActiveSessionContracts(h.dispatcher, evt.SessionID)
@@ -98,12 +105,12 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 	// Build the world state snapshot once for the whole fill pass.
 	playerAddr := evt.PlayerAddress
 	networkNodeID := evt.NetworkNodeID
-	snapshot := chain.BuildSnapshot(ctx, h.chainClient, cormID, playerAddr, networkNodeID)
+	snapshot := chain.BuildSnapshot(ctx, h.chainClient, chainStateID, playerAddr, networkNodeID)
 
 	// Try standard contract generation first.
 	standardFailed := false
 	for activeCount < maxActiveContracts {
-		if err := generateOneContract(ctx, h, environment, cormID, traits, evt, snapshot, playerAddr); err != nil {
+		if err := generateOneContract(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, playerAddr); err != nil {
 			slog.Info(fmt.Sprintf("phase2: standard fill stopped after %d active: %v", activeCount, err))
 			standardFailed = true
 			break
@@ -123,8 +130,8 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 		}
 
 		// Bootstrap CORM if the corm has zero balance.
-		if snapshot.CormCORMBalance == 0 {
-			minted, err := h.chainClient.MintBootstrapCORM(ctx, cormID, bootstrapCORMAmount)
+		if snapshot.CormCORMBalance == 0 && chainStateID != "" {
+			minted, err := h.chainClient.MintBootstrapCORM(ctx, chainStateID, bootstrapCORMAmount)
 			if err != nil {
 				slog.Info(fmt.Sprintf("phase2: bootstrap CORM mint failed for %s: %v", cormID, err))
 			} else if minted == 0 {
@@ -133,6 +140,8 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 				snapshot.CormCORMBalance = minted
 				slog.Info(fmt.Sprintf("phase2: minted %d bootstrap CORM for corm %s", minted, cormID))
 			}
+		} else if snapshot.CormCORMBalance == 0 {
+			slog.Warn(fmt.Sprintf("phase2: cannot bootstrap CORM for corm %s (no on-chain state ID)", cormID))
 		}
 
 		slots := maxActiveContracts - activeCount
@@ -144,7 +153,7 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 				if activeCount >= maxActiveContracts {
 					break
 				}
-				if err := createContractFromIntent(ctx, h, environment, cormID, traits, evt, snapshot, playerAddr, &intent); err != nil {
+				if err := createContractFromIntent(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, playerAddr, &intent); err != nil {
 					slog.Info(fmt.Sprintf("phase2: goal-directed contract failed: %v", err))
 					break
 				}
@@ -167,19 +176,19 @@ func attemptContractFill(ctx context.Context, h *Handler, environment, cormID st
 
 // generateOneContract runs the deterministic contract generation pipeline once.
 // Returns nil on success or an error if generation should stop.
-func generateOneContract(ctx context.Context, h *Handler, environment, cormID string, traits *types.CormTraits, evt types.CormEvent, snapshot chain.WorldSnapshot, playerAddr string) error {
+func generateOneContract(ctx context.Context, h *Handler, environment, cormID, chainStateID string, traits *types.CormTraits, evt types.CormEvent, snapshot chain.WorldSnapshot, playerAddr string) error {
 	// Generate contract intent deterministically (no LLM call)
 	intent, err := GenerateContractIntent(traits, snapshot, h.registry, playerAddr, nil)
 	if err != nil {
 		return fmt.Errorf("generate intent: %w", err)
 	}
 
-	return createContractFromIntent(ctx, h, environment, cormID, traits, evt, snapshot, playerAddr, intent)
+	return createContractFromIntent(ctx, h, environment, cormID, chainStateID, traits, evt, snapshot, playerAddr, intent)
 }
 
 // createContractFromIntent resolves, validates, and creates a contract from
 // an intent. Shared by both standard and goal-directed generation.
-func createContractFromIntent(ctx context.Context, h *Handler, environment, cormID string, traits *types.CormTraits, evt types.CormEvent, snapshot chain.WorldSnapshot, playerAddr string, intent *types.ContractIntent) error {
+func createContractFromIntent(ctx context.Context, h *Handler, environment, cormID, chainStateID string, traits *types.CormTraits, evt types.CormEvent, snapshot chain.WorldSnapshot, playerAddr string, intent *types.ContractIntent) error {
 	// Resolve intent to exact parameters
 	params, err := ResolveIntent(*intent, snapshot, h.registry, traits, h.pricing, playerAddr)
 	if err != nil {
@@ -191,8 +200,13 @@ func createContractFromIntent(ctx context.Context, h *Handler, environment, corm
 		return fmt.Errorf("validation: %w", err)
 	}
 
-	// Create contract on-chain (stub)
-	contractID, err := h.chainClient.CreateContract(ctx, cormID, *params)
+	// Create contract on-chain using the Sui object ID (chainStateID),
+	// falling back to cormID for stub mode.
+	chainID := chainStateID
+	if chainID == "" {
+		chainID = cormID
+	}
+	contractID, err := h.chainClient.CreateContract(ctx, chainID, *params)
 	if err != nil {
 		return fmt.Errorf("create contract: %w", err)
 	}

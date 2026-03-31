@@ -56,6 +56,8 @@ All communication is in-process via Go channels. No WebSocket, no HTTP relay.
 - **Trait Reducer** (`internal/memory`) — deterministic trait mutations (stability, corruption, patience, paranoia, etc.) applied inline on every event batch.
 - **Chain Client** (`internal/chain`) — per-environment Sui RPC client for on-chain state writes. Uses `pattonkan/sui-go` for JSON-RPC, PTB building, Ed25519 signing, and BCS decoding. Implements real PTB transactions for CormState creation (`install`), state updates (`update_state`), CORM minting (`corm_coin::mint`), and `coin_for_item` contract creation. Falls back to stub logging when package/object IDs are not configured (graceful degradation for dev environments). Exposes `CanCreateContracts()` and `CanMintCORM()` for pre-flight capability checks. Inventory and SSU reads remain seed-mode stubs pending SUI dynamic field integration (requires `getDynamicFields` + `getDynamicFieldObject` RPC calls per SSU, similar to the web app's `useSsuInventory` hook).
 
+**Corm ID vs Chain State ID:** Internally, each corm is identified by a UUID (e.g. `08c0145b-...`), stored in DB tables and used for session/trait lookups. On-chain, each corm's `CormState` shared object has a Sui hex object ID (e.g. `0xabc123...`). The `corm_network_nodes.chain_state_id` column maps between them — it stores the Sui object ID returned by `CreateCormState()`. Chain methods (`MintCORM`, `GetCormState`, `UpdateCormState`) require the Sui hex ID; `ResolveChainStateID()` looks up the primary network node's `chain_state_id` for a given corm UUID.
+
 ### Goroutines
 
 1. **HTTP Server** — standard `http.ListenAndServe` serving all game routes and SSE.
