@@ -1254,7 +1254,9 @@ export function buildAuthorizeExtension(params: {
   const tx = new Transaction();
   const pkg = worldPkg();
   const suTypeArg = `${pkg}::storage_unit::StorageUnit`;
-  const authTypeArg = `${packages.cormAuth}::corm_auth::CormAuth`;
+  // CormAuth type is anchored to the original defining package, not the
+  // upgraded published-at address.
+  const authTypeArg = `${config.originalIds.cormAuth}::corm_auth::CormAuth`;
 
   // 1. Borrow OwnerCap<StorageUnit> from Character
   const [ownerCap, receipt] = tx.moveCall({

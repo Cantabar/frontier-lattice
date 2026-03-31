@@ -68,6 +68,13 @@ declare -A VITE_VAR_MAP=(
   [corm_state]="VITE_CORM_STATE_PACKAGE_ID"
   [assembly_metadata]="VITE_ASSEMBLY_METADATA_PACKAGE_ID"
 )
+# Packages that need VITE_*_ORIGINAL_ID vars (for type references after upgrade).
+# On Sui, struct types (events, objects, coins) are anchored to the original
+# defining package, not the upgraded published-at address.
+declare -A VITE_ORIGINAL_VAR_MAP=(
+  [corm_auth]="VITE_CORM_AUTH_ORIGINAL_ID"
+  [corm_state]="VITE_CORM_STATE_ORIGINAL_ID"
+)
 
 # Determine which packages to upgrade
 if [ $# -gt 0 ]; then
@@ -149,6 +156,7 @@ for pkg in "${PACKAGES[@]}"; do
 
   UPGRADE_CAP=$(sed -n '/^\[published\.'"$BUILD_ENV"'\]/,/^\[/{/upgrade-capability/s/.*"\(0x[^"]*\)".*/\1/p;}' "$published_toml")
   OLD_PUBLISHED_AT=$(sed -n '/^\[published\.'"$BUILD_ENV"'\]/,/^\[/{/published-at/s/.*"\(0x[^"]*\)".*/\1/p;}' "$published_toml")
+  ORIGINAL_ID=$(sed -n '/^\[published\.'"$BUILD_ENV"'\]/,/^\[/{/original-id/s/.*"\(0x[^"]*\)".*/\1/p;}' "$published_toml")
 
   if [ -z "$UPGRADE_CAP" ]; then
     echo "  ERROR: No upgrade-capability found in Published.toml for env '$BUILD_ENV'." >&2
@@ -214,12 +222,24 @@ for pkg in "${PACKAGES[@]}"; do
     write_env_var "$vite_var" "$NEW_PACKAGE_ID" "$WEB_ENV_FILE"
   fi
 
-  # corm_state aliases
+  # Write original-id for packages that need it (type references)
+  vite_orig_var="${VITE_ORIGINAL_VAR_MAP[$pkg]:-}"
+  if [ -n "$vite_orig_var" ] && [ -n "$ORIGINAL_ID" ]; then
+    write_env_var "$vite_orig_var" "$ORIGINAL_ID" "$ENV_FILE"
+    if [ -f "$WEB_ENV_FILE" ]; then
+      write_env_var "$vite_orig_var" "$ORIGINAL_ID" "$WEB_ENV_FILE"
+    fi
+    echo "  Original ID: $ORIGINAL_ID (→ $vite_orig_var)"
+  fi
+
+  # corm_state aliases — CORM coin type uses original-id (not published-at)
+  # because Sui coin types are anchored to the defining package.
   if [ "$pkg" = "corm_state" ]; then
     write_env_var "CORM_STATE_PACKAGE_ID" "$NEW_PACKAGE_ID" "$ENV_FILE"
-    write_env_var "VITE_CORM_COIN_TYPE" "${NEW_PACKAGE_ID}::corm_coin::CORM_COIN" "$ENV_FILE"
+    COIN_TYPE_PKG="${ORIGINAL_ID:-$NEW_PACKAGE_ID}"
+    write_env_var "VITE_CORM_COIN_TYPE" "${COIN_TYPE_PKG}::corm_coin::CORM_COIN" "$ENV_FILE"
     if [ -f "$WEB_ENV_FILE" ]; then
-      write_env_var "VITE_CORM_COIN_TYPE" "${NEW_PACKAGE_ID}::corm_coin::CORM_COIN" "$WEB_ENV_FILE"
+      write_env_var "VITE_CORM_COIN_TYPE" "${COIN_TYPE_PKG}::corm_coin::CORM_COIN" "$WEB_ENV_FILE"
     fi
   fi
   if [ "$pkg" = "witnessed_contracts" ]; then

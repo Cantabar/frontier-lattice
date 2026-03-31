@@ -28,8 +28,10 @@ export interface InstalledCorm {
 }
 
 export function useInstalledCorms() {
-  const cormStatePkg = config.packages.cormState;
-  const enabled = cormStatePkg !== "0x0";
+  // Events are typed under the original package ID (stable across upgrades),
+  // not the upgraded published-at address used for function calls.
+  const cormStateOriginal = config.originalIds.cormState;
+  const enabled = cormStateOriginal !== "0x0";
 
   const { structures, isLoading: structuresLoading } = useStructures();
 
@@ -51,7 +53,7 @@ export function useInstalledCorms() {
     "queryEvents",
     {
       query: {
-        MoveEventType: `${cormStatePkg}::corm_state::CormStateCreatedEvent`,
+        MoveEventType: `${cormStateOriginal}::corm_state::CormStateCreatedEvent`,
       },
       limit: 200,
       order: "descending",

@@ -116,6 +116,7 @@ Each contract package has a `Move.toml` with dependency addresses. Package IDs a
 - **Script:** `scripts/upgrade-contracts.sh` reads the `UpgradeCap` from each package's `Published.toml`, runs `sui client upgrade`, and updates env vars with the new package IDs.
 - **Prerequisites:** The active SUI wallet must be the same wallet that originally published (owns the UpgradeCaps). The `Published.toml` must exist with an `upgrade-capability` entry for the target environment.
 - **Sui constraints:** `init` does not re-run on upgrade. Existing struct layouts cannot change. New functions, modules, and structs can be added. Function implementations can change.
+- **original-id vs published-at:** After an upgrade, the `Published.toml` contains both `original-id` (stable, set at first publish) and `published-at` (changes each upgrade). On Sui, struct types — including events, shared objects, and coin types — are permanently anchored to the `original-id`. Function calls must target `published-at` (latest bytecode). The upgrade script writes both: `VITE_*_PACKAGE_ID` = `published-at` (for function calls), `VITE_*_ORIGINAL_ID` = `original-id` (for event queries, type arguments, and coin types).
 - **Post-upgrade migrations:** If an upgrade adds new version-gated logic, call the `migrate_*` functions for each shared object using the `CormAdminCap`. The upgrade script prints the required migration commands.
 - See `plan/version-tracking.md` for the full versioning strategy.
 

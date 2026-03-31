@@ -108,15 +108,17 @@ All via Vite environment variables (`VITE_*`), resolved in `src/config.ts`:
 - `VITE_SUI_NETWORK` — Sui network: `localnet`, `devnet`, `testnet`
 - `VITE_TRIBE_PACKAGE_ID` — tribe contract package ID
 - `VITE_TRUSTLESS_CONTRACTS_PACKAGE_ID` — trustless contracts package ID
-- `VITE_CORM_AUTH_PACKAGE_ID` — corm_auth package ID
-- `VITE_CORM_STATE_PACKAGE_ID` — corm_state package ID
+- `VITE_CORM_AUTH_PACKAGE_ID` — corm_auth package ID (published-at address for function calls)
+- `VITE_CORM_AUTH_ORIGINAL_ID` — corm_auth original package ID (for type arguments; defaults to PACKAGE_ID if unset)
+- `VITE_CORM_STATE_PACKAGE_ID` — corm_state package ID (published-at address for function calls)
+- `VITE_CORM_STATE_ORIGINAL_ID` — corm_state original package ID (for event queries and type references; defaults to PACKAGE_ID if unset)
 - `VITE_WITNESSED_CONTRACTS_PACKAGE_ID` — witnessed contracts (build_request) package ID
 - `VITE_ASSEMBLY_METADATA_PACKAGE_ID` — assembly_metadata package ID
 - `VITE_WORLD_PACKAGE_ID` — Eve Frontier world package ID
 - `VITE_TRIBE_REGISTRY_ID` — TribeRegistry shared object ID
 - `VITE_METADATA_REGISTRY_ID` — MetadataRegistry shared object ID (assembly_metadata)
 - `VITE_ENERGY_CONFIG_ID` — energy config shared object ID
-- `VITE_CORM_COIN_TYPE` — CORM coin type string (primary coin for contracts; derived from deployed `corm_state` package address as `<PKG>::corm_coin::CORM_COIN`)
+- `VITE_CORM_COIN_TYPE` — CORM coin type string (primary coin for contracts; derived from the **original** `corm_state` package address as `<ORIGINAL_ID>::corm_coin::CORM_COIN` — stable across upgrades)
 - `VITE_COIN_TYPE` — fallback coin type for escrow/treasury when CORM is not configured (default: `0x2::sui::SUI`)
 - `VITE_INDEXER_URL` — indexer API base URL (default: `/api/v1`)
 - `VITE_WEB_UI_HOST` — public web UI host used to compose on-chain SSU dApp URLs (defaults: `https://ef-corm.com` for stillness, `https://utopia.ef-corm.com` for utopia)
@@ -127,7 +129,8 @@ All via Vite environment variables (`VITE_*`), resolved in `src/config.ts`:
 - `VITE_CORM_CONFIG_ID` — CormConfig shared object ID (for permissionless corm installation)
 
 Per-environment defaults are defined in `config.ts` and overridden by explicit `VITE_*` vars. Environment files: `.env.localnet`, `.env.utopia`, `.env.stillness`. Package IDs and shared object IDs are auto-populated by `scripts/publish-contracts.sh`; any package left at `0x0` will trigger an "Unconfigured Packages" warning on page load.
-**CormConfig and package identity:** The `CormConfig` shared object is typed to the `corm_state` package address that created it. If contracts are republished (new package IDs), the existing `CormConfig` becomes stale — the `install` function on the new package expects its own `CormConfig` type, causing a `TypeMismatch` error. After a republish, `CormConfig` must be recreated via `create_config` on the new package and `VITE_CORM_CONFIG_ID` updated. The publish script handles this automatically, but if it fails (for example, missing `CormAdminCap` or brain address), the config ID must be updated manually.
+**original-id vs published-at (upgrades):** After a Sui package upgrade, struct types (events, objects, coins) remain anchored to the **original** defining package address, not the new `published-at` address. `config.packages.*` contains `published-at` values (for function call targets). `config.originalIds.*` contains `original-id` values (for event queries, type arguments, and `VITE_CORM_COIN_TYPE`). When `VITE_*_ORIGINAL_ID` is unset, `originalIds` falls back to the corresponding `packages.*` value, which is correct for packages that have never been upgraded.
+**CormConfig and package identity:** The `CormConfig` shared object is typed to the **original** `corm_state` package address. On upgrade (not republish), CormConfig remains valid because the type identity is preserved. On a full **republish** (new package IDs), the existing `CormConfig` becomes stale — the `install` function on the new package expects its own `CormConfig` type, causing a `TypeMismatch` error. After a republish, `CormConfig` must be recreated via `create_config` on the new package and `VITE_CORM_CONFIG_ID` updated. The publish script handles this automatically, but if it fails (for example, missing `CormAdminCap` or brain address), the config ID must be updated manually.
 
 **Stillness deployment status:** All contract package IDs are configured in `web/.env.stillness` and deployed to https://ef-corm.com via S3 + CloudFront.
 

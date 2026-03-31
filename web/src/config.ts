@@ -80,6 +80,20 @@ export const config = {
     witnessedContracts: import.meta.env.VITE_WITNESSED_CONTRACTS_PACKAGE_ID ?? "0x0",
   },
 
+  /**
+   * Original package IDs for upgraded packages. On Sui, struct types (events,
+   * objects, coins) remain anchored to the original defining package, not the
+   * upgraded `published-at` address. Use these for event queries and type
+   * arguments; use `packages.*` for function call targets.
+   *
+   * Defaults to the corresponding `packages.*` value when not set, which is
+   * correct for packages that have never been upgraded.
+   */
+  originalIds: {
+    cormState: import.meta.env.VITE_CORM_STATE_ORIGINAL_ID || import.meta.env.VITE_CORM_STATE_PACKAGE_ID || "0x0",
+    cormAuth: import.meta.env.VITE_CORM_AUTH_ORIGINAL_ID || import.meta.env.VITE_CORM_AUTH_PACKAGE_ID || "0x0",
+  },
+
   /** Shared object IDs */
   tribeRegistryId: import.meta.env.VITE_TRIBE_REGISTRY_ID ?? "0x0",
   energyConfigId: import.meta.env.VITE_ENERGY_CONFIG_ID ?? "0x0",
