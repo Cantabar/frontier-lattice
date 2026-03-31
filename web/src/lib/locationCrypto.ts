@@ -357,6 +357,22 @@ export function buildAuthHeader(
   return `SuiSig ${messageB64}.${signature}`;
 }
 
+/**
+ * Build the TxSig Authorization header from a challenge + signed transaction.
+ *
+ * Used as a fallback when signPersonalMessage is unavailable or broken.
+ * The transaction signature proves wallet ownership; the challenge
+ * provides freshness (timestamp) and address binding.
+ */
+export function buildTxAuthHeader(
+  challengeBytes: Uint8Array,
+  txBytes: string,        // base64-encoded transaction bytes from signTransaction
+  signature: string,      // base64-encoded Sui signature from signTransaction
+): string {
+  const challengeB64 = bytesToBase64(challengeBytes);
+  return `TxSig ${challengeB64}.${txBytes}.${signature}`;
+}
+
 // ============================================================
 // Base64 Helpers
 // ============================================================

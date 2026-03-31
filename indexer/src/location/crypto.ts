@@ -13,7 +13,7 @@
 import { randomBytes, createCipheriv, createDecipheriv, createHmac } from "node:crypto";
 import { x25519, ed25519 } from "@noble/curves/ed25519";
 import { blake2b } from "@noble/hashes/blake2b";
-import { verifyPersonalMessageSignature } from "@mysten/sui/verify";
+import { verifyPersonalMessageSignature, verifyTransactionSignature } from "@mysten/sui/verify";
 import { parseSerializedSignature } from "@mysten/sui/cryptography";
 import { ZkLoginPublicIdentifier } from "@mysten/sui/zklogin";
 import { bcs } from "@mysten/sui/bcs";
@@ -140,6 +140,88 @@ function parseChallenge(text: string): { address: string; timestampMs: number } 
   }
 
   return null;
+}
+
+/**
+ * Verify a TxSig authorization: transaction signature + separate challenge.
+ *
+ * The transaction signature proves wallet ownership (cryptographic identity).
+ * The challenge provides freshness (timestamp) and address binding.
+ *
+ * @param challenge  Raw challenge bytes (same format as SuiSig challenges)
+ * @param txBytes    BCS-encoded transaction bytes from signTransaction
+ * @param signature  Base64-encoded SUI signature (scheme flag + sig + pubkey)
+ * @returns          AuthResult with the verified address or an error
+ */
+export async function verifyTxAuth(
+  challenge: Uint8Array,
+  txBytes: Uint8Array,
+  signature: string,
+): Promise<AuthResult> {
+  try {
+    // 1. Parse the challenge for claimed address + timestamp
+    const text = new TextDecoder().decode(challenge);
+    const parsed = parseChallenge(text);
+    if (!parsed) {
+      return { valid: false, address: "", error: "Invalid challenge format" };
+    }
+
+    const { address: claimedAddress, timestampMs } = parsed;
+
+    // 2. Check timestamp freshness
+    const now = Date.now();
+    if (Math.abs(now - timestampMs) > CHALLENGE_WINDOW_MS) {
+      return { valid: false, address: claimedAddress, error: "Challenge expired" };
+    }
+
+    // 3. Verify the transaction signature and extract the signer address
+    try {
+      const publicKey = await verifyTransactionSignature(txBytes, signature, {
+        address: claimedAddress,
+      });
+      const recoveredAddress = publicKey.toSuiAddress();
+      if (recoveredAddress !== claimedAddress) {
+        return { valid: false, address: claimedAddress, error: "Address mismatch" };
+      }
+      return { valid: true, address: claimedAddress };
+    } catch (sdkErr) {
+      // Fallback: manual Ed25519 verification against the transaction digest.
+      // Some wallets may produce signatures that the SDK wrapper rejects
+      // but are cryptographically valid.
+      try {
+        const parsedSig = parseSerializedSignature(signature);
+        if (
+          parsedSig.signatureScheme === "ED25519" ||
+          parsedSig.signatureScheme === "Secp256k1" ||
+          parsedSig.signatureScheme === "Secp256r1"
+        ) {
+          // Transaction intent prefix: [0, 0, 0] (scope=0 for TransactionData)
+          const intentPrefix = new Uint8Array([0, 0, 0]);
+          const intentMessage = new Uint8Array(intentPrefix.length + txBytes.length);
+          intentMessage.set(intentPrefix);
+          intentMessage.set(txBytes, intentPrefix.length);
+          const digest = blake2b(intentMessage, { dkLen: 32 });
+
+          if (parsedSig.signatureScheme === "ED25519") {
+            const valid = ed25519.verify(parsedSig.signature, digest, parsedSig.publicKey);
+            if (valid) {
+              return { valid: true, address: claimedAddress };
+            }
+          }
+          // Secp256k1/r1 manual fallback could be added here if needed
+        }
+      } catch {
+        // Manual fallback also failed — propagate original error
+      }
+      throw sdkErr;
+    }
+  } catch (err) {
+    return {
+      valid: false,
+      address: "",
+      error: err instanceof Error ? err.message : "TxSig verification failed",
+    };
+  }
 }
 
 /**

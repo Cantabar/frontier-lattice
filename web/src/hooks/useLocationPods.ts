@@ -9,7 +9,8 @@
  */
 
 import { useState, useCallback } from "react";
-import { useSignPersonalMessage } from "@mysten/dapp-kit";
+import { useSignPersonalMessage, useSignTransaction } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
 import { useIdentity } from "./useIdentity";
 import {
   getLocationPodsByTribe,
@@ -28,6 +29,7 @@ import {
 import {
   buildAuthChallenge,
   buildAuthHeader,
+  buildTxAuthHeader,
   computeLocationHash,
   generateSalt,
   encryptLocation,
@@ -159,6 +161,7 @@ export function clearLocationSession() {
 export function useLocationPods(): UseLocationPodsReturn {
   const { address } = useIdentity();
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
+  const { mutateAsync: signTransaction } = useSignTransaction();
 
   const [pods, setPods] = useState<DecryptedPod[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -177,13 +180,28 @@ export function useLocationPods(): UseLocationPodsReturn {
       return sessionCache.header;
     }
 
-    // Need a fresh session — sign a challenge and exchange for a token
+    // Need a fresh auth header — try signPersonalMessage first, fall back to signTransaction.
+    // EveVault (and potentially other wallets) may not implement signPersonalMessage correctly,
+    // but every Sui wallet must support signTransaction.
     const challenge = buildAuthChallenge(address);
-    const { signature } = await signPersonalMessage({ message: challenge });
-    const suiSigHeader = buildAuthHeader(challenge, signature);
+    let rawAuthHeader: string;
 
     try {
-      const { token, expires_at } = await createLocationSession(suiSigHeader);
+      // Primary: SuiSig via signPersonalMessage
+      const { signature } = await signPersonalMessage({ message: challenge });
+      rawAuthHeader = buildAuthHeader(challenge, signature);
+    } catch {
+      // Fallback: TxSig via signTransaction (universally supported)
+      const tx = new Transaction();
+      const [coin] = tx.splitCoins(tx.gas, [0]);
+      tx.transferObjects([coin], address);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { bytes: txBytes, signature: txSig } = await signTransaction({ transaction: tx as any });
+      rawAuthHeader = buildTxAuthHeader(challenge, txBytes, txSig);
+    }
+
+    try {
+      const { token, expires_at } = await createLocationSession(rawAuthHeader);
       const bearerHeader = `Bearer ${token}`;
       cacheSession({
         header: bearerHeader,
@@ -192,12 +210,12 @@ export function useLocationPods(): UseLocationPodsReturn {
       });
       return bearerHeader;
     } catch {
-      // Fallback: if session creation fails, use the SuiSig header directly
+      // Fallback: if session creation fails, use the raw auth header directly
       // (still valid for the server's 5-minute window)
       clearSessionCache();
-      return suiSigHeader;
+      return rawAuthHeader;
     }
-  }, [address, signPersonalMessage]);
+  }, [address, signPersonalMessage, signTransaction]);
 
   const fetchPods = useCallback(
     async (tribeId: string, tlkBytes: Uint8Array) => {
