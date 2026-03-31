@@ -219,6 +219,8 @@ Three CSS breakpoints handle different screen sizes:
 
 The analysis sidebar collapse state is persisted in `sessionStorage`. On tablet viewports, the JS init script defaults to collapsed if no user preference has been saved.
 
+The analysis sidebar uses **granular OOB updates** for per-interaction refreshes (cell decrypts, word submits). Instead of replacing the entire `#cipher-analysis` aside on every action — which would destroy sidebar/panel collapse state and cause layout shifts on smaller screens — the server renders `cipher-analysis-oob.html`, which emits three `innerHTML` OOB swaps targeting only the panel body elements (`#analysis-subst-body`, `#analysis-stats-body`, `#analysis-freq-body`). The `<aside>`, `<section>`, and toggle button elements are never replaced, so collapse classes and JS event listeners are naturally preserved. The full `cipher-analysis.html` template is only used for initial page renders and phase transitions.
+
 Grid sizing is viewport-adaptive: client JS measures the available space in `.puzzle-main` and passes `cw`/`ch` to the server, which computes grid dimensions via `GridDimensionsForViewport()` (min 10 cols, max 30 cols, min 6 rows, max 30 rows).
 
 ## Testing

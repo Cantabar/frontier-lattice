@@ -15,7 +15,7 @@
         </section>
         <section class="analysis-panel" data-panel="substitution">
             <h3 class="panel-title">&gt; substitution_log</h3>
-            <div class="panel-body subst-table">
+            <div id="analysis-subst-body" class="panel-body subst-table">
                 {{if .Substitutions}}
                     {{range .Substitutions}}
                     <div class="subst-row">
@@ -31,7 +31,7 @@
         </section>
         <section class="analysis-panel" data-panel="stats">
             <h3 class="panel-title">&gt; decryption_stats</h3>
-            <div class="panel-body stats-block">
+            <div id="analysis-stats-body" class="panel-body stats-block">
                 <div class="stats-row">
                     <span class="stats-label">SOLVED</span>
                     <span class="stats-value">{{.SolveCount}}</span>
@@ -42,10 +42,10 @@
                 </div>
             </div>
         </section>
-        {{if .ShowFreq}}
         <section class="analysis-panel" data-panel="freq">
             <h3 class="panel-title">&gt; freq_analysis</h3>
-            <div class="panel-body freq-list">
+            <div id="analysis-freq-body" class="panel-body freq-list">
+                {{if .ShowFreq}}
                 {{range .FreqEntries}}
                 <div class="freq-row">
                     <span class="freq-label{{if .IsAlpha}} freq-label--alpha{{end}}">{{.Char}}</span>
@@ -55,8 +55,10 @@
                     <span class="freq-count">{{.Count}}</span>
                 </div>
                 {{end}}
+                {{else}}
+                <div class="analysis-empty">insufficient data</div>
+                {{end}}
             </div>
         </section>
-        {{end}}
     </div>
 </aside>{{end}}

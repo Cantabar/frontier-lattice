@@ -1,0 +1,36 @@
+{{define "cipher-analysis-oob.html"}}<div id="analysis-subst-body" hx-swap-oob="innerHTML">
+    {{if .Substitutions}}
+        {{range .Substitutions}}
+        <div class="subst-row">
+            <span class="subst-char">{{.Encrypted}}</span>
+            <span class="subst-arrow">→</span>
+            <span class="subst-char{{if .IsAlpha}} subst-char--alpha{{end}}">{{.Plaintext}}</span>
+        </div>
+        {{end}}
+    {{else}}
+        <div class="analysis-empty">awaiting decrypts</div>
+    {{end}}
+</div><div id="analysis-stats-body" hx-swap-oob="innerHTML">
+    <div class="stats-row">
+        <span class="stats-label">SOLVED</span>
+        <span class="stats-value">{{.SolveCount}}</span>
+    </div>
+    <div class="stats-row">
+        <span class="stats-label">DECRYPTED</span>
+        <span class="stats-value">{{.DecryptedCount}}/{{.TotalCells}}</span>
+    </div>
+</div><div id="analysis-freq-body" hx-swap-oob="innerHTML">
+    {{if .ShowFreq}}
+    {{range .FreqEntries}}
+    <div class="freq-row">
+        <span class="freq-label{{if .IsAlpha}} freq-label--alpha{{end}}">{{.Char}}</span>
+        <div class="freq-track">
+            <div class="freq-fill" style="width: {{.BarWidth}}%"></div>
+        </div>
+        <span class="freq-count">{{.Count}}</span>
+    </div>
+    {{end}}
+    {{else}}
+    <div class="analysis-empty">insufficient data</div>
+    {{end}}
+</div>{{end}}

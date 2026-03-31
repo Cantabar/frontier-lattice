@@ -313,9 +313,7 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 			}
 			h.templates.ExecuteTemplate(w, "cell.html", cd)
 		}
-		analysis := buildCipherAnalysis(sess)
-		analysis.SwapOOB = true
-		h.templates.ExecuteTemplate(w, "cipher-analysis.html", analysis)
+		h.templates.ExecuteTemplate(w, "cipher-analysis-oob.html", buildCipherAnalysis(sess))
 
 		if targetDestroyed {
 			fmt.Fprintf(w, `<div id="pulse-data" hx-swap-oob="innerHTML" data-game-over="true"></div>`)
@@ -355,9 +353,7 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		analysis := buildCipherAnalysis(sess)
-		analysis.SwapOOB = true
-		h.templates.ExecuteTemplate(w, "cipher-analysis.html", analysis)
+		h.templates.ExecuteTemplate(w, "cipher-analysis-oob.html", buildCipherAnalysis(sess))
 
 		// Localized pulse (radius 2) from the clicked cell
 		pulsedCells := puzzle.CellsInRadius(sess.Grid, row, col, 2.0)
@@ -455,11 +451,9 @@ func (h *Handlers) PuzzleDecrypt(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cellData := buildCellData(sess, row, col)
-	analysis := buildCipherAnalysis(sess)
-	analysis.SwapOOB = true
 
 	h.templates.ExecuteTemplate(w, "cell.html", cellData)
-	h.templates.ExecuteTemplate(w, "cipher-analysis.html", analysis)
+	h.templates.ExecuteTemplate(w, "cipher-analysis-oob.html", buildCipherAnalysis(sess))
 
 	// Compute pulse cells once, use for both visual pulse and trap movement
 	var trapMoves []puzzle.TrapMoveResult
@@ -694,9 +688,7 @@ func (h *Handlers) PuzzleSubmit(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("HX-Reswap", "beforeend")
 	h.templates.ExecuteTemplate(w, "result.html", resultData)
 	if sess.Phase == puzzle.PhasePuzzle {
-		analysis := buildCipherAnalysis(sess)
-		analysis.SwapOOB = true
-		h.templates.ExecuteTemplate(w, "cipher-analysis.html", analysis)
+		h.templates.ExecuteTemplate(w, "cipher-analysis-oob.html", buildCipherAnalysis(sess))
 	}
 	// OOB update the contract list and render target-found overlay if a contract was just solved
 	if correct {
