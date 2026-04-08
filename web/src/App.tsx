@@ -25,6 +25,7 @@ import { StructuresRedirect, MyStructuresPage } from "./pages/MyStructuresPage";
 import { LocationsPage } from "./pages/LocationsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { VerifyProofPage } from "./pages/VerifyProofPage";
+import { ForgePlanner } from "./pages/ForgePlanner";
 import { ContinuityEngine } from "./continuity-engine/ContinuityEngine";
 import { ToastContainer } from "./components/shared/Toast";
 import { LoadingSpinner } from "./components/shared/LoadingSpinner";
@@ -104,6 +105,7 @@ export default function App() {
               <Route path="/contracts/build/create" element={<CreateBuildRequestPage />} />
               <Route path="/contracts/build/:contractId" element={<BuildRequestDetailPage />} />
               <Route path="/contracts/:contractId" element={<ContractDetailPage />} />
+              <Route path="/forge" element={<ForgePlanner />} />
               <Route path="/continuity" element={<ContinuityEngine />} />
               <Route path="/events" element={<EventExplorer />} />
               <Route path="/structures" element={<StructuresRedirect />} />

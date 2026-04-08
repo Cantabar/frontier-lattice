@@ -6,6 +6,7 @@ import {
   Building2,
   FileText,
   Cpu,
+  Hammer,
   MapPin,
   ShieldCheck,
   Activity,
@@ -259,6 +260,7 @@ export function Sidebar({ mode, toggle }: SidebarProps) {
       icon: Building2,
     },
     { to: "/contracts", label: "Contracts", icon: FileText },
+    { to: "/forge", label: "Forge Planner", icon: Hammer },
     { to: "/continuity", label: "Continuity", icon: Cpu },
     {
       to: "/locations",
