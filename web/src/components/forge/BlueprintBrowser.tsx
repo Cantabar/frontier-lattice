@@ -481,7 +481,7 @@ export function BlueprintBrowser({ blueprints, onResolve }: Props) {
       list = list.filter((b) => b.slotType === activeSlot);
     }
 
-    // Text search (blueprint name, ID, or product name)
+    // Text search (blueprint name, ID, product name, or input material name)
     const q = query.toLowerCase().trim();
     if (q) {
       list = list.filter(
@@ -490,6 +490,9 @@ export function BlueprintBrowser({ blueprints, onResolve }: Props) {
           String(b.blueprintId).includes(q) ||
           b.outputs.some((o) =>
             getItem(o.typeId)?.name?.toLowerCase().includes(q),
+          ) ||
+          b.inputs.some((i) =>
+            getItem(i.typeId)?.name?.toLowerCase().includes(q),
           ),
       );
     }
