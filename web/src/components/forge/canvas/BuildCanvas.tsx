@@ -248,13 +248,23 @@ function BuildCanvasContent({ layout, getItem, transform, onTransformChange, str
         cursor = left + w + 40;
       }
 
-      // Clamp: if row overflows the canvas, shift everything left.
+      // Clamp: if row overflows the canvas, shift everything left while
+      // maintaining minimum spacing between cards.  A simple per-card
+      // Math.max(CANVAS_PAD_LEFT, …) clamp can push multiple cards to the
+      // same X coordinate, causing overlaps.  Instead: shift all cards by
+      // the overflow amount, then do a second left-to-right sweep to
+      // re-enforce the 40px gap from CANVAS_PAD_LEFT onward.
       const last = placed[placed.length - 1];
       const rightEdge = last.left + cardWidth(last.card);
       const maxRight = cw - CANVAS_PAD_RIGHT;
       if (rightEdge > maxRight) {
         const shift = rightEdge - maxRight;
-        for (const p of placed) p.left = Math.max(CANVAS_PAD_LEFT, p.left - shift);
+        for (const p of placed) p.left -= shift;
+        let clampCursor = CANVAS_PAD_LEFT;
+        for (const p of placed) {
+          if (p.left < clampCursor) p.left = clampCursor;
+          clampCursor = p.left + cardWidth(p.card) + 40;
+        }
       }
 
       for (const { card, left } of placed) {
