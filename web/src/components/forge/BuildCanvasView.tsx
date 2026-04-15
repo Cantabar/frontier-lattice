@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, Fragment } from "react";
 import styled from "styled-components";
 import { useOptimizer, type RecipeLookup } from "../../hooks/useOptimizer";
 import { useItems } from "../../hooks/useItems";
@@ -317,13 +317,47 @@ const OreQty = styled.span`
   margin-left: auto;
 `;
 
-const ProductRow = styled.div`
+const ProductGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  margin-top: 6px;
+  border-top: 1px solid ${({ theme }) => theme.colors.surface.border};
+`;
+
+const GridCell = styled.span`
+  padding: 3px 6px;
+  font-size: 11px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 2px 0 2px 26px;
-  font-size: 12px;
+  white-space: nowrap;
+`;
+
+const GridHeader = styled(GridCell)`
+  font-size: 10px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.surface.border};
+`;
+
+const GridData = styled(GridCell)<{ $even?: boolean }>`
   color: ${({ theme }) => theme.colors.text.secondary};
+  background: ${({ theme, $even }) =>
+    $even ? theme.colors.surface.raised : "transparent"};
+`;
+
+const ProductNameCell = styled(GridData)`
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-size: 12px;
+  padding-left: 0;
+`;
+
+const NumericCell = styled(GridData)`
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
 `;
 
 const SurplusBadge = styled.span`
@@ -809,22 +843,32 @@ export function BuildCanvasView({
                           {entry.totalUnits.toLocaleString()} units · {entry.runs}× runs
                         </OreQty>
                       </OreHeader>
-                      {entry.products.map((p) => {
-                        const productName = getItem(p.typeId)?.name ?? `Type ${p.typeId}`;
-                        return (
-                          <ProductRow key={p.typeId}>
-                            <span>{productName}</span>
-                            <span>
-                              {p.needed > 0 ? `need ${p.needed}` : "not needed"}
-                              {" → produces "}
-                              {p.produced}
-                            </span>
-                            {p.surplus > 0 && (
-                              <SurplusBadge>+{p.surplus} surplus</SurplusBadge>
-                            )}
-                          </ProductRow>
-                        );
-                      })}
+                      <ProductGrid>
+                        <GridHeader>Product</GridHeader>
+                        <GridHeader style={{ justifyContent: "flex-end" }}>Needed</GridHeader>
+                        <GridHeader style={{ justifyContent: "flex-end" }}>Produced</GridHeader>
+                        <GridHeader style={{ justifyContent: "flex-end" }}>Surplus</GridHeader>
+                        {entry.products.map((p, i) => {
+                          const productName = getItem(p.typeId)?.name ?? `Type ${p.typeId}`;
+                          const even = i % 2 === 1;
+                          return (
+                            <Fragment key={p.typeId}>
+                              <ProductNameCell $even={even}>{productName}</ProductNameCell>
+                              <NumericCell $even={even}>
+                                {p.needed > 0 ? p.needed.toLocaleString() : "—"}
+                              </NumericCell>
+                              <NumericCell $even={even}>{p.produced.toLocaleString()}</NumericCell>
+                              <NumericCell $even={even}>
+                                {p.surplus > 0 ? (
+                                  <SurplusBadge>+{p.surplus.toLocaleString()}</SurplusBadge>
+                                ) : (
+                                  "—"
+                                )}
+                              </NumericCell>
+                            </Fragment>
+                          );
+                        })}
+                      </ProductGrid>
                     </OreEntryCard>
                   );
                 })}
