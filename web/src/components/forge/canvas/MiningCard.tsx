@@ -13,15 +13,16 @@ function fmtQty(n: number): string {
 /* ── Constants ────────────────────────────────────────────────── */
 
 const MINING_COLOR = "#FFD740"; // amber — "mine this"
+const LOOT_COLOR = "#40C4AA";  // teal  — "loot/drop this"
 
 /* ── Styled components ────────────────────────────────────────── */
 
-const Card = styled.div`
+const Card = styled.div<{ $accentColor: string }>`
   position: absolute;
   width: 160px;
   background: ${({ theme }) => theme.colors.surface.raised};
-  border: 1px solid ${MINING_COLOR}44;
-  border-top: 2px solid ${MINING_COLOR};
+  border: 1px solid ${({ $accentColor }) => $accentColor}44;
+  border-top: 2px solid ${({ $accentColor }) => $accentColor};
   display: flex;
   flex-direction: column;
   user-select: none;
@@ -44,11 +45,11 @@ const PortCell = styled.div`
   z-index: 1;
 `;
 
-const Dot = styled.div`
+const Dot = styled.div<{ $accentColor: string }>`
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: ${MINING_COLOR};
+  background: ${({ $accentColor }) => $accentColor};
   border: 1px solid ${({ theme }) => theme.colors.surface.raised};
   flex-shrink: 0;
   position: relative;
@@ -94,12 +95,12 @@ const Center = styled.div`
   text-align: center;
 `;
 
-const MiningLabel = styled.span`
+const SourceLabel = styled.span<{ $accentColor: string }>`
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: ${MINING_COLOR};
+  color: ${({ $accentColor }) => $accentColor};
 `;
 
 const OreName = styled.span`
@@ -145,8 +146,14 @@ export function MiningCard({ card, getItem, style, dimmed, focused, onCardPointe
   const item = getItem(card.typeId);
   const dotId = `${card.id}:out:${card.typeId}`;
 
+  const isOre = item?.categoryName === "Asteroid";
+  const accentColor = isOre ? MINING_COLOR : LOOT_COLOR;
+  const sourceIcon  = isOre ? "⛏" : "◈";
+  const sourceLabel = isOre ? "Mining" : "Loot";
+
   return (
     <Card
+      $accentColor={accentColor}
       style={{
         ...style,
         opacity: dimmed ? 0.2 : 1,
@@ -173,7 +180,7 @@ export function MiningCard({ card, getItem, style, dimmed, focused, onCardPointe
               {fmtQty(card.totalQty)} needed
             </Tooltip>
           )}
-          <Dot data-dotid={dotId} />
+          <Dot $accentColor={accentColor} data-dotid={dotId} />
           {item?.icon ? (
             <ItemIcon src={item.icon} alt={item?.name} $hovered={hovered} />
           ) : (
@@ -186,7 +193,7 @@ export function MiningCard({ card, getItem, style, dimmed, focused, onCardPointe
       <Divider />
 
       <Center>
-        <MiningLabel>⛏ Mining</MiningLabel>
+        <SourceLabel $accentColor={accentColor}>{sourceIcon} {sourceLabel}</SourceLabel>
         <OreName>{item?.name ?? `Item #${card.typeId}`}</OreName>
       </Center>
     </Card>
