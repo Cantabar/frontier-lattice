@@ -220,19 +220,27 @@ function BuildCanvasContent({ layout, getItem, transform, onTransformChange, str
         continue;
       }
 
-      // Sort by preferred position (nulls at end, preserving original col order among nulls).
+      // Build sweep order: preferred cards sorted by preferred X, with
+      // null-preference cards interleaved at their original column position
+      // (between the preferred cards they originally sat between).
+      // Appending null-pref cards at the far right causes larger overflow,
+      // which shifts the whole row left and destroys adjacent-tier alignment.
       const indexed = row.map((card, i) => ({ card, origIdx: i, pref: preferred[i] }));
-      indexed.sort((a, b) => {
-        if (a.pref !== null && b.pref !== null) return a.pref - b.pref;
-        if (a.pref !== null) return -1;
-        if (b.pref !== null) return 1;
-        return a.origIdx - b.origIdx;
-      });
+      const withPref = indexed.filter(({ pref }) => pref !== null).sort((a, b) => a.pref! - b.pref!);
+      const nullPref = indexed.filter(({ pref }) => pref === null).sort((a, b) => a.origIdx - b.origIdx);
+      const sweepOrder: typeof indexed = [];
+      let ni = 0;
+      for (const item of withPref) {
+        while (ni < nullPref.length && nullPref[ni].origIdx < item.origIdx)
+          sweepOrder.push(nullPref[ni++]);
+        sweepOrder.push(item);
+      }
+      while (ni < nullPref.length) sweepOrder.push(nullPref[ni++]);
 
       // Left-to-right sweep: place each card at max(preferred, prevRight + gap).
       let cursor = CANVAS_PAD_LEFT;
       const placed: Array<{ card: CanvasCard; left: number }> = [];
-      for (const { card, pref } of indexed) {
+      for (const { card, pref } of sweepOrder) {
         const w = cardWidth(card);
         const idealLeft = pref ?? cursor;
         const left = Math.max(idealLeft, cursor);
