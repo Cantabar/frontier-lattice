@@ -427,6 +427,8 @@ interface Props {
   structures?: import("../../lib/types").AssemblyData[];
   /** Whether the structures query is still loading. */
   structuresLoading?: boolean;
+  /** Pre-select a blueprint output typeId on mount (e.g. from "Open in Planner" on blueprint cards). */
+  initialTypeId?: number | null;
 }
 
 const DEFAULT_TRANSFORM: CanvasTransform = { tx: 40, ty: 40, scale: 1 };
@@ -439,6 +441,7 @@ export function BuildCanvasView({
   onCraftingStyleChange,
   structures: structuresProp,
   structuresLoading: structuresLoadingProp,
+  initialTypeId,
 }: Props) {
   const { address } = useIdentity();
   const { getItem } = useItems();
@@ -554,6 +557,14 @@ export function BuildCanvasView({
     const qty = Math.max(1, parseInt(quantity, 10) || 1);
     optimize(outputTypeId, qty, effectiveInventory, recipeLookup);
   }
+
+  // Load blueprint passed in from the browser tab ("Open in Planner" button).
+  useEffect(() => {
+    if (initialTypeId != null) {
+      handleResolve(initialTypeId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTypeId]);
 
   function handleQuantityChange(value: string) {
     setQuantity(value);

@@ -232,7 +232,8 @@ const Grid = styled.div`
   gap: ${({ theme }) => theme.spacing.sm};
 `;
 
-const Card = styled.button<{ $tierColor?: string }>`
+const Card = styled.div<{ $tierColor?: string }>`
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: ${({ theme }) => theme.spacing.sm};
@@ -250,6 +251,32 @@ const Card = styled.button<{ $tierColor?: string }>`
     border-right-color: ${({ theme }) => theme.colors.primary.main};
     border-top-color: ${({ theme }) => theme.colors.primary.main};
     border-bottom-color: ${({ theme }) => theme.colors.primary.main};
+  }
+`;
+
+const PlanButton = styled.button`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid ${({ theme }) => theme.colors.primary.main};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  background: ${({ theme }) => theme.colors.primary.subtle};
+  color: ${({ theme }) => theme.colors.primary.main};
+  cursor: pointer;
+  white-space: nowrap;
+
+  ${Card}:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.primary.main};
+    color: ${({ theme }) => theme.colors.surface.bg};
   }
 `;
 
@@ -760,6 +787,8 @@ export function BlueprintBrowser({ blueprints, onResolve }: Props) {
               key={bp.blueprintId}
               $tierColor={tierColor}
               onClick={() => setSelectedBp(bp)}
+              role="button"
+              tabIndex={0}
             >
               {bp.primaryIcon && (
                 <CardIcon
@@ -811,6 +840,17 @@ export function BlueprintBrowser({ blueprints, onResolve }: Props) {
                   )}
                 </BadgeRow>
               </CardBody>
+              {onResolve && (
+                <PlanButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onResolve(bp.outputs[0]?.typeId ?? bp.primaryTypeId);
+                  }}
+                  title="Open in Planner"
+                >
+                  Plan →
+                </PlanButton>
+              )}
             </Card>
           );
         })}

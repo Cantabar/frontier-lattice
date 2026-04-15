@@ -61,6 +61,12 @@ export function ForgePlanner() {
   const { blueprints, recipesForOptimizer, allRecipesMap } = useBlueprints(craftingStyle);
 
   const [activeTab, setActiveTab] = useState<PageTab>("blueprints");
+  const [plannerTypeId, setPlannerTypeId] = useState<number | null>(null);
+
+  function openInPlanner(outputTypeId: number) {
+    setPlannerTypeId(outputTypeId);
+    setActiveTab("planner");
+  }
 
   return (
     <Page>
@@ -80,7 +86,7 @@ export function ForgePlanner() {
 
       {/* ── Tab: Blueprints ── */}
       {activeTab === "blueprints" && (
-        <BlueprintBrowser blueprints={blueprints} />
+        <BlueprintBrowser blueprints={blueprints} onResolve={openInPlanner} />
       )}
 
       {/* ── Tab: Planner ── */}
@@ -91,6 +97,7 @@ export function ForgePlanner() {
           recipesForOptimizer={recipesForOptimizer}
           craftingStyle={craftingStyle}
           onCraftingStyleChange={setCraftingStyle}
+          initialTypeId={plannerTypeId}
         />
       )}
     </Page>
