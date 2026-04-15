@@ -521,6 +521,16 @@ export function BuildCanvasView({
     [optimize, effectiveInventory, recipeLookup],
   );
 
+  // Re-run optimizer when SSU inventory selection or recipe lookup changes.
+  useEffect(() => {
+    if (selectedTypeId != null) {
+      const qty = Math.max(1, parseInt(quantity, 10) || 1);
+      optimize(selectedTypeId, qty, effectiveInventory, recipeLookup);
+    }
+    // Intentionally omits selectedTypeId/quantity — only fires on inventory/recipe changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveInventory, recipeLookup]);
+
   function handleResolve(outputTypeId: number) {
     setSelectedTypeId(outputTypeId);
     setShowBrowser(false);
