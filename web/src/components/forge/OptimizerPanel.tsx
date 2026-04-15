@@ -4,7 +4,7 @@ import { useOptimizer, type ResolvedNode, type GapAnalysis, type RecipeLookup } 
 import type { RecipeData } from "../../lib/types";
 import { type BlueprintRecipe } from "../../hooks/useBlueprints";
 import type { CraftingStyle } from "../../hooks/useCraftingStyle";
-import { buildByproductIndex, collectRefiningDemands, optimizeOreUsage, type OreSummary } from "../../lib/oreOptimizer";
+import { buildByproductIndex, buildRecipesByOutput, collectRefiningDemands, optimizeOreUsage, type OreSummary } from "../../lib/oreOptimizer";
 import { ItemPickerField } from "../shared/ItemPickerField";
 import { PrimaryButton, SecondaryButton } from "../shared/Button";
 import { useItems } from "../../hooks/useItems";
@@ -662,11 +662,12 @@ export function OptimizerPanel({
 
   // Ore optimization (computed on demand when ore summary is visible)
   const byproductIdx = useMemo(() => buildByproductIndex(recipes), [recipes]);
+  const recipesByOutput = useMemo(() => buildRecipesByOutput(recipes), [recipes]);
   const oreSummary: OreSummary | null = useMemo(() => {
     if (!showOreSummary || !result) return null;
     const { demands, nonRefiningLeaves } = collectRefiningDemands(result.tree, byproductIdx);
-    return optimizeOreUsage(demands, nonRefiningLeaves, byproductIdx, effectiveInventory);
-  }, [showOreSummary, result, byproductIdx, effectiveInventory]);
+    return optimizeOreUsage(demands, nonRefiningLeaves, byproductIdx, effectiveInventory, recipesByOutput);
+  }, [showOreSummary, result, byproductIdx, effectiveInventory, recipesByOutput]);
 
   function getItemName(typeId: number): string {
     return getItem(typeId)?.name ?? `Type ${typeId}`;

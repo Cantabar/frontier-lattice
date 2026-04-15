@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import type { RecipeData } from "./types";
 import {
   buildByproductIndex,
+  buildRecipesByOutput,
   resolveToRawOre,
   buildIntermediateInputMap,
   computeCompoundOutputs,
@@ -79,6 +80,19 @@ const allRecipes: RecipeData[] = [
   recipe1201, recipe1190, recipe1203, recipe1186, recipe1192,
 ];
 
+// Iron-Rich Nodules regression: single-output intermediate chain
+// IRI (raw ore) → IRN (single-output) → NFV + PGV (multi-output)
+const IRI = 4;   // Iridosmine Nodules (RAW) — modelled after real typeId 78426
+// BP#1204: 40 IRI → 40 IRN  (single-output — NOT in byproductIndex)
+const recipe1204: RecipeData = {
+  outputTypeId: IR,
+  outputQuantity: 40,
+  inputs: [{ typeId: IRI, quantity: 40 }],
+  runTime: 5,
+};
+
+const allRecipesWithIridosmine: RecipeData[] = [...allRecipes, recipe1204];
+
 /* ------------------------------------------------------------------ */
 /* resolveToRawOre                                                     */
 /* ------------------------------------------------------------------ */
@@ -127,6 +141,24 @@ describe("resolveToRawOre", () => {
     expect(res!.chain).toHaveLength(2);
     expect(res!.chain[0]).toBe(recipe1201);
     expect(res!.chain[1]).toBe(recipe1190);
+  });
+
+  it("resolves single-output intermediate to raw ore via recipesByOutput fallback", () => {
+    // IR is an intermediate produced by a single-output recipe (recipe1204: IRI → IR).
+    // Without recipesByOutput, resolveToRawOre(IR) returns null (no multi-output recipe).
+    // With recipesByOutput, it should resolve IR → IRI.
+    const bpIdxIri = buildByproductIndex(allRecipesWithIridosmine);
+    const rbo = buildRecipesByOutput(allRecipesWithIridosmine);
+
+    const resWithout = resolveToRawOre(IR, bpIdxIri);
+    expect(resWithout).toBeNull();
+
+    const resWith = resolveToRawOre(IR, bpIdxIri, undefined, rbo);
+    expect(resWith).not.toBeNull();
+    expect(resWith!.rawOreTypeId).toBe(IRI);
+    expect(resWith!.rawInputPerRun).toBe(40);
+    expect(resWith!.chain).toHaveLength(1);
+    expect(resWith!.chain[0]).toBe(recipe1204);
   });
 
   it("handles cycles gracefully", () => {
@@ -280,5 +312,28 @@ describe("optimizeOreUsage integration", () => {
     expect(result.entries[0].oreTypeId).toBe(IR);
     // ceil(1000 / 198) = 6 runs
     expect(result.entries[0].runs).toBe(6);
+  });
+
+  it("resolves single-output intermediate (IRI → IR → NFV) to raw ore IRI", () => {
+    // This is the Iron-Rich Nodules regression:
+    // recipe1204 (IRI → IR, single-output) is NOT in byproductIndex.
+    // Without recipesByOutput, IR would be listed as the ore.
+    // With recipesByOutput, the ore summary should show IRI instead.
+    const bpIdxIri = buildByproductIndex(allRecipesWithIridosmine);
+    const rbo = buildRecipesByOutput(allRecipesWithIridosmine);
+    const demands = new Map<number, number>([[NFV, 1980]]);
+
+    const result = optimizeOreUsage(demands, [], bpIdxIri, undefined, rbo);
+
+    expect(result.entries).toHaveLength(1);
+    // IRI (Iridosmine-like raw ore) must be the ore, not IR (intermediate)
+    expect(result.entries[0].oreTypeId).toBe(IRI);
+    // Compound outputs per ore run (1 run of recipe1204 = 40 IRI):
+    //   recipe1204: 40 IRI → 40 IR; recipe1192: 10 IR → 198 NFV + 20 PGV
+    //   scale factor = 40 IR / 10 IR per recipe1192 run = 4 recipe1192 runs
+    //   NFV per ore run = 198 * 4 = 792
+    // Ore runs needed = ceil(1980 / 792) = 3; IRI units = 3 * 40 = 120
+    expect(result.entries[0].runs).toBe(3);
+    expect(result.entries[0].totalUnits).toBe(120);
   });
 });

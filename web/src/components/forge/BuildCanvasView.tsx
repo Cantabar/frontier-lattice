@@ -12,6 +12,7 @@ import type { RecipeData } from "../../lib/types";
 import type { CraftingStyle } from "../../hooks/useCraftingStyle";
 import {
   buildByproductIndex,
+  buildRecipesByOutput,
   collectRefiningDemands,
   optimizeOreUsage,
   type OreSummary,
@@ -551,11 +552,15 @@ export function BuildCanvasView({
     () => buildByproductIndex(recipesForOptimizer),
     [recipesForOptimizer],
   );
+  const recipesByOutput = useMemo(
+    () => buildRecipesByOutput(recipesForOptimizer),
+    [recipesForOptimizer],
+  );
   const oreSummary = useMemo<OreSummary | null>(() => {
     if (openPanel !== "ore" || !result) return null;
     const { demands, nonRefiningLeaves } = collectRefiningDemands(result.tree, byproductIdx);
-    return optimizeOreUsage(demands, nonRefiningLeaves, byproductIdx, effectiveInventory);
-  }, [openPanel, result, byproductIdx, effectiveInventory]);
+    return optimizeOreUsage(demands, nonRefiningLeaves, byproductIdx, effectiveInventory, recipesByOutput);
+  }, [openPanel, result, byproductIdx, effectiveInventory, recipesByOutput]);
 
   // Display name for selected blueprint
   const selectedItemName = useMemo(() => {

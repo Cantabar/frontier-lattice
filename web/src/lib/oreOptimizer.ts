@@ -77,6 +77,24 @@ interface RefiningSource {
 }
 
 /**
+ * Build a map from primary outputTypeId → first matching recipe, for ALL
+ * recipes.  Used as a fallback in resolveToRawOre to trace single-output
+ * crafting chains (e.g. Iridosmine Nodules → Iron-Rich Nodules) that are
+ * absent from the byproductIndex.
+ */
+export function buildRecipesByOutput(
+  recipes: RecipeData[],
+): Map<number, RecipeData> {
+  const map = new Map<number, RecipeData>();
+  for (const recipe of recipes) {
+    if (!map.has(recipe.outputTypeId)) {
+      map.set(recipe.outputTypeId, recipe);
+    }
+  }
+  return map;
+}
+
+/**
  * Build a map from every output typeId to the refining recipes that produce it.
  * Only includes recipes that have secondary outputs (multi-output recipes).
  */
@@ -205,50 +223,85 @@ export interface ChainResolution {
  * primary-output recipes in the byproductIndex.
  *
  * Returns null if `typeId` is not the primary output of any multi-output
- * recipe (i.e. it is already a raw ore or only appears as a byproduct).
+ * recipe (i.e. it is already a raw ore or only appears as a byproduct),
+ * unless `recipesByOutput` is provided and contains a single-output recipe
+ * chain leading to a raw ore.
  */
 export function resolveToRawOre(
   typeId: number,
   byproductIndex: Map<number, RefiningSource[]>,
   visited?: Set<number>,
+  recipesByOutput?: Map<number, RecipeData>,
 ): ChainResolution | null {
   const v = visited ?? new Set<number>();
 
   const sources = byproductIndex.get(typeId);
-  if (!sources) return null;
 
   // Only follow the recipe where typeId is the PRIMARY output.
-  const primarySource = sources.find((s) => s.recipe.outputTypeId === typeId);
-  if (!primarySource) return null;
+  const primarySource = sources?.find((s) => s.recipe.outputTypeId === typeId);
 
-  const recipe = primarySource.recipe;
-  const inputTypeId = recipe.inputs[0]?.typeId;
-  if (inputTypeId == null || v.has(typeId)) return null;
+  if (primarySource) {
+    const recipe = primarySource.recipe;
+    const inputTypeId = recipe.inputs[0]?.typeId;
+    if (inputTypeId == null || v.has(typeId)) return null;
 
-  v.add(typeId);
-  const deeper = resolveToRawOre(inputTypeId, byproductIndex, v);
-  v.delete(typeId);
+    v.add(typeId);
+    const deeper = resolveToRawOre(inputTypeId, byproductIndex, v, recipesByOutput);
+    v.delete(typeId);
 
-  if (deeper) {
+    if (deeper) {
+      return {
+        rawOreTypeId: deeper.rawOreTypeId,
+        rawInputPerRun: deeper.rawInputPerRun,
+        chain: [...deeper.chain, recipe],
+      };
+    }
+
+    // If the recursive call returned null but inputTypeId has a primary-output
+    // recipe, the null was caused by a cycle — propagate it.
+    const inputSources = byproductIndex.get(inputTypeId);
+    if (inputSources?.some((s) => s.recipe.outputTypeId === inputTypeId)) {
+      return null;
+    }
+
     return {
-      rawOreTypeId: deeper.rawOreTypeId,
-      rawInputPerRun: deeper.rawInputPerRun,
-      chain: [...deeper.chain, recipe],
+      rawOreTypeId: inputTypeId,
+      rawInputPerRun: recipe.inputs[0].quantity,
+      chain: [recipe],
     };
   }
 
-  // If the recursive call returned null but inputTypeId has a primary-output
-  // recipe, the null was caused by a cycle — propagate it.
-  const inputSources = byproductIndex.get(inputTypeId);
-  if (inputSources?.some((s) => s.recipe.outputTypeId === inputTypeId)) {
-    return null;
+  // Fallback: trace through single-output recipes (not in byproductIndex).
+  // This handles intermediates like Iron-Rich Nodules that are the sole output
+  // of a refining recipe (e.g. Iridosmine Nodules → Iron-Rich Nodules) before
+  // being consumed by a multi-output recipe.
+  if (recipesByOutput && !v.has(typeId)) {
+    const fallbackRecipe = recipesByOutput.get(typeId);
+    if (fallbackRecipe) {
+      const inputTypeId = fallbackRecipe.inputs[0]?.typeId;
+      if (inputTypeId != null) {
+        v.add(typeId);
+        const deeper = resolveToRawOre(inputTypeId, byproductIndex, v, recipesByOutput);
+        v.delete(typeId);
+
+        if (deeper) {
+          return {
+            rawOreTypeId: deeper.rawOreTypeId,
+            rawInputPerRun: deeper.rawInputPerRun,
+            chain: [...deeper.chain, fallbackRecipe],
+          };
+        }
+
+        return {
+          rawOreTypeId: inputTypeId,
+          rawInputPerRun: fallbackRecipe.inputs[0].quantity,
+          chain: [fallbackRecipe],
+        };
+      }
+    }
   }
 
-  return {
-    rawOreTypeId: inputTypeId,
-    rawInputPerRun: recipe.inputs[0].quantity,
-    chain: [recipe],
-  };
+  return null;
 }
 
 /**
@@ -391,6 +444,7 @@ export function optimizeOreUsage(
   nonRefiningLeaves: LeafMaterial[],
   byproductIndex: Map<number, RefiningSource[]>,
   ssuInventory?: ReadonlyMap<number, number>,
+  recipesByOutput?: Map<number, RecipeData>,
 ): OreSummary {
   // ── Net demand after SSU deduction ──
   const demand = new Map<number, number>();
@@ -416,7 +470,7 @@ export function optimizeOreUsage(
       if (directInputTypeId == null) continue;
 
       // Resolve through multi-output recipe chains to find the true raw ore.
-      const resolution = resolveToRawOre(directInputTypeId, byproductIndex);
+      const resolution = resolveToRawOre(directInputTypeId, byproductIndex, undefined, recipesByOutput);
       const rawOreTypeId = resolution ? resolution.rawOreTypeId : directInputTypeId;
       const rawInputPerRun = resolution
         ? resolution.rawInputPerRun
