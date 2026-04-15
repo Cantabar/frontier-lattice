@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
 import { CopyableId } from "../shared/CopyableId";
-import { buildOnlineStructure, buildOfflineStructure, buildUpdateNetworkNodeUrl, getContinuityUrl } from "../../lib/sui";
+import { buildOnlineStructure, buildOfflineStructure, buildUpdateNetworkNodeUrl, buildUpdateMetadataName, getContinuityUrl } from "../../lib/sui";
 import { useIdentity } from "../../hooks/useIdentity";
 import { config } from "../../config";
 import { truncateAddress } from "../../lib/format";
@@ -82,6 +82,42 @@ const NodeName = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+`;
+
+const InlineNameInput = styled.input`
+  font-size: 14px;
+  padding: 2px 6px;
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  background: ${({ theme }) => theme.colors.surface.bg};
+  color: ${({ theme }) => theme.colors.text.primary};
+  font-family: inherit;
+  min-width: 0;
+  width: 180px;
+`;
+
+const EditNameButton = styled.button`
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: ${({ theme }) => theme.radii.sm};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.colors.surface.raised};
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 `;
 
 const NodeMeta = styled.div`
@@ -353,6 +389,9 @@ export function NetworkNodeGroup({
   const { characterId: myCharacterId } = useIdentity();
   const [pending, setPending] = useState(false);
   const [updatingUrl, setUpdatingUrl] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const [iconFallback, setIconFallback] = useState<"primary" | "canonical" | "none">("primary");
 
   // Reset icon fallback state when the node changes
@@ -419,6 +458,32 @@ export function NetworkNodeGroup({
     }
   }
 
+  async function handleRenameName(name: string) {
+    if (!myCharacterId || !assembly) return;
+    setSavingName(true);
+    try {
+      const capObj = await suiClient.getObject({ id: assembly.ownerCapId });
+      const tx = buildUpdateMetadataName({
+        characterId: myCharacterId,
+        structureId: assembly.id,
+        ownerCapId: assembly.ownerCapId,
+        ownerCapVersion: capObj.data?.version ?? assembly.ownerCapVersion,
+        ownerCapDigest: capObj.data?.digest ?? assembly.ownerCapDigest,
+        moveType: "NetworkNode",
+        name,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await signAndExecute({ transaction: tx as any });
+      await new Promise((r) => setTimeout(r, 1500));
+      setEditing(false);
+      onRefreshNodes();
+    } catch (err) {
+      console.error("Failed to rename network node:", err);
+    } finally {
+      setSavingName(false);
+    }
+  }
+
   async function handleToggle(action: "online" | "offline") {
     if (!characterId || !assembly) return;
     setPending(true);
@@ -466,7 +531,55 @@ export function NetworkNodeGroup({
           <StructureIconPlaceholder />
         )}
         <NodeInfo>
-          <NodeName>{displayName}</NodeName>
+          <NodeName>
+            {editing ? (
+              <form
+                style={{ display: "flex", gap: 4, alignItems: "center" }}
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!editValue.trim()) return;
+                  await handleRenameName(editValue.trim());
+                }}
+              >
+                <InlineNameInput
+                  autoFocus
+                  maxLength={64}
+                  value={editValue}
+                  placeholder="Node name"
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={savingName}
+                />
+                <EditNameButton type="submit" disabled={savingName} onClick={(e) => e.stopPropagation()}>
+                  {savingName ? "…" : "Save"}
+                </EditNameButton>
+                <EditNameButton
+                  type="button"
+                  disabled={savingName}
+                  onClick={(e) => { e.stopPropagation(); setEditing(false); }}
+                >
+                  Cancel
+                </EditNameButton>
+              </form>
+            ) : (
+              <>
+                {displayName}
+                {isOwner && myCharacterId && assembly && (
+                  <EditNameButton
+                    style={{ marginLeft: 6 }}
+                    title={node.name ? "Rename network node" : "Name this network node"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditValue(node.name || "");
+                      setEditing(true);
+                    }}
+                  >
+                    {node.name ? "✏️" : "+ Name"}
+                  </EditNameButton>
+                )}
+              </>
+            )}
+          </NodeName>
           <NodeMeta>
             <CopyableId id={node.id} asCode />
           </NodeMeta>
