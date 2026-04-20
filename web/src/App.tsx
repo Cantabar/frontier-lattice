@@ -111,7 +111,7 @@ export default function App() {
               <Route path="/structures/:characterId" element={<MyStructuresPage />} />
               <Route path="/locations" element={<LocationsPage />} />
               <Route path="/map" element={
-                <Suspense fallback={<div>Loading...</div>}>
+                <Suspense fallback={<LoadingSpinner />}>
                   <MapPage />
                 </Suspense>
               } />
