@@ -60,6 +60,10 @@ corm-brain/corm-brain
 # TypeScript incremental build cache
 *.tsbuildinfo
 
+# Playwright test artifacts
+web/test-results/
+web/playwright-report/
+
 # ZK circuit generated artifacts
 indexer/circuits/build/
 indexer/circuits/*.ptau
