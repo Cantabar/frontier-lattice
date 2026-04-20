@@ -1,4 +1,5 @@
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, Component } from "react";
+import type { ReactNode, ErrorInfo } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import styled from "styled-components";
 
@@ -31,6 +32,25 @@ import { LoadingSpinner } from "./components/shared/LoadingSpinner";
 
 const DappApp = lazy(() => import("./DappApp"));
 const MapPage = lazy(() => import("./pages/MapPage").then(m => ({ default: m.MapPage })));
+
+class MapErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: Error | null }
+> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(_error: Error, _info: ErrorInfo) {}
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 24, color: "#e87040" }}>
+          Map failed to load: {(this.state.error as Error).message}
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const Shell = styled.div`
   display: flex;
@@ -111,9 +131,11 @@ export default function App() {
               <Route path="/structures/:characterId" element={<MyStructuresPage />} />
               <Route path="/locations" element={<LocationsPage />} />
               <Route path="/map" element={
-                <Suspense fallback={<LoadingSpinner />}>
-                  <MapPage />
-                </Suspense>
+                <MapErrorBoundary>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <MapPage />
+                  </Suspense>
+                </MapErrorBoundary>
               } />
               <Route path="/verify" element={<VerifyProofPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />

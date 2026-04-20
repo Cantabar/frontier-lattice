@@ -7,11 +7,12 @@ import { SOLAR_SYSTEMS } from "../lib/solarSystems";
 
 const PageContainer = styled.div`
   display: flex;
-  height: 100vh;
+  height: 100%;
 `;
 
 const CanvasArea = styled.div`
   flex: 1;
+  min-height: 0;
   position: relative;
 `;
 

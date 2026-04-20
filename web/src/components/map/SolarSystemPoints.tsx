@@ -16,7 +16,7 @@ export function SolarSystemPoints({
   const { raycaster } = useThree();
 
   useEffect(() => {
-    raycaster.params.Points = { threshold: 1.5 };
+    raycaster.params.Points = { threshold: 50 };
   }, [raycaster]);
 
   const geometry = useMemo(() => {

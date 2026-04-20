@@ -101,13 +101,14 @@ test.describe("Map page", () => {
     // Allow r3f one frame to finish initial render before clicking
     await page.waitForTimeout(500);
 
-    // Try several points across the canvas centre to hit at least one star
+    // Try a grid of points across the canvas to hit at least one star
     const box = await canvas.boundingBox();
-    const attempts = [
-      { x: box!.x + box!.width * 0.5, y: box!.y + box!.height * 0.5 },
-      { x: box!.x + box!.width * 0.45, y: box!.y + box!.height * 0.5 },
-      { x: box!.x + box!.width * 0.55, y: box!.y + box!.height * 0.5 },
-    ];
+    const attempts: { x: number; y: number }[] = [];
+    for (const fx of [0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65]) {
+      for (const fy of [0.35, 0.45, 0.5, 0.55, 0.65]) {
+        attempts.push({ x: box!.x + box!.width * fx, y: box!.y + box!.height * fy });
+      }
+    }
 
     let hit = false;
     for (const pt of attempts) {

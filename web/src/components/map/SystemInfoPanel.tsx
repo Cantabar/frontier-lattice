@@ -7,9 +7,6 @@ export interface SystemInfoPanelProps {
 }
 
 const Panel = styled.div`
-  position: absolute;
-  top: 16px;
-  left: 16px;
   background: rgba(10, 15, 25, 0.82);
   border: 1px solid rgba(100, 160, 220, 0.25);
   border-radius: 6px;
@@ -17,9 +14,6 @@ const Panel = styled.div`
   color: #c8d8e8;
   font-size: 13px;
   line-height: 1.6;
-  min-width: 200px;
-  pointer-events: none;
-  user-select: none;
 `;
 
 const SystemName = styled.div`
