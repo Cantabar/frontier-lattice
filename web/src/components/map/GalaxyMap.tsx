@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { SolarSystemPoints } from "./SolarSystemPoints";
@@ -9,8 +10,8 @@ interface GalaxyMapProps {
   idToIndex: Map<number, number>;
   selectedId: number | null;
   onSelect: (id: number) => void;
-  sceneOverlays?: React.ReactNode;
-  hudOverlays?: React.ReactNode;
+  sceneOverlays?: ReactNode;
+  hudOverlays?: ReactNode;
 }
 
 export function GalaxyMap({
@@ -35,7 +36,7 @@ export function GalaxyMap({
         />
         {sceneOverlays}
       </Canvas>
-      <div>{hudOverlays}</div>
+      {hudOverlays}
     </div>
   );
 }
