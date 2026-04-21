@@ -13,8 +13,7 @@
 
 // poseidon-lite is a transitive dep of @mysten/sui — tree-shakeable, ~50KB
 import { poseidon4 } from "poseidon-lite/poseidon4";
-import { x25519 } from "@noble/curves/ed25519";
-import { edwardsToMontgomeryPub } from "@noble/curves/ed25519";
+import { x25519, ed25519 } from "@noble/curves/ed25519.js";
 
 // ============================================================
 // Types
@@ -202,7 +201,7 @@ export async function getOrCreateX25519Keypair(
   }
 
   // Generate a new random keypair
-  const x25519Priv = x25519.utils.randomPrivateKey();
+  const x25519Priv = x25519.utils.randomSecretKey();
   const x25519Pub = x25519.getPublicKey(x25519Priv);
 
   // Persist
@@ -311,7 +310,7 @@ export async function wrapTlk(
   memberX25519Pub: Uint8Array,
 ): Promise<string> {
   // Generate ephemeral X25519 keypair
-  const ephPriv = x25519.utils.randomPrivateKey();
+  const ephPriv = x25519.utils.randomSecretKey();
   const ephPub = x25519.getPublicKey(ephPriv);
 
   // ECDH → shared secret
@@ -358,7 +357,7 @@ export async function wrapTlk(
  * Used to derive the encryption key for TLK wrapping.
  */
 export function ed25519PubToX25519(ed25519Pub: Uint8Array): Uint8Array {
-  return edwardsToMontgomeryPub(ed25519Pub);
+  return ed25519.utils.toMontgomery(ed25519Pub);
 }
 
 // ============================================================

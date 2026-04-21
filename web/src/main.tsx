@@ -8,7 +8,7 @@ import {
   WalletProvider,
   createNetworkConfig,
 } from "@mysten/dapp-kit";
-import { getFullnodeUrl } from "@mysten/sui/client";
+import { getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
 
 import { theme } from "./styles/theme";
 import { GlobalStyles } from "./styles/globalStyles";
@@ -25,9 +25,9 @@ const queryClient = new QueryClient({
 });
 
 const { networkConfig } = createNetworkConfig({
-  localnet: { url: getFullnodeUrl("localnet") },
-  devnet: { url: getFullnodeUrl("devnet") },
-  testnet: { url: config.suiRpcUrl || getFullnodeUrl("testnet") },
+  localnet: { url: getJsonRpcFullnodeUrl("localnet"), network: "localnet" },
+  devnet: { url: getJsonRpcFullnodeUrl("devnet"), network: "devnet" },
+  testnet: { url: config.suiRpcUrl || getJsonRpcFullnodeUrl("testnet"), network: "testnet" },
 });
 
 createRoot(document.getElementById("root")!).render(
