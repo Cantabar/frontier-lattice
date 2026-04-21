@@ -29,7 +29,7 @@ export function useOverlayColors(params: {
       return { colors: null, glowMask: null, densityMask: null };
     }
 
-    const { filter, mode } = overlayConfig;
+    const { filter, mode, planetTypeId } = overlayConfig;
     const N = ids.length;
 
     // Helper: get color for a system by filter
@@ -60,7 +60,6 @@ export function useOverlayColors(params: {
           );
         }
         case 'planetType': {
-          const planetTypeId = overlayConfig.planetTypeId;
           if (planetTypeId == null) return DIM_COLOR;
           const entry = PLANET_TYPES.find((pt) => pt.typeId === planetTypeId);
           if (entry == null) return DIM_COLOR;
@@ -109,7 +108,6 @@ export function useOverlayColors(params: {
           return (SYSTEM_PLANET_COUNT.get(id) ?? 0) > 0;
         }
         case 'planetType': {
-          const planetTypeId = overlayConfig.planetTypeId;
           if (planetTypeId == null) return false;
           const entry = PLANET_TYPES.find((pt) => pt.typeId === planetTypeId);
           if (entry == null) return false;

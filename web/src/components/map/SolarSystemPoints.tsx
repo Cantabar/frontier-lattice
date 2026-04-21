@@ -2,11 +2,15 @@ import { useEffect, useMemo, useRef } from "react";
 import { ThreeEvent, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
+const GOLD: [number, number, number] = [1, 0.84, 0];
+const WHITE: [number, number, number] = [1, 1, 1];
+
 interface SolarSystemPointsProps {
   positions: Float32Array;
   ids: number[];
   onSelect: (id: number) => void;
   selectedId?: number | null;
+  overlayColors?: Float32Array | null;
 }
 
 export function SolarSystemPoints({
@@ -14,10 +18,12 @@ export function SolarSystemPoints({
   ids,
   onSelect,
   selectedId = null,
+  overlayColors = null,
 }: SolarSystemPointsProps) {
   const { raycaster } = useThree();
   const colorAttrRef = useRef<THREE.BufferAttribute | null>(null);
   const prevIdRef = useRef<number | null>(null);
+  const restoreColorRef = useRef<[number, number, number]>(WHITE);
 
   useEffect(() => {
     raycaster.params.Points = { threshold: 50 };
@@ -46,32 +52,68 @@ export function SolarSystemPoints({
     return () => { geometry.dispose(); };
   }, [geometry]);
 
+  // Apply overlay colors to the full buffer whenever the overlay changes.
   useEffect(() => {
     const colorAttr = colorAttrRef.current;
     if (!colorAttr) return;
-    const colorBuffer = colorAttr.array as Float32Array;
+    const buf = colorAttr.array as Float32Array;
 
-    if (prevIdRef.current !== null) {
-      const prevIdx = idToIndex.get(prevIdRef.current);
-      if (prevIdx !== undefined) {
-        colorBuffer[prevIdx * 3] = 1;
-        colorBuffer[prevIdx * 3 + 1] = 1;
-        colorBuffer[prevIdx * 3 + 2] = 1;
-      }
+    if (overlayColors) {
+      buf.set(overlayColors);
+    } else {
+      buf.fill(1);
     }
 
+    // Re-apply gold highlight if a system is still selected.
     if (selectedId !== null && selectedId !== undefined) {
       const idx = idToIndex.get(selectedId);
       if (idx !== undefined) {
-        colorBuffer[idx * 3] = 1;
-        colorBuffer[idx * 3 + 1] = 0.84;
-        colorBuffer[idx * 3 + 2] = 0;
+        // Capture the new underlying color for this system before overwriting.
+        restoreColorRef.current = overlayColors
+          ? [overlayColors[idx * 3], overlayColors[idx * 3 + 1], overlayColors[idx * 3 + 2]]
+          : WHITE;
+        buf[idx * 3]     = GOLD[0];
+        buf[idx * 3 + 1] = GOLD[1];
+        buf[idx * 3 + 2] = GOLD[2];
+      }
+    }
+
+    colorAttr.needsUpdate = true;
+  }, [overlayColors, idToIndex, selectedId]);
+
+  // Apply gold highlight when the selected system changes.
+  useEffect(() => {
+    const colorAttr = colorAttrRef.current;
+    if (!colorAttr) return;
+    const buf = colorAttr.array as Float32Array;
+
+    // Restore previous selection.
+    if (prevIdRef.current !== null) {
+      const prevIdx = idToIndex.get(prevIdRef.current);
+      if (prevIdx !== undefined) {
+        const [r, g, b] = restoreColorRef.current;
+        buf[prevIdx * 3]     = r;
+        buf[prevIdx * 3 + 1] = g;
+        buf[prevIdx * 3 + 2] = b;
+      }
+    }
+
+    // Highlight new selection, capturing restore color first.
+    if (selectedId !== null && selectedId !== undefined) {
+      const idx = idToIndex.get(selectedId);
+      if (idx !== undefined) {
+        restoreColorRef.current = overlayColors
+          ? [overlayColors[idx * 3], overlayColors[idx * 3 + 1], overlayColors[idx * 3 + 2]]
+          : WHITE;
+        buf[idx * 3]     = GOLD[0];
+        buf[idx * 3 + 1] = GOLD[1];
+        buf[idx * 3 + 2] = GOLD[2];
       }
     }
 
     colorAttr.needsUpdate = true;
     prevIdRef.current = selectedId ?? null;
-  }, [selectedId, idToIndex]);
+  }, [selectedId, idToIndex, overlayColors]);
 
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     if (event.intersections.length === 0) return;

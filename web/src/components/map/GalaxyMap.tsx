@@ -12,6 +12,7 @@ interface GalaxyMapProps {
   idToIndex: Map<number, number>;
   selectedId: number | null;
   onSelect: (id: number) => void;
+  overlayColors?: Float32Array | null;
   sceneOverlays?: ReactNode;
   hudOverlays?: ReactNode;
 }
@@ -22,6 +23,7 @@ export function GalaxyMap({
   idToIndex,
   selectedId,
   onSelect,
+  overlayColors,
   sceneOverlays,
   hudOverlays,
 }: GalaxyMapProps) {
@@ -32,7 +34,7 @@ export function GalaxyMap({
         <ambientLight intensity={0.5} />
         <OrbitControls ref={controlsRef as Ref<OrbitControlsImpl>} enableDamping />
         <CameraController selectedId={selectedId} positions={positions} idToIndex={idToIndex} controlsRef={controlsRef} />
-        <SolarSystemPoints positions={positions} ids={ids} onSelect={onSelect} selectedId={selectedId} />
+        <SolarSystemPoints positions={positions} ids={ids} onSelect={onSelect} selectedId={selectedId} overlayColors={overlayColors} />
         <SelectionIndicator
           positions={positions}
           idToIndex={idToIndex}
