@@ -22,6 +22,8 @@ import { truncateAddress } from "../lib/format";
 import { CopyableId } from "../components/shared/CopyableId";
 import { ASSEMBLY_TYPES } from "../lib/types";
 import type { AssemblyData, AssemblyTypeFilter, AssemblyStatus } from "../lib/types";
+import { useEnergyMap, formatEnergyDisplay } from "../hooks/useEnergyMap";
+import { CollapsibleSummary } from "../components/structures/CollapsibleSummary";
 
 // ---------------------------------------------------------------------------
 // Styled components
@@ -112,34 +114,6 @@ const LocationAuthButton = styled.button`
     opacity: 0.4;
     cursor: not-allowed;
   }
-`;
-
-const SummaryGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: ${({ theme }) => theme.spacing.md};
-  margin-bottom: ${({ theme }) => theme.spacing.lg};
-`;
-
-const SummaryCard = styled.div`
-  background: ${({ theme }) => theme.colors.surface.raised};
-  border: 1px solid ${({ theme }) => theme.colors.surface.border};
-  border-radius: ${({ theme }) => theme.radii.md};
-  padding: ${({ theme }) => theme.spacing.md};
-`;
-
-const CardLabel = styled.div`
-  font-size: 12px;
-  color: ${({ theme }) => theme.colors.text.muted};
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: ${({ theme }) => theme.spacing.xs};
-`;
-
-const CardValue = styled.div`
-  font-size: 20px;
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 const FilterRow = styled.div`
@@ -274,7 +248,7 @@ const TypeBadge = styled.span`
   font-weight: 600;
   border-radius: ${({ theme }) => theme.radii.sm};
   background: ${({ theme }) => theme.colors.secondary.accentMuted};
-  color: ${({ theme }) => theme.colors.secondary.accent};
+  color: ${({ theme }) => theme.colors.text.primary};
   width: 140px;
   text-align: center;
   overflow: hidden;
@@ -645,36 +619,16 @@ export function MyStructuresPage() {
       </Header>
 
       {/* Summary cards */}
-      <SummaryGrid>
-        <SummaryCard>
-          <CardLabel>Total</CardLabel>
-          <CardValue>{structures.length}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardLabel>Online</CardLabel>
-          <CardValue>{onlineCount}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardLabel>Offline</CardLabel>
-          <CardValue>{offlineCount}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardLabel>Nodes</CardLabel>
-          <CardValue>{nodeIds.length}</CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardLabel>Energy</CardLabel>
-          <CardValue>
-            {energyTotals.reserved} / {energyTotals.max} GJ
-          </CardValue>
-        </SummaryCard>
-        <SummaryCard>
-          <CardLabel>CORM Enabled</CardLabel>
-          <CardValue>
-            {cormEnabledCount} / {ssuStructures.length} SSUs
-          </CardValue>
-        </SummaryCard>
-      </SummaryGrid>
+      <CollapsibleSummary
+        totalCount={structures.length}
+        onlineCount={onlineCount}
+        offlineCount={offlineCount}
+        nodeCount={nodeIds.length}
+        energyReserved={energyTotals.reserved}
+        energyMax={energyTotals.max}
+        cormEnabledCount={cormEnabledCount}
+        totalSsuCount={ssuStructures.length}
+      />
 
       {/* Location auth banner (owner-only, before auth) */}
       {isOwner && tribeId && locationAuth === "idle" && (
@@ -854,6 +808,7 @@ function StructureRow({
 }) {
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
+  const { energyMap } = useEnergyMap();
   const [pending, setPending] = useState(false);
   const [enablingExt, setEnablingExt] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -1021,7 +976,7 @@ function StructureRow({
           {structure.status}
         </StatusLabel>
         <EnergyIndicator $connected={!!structure.energySourceId}>
-          {structure.energySourceId ? "⚡ Connected" : "— No energy"}
+          {formatEnergyDisplay(structure.typeId, energyMap)}
         </EnergyIndicator>
       </TagsLeft>
 
