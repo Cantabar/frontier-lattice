@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { SOLAR_SYSTEMS, solarSystemName } from "../../lib/solarSystems";
 import { constellationName, regionName } from "../../lib/regions";
+import { formatCoordLy } from "../../lib/galaxyMap";
 
 export interface SystemInfoPanelProps {
   selectedSystemId: number | null;
@@ -59,6 +60,13 @@ export function SystemInfoPanel({ selectedSystemId }: SystemInfoPanelProps) {
       <SystemId>{selectedSystemId}</SystemId>
       <Detail>Constellation: {constellation}</Detail>
       <Detail>Region: {region}</Detail>
+      {entry && (
+        <>
+          <Detail>X: {formatCoordLy(entry.x)}</Detail>
+          <Detail>Y: {formatCoordLy(entry.y)}</Detail>
+          <Detail>Z: {formatCoordLy(entry.z)}</Detail>
+        </>
+      )}
     </Panel>
   );
 }
