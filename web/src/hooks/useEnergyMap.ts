@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSuiClient } from "@mysten/dapp-kit";
 
@@ -147,11 +147,11 @@ export function useEnergyMap(): {
     return map;
   }, [data]);
 
-  const clearCache = () => {
+  const clearCache = useCallback(() => {
     removeCache();
     queryClient.removeQueries({ queryKey: QUERY_KEY });
     refetch();
-  };
+  }, [queryClient, refetch]);
 
   return {
     energyMap,
