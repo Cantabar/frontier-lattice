@@ -160,7 +160,7 @@ const TypeBadge = styled.span`
   font-weight: 600;
   border-radius: ${({ theme }) => theme.radii.sm};
   background: ${({ theme }) => theme.colors.secondary.accentMuted};
-  color: ${({ theme }) => theme.colors.secondary.accent};
+  color: ${({ theme }) => theme.colors.text.primary};
   width: 140px;
   text-align: center;
   overflow: hidden;
