@@ -1,18 +1,10 @@
-import { useState, useMemo } from "react";
 import styled from "styled-components";
+import { MapProvider, useMapContext } from "../contexts/MapContext";
 import { GalaxyMap } from "../components/map/GalaxyMap";
 import { SystemInfoPanel } from "../components/map/SystemInfoPanel";
 import { OverlayPanel } from "../components/map/OverlayPanel";
 import { GlowLayer } from "../components/map/GlowLayer";
 import { DensityGradientLayer } from "../components/map/DensityGradientLayer";
-import { buildGalaxyBuffer } from "../lib/galaxyMap";
-import { SOLAR_SYSTEMS } from "../lib/solarSystems";
-import { ACCENT_COLOR } from "../lib/overlayPalette";
-import { useOverlayColors } from "../hooks/useOverlayColors";
-import { useLocationPods } from "../hooks/useLocationPods";
-import type { OverlayConfig } from "../lib/overlayTypes";
-
-type SidebarTab = "system" | "overlays";
 
 const PageContainer = styled.div`
   display: flex;
@@ -66,50 +58,19 @@ const TabContent = styled.div`
   flex: 1;
 `;
 
-export function MapPage() {
-  const [selectedSystemId, setSelectedSystemId] = useState<number | null>(null);
-  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("system");
-  const [overlayConfig, setOverlayConfig] = useState<OverlayConfig | null>(null);
-
-  const { positions, ids, idToIndex } = useMemo(
-    () => buildGalaxyBuffer(Array.from(SOLAR_SYSTEMS.values())),
-    [],
-  );
-
-  const { pods } = useLocationPods();
-
-  const { colors, glowMask, densityMask } = useOverlayColors({
-    overlayConfig,
-    ids,
-    pods,
-  });
-
-  const sceneOverlays = (() => {
-    if (!overlayConfig) return undefined;
-    if (overlayConfig.mode === "glow" && glowMask) {
-      return (
-        <GlowLayer positions={positions} glowMask={glowMask} glowColor={ACCENT_COLOR} />
-      );
-    }
-    if (overlayConfig.mode === "densityGradient" && densityMask) {
-      return (
-        <DensityGradientLayer positions={positions} densityMask={densityMask} color={ACCENT_COLOR} />
-      );
-    }
-    return undefined;
-  })();
+function MapPageInner() {
+  const { sidebarTab, setSidebarTab, selectedId, glowMask, densityMask } = useMapContext();
 
   return (
     <PageContainer>
       <CanvasArea>
         <GalaxyMap
-          positions={positions}
-          ids={ids}
-          idToIndex={idToIndex}
-          selectedId={selectedSystemId}
-          onSelect={setSelectedSystemId}
-          overlayColors={colors}
-          sceneOverlays={sceneOverlays}
+          sceneOverlays={
+            <>
+              {glowMask && <GlowLayer />}
+              {densityMask && <DensityGradientLayer />}
+            </>
+          }
         />
       </CanvasArea>
       <InfoSidebar>
@@ -123,17 +84,19 @@ export function MapPage() {
         </TabBar>
         <TabContent>
           {sidebarTab === "system" && (
-            <SystemInfoPanel selectedSystemId={selectedSystemId} />
+            <SystemInfoPanel selectedSystemId={selectedId} />
           )}
-          {sidebarTab === "overlays" && (
-            <OverlayPanel
-              overlayConfig={overlayConfig}
-              onChange={setOverlayConfig}
-              pods={pods}
-            />
-          )}
+          {sidebarTab === "overlays" && <OverlayPanel />}
         </TabContent>
       </InfoSidebar>
     </PageContainer>
+  );
+}
+
+export function MapPage() {
+  return (
+    <MapProvider>
+      <MapPageInner />
+    </MapProvider>
   );
 }

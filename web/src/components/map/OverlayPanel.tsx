@@ -2,7 +2,7 @@ import styled from "styled-components";
 import type { OverlayConfig, OverlayFilter, OverlayMode } from "../../lib/overlayTypes";
 import { PLANET_TYPES } from "../../lib/overlayData";
 import { OverlayLegend } from "./OverlayLegend";
-import type { DecryptedPod } from "../../hooks/useLocationPods";
+import { useMapContext } from "../../contexts/MapContext";
 
 const Section = styled.div`
   margin-bottom: 16px;
@@ -105,34 +105,30 @@ const ALL_FILTERS: OverlayFilter[] = [
 
 const ALL_MODES: OverlayMode[] = ["color", "glow", "densityGradient"];
 
-interface OverlayPanelProps {
-  overlayConfig: OverlayConfig | null;
-  onChange: (config: OverlayConfig | null) => void;
-  pods: DecryptedPod[];
-}
+export function OverlayPanel() {
+  const { overlayConfig, setOverlayConfig, pods } = useMapContext();
 
-export function OverlayPanel({ overlayConfig, onChange, pods }: OverlayPanelProps) {
   const hasPods = pods.length > 0;
   const activeFilter = overlayConfig?.filter ?? null;
   const activeMode = overlayConfig?.mode ?? "color";
 
   function selectFilter(filter: OverlayFilter) {
     if (activeFilter === filter) {
-      onChange(null);
+      setOverlayConfig(null);
       return;
     }
     const defaultPlanetTypeId = filter === "planetType" ? PLANET_TYPES[0].typeId : undefined;
-    onChange({ filter, mode: activeMode, planetTypeId: defaultPlanetTypeId });
+    setOverlayConfig({ filter, mode: activeMode, planetTypeId: defaultPlanetTypeId });
   }
 
   function selectMode(mode: OverlayMode) {
     if (!overlayConfig) return;
-    onChange({ ...overlayConfig, mode });
+    setOverlayConfig({ ...overlayConfig, mode });
   }
 
   function selectPlanetType(typeId: number) {
     if (!overlayConfig) return;
-    onChange({ ...overlayConfig, planetTypeId: typeId });
+    setOverlayConfig({ ...overlayConfig, planetTypeId: typeId });
   }
 
   return (
@@ -140,7 +136,7 @@ export function OverlayPanel({ overlayConfig, onChange, pods }: OverlayPanelProp
       <Section>
         <Label>Filter</Label>
         <FilterList>
-          <FilterButton $active={activeFilter === null} onClick={() => onChange(null)}>
+          <FilterButton $active={activeFilter === null} onClick={() => setOverlayConfig(null)}>
             None
           </FilterButton>
           {ALL_FILTERS.map((filter) => {

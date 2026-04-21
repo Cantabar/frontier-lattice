@@ -1,13 +1,11 @@
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { useMapContext } from "../../contexts/MapContext";
+import { ACCENT_COLOR } from "../../lib/overlayPalette";
 
-interface DensityGradientLayerProps {
-  positions: Float32Array;
-  densityMask: Float32Array;
-  color: THREE.Color;
-}
+export function DensityGradientLayer() {
+  const { positions, densityMask } = useMapContext();
 
-export function DensityGradientLayer({ positions, densityMask, color }: DensityGradientLayerProps) {
   const texture = useMemo(() => {
     const size = 64;
     const canvas = document.createElement("canvas");
@@ -25,9 +23,11 @@ export function DensityGradientLayer({ positions, densityMask, color }: DensityG
 
   const geometry = useMemo(() => {
     const qualifying: number[] = [];
-    for (let i = 0; i < densityMask.length; i++) {
-      if (densityMask[i] > 0.5) {
-        qualifying.push(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+    if (densityMask) {
+      for (let i = 0; i < densityMask.length; i++) {
+        if (densityMask[i] > 0.5) {
+          qualifying.push(positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2]);
+        }
       }
     }
     const geo = new THREE.BufferGeometry();
@@ -40,7 +40,7 @@ export function DensityGradientLayer({ positions, densityMask, color }: DensityG
   return (
     <points geometry={geometry}>
       <pointsMaterial
-        color={color}
+        color={ACCENT_COLOR}
         size={2000}
         sizeAttenuation
         map={texture}

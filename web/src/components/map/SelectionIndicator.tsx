@@ -1,14 +1,11 @@
 import { useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { useMapContext } from "../../contexts/MapContext";
 
-interface SelectionIndicatorProps {
-  positions: Float32Array;
-  idToIndex: Map<number, number>;
-  selectedId: number | null;
-}
+export function SelectionIndicator() {
+  const { positions, idToIndex, selectedId } = useMapContext();
 
-export function SelectionIndicator({ positions, idToIndex, selectedId }: SelectionIndicatorProps) {
   if (selectedId === null) return null;
 
   const idx = idToIndex.get(selectedId);

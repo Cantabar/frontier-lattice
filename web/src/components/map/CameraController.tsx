@@ -2,22 +2,16 @@ import { useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
+import { useMapContext } from "../../contexts/MapContext";
 
 const FLY_DURATION_MS = 800;
 
 interface CameraControllerProps {
-  selectedId: number | null;
-  positions: Float32Array;
-  idToIndex: Map<number, number>;
   controlsRef: React.RefObject<OrbitControlsImpl | null>;
 }
 
-export function CameraController({
-  selectedId,
-  positions,
-  idToIndex,
-  controlsRef,
-}: CameraControllerProps) {
+export function CameraController({ controlsRef }: CameraControllerProps) {
+  const { selectedId, positions, idToIndex } = useMapContext();
   const { camera } = useThree();
 
   const startTargetRef = useRef<THREE.Vector3>(new THREE.Vector3());
