@@ -1,6 +1,5 @@
 import overlayDataJson from '../data/overlay-data.json';
 
-// JSON shape: systems is [sysId, factionId|null, totalPlanets, bitmask, moonCount, hasStation][]
 type SystemRow = [number, number | null, number, number, number, number];
 
 const data = overlayDataJson as unknown as {
@@ -8,8 +7,6 @@ const data = overlayDataJson as unknown as {
   regionAdj: [number, number][];
   constAdj: [number, number][];
 };
-
-// ── System lookup maps ────────────────────────────────────────────────────────
 
 export const SYSTEM_FACTION = new Map<number, number | null>();
 export const SYSTEM_PLANET_COUNT = new Map<number, number>();
@@ -35,8 +32,6 @@ for (const [sysId, factionId, totalPlanets, bitmask, moonCount, hasStation] of d
 export const MAX_PLANET_COUNT: number = maxPlanetCount;
 export const MAX_MOON_COUNT: number = maxMoonCount;
 
-// ── Planet types ──────────────────────────────────────────────────────────────
-
 export const PLANET_TYPES: ReadonlyArray<{ typeId: number; name: string; bit: number }> = [
   { typeId: 11,   name: 'Temperate', bit: 0 },
   { typeId: 12,   name: 'Ice',       bit: 1 },
@@ -46,8 +41,6 @@ export const PLANET_TYPES: ReadonlyArray<{ typeId: number; name: string; bit: nu
   { typeId: 2016, name: 'Barren',    bit: 5 },
   { typeId: 2063, name: 'Plasma',    bit: 6 },
 ];
-
-// ── Adjacency maps ────────────────────────────────────────────────────────────
 
 export const REGION_ADJACENCY = new Map<number, number[]>();
 export const CONSTELLATION_ADJACENCY = new Map<number, number[]>();
