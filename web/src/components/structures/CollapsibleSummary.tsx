@@ -25,7 +25,7 @@ const SummaryHeader = styled.div`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: ${({ theme }) => theme.spacing?.sm ?? "8px"};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
 const SummaryTitle = styled.h3`
@@ -34,7 +34,7 @@ const SummaryTitle = styled.h3`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: ${({ theme }) => theme.colors?.text?.primary ?? "#F0F4F8"};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 const SummaryToggle = styled.button`
@@ -44,34 +44,34 @@ const SummaryToggle = styled.button`
   font-size: 16px;
   padding: 0 4px;
   line-height: 1;
-  color: ${({ theme }) => theme.colors?.text?.muted ?? "#78909C"};
+  color: ${({ theme }) => theme.colors.text.muted};
 `;
 
 const SummaryBody = styled.div<{ $open: boolean }>`
   display: ${({ $open }) => ($open ? "grid" : "none")};
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: ${({ theme }) => theme.spacing?.md ?? "16px"};
+  gap: ${({ theme }) => theme.spacing.md};
 `;
 
 const SummaryCard = styled.div`
-  background: ${({ theme }) => theme.colors?.surface?.raised ?? "#13171D"};
-  border: 1px solid ${({ theme }) => theme.colors?.surface?.border ?? "#2D3038"};
-  border-radius: ${({ theme }) => theme.radii?.md ?? "2px"};
-  padding: ${({ theme }) => theme.spacing?.md ?? "16px"};
+  background: ${({ theme }) => theme.colors.surface.raised};
+  border: 1px solid ${({ theme }) => theme.colors.surface.border};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.md};
 `;
 
 const CardLabel = styled.div`
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: ${({ theme }) => theme.colors?.text?.muted ?? "#78909C"};
-  margin-bottom: ${({ theme }) => theme.spacing?.xs ?? "4px"};
+  color: ${({ theme }) => theme.colors.text.muted};
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
 const CardValue = styled.div`
   font-size: 20px;
   font-weight: 700;
-  color: ${({ theme }) => theme.colors?.text?.primary ?? "#F0F4F8"};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 // ---------------------------------------------------------------------------
