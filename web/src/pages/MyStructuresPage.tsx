@@ -535,6 +535,7 @@ export function MyStructuresPage() {
   }, [structures]);
 
   const { nodes: networkNodes, refetch: refetchNodes } = useNetworkNodes(nodeIds);
+  const { energyMap } = useEnergyMap();
 
   // Lookup of NetworkNode AssemblyData by ID (needed by NetworkNodeGroup for online/offline)
   const nodeAssemblyMap = useMemo(() => {
@@ -733,6 +734,7 @@ export function MyStructuresPage() {
                     tlkUnlocked={locationAuth === "authenticated" && !!tlk.tlkBytes}
                     onAddLocation={(id) => setAddLocationForId(id)}
                     isOwner={isOwner}
+                    energyMap={energyMap}
                   />
                 ))}
               </Grid>
@@ -755,6 +757,7 @@ export function MyStructuresPage() {
               tlkUnlocked={locationAuth === "authenticated" && !!tlk.tlkBytes}
               onAddLocation={(id) => setAddLocationForId(id)}
               isOwner={isOwner}
+              energyMap={energyMap}
             />
           ))}
         </Grid>
@@ -793,6 +796,7 @@ function StructureRow({
   tlkUnlocked,
   onAddLocation,
   isOwner = true,
+  energyMap,
 }: {
   structure: AssemblyData;
   characterId: string | null;
@@ -805,10 +809,10 @@ function StructureRow({
   tlkUnlocked: boolean;
   onAddLocation: (structureId: string) => void;
   isOwner?: boolean;
+  energyMap: Map<number, number>;
 }) {
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const suiClient = useSuiClient();
-  const { energyMap } = useEnergyMap();
   const [pending, setPending] = useState(false);
   const [enablingExt, setEnablingExt] = useState(false);
   const [editing, setEditing] = useState(false);
