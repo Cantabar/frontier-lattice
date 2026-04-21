@@ -1,27 +1,28 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import { useMapContext } from "../../contexts/MapContext";
 import { ACCENT_COLOR } from "../../lib/overlayPalette";
+import { mapRenderBridge } from "../../lib/mapRenderBridge";
 
 export function GlowLayer() {
-  const { positions, glowMask } = useMapContext();
-  const colorAttrRef = useRef<THREE.BufferAttribute | null>(null);
+  const { positions } = useMapContext();
 
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     const colorBuffer = new Float32Array(positions.length);
-    const attr = new THREE.BufferAttribute(colorBuffer, 3);
-    geo.setAttribute("color", attr);
-    colorAttrRef.current = attr;
+    geo.setAttribute("color", new THREE.BufferAttribute(colorBuffer, 3));
     return geo;
   }, [positions]);
 
   useEffect(() => () => { geometry.dispose(); }, [geometry]);
 
-  useEffect(() => {
-    const attr = colorAttrRef.current;
-    if (!attr || !glowMask) return;
+  useFrame(() => {
+    if (!mapRenderBridge.glowDirty) return;
+    const glowMask = mapRenderBridge.glowMask;
+    if (!glowMask) return;
+    const attr = geometry.getAttribute("color") as THREE.BufferAttribute;
     const buf = attr.array as Float32Array;
     for (let i = 0; i < glowMask.length; i++) {
       const m = glowMask[i];
@@ -30,7 +31,8 @@ export function GlowLayer() {
       buf[i * 3 + 2] = ACCENT_COLOR.b * m;
     }
     attr.needsUpdate = true;
-  }, [glowMask]);
+    mapRenderBridge.glowDirty = false;
+  });
 
   return (
     <points geometry={geometry}>

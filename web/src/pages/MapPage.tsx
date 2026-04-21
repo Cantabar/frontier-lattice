@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import styled from "styled-components";
 import { MapProvider, useMapContext } from "../contexts/MapContext";
 import { GalaxyMap } from "../components/map/GalaxyMap";
@@ -61,17 +62,17 @@ const TabContent = styled.div`
 function MapPageInner() {
   const { sidebarTab, setSidebarTab, selectedId, glowMask, densityMask } = useMapContext();
 
+  const sceneOverlays = useMemo(() => (
+    <>
+      {glowMask && <GlowLayer />}
+      {densityMask && <DensityGradientLayer />}
+    </>
+  ), [glowMask, densityMask]);
+
   return (
     <PageContainer>
       <CanvasArea>
-        <GalaxyMap
-          sceneOverlays={
-            <>
-              {glowMask && <GlowLayer />}
-              {densityMask && <DensityGradientLayer />}
-            </>
-          }
-        />
+        <GalaxyMap sceneOverlays={sceneOverlays} />
       </CanvasArea>
       <InfoSidebar>
         <TabBar>

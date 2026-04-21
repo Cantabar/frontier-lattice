@@ -1,4 +1,4 @@
-import { type ReactNode, type Ref, useRef } from "react";
+import { memo, type ReactNode, type Ref, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -11,7 +11,7 @@ interface GalaxyMapProps {
   hudOverlays?: ReactNode;
 }
 
-export function GalaxyMap({ sceneOverlays, hudOverlays }: GalaxyMapProps) {
+export const GalaxyMap = memo(function GalaxyMap({ sceneOverlays, hudOverlays }: GalaxyMapProps) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   return (
     <div style={{ width: "100%", height: "100%" }}>
@@ -26,4 +26,4 @@ export function GalaxyMap({ sceneOverlays, hudOverlays }: GalaxyMapProps) {
       {hudOverlays}
     </div>
   );
-}
+});

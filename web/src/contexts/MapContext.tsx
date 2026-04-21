@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { buildGalaxyBuffer } from "../lib/galaxyMap";
 import { SOLAR_SYSTEMS } from "../lib/solarSystems";
@@ -6,6 +6,7 @@ import { useOverlayColors } from "../hooks/useOverlayColors";
 import { useLocationPods } from "../hooks/useLocationPods";
 import type { DecryptedPod } from "../hooks/useLocationPods";
 import type { OverlayConfig } from "../lib/overlayTypes";
+import { mapRenderBridge } from "../lib/mapRenderBridge";
 
 type SidebarTab = "system" | "overlays";
 
@@ -35,7 +36,7 @@ interface MapContextValue {
   finalStarColors: Float32Array;
 }
 
-const MapContext = createContext<MapContextValue | null>(null);
+export const MapContext = createContext<MapContextValue | null>(null);
 
 export function useMapContext(): MapContextValue {
   const ctx = useContext(MapContext);
@@ -79,6 +80,16 @@ export function MapProvider({ children }: { children: ReactNode }) {
     }
     return buf;
   }, [overlayColors, selectedId, idToIndex, ids.length]);
+
+  useLayoutEffect(() => {
+    mapRenderBridge.finalStarColors = finalStarColors;
+    mapRenderBridge.colorsDirty = true;
+  }, [finalStarColors]);
+
+  useLayoutEffect(() => {
+    mapRenderBridge.glowMask = glowMask;
+    mapRenderBridge.glowDirty = true;
+  }, [glowMask]);
 
   const value: MapContextValue = {
     positions,
