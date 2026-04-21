@@ -8,6 +8,7 @@ import { SOLAR_SYSTEMS } from "../lib/solarSystems";
 const PageContainer = styled.div`
   display: flex;
   height: 100%;
+  background: #000;
 `;
 
 const CanvasArea = styled.div`

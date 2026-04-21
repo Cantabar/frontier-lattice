@@ -26,7 +26,7 @@ export function GalaxyMap({
 }: GalaxyMapProps) {
   return (
     <div style={{ width: "100%", height: "100%" }}>
-      <Canvas camera={{ position: [0, 0, 15000], fov: 60, near: 1, far: 20000 }}>
+      <Canvas camera={{ position: [0, 0, 15000], fov: 60, near: 1, far: 200000 }}>
         <ambientLight intensity={0.5} />
         <OrbitControls enableDamping />
         <SolarSystemPoints positions={positions} ids={ids} onSelect={onSelect} />
