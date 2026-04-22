@@ -542,6 +542,30 @@ Attempted approaches to derive a mapping:
   assignment — produced incorrect mappings (messageIDs are not assigned in hierarchy order).
 - Cross-referencing with the World API confirmed the ordering does not match.
 
+### Region and constellation names from static data
+
+The `res__localizationfsd_localization_fsd_main.json` labels file contains entries for
+all regions, constellations, and solar systems under the `FullPath` values
+`"Map/Regions"`, `"Map/Constellations"`, and `"Map/SolarSystems"` respectively.
+
+The key insight: the `label` field encodes the game ID directly
+(e.g. `"region_10000001"`, `"constellation_20000001"`, `"solar_system_30000001"`).
+This makes it possible to build an `id → messageID` map without relying on sequential
+ordering (which does not hold).
+
+Resolution steps:
+1. Filter `labels` by `FullPath == "Map/Regions"` (or Constellations / SolarSystems)
+2. Parse the numeric ID from `entry.label` (strip prefix)
+3. Look up `translations[String(entry.messageID)][0]` from the en-us localization file
+   (`res__localizationfsd_localization_fsd_en-us.json`, index `[1]`)
+
+Coverage: **1,422 region names** available via this method.
+
+The `scripts/fetch-regions.mjs` script uses this approach to populate the `name` field in
+`web/src/data/regions.json`. Falls back to `String(regionId)` for any unmapped IDs.
+
+---
+
 ### World API comparison
 The Stillness World API (`/v2/solarsystems`) provides 24,502 systems with:
 - `id` — system ID
